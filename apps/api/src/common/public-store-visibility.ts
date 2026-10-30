@@ -1,4 +1,4 @@
-import type { Prisma } from '@biasmarket/db';
+import type { Prisma } from "@biasmarket/db";
 
 // Single source of truth for "may this store appear on a public surface".
 // `isPublic` is a seller-owned toggle (a real seller may legitimately
@@ -25,6 +25,6 @@ export const PUBLIC_STORE_VISIBILITY = {
 export const PUBLIC_STORE_HAS_LISTABLE_PRODUCT = {
   owner: { banned: { not: true } },
   products: {
-    some: { status: 'PUBLISHED', deletedAt: null, discontinued: false },
+    some: { status: "PUBLISHED", deletedAt: null, discontinued: false },
   },
 } as const satisfies Prisma.StoreWhereInput;

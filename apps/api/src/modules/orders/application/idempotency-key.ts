@@ -1,9 +1,9 @@
-import { BadRequestException } from '@nestjs/common';
-import { Prisma } from '@biasmarket/db';
-import { isUUID } from 'class-validator';
+import { BadRequestException } from "@nestjs/common";
+import { Prisma } from "@biasmarket/db";
+import { isUUID } from "class-validator";
 
-export const IDEMPOTENCY_KEY_HEADER = 'idempotency-key';
-const UNIQUE_INDEX_NAME = 'Order_storeId_createdByUserId_idempotencyKey_key';
+export const IDEMPOTENCY_KEY_HEADER = "idempotency-key";
+const UNIQUE_INDEX_NAME = "Order_storeId_createdByUserId_idempotencyKey_key";
 
 /**
  * The optional `Idempotency-Key` header: absent means behavior unchanged,
@@ -15,7 +15,7 @@ export function parseIdempotencyKey(
   if (header === undefined) return undefined;
   // A repeated header is not one key.
   if (Array.isArray(header) || !isUUID(header)) {
-    throw new BadRequestException('Idempotency-Key debe ser un UUID');
+    throw new BadRequestException("Idempotency-Key debe ser un UUID");
   }
   return header.toLowerCase();
 }
@@ -30,10 +30,10 @@ export function parseIdempotencyKey(
 export function isIdempotencyKeyConflict(err: unknown): boolean {
   if (
     !(err instanceof Prisma.PrismaClientKnownRequestError) ||
-    err.code !== 'P2002'
+    err.code !== "P2002"
   ) {
     return false;
   }
   const meta = JSON.stringify(err.meta ?? {});
-  return meta.includes('idempotencyKey') || meta.includes(UNIQUE_INDEX_NAME);
+  return meta.includes("idempotencyKey") || meta.includes(UNIQUE_INDEX_NAME);
 }

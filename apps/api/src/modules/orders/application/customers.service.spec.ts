@@ -1,15 +1,15 @@
-import { Test, type TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from "@nestjs/testing";
 import {
   BadRequestException,
   ForbiddenException,
   NotFoundException,
-} from '@nestjs/common';
-import { type Mock, vi } from 'vitest';
-import { Prisma } from '@biasmarket/db';
-import { CustomersService } from './customers.service.js';
-import { PrismaService } from '../../../prisma/prisma.service.js';
+} from "@nestjs/common";
+import { type Mock, vi } from "vitest";
+import { Prisma } from "@biasmarket/db";
+import { CustomersService } from "./customers.service.js";
+import { PrismaService } from "../../../prisma/prisma.service.js";
 
-describe('CustomersService', () => {
+describe("CustomersService", () => {
   let service: CustomersService;
   let prisma: {
     store: { findUnique: Mock };
@@ -21,8 +21,8 @@ describe('CustomersService', () => {
     $transaction: Mock;
   };
 
-  const ownerId = 'user-1';
-  const storeId = 'store-1';
+  const ownerId = "user-1";
+  const storeId = "store-1";
 
   beforeEach(async () => {
     prisma = {
@@ -64,18 +64,18 @@ describe('CustomersService', () => {
     prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
   }
 
-  describe('ownership checks', () => {
-    it('throws NotFoundException when the store does not exist', async () => {
+  describe("ownership checks", () => {
+    it("throws NotFoundException when the store does not exist", async () => {
       prisma.store.findUnique.mockResolvedValue(null);
       await expect(service.findAllForStore(storeId, ownerId)).rejects.toThrow(
         NotFoundException,
       );
     });
 
-    it('throws ForbiddenException when the user does not own the store', async () => {
+    it("throws ForbiddenException when the user does not own the store", async () => {
       prisma.store.findUnique.mockResolvedValue({
         id: storeId,
-        ownerId: 'someone-else',
+        ownerId: "someone-else",
       });
       await expect(service.findAllForStore(storeId, ownerId)).rejects.toThrow(
         ForbiddenException,
@@ -83,59 +83,59 @@ describe('CustomersService', () => {
     });
   });
 
-  describe('findAllForStore', () => {
+  describe("findAllForStore", () => {
     beforeEach(() => stubOwnedStore());
 
-    it('counts orders, sums only VERIFIED payments, and tracks the last order date per customer', async () => {
+    it("counts orders, sums only VERIFIED payments, and tracks the last order date per customer", async () => {
       prisma.customer.findMany.mockResolvedValue([
         {
-          id: 'customer-1',
-          name: 'Ana',
-          phone: '+51987654321',
-          email: 'ana@example.com',
+          id: "customer-1",
+          name: "Ana",
+          phone: "+51987654321",
+          email: "ana@example.com",
           emailVerified: true,
-          createdAt: new Date('2026-01-02'),
+          createdAt: new Date("2026-01-02"),
         },
         {
-          id: 'customer-2',
+          id: "customer-2",
           name: null,
-          phone: '+51999999999',
+          phone: "+51999999999",
           email: null,
           emailVerified: false,
-          createdAt: new Date('2026-01-01'),
+          createdAt: new Date("2026-01-01"),
         },
       ]);
       prisma.order.groupBy.mockResolvedValue([
         {
-          customerId: 'customer-1',
+          customerId: "customer-1",
           _count: 3,
-          _max: { createdAt: new Date('2026-02-01') },
+          _max: { createdAt: new Date("2026-02-01") },
         },
         {
-          customerId: 'customer-2',
+          customerId: "customer-2",
           _count: 1,
-          _max: { createdAt: new Date('2026-01-15') },
+          _max: { createdAt: new Date("2026-01-15") },
         },
       ]);
       prisma.orderPayment.findMany.mockResolvedValue([
         {
           amount: 50,
-          source: 'SELLER_RECORDED',
-          reviewStatus: 'N_A',
-          order: { customerId: 'customer-1' },
+          source: "SELLER_RECORDED",
+          reviewStatus: "N_A",
+          order: { customerId: "customer-1" },
         },
         {
           amount: 30,
-          source: 'SELLER_RECORDED',
-          reviewStatus: 'N_A',
-          order: { customerId: 'customer-1' },
+          source: "SELLER_RECORDED",
+          reviewStatus: "N_A",
+          order: { customerId: "customer-1" },
         },
         {
           amount: 90,
-          source: 'SELLER_RECORDED',
-          reviewStatus: 'N_A',
+          source: "SELLER_RECORDED",
+          reviewStatus: "N_A",
           voidedAt: new Date(),
-          order: { customerId: 'customer-1' },
+          order: { customerId: "customer-1" },
         },
       ]);
 
@@ -143,25 +143,25 @@ describe('CustomersService', () => {
 
       expect(result).toEqual([
         expect.objectContaining({
-          id: 'customer-1',
+          id: "customer-1",
           orderCount: 3,
           lifetimeSpend: 80,
         }),
         expect.objectContaining({
-          id: 'customer-2',
+          id: "customer-2",
           orderCount: 1,
           lifetimeSpend: 0,
         }),
       ]);
     });
 
-    it('excludes payments from non-collecting orders from lifetime spend', async () => {
+    it("excludes payments from non-collecting orders from lifetime spend", async () => {
       prisma.customer.findMany.mockResolvedValue([
         {
-          id: 'customer-1',
-          name: 'Ana',
-          phone: '+51987654321',
-          email: 'ana@example.com',
+          id: "customer-1",
+          name: "Ana",
+          phone: "+51987654321",
+          email: "ana@example.com",
           emailVerified: true,
           createdAt: new Date(),
         },
@@ -177,9 +177,9 @@ describe('CustomersService', () => {
         where: {
           storeId,
           voidedAt: null,
-          OR: [{ source: 'SELLER_RECORDED' }, { reviewStatus: 'APPROVED' }],
+          OR: [{ source: "SELLER_RECORDED" }, { reviewStatus: "APPROVED" }],
           order: {
-            paymentStatus: { in: ['VERIFIED', 'PARTIALLY_PAID'] },
+            paymentStatus: { in: ["VERIFIED", "PARTIALLY_PAID"] },
             customerId: { not: null },
           },
         },
@@ -194,45 +194,45 @@ describe('CustomersService', () => {
       expect(result[0].lifetimeSpend).toBe(0);
     });
 
-    it('includes guest orders (no linked customer) as synthetic customers grouped by normalized phone', async () => {
+    it("includes guest orders (no linked customer) as synthetic customers grouped by normalized phone", async () => {
       prisma.customer.findMany.mockResolvedValue([]);
       prisma.order.groupBy.mockResolvedValue([]);
       prisma.orderPayment.findMany.mockResolvedValue([]);
       // Two differently-formatted-but-equivalent phones plus a second guest.
       prisma.order.findMany.mockResolvedValue([
         {
-          customerPhone: '+51 987 654 321',
-          customerName: 'Ana',
+          customerPhone: "+51 987 654 321",
+          customerName: "Ana",
           customerEmail: null,
-          paymentStatus: 'VERIFIED',
-          createdAt: new Date('2026-03-01'),
+          paymentStatus: "VERIFIED",
+          createdAt: new Date("2026-03-01"),
           payments: [
             {
               amount: new Prisma.Decimal(40),
-              source: 'SELLER_RECORDED',
-              reviewStatus: 'N_A',
+              source: "SELLER_RECORDED",
+              reviewStatus: "N_A",
             },
           ],
         },
         {
-          customerPhone: '51987654321',
+          customerPhone: "51987654321",
           customerName: null,
-          customerEmail: 'ana@example.com',
-          paymentStatus: 'PENDING_PAYMENT',
-          createdAt: new Date('2026-03-10'),
+          customerEmail: "ana@example.com",
+          paymentStatus: "PENDING_PAYMENT",
+          createdAt: new Date("2026-03-10"),
           payments: [],
         },
         {
-          customerPhone: '+51999999999',
-          customerName: 'Beto',
+          customerPhone: "+51999999999",
+          customerName: "Beto",
           customerEmail: null,
-          paymentStatus: 'VERIFIED',
-          createdAt: new Date('2026-02-01'),
+          paymentStatus: "VERIFIED",
+          createdAt: new Date("2026-02-01"),
           payments: [
             {
               amount: new Prisma.Decimal(10),
-              source: 'SELLER_RECORDED',
-              reviewStatus: 'N_A',
+              source: "SELLER_RECORDED",
+              reviewStatus: "N_A",
             },
           ],
         },
@@ -241,58 +241,58 @@ describe('CustomersService', () => {
       const result = await service.findAllForStore(storeId, ownerId);
 
       expect(result).toHaveLength(2);
-      const ana = result.find((r) => r.id === 'guest_51987654321');
-      const beto = result.find((r) => r.id === 'guest_51999999999');
+      const ana = result.find((r) => r.id === "guest_51987654321");
+      const beto = result.find((r) => r.id === "guest_51999999999");
       expect(ana).toEqual({
-        id: 'guest_51987654321',
-        name: 'Ana',
-        phone: '+51987654321',
-        email: 'ana@example.com',
+        id: "guest_51987654321",
+        name: "Ana",
+        phone: "+51987654321",
+        email: "ana@example.com",
         emailVerified: false,
-        createdAt: new Date('2026-03-01'),
+        createdAt: new Date("2026-03-01"),
         orderCount: 2,
         lifetimeSpend: 40,
-        lastOrderAt: new Date('2026-03-10'),
+        lastOrderAt: new Date("2026-03-10"),
       });
       expect(beto).toEqual({
-        id: 'guest_51999999999',
-        name: 'Beto',
-        phone: '+51999999999',
+        id: "guest_51999999999",
+        name: "Beto",
+        phone: "+51999999999",
         email: null,
         emailVerified: false,
-        createdAt: new Date('2026-02-01'),
+        createdAt: new Date("2026-02-01"),
         orderCount: 1,
         lifetimeSpend: 10,
-        lastOrderAt: new Date('2026-02-01'),
+        lastOrderAt: new Date("2026-02-01"),
       });
       // Sorted by (synthetic) createdAt desc, newest first.
       expect(result.map((r) => r.id)).toEqual([
-        'guest_51987654321',
-        'guest_51999999999',
+        "guest_51987654321",
+        "guest_51999999999",
       ]);
     });
 
-    it('excludes a PENDING_REVIEW buyer-submitted payment from guest lifetimeSpend', async () => {
+    it("excludes a PENDING_REVIEW buyer-submitted payment from guest lifetimeSpend", async () => {
       prisma.customer.findMany.mockResolvedValue([]);
       prisma.order.groupBy.mockResolvedValue([]);
       prisma.orderPayment.findMany.mockResolvedValue([]);
       prisma.order.findMany.mockResolvedValue([
         {
-          customerPhone: '+51987654321',
-          customerName: 'Ana',
+          customerPhone: "+51987654321",
+          customerName: "Ana",
           customerEmail: null,
-          paymentStatus: 'VERIFIED',
-          createdAt: new Date('2026-03-01'),
+          paymentStatus: "VERIFIED",
+          createdAt: new Date("2026-03-01"),
           payments: [
             {
               amount: new Prisma.Decimal(40),
-              source: 'SELLER_RECORDED',
-              reviewStatus: 'N_A',
+              source: "SELLER_RECORDED",
+              reviewStatus: "N_A",
             },
             {
               amount: new Prisma.Decimal(1000),
-              source: 'BUYER_SUBMITTED',
-              reviewStatus: 'PENDING_REVIEW',
+              source: "BUYER_SUBMITTED",
+              reviewStatus: "PENDING_REVIEW",
             },
           ],
         },
@@ -304,22 +304,22 @@ describe('CustomersService', () => {
       expect(result[0].lifetimeSpend).toBe(40);
     });
 
-    it('counts only the verified amount of a PARTIALLY_PAID guest order in lifetimeSpend', async () => {
+    it("counts only the verified amount of a PARTIALLY_PAID guest order in lifetimeSpend", async () => {
       prisma.customer.findMany.mockResolvedValue([]);
       prisma.order.groupBy.mockResolvedValue([]);
       prisma.orderPayment.findMany.mockResolvedValue([]);
       prisma.order.findMany.mockResolvedValue([
         {
-          customerPhone: '+51987654321',
-          customerName: 'Ana',
+          customerPhone: "+51987654321",
+          customerName: "Ana",
           customerEmail: null,
-          paymentStatus: 'PARTIALLY_PAID',
-          createdAt: new Date('2026-03-01'),
+          paymentStatus: "PARTIALLY_PAID",
+          createdAt: new Date("2026-03-01"),
           payments: [
             {
               amount: new Prisma.Decimal(30),
-              source: 'SELLER_RECORDED',
-              reviewStatus: 'N_A',
+              source: "SELLER_RECORDED",
+              reviewStatus: "N_A",
             },
           ],
         },
@@ -332,44 +332,44 @@ describe('CustomersService', () => {
       expect(result[0].lifetimeSpend).toBe(30);
     });
 
-    it('folds guest orders into an existing customer row with the same phone', async () => {
+    it("folds guest orders into an existing customer row with the same phone", async () => {
       prisma.customer.findMany.mockResolvedValue([
         {
-          id: 'customer-1',
-          name: 'Ana',
-          phone: '+51987654321',
-          email: 'ana@example.com',
+          id: "customer-1",
+          name: "Ana",
+          phone: "+51987654321",
+          email: "ana@example.com",
           emailVerified: true,
-          createdAt: new Date('2026-01-01'),
+          createdAt: new Date("2026-01-01"),
         },
       ]);
       prisma.order.groupBy.mockResolvedValue([
         {
-          customerId: 'customer-1',
+          customerId: "customer-1",
           _count: 1,
-          _max: { createdAt: new Date('2026-01-05') },
+          _max: { createdAt: new Date("2026-01-05") },
         },
       ]);
       prisma.orderPayment.findMany.mockResolvedValue([
         {
           amount: 30,
-          source: 'SELLER_RECORDED',
-          reviewStatus: 'N_A',
-          order: { customerId: 'customer-1' },
+          source: "SELLER_RECORDED",
+          reviewStatus: "N_A",
+          order: { customerId: "customer-1" },
         },
       ]);
       prisma.order.findMany.mockResolvedValue([
         {
-          customerPhone: '51987654321',
+          customerPhone: "51987654321",
           customerName: null,
           customerEmail: null,
-          paymentStatus: 'VERIFIED',
-          createdAt: new Date('2026-06-01'),
+          paymentStatus: "VERIFIED",
+          createdAt: new Date("2026-06-01"),
           payments: [
             {
               amount: new Prisma.Decimal(20),
-              source: 'SELLER_RECORDED',
-              reviewStatus: 'N_A',
+              source: "SELLER_RECORDED",
+              reviewStatus: "N_A",
             },
           ],
         },
@@ -380,16 +380,16 @@ describe('CustomersService', () => {
       expect(result).toHaveLength(1);
       expect(result[0]).toEqual(
         expect.objectContaining({
-          id: 'customer-1',
+          id: "customer-1",
           orderCount: 2,
           lifetimeSpend: 50,
-          lastOrderAt: new Date('2026-06-01'),
+          lastOrderAt: new Date("2026-06-01"),
         }),
       );
     });
   });
 
-  describe('findAllForStore: ghost customers (#337)', () => {
+  describe("findAllForStore: ghost customers (#337)", () => {
     beforeEach(() => stubOwnedStore());
 
     const customer = (id: string, phone: string, extra: object = {}) => ({
@@ -401,14 +401,14 @@ describe('CustomersService', () => {
       passwordHash: null,
       pendingEmail: null,
       pendingPhone: null,
-      createdAt: new Date('2026-01-01'),
+      createdAt: new Date("2026-01-01"),
       ...extra,
     });
 
-    it('hides a zero-order contact with no email, password or verification, even if it has a name', async () => {
+    it("hides a zero-order contact with no email, password or verification, even if it has a name", async () => {
       prisma.customer.findMany.mockResolvedValue([
-        customer('orphan', '+51911000001'),
-        customer('named-orphan', '+51911000002', { name: 'Ana' }),
+        customer("orphan", "+51911000001"),
+        customer("named-orphan", "+51911000002", { name: "Ana" }),
       ]);
       prisma.order.groupBy.mockResolvedValue([]);
       prisma.orderPayment.findMany.mockResolvedValue([]);
@@ -417,36 +417,36 @@ describe('CustomersService', () => {
     });
 
     it.each([
-      ['email', { email: 'a@example.com' }],
-      ['passwordHash', { passwordHash: 'hash' }],
-      ['pendingEmail', { pendingEmail: 'b@example.com' }],
-      ['pendingPhone', { pendingPhone: '+51911000009' }],
-      ['emailVerified', { emailVerified: true }],
-    ])('keeps a registered zero-order customer (%s)', async (_label, extra) => {
+      ["email", { email: "a@example.com" }],
+      ["passwordHash", { passwordHash: "hash" }],
+      ["pendingEmail", { pendingEmail: "b@example.com" }],
+      ["pendingPhone", { pendingPhone: "+51911000009" }],
+      ["emailVerified", { emailVerified: true }],
+    ])("keeps a registered zero-order customer (%s)", async (_label, extra) => {
       prisma.customer.findMany.mockResolvedValue([
-        customer('registered', '+51911000003', extra),
+        customer("registered", "+51911000003", extra),
       ]);
       prisma.order.groupBy.mockResolvedValue([]);
       prisma.orderPayment.findMany.mockResolvedValue([]);
 
       const result = await service.findAllForStore(storeId, ownerId);
 
-      expect(result.map((r) => r.id)).toEqual(['registered']);
+      expect(result.map((r) => r.id)).toEqual(["registered"]);
     });
 
-    it('keeps a contact whose only orders are guest orders folded in by phone', async () => {
+    it("keeps a contact whose only orders are guest orders folded in by phone", async () => {
       prisma.customer.findMany.mockResolvedValue([
-        customer('folded', '+51987654321'),
+        customer("folded", "+51987654321"),
       ]);
       prisma.order.groupBy.mockResolvedValue([]);
       prisma.orderPayment.findMany.mockResolvedValue([]);
       prisma.order.findMany.mockResolvedValue([
         {
-          customerPhone: '51987654321',
+          customerPhone: "51987654321",
           customerName: null,
           customerEmail: null,
-          paymentStatus: 'PENDING_PAYMENT',
-          createdAt: new Date('2026-06-01'),
+          paymentStatus: "PENDING_PAYMENT",
+          createdAt: new Date("2026-06-01"),
           payments: [],
         },
       ]);
@@ -455,39 +455,39 @@ describe('CustomersService', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0]).toEqual(
-        expect.objectContaining({ id: 'folded', orderCount: 1 }),
+        expect.objectContaining({ id: "folded", orderCount: 1 }),
       );
     });
 
-    it('keeps a contact with orders of its own', async () => {
+    it("keeps a contact with orders of its own", async () => {
       prisma.customer.findMany.mockResolvedValue([
-        customer('with-orders', '+51911000004'),
+        customer("with-orders", "+51911000004"),
       ]);
       prisma.order.groupBy.mockResolvedValue([
         {
-          customerId: 'with-orders',
+          customerId: "with-orders",
           _count: 2,
-          _max: { createdAt: new Date('2026-02-01') },
+          _max: { createdAt: new Date("2026-02-01") },
         },
       ]);
       prisma.orderPayment.findMany.mockResolvedValue([]);
 
       const result = await service.findAllForStore(storeId, ownerId);
 
-      expect(result.map((r) => r.id)).toEqual(['with-orders']);
+      expect(result.map((r) => r.id)).toEqual(["with-orders"]);
     });
 
-    it('still emits guest synthetic rows for guest-only phones', async () => {
+    it("still emits guest synthetic rows for guest-only phones", async () => {
       prisma.customer.findMany.mockResolvedValue([]);
       prisma.order.groupBy.mockResolvedValue([]);
       prisma.orderPayment.findMany.mockResolvedValue([]);
       prisma.order.findMany.mockResolvedValue([
         {
-          customerPhone: '+51911000005',
-          customerName: 'Guest',
+          customerPhone: "+51911000005",
+          customerName: "Guest",
           customerEmail: null,
-          paymentStatus: 'PENDING_PAYMENT',
-          createdAt: new Date('2026-06-01'),
+          paymentStatus: "PENDING_PAYMENT",
+          createdAt: new Date("2026-06-01"),
           payments: [],
         },
       ]);
@@ -499,57 +499,57 @@ describe('CustomersService', () => {
     });
   });
 
-  describe('findOneForStore', () => {
+  describe("findOneForStore", () => {
     beforeEach(() => stubOwnedStore());
 
-    it('throws NotFoundException when the customer belongs to a different store', async () => {
+    it("throws NotFoundException when the customer belongs to a different store", async () => {
       prisma.customer.findUnique.mockResolvedValue({
-        id: 'customer-1',
-        storeId: 'other-store',
+        id: "customer-1",
+        storeId: "other-store",
       });
       await expect(
-        service.findOneForStore('customer-1', storeId, ownerId),
+        service.findOneForStore("customer-1", storeId, ownerId),
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('returns the customer plus their order history with payment summaries', async () => {
+    it("returns the customer plus their order history with payment summaries", async () => {
       prisma.customer.findUnique.mockResolvedValue({
-        id: 'customer-1',
+        id: "customer-1",
         storeId,
-        name: 'Ana',
-        phone: '+51987654321',
-        email: 'ana@example.com',
+        name: "Ana",
+        phone: "+51987654321",
+        email: "ana@example.com",
         emailVerified: true,
         createdAt: new Date(),
       });
       prisma.order.findMany.mockResolvedValue([
         {
-          id: 'order-1',
+          id: "order-1",
           requiredAmount: new Prisma.Decimal(100),
           payments: [
             {
               amount: new Prisma.Decimal(40),
-              source: 'SELLER_RECORDED',
-              reviewStatus: 'N_A',
+              source: "SELLER_RECORDED",
+              reviewStatus: "N_A",
             },
           ],
         },
       ]);
 
       const result = await service.findOneForStore(
-        'customer-1',
+        "customer-1",
         storeId,
         ownerId,
       );
 
       expect(prisma.order.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { storeId, customerId: 'customer-1' },
+          where: { storeId, customerId: "customer-1" },
         }),
       );
       expect(result.orders).toEqual([
         expect.objectContaining({
-          id: 'order-1',
+          id: "order-1",
           paidAmount: 40,
           pendingAmount: 60,
           paidPercentage: 40,
@@ -557,43 +557,43 @@ describe('CustomersService', () => {
       ]);
     });
 
-    it('resolves a guest synthetic id to its orders by normalized phone', async () => {
+    it("resolves a guest synthetic id to its orders by normalized phone", async () => {
       prisma.customer.findUnique.mockResolvedValue(null);
       prisma.order.findMany.mockResolvedValue([
         {
-          id: 'order-g1',
-          customerPhone: '+51 987 654 321',
-          customerName: 'Ana',
-          customerEmail: 'ana@example.com',
+          id: "order-g1",
+          customerPhone: "+51 987 654 321",
+          customerName: "Ana",
+          customerEmail: "ana@example.com",
           requiredAmount: new Prisma.Decimal(100),
-          createdAt: new Date('2026-03-01'),
+          createdAt: new Date("2026-03-01"),
           payments: [
             {
               amount: new Prisma.Decimal(40),
-              source: 'SELLER_RECORDED',
-              reviewStatus: 'N_A',
+              source: "SELLER_RECORDED",
+              reviewStatus: "N_A",
             },
           ],
         },
         {
-          id: 'order-g2',
-          customerPhone: '51999999999',
-          customerName: 'Beto',
+          id: "order-g2",
+          customerPhone: "51999999999",
+          customerName: "Beto",
           customerEmail: null,
           requiredAmount: new Prisma.Decimal(50),
-          createdAt: new Date('2026-02-01'),
+          createdAt: new Date("2026-02-01"),
           payments: [],
         },
       ]);
 
       const result = await service.findOneForStore(
-        'guest_51987654321',
+        "guest_51987654321",
         storeId,
         ownerId,
       );
 
       expect(prisma.customer.findUnique).toHaveBeenCalledWith({
-        where: { storeId_phone: { storeId, phone: '+51987654321' } },
+        where: { storeId_phone: { storeId, phone: "+51987654321" } },
       });
       expect(prisma.order.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -605,16 +605,16 @@ describe('CustomersService', () => {
         }),
       );
       expect(result.customer).toEqual({
-        id: 'guest_51987654321',
-        name: 'Ana',
-        phone: '+51987654321',
-        email: 'ana@example.com',
+        id: "guest_51987654321",
+        name: "Ana",
+        phone: "+51987654321",
+        email: "ana@example.com",
         emailVerified: false,
-        createdAt: new Date('2026-03-01'),
+        createdAt: new Date("2026-03-01"),
       });
       expect(result.orders).toEqual([
         expect.objectContaining({
-          id: 'order-g1',
+          id: "order-g1",
           paidAmount: 40,
           pendingAmount: 60,
           paidPercentage: 40,
@@ -622,272 +622,272 @@ describe('CustomersService', () => {
       ]);
     });
 
-    it('throws NotFoundException when a guest id has no matching orders', async () => {
+    it("throws NotFoundException when a guest id has no matching orders", async () => {
       prisma.customer.findUnique.mockResolvedValue(null);
       prisma.order.findMany.mockResolvedValue([
         {
-          id: 'order-g1',
-          customerPhone: '+51999999999',
-          customerName: 'Beto',
+          id: "order-g1",
+          customerPhone: "+51999999999",
+          customerName: "Beto",
           customerEmail: null,
           requiredAmount: new Prisma.Decimal(50),
-          createdAt: new Date('2026-02-01'),
+          createdAt: new Date("2026-02-01"),
           payments: [],
         },
       ]);
 
       await expect(
-        service.findOneForStore('guest_51987654321', storeId, ownerId),
+        service.findOneForStore("guest_51987654321", storeId, ownerId),
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('falls through to the real customer when an account now exists for the guest phone', async () => {
+    it("falls through to the real customer when an account now exists for the guest phone", async () => {
       prisma.customer.findUnique.mockResolvedValue({
-        id: 'customer-1',
+        id: "customer-1",
         storeId,
-        name: 'Ana',
-        phone: '+51987654321',
-        email: 'ana@example.com',
+        name: "Ana",
+        phone: "+51987654321",
+        email: "ana@example.com",
         emailVerified: true,
-        createdAt: new Date('2026-01-01'),
+        createdAt: new Date("2026-01-01"),
       });
       prisma.order.findMany.mockResolvedValue([
         {
-          id: 'order-1',
+          id: "order-1",
           requiredAmount: new Prisma.Decimal(100),
           payments: [
             {
               amount: new Prisma.Decimal(40),
-              source: 'SELLER_RECORDED',
-              reviewStatus: 'N_A',
+              source: "SELLER_RECORDED",
+              reviewStatus: "N_A",
             },
           ],
         },
       ]);
 
       const result = await service.findOneForStore(
-        'guest_51987654321',
+        "guest_51987654321",
         storeId,
         ownerId,
       );
 
       expect(prisma.customer.findUnique).toHaveBeenLastCalledWith({
-        where: { id: 'customer-1', identityErasedAt: null },
+        where: { id: "customer-1", identityErasedAt: null },
       });
-      expect(result.customer.id).toBe('customer-1');
+      expect(result.customer.id).toBe("customer-1");
       expect(result.orders).toEqual([
-        expect.objectContaining({ id: 'order-1' }),
+        expect.objectContaining({ id: "order-1" }),
       ]);
     });
   });
 
-  describe('lookupByPhone', () => {
+  describe("lookupByPhone", () => {
     beforeEach(() => stubOwnedStore());
 
-    it('rejects a seller who does not own the store', async () => {
+    it("rejects a seller who does not own the store", async () => {
       prisma.store.findUnique.mockResolvedValue({
         id: storeId,
-        ownerId: 'someone-else',
+        ownerId: "someone-else",
       });
 
       await expect(
-        service.lookupByPhone(storeId, ownerId, '987654321'),
+        service.lookupByPhone(storeId, ownerId, "987654321"),
       ).rejects.toThrow(ForbiddenException);
       expect(prisma.order.count).not.toHaveBeenCalled();
     });
 
-    it('counts this store only, through the canonical phone column', async () => {
+    it("counts this store only, through the canonical phone column", async () => {
       prisma.customer.findUnique.mockResolvedValue(null);
       prisma.order.count.mockResolvedValue(2);
       prisma.order.findFirst.mockResolvedValue({
-        customerName: 'Anita',
-        createdAt: new Date('2026-02-01'),
+        customerName: "Anita",
+        createdAt: new Date("2026-02-01"),
       });
 
-      const result = await service.lookupByPhone(storeId, ownerId, '987654321');
+      const result = await service.lookupByPhone(storeId, ownerId, "987654321");
 
       expect(prisma.order.count).toHaveBeenCalledWith({
-        where: { storeId, customerPhoneNormalized: '+51987654321' },
+        where: { storeId, customerPhoneNormalized: "+51987654321" },
       });
       expect(prisma.order.findFirst).toHaveBeenCalledWith({
-        where: { storeId, customerPhoneNormalized: '+51987654321' },
-        orderBy: { createdAt: 'desc' },
+        where: { storeId, customerPhoneNormalized: "+51987654321" },
+        orderBy: { createdAt: "desc" },
         select: { customerName: true, createdAt: true },
       });
       expect(result).toEqual({
-        normalizedPhone: '+51987654321',
+        normalizedPhone: "+51987654321",
         previousOrders: 2,
-        lastAlias: 'Anita',
+        lastAlias: "Anita",
       });
     });
 
-    it('still resolves orders written before the normalizing column was backfilled', async () => {
+    it("still resolves orders written before the normalizing column was backfilled", async () => {
       prisma.customer.findUnique.mockResolvedValue(null);
       prisma.order.count.mockResolvedValue(0);
       prisma.order.findFirst.mockResolvedValue(null);
       prisma.order.findMany.mockResolvedValue([
         {
-          customerPhone: '+51 987 654 321',
-          customerName: 'Anita',
-          createdAt: new Date('2026-02-01'),
+          customerPhone: "+51 987 654 321",
+          customerName: "Anita",
+          createdAt: new Date("2026-02-01"),
         },
         {
-          customerPhone: '+51911111111',
-          customerName: 'Otro',
-          createdAt: new Date('2026-03-01'),
+          customerPhone: "+51911111111",
+          customerName: "Otro",
+          createdAt: new Date("2026-03-01"),
         },
       ]);
 
-      const result = await service.lookupByPhone(storeId, ownerId, '987654321');
+      const result = await service.lookupByPhone(storeId, ownerId, "987654321");
 
       expect(prisma.order.findMany).toHaveBeenCalledWith({
         where: { storeId, customerPhoneNormalized: null },
         select: { customerPhone: true, customerName: true, createdAt: true },
       });
       expect(result).toEqual({
-        normalizedPhone: '+51987654321',
+        normalizedPhone: "+51987654321",
         previousOrders: 1,
-        lastAlias: 'Anita',
+        lastAlias: "Anita",
       });
     });
 
-    it('prefers the latest order alias while preserving a stored customer name', async () => {
-      prisma.customer.findUnique.mockResolvedValue({ name: 'Ana P.' });
+    it("prefers the latest order alias while preserving a stored customer name", async () => {
+      prisma.customer.findUnique.mockResolvedValue({ name: "Ana P." });
       prisma.order.count.mockResolvedValue(1);
       prisma.order.findFirst.mockResolvedValue({
-        customerName: 'Anita',
-        createdAt: new Date('2026-02-01'),
+        customerName: "Anita",
+        createdAt: new Date("2026-02-01"),
       });
 
       const result = await service.lookupByPhone(
         storeId,
         ownerId,
-        '+51987654321',
+        "+51987654321",
       );
 
-      expect(result.lastAlias).toBe('Anita');
+      expect(result.lastAlias).toBe("Anita");
     });
 
-    it('falls back to the stored customer name when there are no orders', async () => {
-      prisma.customer.findUnique.mockResolvedValue({ name: 'Ana P.' });
+    it("falls back to the stored customer name when there are no orders", async () => {
+      prisma.customer.findUnique.mockResolvedValue({ name: "Ana P." });
       prisma.order.count.mockResolvedValue(0);
       prisma.order.findFirst.mockResolvedValue(null);
 
       const result = await service.lookupByPhone(
         storeId,
         ownerId,
-        '+51987654321',
+        "+51987654321",
       );
 
-      expect(result.lastAlias).toBe('Ana P.');
+      expect(result.lastAlias).toBe("Ana P.");
     });
 
     it.each([
-      ['2026-02-01', 'Legacy alias'],
-      ['2026-04-01', 'Indexed alias'],
-      ['2026-03-01', 'Indexed alias'],
+      ["2026-02-01", "Legacy alias"],
+      ["2026-04-01", "Indexed alias"],
+      ["2026-03-01", "Indexed alias"],
     ])(
-      'compares indexed order dated %s with the newest legacy match',
+      "compares indexed order dated %s with the newest legacy match",
       async (indexedDate, expectedAlias) => {
         prisma.customer.findUnique.mockResolvedValue(null);
         prisma.order.count.mockResolvedValue(1);
         prisma.order.findFirst.mockResolvedValue({
-          customerName: 'Indexed alias',
+          customerName: "Indexed alias",
           createdAt: new Date(indexedDate),
         });
         prisma.order.findMany.mockResolvedValue([
           {
-            customerPhone: '+51 987 654 321',
-            customerName: 'Older legacy alias',
-            createdAt: new Date('2026-01-01'),
+            customerPhone: "+51 987 654 321",
+            customerName: "Older legacy alias",
+            createdAt: new Date("2026-01-01"),
           },
           {
-            customerPhone: '51987654321',
-            customerName: 'Legacy alias',
-            createdAt: new Date('2026-03-01'),
+            customerPhone: "51987654321",
+            customerName: "Legacy alias",
+            createdAt: new Date("2026-03-01"),
           },
           {
-            customerPhone: '+51911111111',
-            customerName: 'Unrelated alias',
-            createdAt: new Date('2026-05-01'),
+            customerPhone: "+51911111111",
+            customerName: "Unrelated alias",
+            createdAt: new Date("2026-05-01"),
           },
         ]);
 
         const result = await service.lookupByPhone(
           storeId,
           ownerId,
-          '987654321',
+          "987654321",
         );
 
         expect(result).toEqual({
-          normalizedPhone: '+51987654321',
+          normalizedPhone: "+51987654321",
           previousOrders: 3,
           lastAlias: expectedAlias,
         });
       },
     );
 
-    it('returns no alias when neither lookup finds an order', async () => {
+    it("returns no alias when neither lookup finds an order", async () => {
       prisma.customer.findUnique.mockResolvedValue(null);
       prisma.order.count.mockResolvedValue(0);
       prisma.order.findFirst.mockResolvedValue(null);
 
-      const result = await service.lookupByPhone(storeId, ownerId, '987654321');
+      const result = await service.lookupByPhone(storeId, ownerId, "987654321");
 
       expect(result).toEqual({
-        normalizedPhone: '+51987654321',
+        normalizedPhone: "+51987654321",
         previousOrders: 0,
         lastAlias: null,
       });
     });
 
-    it('rejects a phone that fails validation', async () => {
+    it("rejects a phone that fails validation", async () => {
       await expect(
-        service.lookupByPhone(storeId, ownerId, '812345678'),
+        service.lookupByPhone(storeId, ownerId, "812345678"),
       ).rejects.toThrow(BadRequestException);
     });
   });
 
-  describe('upsertStoreContact', () => {
+  describe("upsertStoreContact", () => {
     beforeEach(() => stubOwnedStore());
 
-    it('upserts the store contact without touching BuyerAccount', async () => {
-      prisma.customer.findUnique.mockResolvedValue({ id: 'customer-1' });
-      prisma.customer.update.mockResolvedValue({ id: 'customer-1' });
+    it("upserts the store contact without touching BuyerAccount", async () => {
+      prisma.customer.findUnique.mockResolvedValue({ id: "customer-1" });
+      prisma.customer.update.mockResolvedValue({ id: "customer-1" });
 
       await service.upsertStoreContact(
         storeId,
         ownerId,
-        '987 654 321',
-        '  Ana  ',
+        "987 654 321",
+        "  Ana  ",
       );
 
       const [lockStrings, ...lockValues] = prisma.$executeRaw.mock.calls[0];
-      expect(lockStrings.join('?')).toContain('pg_advisory_xact_lock');
-      expect(lockValues).toContain('assisted-customer:store-1:+51987654321');
+      expect(lockStrings.join("?")).toContain("pg_advisory_xact_lock");
+      expect(lockValues).toContain("assisted-customer:store-1:+51987654321");
 
       const [strings, ...values] = prisma.$executeRaw.mock.calls[1];
-      expect(strings.join('?')).toContain('INSERT INTO "Customer"');
-      expect(strings.join('?')).toContain('ON CONFLICT ("storeId", "phone")');
+      expect(strings.join("?")).toContain('INSERT INTO "Customer"');
+      expect(strings.join("?")).toContain('ON CONFLICT ("storeId", "phone")');
       expect(values).toContain(storeId);
-      expect(values).toContain('+51987654321');
+      expect(values).toContain("+51987654321");
       expect(prisma.customer.update).toHaveBeenCalledWith({
-        where: { storeId_phone: { storeId, phone: '+51987654321' } },
-        data: { name: 'Ana' },
+        where: { storeId_phone: { storeId, phone: "+51987654321" } },
+        data: { name: "Ana" },
       });
       expect(prisma.buyerAccount.create).not.toHaveBeenCalled();
       expect(prisma.buyerAccount.upsert).not.toHaveBeenCalled();
       expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
     });
 
-    it('rejects a seller who does not own the store', async () => {
+    it("rejects a seller who does not own the store", async () => {
       prisma.store.findUnique.mockResolvedValue({
         id: storeId,
-        ownerId: 'someone-else',
+        ownerId: "someone-else",
       });
 
       await expect(
-        service.upsertStoreContact(storeId, ownerId, '987654321', 'Ana'),
+        service.upsertStoreContact(storeId, ownerId, "987654321", "Ana"),
       ).rejects.toThrow(ForbiddenException);
       expect(prisma.$executeRaw).not.toHaveBeenCalled();
     });

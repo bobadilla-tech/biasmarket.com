@@ -1,6 +1,6 @@
-import { randomUUID } from 'node:crypto';
-import { ConflictException } from '@nestjs/common';
-import type { Prisma } from '@biasmarket/db';
+import { randomUUID } from "node:crypto";
+import { ConflictException } from "@nestjs/common";
+import type { Prisma } from "@biasmarket/db";
 
 type Tx = Prisma.TransactionClient;
 
@@ -43,7 +43,7 @@ export async function upsertAssistedCustomer(
   }
   if (!customer) {
     throw new ConflictException(
-      'No se pudo registrar al comprador, intenta de nuevo',
+      "No se pudo registrar al comprador, intenta de nuevo",
     );
   }
 

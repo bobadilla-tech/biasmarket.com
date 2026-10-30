@@ -1,5 +1,5 @@
-import { IsString, Matches, MaxLength } from 'class-validator';
-import { IsValidBuyerPhone } from './is-valid-buyer-phone.js';
+import { IsString, Matches, MaxLength } from "class-validator";
+import { IsValidBuyerPhone } from "./is-valid-buyer-phone.js";
 
 // Supplied only to the internal, secret-guarded request-processing endpoint.
 // Do not log, persist, or echo customerPhone.

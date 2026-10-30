@@ -1,14 +1,14 @@
-import { Test, type TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from "@nestjs/testing";
 import {
   BadRequestException,
   ForbiddenException,
   NotFoundException,
-} from '@nestjs/common';
-import { type Mock, vi } from 'vitest';
-import { StoresService } from './stores.service.js';
-import { PrismaService } from '../../prisma/prisma.service.js';
+} from "@nestjs/common";
+import { type Mock, vi } from "vitest";
+import { StoresService } from "./stores.service.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
-describe('StoresService', () => {
+describe("StoresService", () => {
   let service: StoresService;
   let prisma: {
     store: {
@@ -29,7 +29,7 @@ describe('StoresService', () => {
     $queryRaw: Mock;
   };
 
-  const ownerId = 'user-1';
+  const ownerId = "user-1";
 
   beforeEach(async () => {
     prisma = {
@@ -59,21 +59,21 @@ describe('StoresService', () => {
   });
 
   const createDto = {
-    name: 'My Store',
-    slug: 'my-store',
-    whatsappNumber: '+51999999999',
+    name: "My Store",
+    slug: "my-store",
+    whatsappNumber: "+51999999999",
   };
 
-  it('rejects reserved slugs without touching the database', async () => {
+  it("rejects reserved slugs without touching the database", async () => {
     await expect(
-      service.create(ownerId, { ...createDto, slug: 'admin' }),
+      service.create(ownerId, { ...createDto, slug: "admin" }),
     ).rejects.toThrow(BadRequestException);
 
     expect(prisma.store.create).not.toHaveBeenCalled();
   });
 
-  it('rejects a slug that already exists', async () => {
-    prisma.store.findUnique.mockResolvedValue({ id: 'existing-store' });
+  it("rejects a slug that already exists", async () => {
+    prisma.store.findUnique.mockResolvedValue({ id: "existing-store" });
 
     await expect(service.create(ownerId, createDto)).rejects.toThrow(
       BadRequestException,
@@ -82,62 +82,62 @@ describe('StoresService', () => {
     expect(prisma.store.create).not.toHaveBeenCalled();
   });
 
-  it('creates the store with a slugified slug, whatsappNumber, and a default PICKUP delivery method', async () => {
+  it("creates the store with a slugified slug, whatsappNumber, and a default PICKUP delivery method", async () => {
     prisma.store.findUnique.mockResolvedValue(null);
-    prisma.store.create.mockResolvedValue({ id: 'store-1' });
+    prisma.store.create.mockResolvedValue({ id: "store-1" });
 
     await service.create(ownerId, {
-      name: 'My Cool Store!',
-      slug: 'My Cool Store!',
-      whatsappNumber: '+51999999999',
+      name: "My Cool Store!",
+      slug: "My Cool Store!",
+      whatsappNumber: "+51999999999",
     });
 
     expect(prisma.store.findUnique).toHaveBeenCalledWith({
-      where: { slug: 'my-cool-store' },
+      where: { slug: "my-cool-store" },
     });
     expect(prisma.store.create).toHaveBeenCalledWith({
       data: {
-        name: 'My Cool Store!',
-        slug: 'my-cool-store',
+        name: "My Cool Store!",
+        slug: "my-cool-store",
         ownerId,
         themeConfig: {},
-        paymentInstructions: '',
-        whatsappNumber: '+51999999999',
+        paymentInstructions: "",
+        whatsappNumber: "+51999999999",
       },
     });
     expect(prisma.deliveryMethodConfig.create).toHaveBeenCalledWith({
-      data: { storeId: 'store-1', type: 'PICKUP', enabled: true, details: {} },
+      data: { storeId: "store-1", type: "PICKUP", enabled: true, details: {} },
     });
   });
 
-  it('persists a provided themeConfig during creation', async () => {
+  it("persists a provided themeConfig during creation", async () => {
     prisma.store.findUnique.mockResolvedValue(null);
-    prisma.store.create.mockResolvedValue({ id: 'store-2' });
+    prisma.store.create.mockResolvedValue({ id: "store-2" });
 
     await service.create(ownerId, {
       ...createDto,
       themeConfig: {
-        paletteId: 'royal-bloom',
-        colors: { primary: '#7c3aed', accent: '#f472b6' },
+        paletteId: "royal-bloom",
+        colors: { primary: "#7c3aed", accent: "#f472b6" },
       },
     });
 
     expect(prisma.store.create).toHaveBeenCalledWith({
       data: {
-        name: 'My Store',
-        slug: 'my-store',
+        name: "My Store",
+        slug: "my-store",
         ownerId,
         themeConfig: {
-          paletteId: 'royal-bloom',
-          colors: { primary: '#7c3aed', accent: '#f472b6' },
+          paletteId: "royal-bloom",
+          colors: { primary: "#7c3aed", accent: "#f472b6" },
         },
-        paymentInstructions: '',
-        whatsappNumber: '+51999999999',
+        paymentInstructions: "",
+        whatsappNumber: "+51999999999",
       },
     });
   });
 
-  it('findAllForUser() lists stores scoped to the owner', async () => {
+  it("findAllForUser() lists stores scoped to the owner", async () => {
     prisma.store.findMany.mockResolvedValue([]);
 
     await service.findAllForUser(ownerId);
@@ -147,7 +147,7 @@ describe('StoresService', () => {
     });
   });
 
-  describe('sitemap queries', () => {
+  describe("sitemap queries", () => {
     // D7 — sitemap reads now gate on the thin-content bar on top of
     // PUBLIC_STORE_VISIBILITY: non-banned owner, >= 2 published products, and
     // some prose (loose OR — see SITEMAP_INDEXABLE_STORE_WHERE).
@@ -159,11 +159,11 @@ describe('StoresService', () => {
       OR: [
         { bio: { not: null } },
         { aboutMarkdown: { not: null } },
-        { sections: { some: { type: 'TEXT_BLOCK' } } },
+        { sections: { some: { type: "TEXT_BLOCK" } } },
       ],
     };
 
-    it('counts only public stores above the thin-content bar', async () => {
+    it("counts only public stores above the thin-content bar", async () => {
       prisma.store.count.mockResolvedValue(4);
 
       await expect(service.findPublicSitemapCount()).resolves.toBe(4);
@@ -172,12 +172,12 @@ describe('StoresService', () => {
       });
     });
 
-    it('pages public stores with deterministic createdAt/id ordering', async () => {
-      const staleAt = new Date('2026-03-04T05:06:07.000Z');
-      const createdAt = new Date('2026-01-02T03:04:05.000Z');
+    it("pages public stores with deterministic createdAt/id ordering", async () => {
+      const staleAt = new Date("2026-03-04T05:06:07.000Z");
+      const createdAt = new Date("2026-01-02T03:04:05.000Z");
       prisma.store.findMany.mockResolvedValue([
-        { slug: 'first', contentStaleAt: staleAt, createdAt },
-        { slug: 'second', contentStaleAt: null, createdAt },
+        { slug: "first", contentStaleAt: staleAt, createdAt },
+        { slug: "second", contentStaleAt: null, createdAt },
       ]);
       prisma.store.count.mockResolvedValue(8);
 
@@ -186,8 +186,8 @@ describe('StoresService', () => {
       await expect(service.findPublicSitemapPage(50_000, 100)).resolves.toEqual(
         {
           items: [
-            { slug: 'first', lastModified: staleAt.toISOString() },
-            { slug: 'second', lastModified: createdAt.toISOString() },
+            { slug: "first", lastModified: staleAt.toISOString() },
+            { slug: "second", lastModified: createdAt.toISOString() },
           ],
           total: 8,
         },
@@ -195,7 +195,7 @@ describe('StoresService', () => {
       expect(prisma.store.findMany).toHaveBeenCalledWith({
         where: SITEMAP_WHERE,
         select: { slug: true, contentStaleAt: true, createdAt: true },
-        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
         skip: 100,
         take: 50_000,
       });
@@ -205,266 +205,266 @@ describe('StoresService', () => {
     });
   });
 
-  describe('findBySlugForOwner()', () => {
-    it('throws NotFoundException when no store has that slug', async () => {
+  describe("findBySlugForOwner()", () => {
+    it("throws NotFoundException when no store has that slug", async () => {
       prisma.store.findUnique.mockResolvedValue(null);
 
       await expect(
-        service.findBySlugForOwner('missing', ownerId),
+        service.findBySlugForOwner("missing", ownerId),
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('throws ForbiddenException when the user does not own the store', async () => {
+    it("throws ForbiddenException when the user does not own the store", async () => {
       prisma.store.findUnique.mockResolvedValue({
-        id: 'store-1',
-        ownerId: 'someone-else',
+        id: "store-1",
+        ownerId: "someone-else",
       });
 
       await expect(
-        service.findBySlugForOwner('my-store', ownerId),
+        service.findBySlugForOwner("my-store", ownerId),
       ).rejects.toThrow(ForbiddenException);
     });
 
-    it('returns the store when the user owns it', async () => {
+    it("returns the store when the user owns it", async () => {
       prisma.store.findUnique.mockResolvedValue({
-        id: 'store-1',
-        slug: 'my-store',
+        id: "store-1",
+        slug: "my-store",
         ownerId,
       });
 
-      const result = await service.findBySlugForOwner('my-store', ownerId);
+      const result = await service.findBySlugForOwner("my-store", ownerId);
 
-      expect(result).toEqual({ id: 'store-1', slug: 'my-store', ownerId });
+      expect(result).toEqual({ id: "store-1", slug: "my-store", ownerId });
     });
   });
 
-  describe('assertOwnership()', () => {
-    it('throws NotFoundException when the store does not exist', async () => {
+  describe("assertOwnership()", () => {
+    it("throws NotFoundException when the store does not exist", async () => {
       prisma.store.findUnique.mockResolvedValue(null);
 
-      await expect(service.assertOwnership('store-1', ownerId)).rejects.toThrow(
+      await expect(service.assertOwnership("store-1", ownerId)).rejects.toThrow(
         NotFoundException,
       );
     });
 
-    it('throws ForbiddenException when the user does not own the store', async () => {
+    it("throws ForbiddenException when the user does not own the store", async () => {
       prisma.store.findUnique.mockResolvedValue({
-        id: 'store-1',
-        ownerId: 'someone-else',
+        id: "store-1",
+        ownerId: "someone-else",
       });
 
-      await expect(service.assertOwnership('store-1', ownerId)).rejects.toThrow(
+      await expect(service.assertOwnership("store-1", ownerId)).rejects.toThrow(
         ForbiddenException,
       );
     });
 
-    it('resolves when the user owns the store', async () => {
-      prisma.store.findUnique.mockResolvedValue({ id: 'store-1', ownerId });
+    it("resolves when the user owns the store", async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: "store-1", ownerId });
 
       await expect(
-        service.assertOwnership('store-1', ownerId),
+        service.assertOwnership("store-1", ownerId),
       ).resolves.toBeUndefined();
     });
   });
 
-  describe('updatePublicHeaderImage()', () => {
-    it('rejects a different store owner before changing the image field', async () => {
+  describe("updatePublicHeaderImage()", () => {
+    it("rejects a different store owner before changing the image field", async () => {
       prisma.store.findUnique.mockResolvedValue({
-        id: 'store-2',
-        ownerId: 'other-user',
+        id: "store-2",
+        ownerId: "other-user",
       });
 
       await expect(
         service.updatePublicHeaderImage(
-          'store-2',
+          "store-2",
           ownerId,
-          'bannerUrl',
-          'https://cdn/banner.jpg',
+          "bannerUrl",
+          "https://cdn/banner.jpg",
         ),
       ).rejects.toThrow(ForbiddenException);
       expect(prisma.store.update).not.toHaveBeenCalled();
     });
 
-    it('updates only the requested public image field for its owner', async () => {
-      prisma.store.findUnique.mockResolvedValue({ id: 'store-1', ownerId });
+    it("updates only the requested public image field for its owner", async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: "store-1", ownerId });
       prisma.store.update.mockResolvedValue({
-        id: 'store-1',
-        bannerUrl: 'https://cdn/banner.jpg',
+        id: "store-1",
+        bannerUrl: "https://cdn/banner.jpg",
       });
 
       await service.updatePublicHeaderImage(
-        'store-1',
+        "store-1",
         ownerId,
-        'bannerUrl',
-        'https://cdn/banner.jpg',
+        "bannerUrl",
+        "https://cdn/banner.jpg",
       );
 
       expect(prisma.store.update).toHaveBeenCalledWith({
-        where: { id: 'store-1' },
+        where: { id: "store-1" },
         data: {
-          bannerUrl: 'https://cdn/banner.jpg',
+          bannerUrl: "https://cdn/banner.jpg",
           contentStaleAt: expect.any(Date),
         },
       });
     });
   });
 
-  describe('update()', () => {
-    it('throws NotFoundException when the store does not exist', async () => {
+  describe("update()", () => {
+    it("throws NotFoundException when the store does not exist", async () => {
       prisma.store.findUnique.mockResolvedValue(null);
 
       await expect(
-        service.update('store-1', ownerId, { whatsappNumber: '+51999999999' }),
+        service.update("store-1", ownerId, { whatsappNumber: "+51999999999" }),
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('throws ForbiddenException when the user does not own the store', async () => {
+    it("throws ForbiddenException when the user does not own the store", async () => {
       prisma.store.findUnique.mockResolvedValue({
-        id: 'store-1',
-        ownerId: 'someone-else',
+        id: "store-1",
+        ownerId: "someone-else",
       });
 
       await expect(
-        service.update('store-1', ownerId, { whatsappNumber: '+51999999999' }),
+        service.update("store-1", ownerId, { whatsappNumber: "+51999999999" }),
       ).rejects.toThrow(ForbiddenException);
     });
 
-    it('updates whatsappNumber when the user owns the store', async () => {
-      prisma.store.findUnique.mockResolvedValue({ id: 'store-1', ownerId });
-      prisma.store.update.mockResolvedValue({ id: 'store-1' });
+    it("updates whatsappNumber when the user owns the store", async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: "store-1", ownerId });
+      prisma.store.update.mockResolvedValue({ id: "store-1" });
 
-      await service.update('store-1', ownerId, {
-        whatsappNumber: '+51999999999',
+      await service.update("store-1", ownerId, {
+        whatsappNumber: "+51999999999",
       });
 
       expect(prisma.store.update).toHaveBeenCalledWith({
-        where: { id: 'store-1' },
-        data: { whatsappNumber: '+51999999999' },
+        where: { id: "store-1" },
+        data: { whatsappNumber: "+51999999999" },
       });
     });
 
-    it('updates themeConfig when the user changes the palette', async () => {
-      prisma.store.findUnique.mockResolvedValue({ id: 'store-1', ownerId });
-      prisma.store.update.mockResolvedValue({ id: 'store-1' });
+    it("updates themeConfig when the user changes the palette", async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: "store-1", ownerId });
+      prisma.store.update.mockResolvedValue({ id: "store-1" });
 
-      await service.update('store-1', ownerId, {
+      await service.update("store-1", ownerId, {
         themeConfig: {
-          paletteId: 'mint-stage',
-          colors: { primary: '#0f766e', accent: '#22c55e' },
+          paletteId: "mint-stage",
+          colors: { primary: "#0f766e", accent: "#22c55e" },
         },
       });
 
       expect(prisma.store.update).toHaveBeenCalledWith({
-        where: { id: 'store-1' },
+        where: { id: "store-1" },
         data: {
           themeConfig: {
-            paletteId: 'mint-stage',
-            colors: { primary: '#0f766e', accent: '#22c55e' },
+            paletteId: "mint-stage",
+            colors: { primary: "#0f766e", accent: "#22c55e" },
           },
         },
       });
     });
 
-    it('persists bio and aboutMarkdown and bumps contentStaleAt when they change', async () => {
-      prisma.store.findUnique.mockResolvedValue({ id: 'store-1', ownerId });
-      prisma.store.update.mockResolvedValue({ id: 'store-1' });
+    it("persists bio and aboutMarkdown and bumps contentStaleAt when they change", async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: "store-1", ownerId });
+      prisma.store.update.mockResolvedValue({ id: "store-1" });
 
-      await service.update('store-1', ownerId, {
-        bio: 'Official merch, ships nationwide.',
-        aboutMarkdown: '## About\n\nWe are the real deal.',
+      await service.update("store-1", ownerId, {
+        bio: "Official merch, ships nationwide.",
+        aboutMarkdown: "## About\n\nWe are the real deal.",
       });
 
       expect(prisma.store.update).toHaveBeenCalledWith({
-        where: { id: 'store-1' },
+        where: { id: "store-1" },
         data: {
-          bio: 'Official merch, ships nationwide.',
-          aboutMarkdown: '## About\n\nWe are the real deal.',
+          bio: "Official merch, ships nationwide.",
+          aboutMarkdown: "## About\n\nWe are the real deal.",
           contentStaleAt: expect.any(Date),
         },
       });
     });
 
-    it('does not bump contentStaleAt on a no-op bio save', async () => {
+    it("does not bump contentStaleAt on a no-op bio save", async () => {
       prisma.store.findUnique.mockResolvedValue({
-        id: 'store-1',
+        id: "store-1",
         ownerId,
-        bio: 'Unchanged.',
+        bio: "Unchanged.",
         aboutMarkdown: null,
       });
-      prisma.store.update.mockResolvedValue({ id: 'store-1' });
+      prisma.store.update.mockResolvedValue({ id: "store-1" });
 
-      await service.update('store-1', ownerId, { bio: 'Unchanged.' });
+      await service.update("store-1", ownerId, { bio: "Unchanged." });
 
       expect(prisma.store.update).toHaveBeenCalledWith({
-        where: { id: 'store-1' },
-        data: { bio: 'Unchanged.' },
+        where: { id: "store-1" },
+        data: { bio: "Unchanged." },
       });
     });
 
-    it('normalizes blank public profile text to null without bumping contentStaleAt', async () => {
+    it("normalizes blank public profile text to null without bumping contentStaleAt", async () => {
       prisma.store.findUnique.mockResolvedValue({
-        id: 'store-1',
+        id: "store-1",
         ownerId,
         locationLabel: null,
         publicOwnerName: null,
         bio: null,
         aboutMarkdown: null,
       });
-      prisma.store.update.mockResolvedValue({ id: 'store-1' });
+      prisma.store.update.mockResolvedValue({ id: "store-1" });
 
-      await service.update('store-1', ownerId, {
-        locationLabel: '  \t',
-        publicOwnerName: '   ',
+      await service.update("store-1", ownerId, {
+        locationLabel: "  \t",
+        publicOwnerName: "   ",
       });
 
       expect(prisma.store.update).toHaveBeenCalledWith({
-        where: { id: 'store-1' },
+        where: { id: "store-1" },
         data: { locationLabel: null, publicOwnerName: null },
       });
     });
 
-    it('trims public profile text before persisting and checking sitemap changes', async () => {
+    it("trims public profile text before persisting and checking sitemap changes", async () => {
       prisma.store.findUnique.mockResolvedValue({
-        id: 'store-1',
+        id: "store-1",
         ownerId,
         locationLabel: null,
         publicOwnerName: null,
       });
-      prisma.store.update.mockResolvedValue({ id: 'store-1' });
+      prisma.store.update.mockResolvedValue({ id: "store-1" });
 
-      await service.update('store-1', ownerId, {
-        locationLabel: '  Lima  ',
-        publicOwnerName: '  Ana  ',
+      await service.update("store-1", ownerId, {
+        locationLabel: "  Lima  ",
+        publicOwnerName: "  Ana  ",
       });
 
       expect(prisma.store.update).toHaveBeenCalledWith({
-        where: { id: 'store-1' },
+        where: { id: "store-1" },
         data: {
-          locationLabel: 'Lima',
-          publicOwnerName: 'Ana',
+          locationLabel: "Lima",
+          publicOwnerName: "Ana",
           contentStaleAt: expect.any(Date),
         },
       });
     });
 
-    it('updates locale and social links when provided', async () => {
-      prisma.store.findUnique.mockResolvedValue({ id: 'store-1', ownerId });
-      prisma.store.update.mockResolvedValue({ id: 'store-1' });
+    it("updates locale and social links when provided", async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: "store-1", ownerId });
+      prisma.store.update.mockResolvedValue({ id: "store-1" });
 
-      await service.update('store-1', ownerId, {
-        locale: 'en',
-        instagramUrl: 'https://instagram.com/mystore',
-        facebookUrl: 'https://facebook.com/mystore',
-        tiktokUrl: '',
+      await service.update("store-1", ownerId, {
+        locale: "en",
+        instagramUrl: "https://instagram.com/mystore",
+        facebookUrl: "https://facebook.com/mystore",
+        tiktokUrl: "",
         twitterUrl: null,
       });
 
       expect(prisma.store.update).toHaveBeenCalledWith({
-        where: { id: 'store-1' },
+        where: { id: "store-1" },
         data: {
-          locale: 'en',
-          instagramUrl: 'https://instagram.com/mystore',
-          facebookUrl: 'https://facebook.com/mystore',
+          locale: "en",
+          instagramUrl: "https://instagram.com/mystore",
+          facebookUrl: "https://facebook.com/mystore",
           tiktokUrl: null,
           twitterUrl: null,
         },
@@ -472,17 +472,17 @@ describe('StoresService', () => {
     });
   });
 
-  describe('findPublicBySlug()', () => {
-    const storeId = 'store-1';
+  describe("findPublicBySlug()", () => {
+    const storeId = "store-1";
     const productA = {
-      id: 'product-a',
-      status: 'PUBLISHED',
+      id: "product-a",
+      status: "PUBLISHED",
       deletedAt: null,
       discontinued: false,
     };
     const productB = {
-      id: 'product-b',
-      status: 'PUBLISHED',
+      id: "product-b",
+      status: "PUBLISHED",
       deletedAt: null,
       discontinued: false,
     };
@@ -490,23 +490,23 @@ describe('StoresService', () => {
     beforeEach(() => {
       prisma.store.findUnique.mockResolvedValue({
         id: storeId,
-        slug: 'my-store',
+        slug: "my-store",
       });
     });
 
-    it('throws NotFoundException when no store has that slug', async () => {
+    it("throws NotFoundException when no store has that slug", async () => {
       prisma.store.findUnique.mockResolvedValue(null);
 
-      await expect(service.findPublicBySlug('missing')).rejects.toThrow(
+      await expect(service.findPublicBySlug("missing")).rejects.toThrow(
         NotFoundException,
       );
     });
 
-    describe('indexable verdict (D5, report-only)', () => {
-      it('returns indexable=true for a public store at the bar with a real TEXT_BLOCK, and never leaks owner', async () => {
+    describe("indexable verdict (D5, report-only)", () => {
+      it("returns indexable=true for a public store at the bar with a real TEXT_BLOCK, and never leaks owner", async () => {
         prisma.store.findUnique.mockResolvedValue({
           id: storeId,
-          slug: 'my-store',
+          slug: "my-store",
           isPublic: true,
           isDemo: false,
           publishedProductCount: 2,
@@ -516,52 +516,52 @@ describe('StoresService', () => {
         });
         prisma.storeSection.findMany.mockResolvedValue([
           {
-            id: 'section-1',
+            id: "section-1",
             storeId,
-            type: 'TEXT_BLOCK',
+            type: "TEXT_BLOCK",
             position: 0,
-            content: { body: 'Welcome to our official fan-run store.' },
+            content: { body: "Welcome to our official fan-run store." },
             collection: null,
           },
         ]);
         prisma.product.findMany.mockResolvedValue([]);
 
-        const result = await service.findPublicBySlug('my-store');
+        const result = await service.findPublicBySlug("my-store");
 
         expect(result.indexable).toBe(true);
-        expect(result).not.toHaveProperty('owner');
+        expect(result).not.toHaveProperty("owner");
       });
 
-      it('returns indexable=false below the product bar even with prose', async () => {
+      it("returns indexable=false below the product bar even with prose", async () => {
         prisma.store.findUnique.mockResolvedValue({
           id: storeId,
-          slug: 'my-store',
+          slug: "my-store",
           isPublic: true,
           isDemo: false,
           publishedProductCount: 1,
-          bio: 'A real tagline.',
+          bio: "A real tagline.",
           aboutMarkdown: null,
           owner: { banned: false },
         });
         prisma.storeSection.findMany.mockResolvedValue([]);
         prisma.product.findMany.mockResolvedValue([]);
 
-        const result = await service.findPublicBySlug('my-store');
+        const result = await service.findPublicBySlug("my-store");
 
         expect(result.indexable).toBe(false);
       });
     });
 
-    it('lists every published product directly when the store has no sections configured', async () => {
+    it("lists every published product directly when the store has no sections configured", async () => {
       prisma.storeSection.findMany.mockResolvedValue([]);
       prisma.product.findMany.mockResolvedValue([productA, productB]);
 
-      const result = await service.findPublicBySlug('my-store');
+      const result = await service.findPublicBySlug("my-store");
 
       expect(prisma.product.findMany).toHaveBeenCalledWith({
         where: {
           storeId,
-          status: 'PUBLISHED',
+          status: "PUBLISHED",
           deletedAt: null,
           discontinued: false,
           id: { notIn: [] },
@@ -582,18 +582,18 @@ describe('StoresService', () => {
       expect(productIds).toEqual([productA.id, productB.id]);
     });
 
-    it('appends a trailing catch-all section for a published product never added to a collection', async () => {
+    it("appends a trailing catch-all section for a published product never added to a collection", async () => {
       prisma.storeSection.findMany.mockResolvedValue([
         {
-          id: 'section-1',
+          id: "section-1",
           storeId,
           position: 0,
           collection: {
-            id: 'collection-1',
-            name: 'Destacados',
+            id: "collection-1",
+            name: "Destacados",
             products: [
               {
-                collectionId: 'collection-1',
+                collectionId: "collection-1",
                 productId: productA.id,
                 position: 0,
                 product: productA,
@@ -604,12 +604,12 @@ describe('StoresService', () => {
       ]);
       prisma.product.findMany.mockResolvedValue([productB]);
 
-      const result = await service.findPublicBySlug('my-store');
+      const result = await service.findPublicBySlug("my-store");
 
       expect(prisma.product.findMany).toHaveBeenCalledWith({
         where: {
           storeId,
-          status: 'PUBLISHED',
+          status: "PUBLISHED",
           deletedAt: null,
           discontinued: false,
           id: { notIn: [productA.id] },
@@ -624,7 +624,7 @@ describe('StoresService', () => {
         },
       });
       expect(result.sections).toHaveLength(2);
-      expect(result.sections[0].collection?.name).toBe('Destacados');
+      expect(result.sections[0].collection?.name).toBe("Destacados");
       expect(
         result.sections[1].collection?.products.map(
           (cp: { productId: string }) => cp.productId,
@@ -632,11 +632,11 @@ describe('StoresService', () => {
       ).toEqual([productB.id]);
     });
 
-    it('excludes hidden sections from the public query', async () => {
+    it("excludes hidden sections from the public query", async () => {
       prisma.storeSection.findMany.mockResolvedValue([]);
       prisma.product.findMany.mockResolvedValue([]);
 
-      await service.findPublicBySlug('my-store');
+      await service.findPublicBySlug("my-store");
 
       expect(prisma.storeSection.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -645,18 +645,18 @@ describe('StoresService', () => {
       );
     });
 
-    it('does not append a trailing section when every published product is already covered', async () => {
+    it("does not append a trailing section when every published product is already covered", async () => {
       prisma.storeSection.findMany.mockResolvedValue([
         {
-          id: 'section-1',
+          id: "section-1",
           storeId,
           position: 0,
           collection: {
-            id: 'collection-1',
-            name: 'Destacados',
+            id: "collection-1",
+            name: "Destacados",
             products: [
               {
-                collectionId: 'collection-1',
+                collectionId: "collection-1",
                 productId: productA.id,
                 position: 0,
                 product: productA,
@@ -667,45 +667,45 @@ describe('StoresService', () => {
       ]);
       prisma.product.findMany.mockResolvedValue([]);
 
-      const result = await service.findPublicBySlug('my-store');
+      const result = await service.findPublicBySlug("my-store");
 
       expect(result.sections).toHaveLength(1);
     });
 
-    it('excludes DRAFT and soft-deleted products from a real collection section', async () => {
+    it("excludes DRAFT and soft-deleted products from a real collection section", async () => {
       const draftProduct = {
-        id: 'product-draft',
-        status: 'DRAFT',
+        id: "product-draft",
+        status: "DRAFT",
         deletedAt: null,
       };
       const deletedProduct = {
-        id: 'product-deleted',
-        status: 'PUBLISHED',
+        id: "product-deleted",
+        status: "PUBLISHED",
         deletedAt: new Date(),
       };
       prisma.storeSection.findMany.mockResolvedValue([
         {
-          id: 'section-1',
+          id: "section-1",
           storeId,
           position: 0,
           collection: {
-            id: 'collection-1',
-            name: 'Destacados',
+            id: "collection-1",
+            name: "Destacados",
             products: [
               {
-                collectionId: 'collection-1',
+                collectionId: "collection-1",
                 productId: productA.id,
                 position: 0,
                 product: productA,
               },
               {
-                collectionId: 'collection-1',
+                collectionId: "collection-1",
                 productId: draftProduct.id,
                 position: 1,
                 product: draftProduct,
               },
               {
-                collectionId: 'collection-1',
+                collectionId: "collection-1",
                 productId: deletedProduct.id,
                 position: 2,
                 product: deletedProduct,
@@ -716,7 +716,7 @@ describe('StoresService', () => {
       ]);
       prisma.product.findMany.mockResolvedValue([]);
 
-      const result = await service.findPublicBySlug('my-store');
+      const result = await service.findPublicBySlug("my-store");
 
       expect(
         result.sections[0].collection?.products.map(
@@ -726,29 +726,29 @@ describe('StoresService', () => {
     });
   });
 
-  describe('findFeatured', () => {
-    it('excludes stores below the minimum order-count floor', async () => {
+  describe("findFeatured", () => {
+    it("excludes stores below the minimum order-count floor", async () => {
       prisma.store.findMany.mockResolvedValue([
-        { id: 'store-1', name: 'A', slug: 'a', logoUrl: null },
+        { id: "store-1", name: "A", slug: "a", logoUrl: null },
       ]);
       prisma.order.findMany.mockResolvedValue([
         {
-          storeId: 'store-1',
+          storeId: "store-1",
           payments: [
             {
               amount: 500,
-              source: 'SELLER_RECORDED',
-              reviewStatus: 'N_A',
+              source: "SELLER_RECORDED",
+              reviewStatus: "N_A",
             },
           ],
         },
         {
-          storeId: 'store-1',
+          storeId: "store-1",
           payments: [
             {
               amount: 200,
-              source: 'SELLER_RECORDED',
-              reviewStatus: 'N_A',
+              source: "SELLER_RECORDED",
+              reviewStatus: "N_A",
             },
           ],
         },
@@ -759,46 +759,46 @@ describe('StoresService', () => {
       expect(result).toEqual([]);
     });
 
-    it('ranks eligible stores by revenue, tie-broken by order count', async () => {
+    it("ranks eligible stores by revenue, tie-broken by order count", async () => {
       prisma.store.findMany.mockResolvedValue([
-        { id: 'store-1', name: 'A', slug: 'a', logoUrl: null },
-        { id: 'store-2', name: 'B', slug: 'b', logoUrl: null },
+        { id: "store-1", name: "A", slug: "a", logoUrl: null },
+        { id: "store-2", name: "B", slug: "b", logoUrl: null },
       ]);
       const sellerPayment = (amount: number) => ({
         amount,
-        source: 'SELLER_RECORDED' as const,
-        reviewStatus: 'N_A' as const,
+        source: "SELLER_RECORDED" as const,
+        reviewStatus: "N_A" as const,
       });
       prisma.order.findMany.mockResolvedValue([
-        { storeId: 'store-1', payments: [sellerPayment(50)] },
-        { storeId: 'store-1', payments: [sellerPayment(50)] },
+        { storeId: "store-1", payments: [sellerPayment(50)] },
+        { storeId: "store-1", payments: [sellerPayment(50)] },
         {
-          storeId: 'store-1',
+          storeId: "store-1",
           // A PENDING_REVIEW buyer submission on top of the counted 50 —
           // must not inflate this store's public ranking revenue.
           payments: [
             sellerPayment(50),
             {
               amount: 1000,
-              source: 'BUYER_SUBMITTED' as const,
-              reviewStatus: 'PENDING_REVIEW' as const,
+              source: "BUYER_SUBMITTED" as const,
+              reviewStatus: "PENDING_REVIEW" as const,
             },
           ],
         },
-        { storeId: 'store-2', payments: [sellerPayment(100)] },
-        { storeId: 'store-2', payments: [sellerPayment(100)] },
-        { storeId: 'store-2', payments: [sellerPayment(100)] },
+        { storeId: "store-2", payments: [sellerPayment(100)] },
+        { storeId: "store-2", payments: [sellerPayment(100)] },
+        { storeId: "store-2", payments: [sellerPayment(100)] },
       ]);
 
       const result = await service.findFeatured(10);
 
-      expect(result.map((s) => s.id)).toEqual(['store-2', 'store-1']);
+      expect(result.map((s) => s.id)).toEqual(["store-2", "store-1"]);
       expect(result[0].revenue).toBe(300);
       expect(result[0].orderCount).toBe(3);
       expect(result[1].revenue).toBe(150);
     });
 
-    it('scopes eligibility to public, non-demo stores with a published product and a non-banned owner', async () => {
+    it("scopes eligibility to public, non-demo stores with a published product and a non-banned owner", async () => {
       prisma.store.findMany.mockResolvedValue([]);
       prisma.order.findMany.mockResolvedValue([]);
 
@@ -809,7 +809,7 @@ describe('StoresService', () => {
           isPublic: true,
           isDemo: false,
           products: {
-            some: { status: 'PUBLISHED', deletedAt: null, discontinued: false },
+            some: { status: "PUBLISHED", deletedAt: null, discontinued: false },
           },
           owner: { banned: { not: true } },
         },
@@ -818,24 +818,24 @@ describe('StoresService', () => {
     });
   });
 
-  describe('findDirectory', () => {
-    it('paginates and filters by name when q is provided', async () => {
+  describe("findDirectory", () => {
+    it("paginates and filters by name when q is provided", async () => {
       prisma.store.findMany.mockResolvedValue([
         {
-          id: 'store-1',
-          name: 'Kpop Shop',
-          slug: 'kpop',
+          id: "store-1",
+          name: "Kpop Shop",
+          slug: "kpop",
           logoUrl: null,
         },
       ]);
       prisma.store.count.mockResolvedValue(1);
 
-      const result = await service.findDirectory(2, 24, 'kpop');
+      const result = await service.findDirectory(2, 24, "kpop");
 
       expect(prisma.store.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
-            name: { contains: 'kpop', mode: 'insensitive' },
+            name: { contains: "kpop", mode: "insensitive" },
           }),
           skip: 24,
           take: 24,
@@ -844,9 +844,9 @@ describe('StoresService', () => {
       expect(result).toEqual({
         stores: [
           {
-            id: 'store-1',
-            name: 'Kpop Shop',
-            slug: 'kpop',
+            id: "store-1",
+            name: "Kpop Shop",
+            slug: "kpop",
             logoUrl: null,
           },
         ],
@@ -856,7 +856,7 @@ describe('StoresService', () => {
       });
     });
 
-    it('omits the name filter when q is not provided', async () => {
+    it("omits the name filter when q is not provided", async () => {
       prisma.store.findMany.mockResolvedValue([]);
       prisma.store.count.mockResolvedValue(0);
 
@@ -869,7 +869,7 @@ describe('StoresService', () => {
             isDemo: false,
             products: {
               some: {
-                status: 'PUBLISHED',
+                status: "PUBLISHED",
                 deletedAt: null,
                 discontinued: false,
               },
@@ -880,7 +880,7 @@ describe('StoresService', () => {
       );
     });
 
-    it('excludes demo and unlisted stores from the directory', async () => {
+    it("excludes demo and unlisted stores from the directory", async () => {
       prisma.store.findMany.mockResolvedValue([]);
       prisma.store.count.mockResolvedValue(0);
 
@@ -892,54 +892,54 @@ describe('StoresService', () => {
     });
   });
 
-  describe('findPublicCatalog', () => {
+  describe("findPublicCatalog", () => {
     const query = {
       page: 2,
       limit: 12,
-      q: 'Álbum',
-      categories: ['photocards', 'bts'],
-      sort: 'precio_asc' as const,
+      q: "Álbum",
+      categories: ["photocards", "bts"],
+      sort: "precio_asc" as const,
     };
 
     beforeEach(() => {
-      prisma.store.findFirst.mockResolvedValue({ id: 'store-1' });
+      prisma.store.findFirst.mockResolvedValue({ id: "store-1" });
       prisma.category.findMany.mockResolvedValue(
         query.categories.map((slug) => ({ slug })),
       );
       prisma.$queryRaw
         .mockResolvedValueOnce([{ total: 1n }])
-        .mockResolvedValueOnce([{ id: 'product-1' }]);
+        .mockResolvedValueOnce([{ id: "product-1" }]);
       prisma.product.findMany.mockResolvedValue([
-        { id: 'product-1', name: 'Album', variants: [], categories: [] },
+        { id: "product-1", name: "Album", variants: [], categories: [] },
       ]);
     });
 
-    it('resolves direct-link stores, normalizes text and filters category slugs', async () => {
-      const result = await service.findPublicCatalog('my-store', query);
+    it("resolves direct-link stores, normalizes text and filters category slugs", async () => {
+      const result = await service.findPublicCatalog("my-store", query);
       expect(prisma.store.findFirst).toHaveBeenCalledWith({
-        where: { slug: 'my-store' },
+        where: { slug: "my-store" },
         select: { id: true },
       });
       const idSql = prisma.$queryRaw.mock.calls[1][0];
-      const sqlText = idSql.strings.join(' ');
-      expect(sqlText).toContain('TRANSLATE(LOWER');
+      const sqlText = idSql.strings.join(" ");
+      expect(sqlText).toContain("TRANSLATE(LOWER");
       expect(sqlText).toContain('c."slug" IN');
-      expect(idSql.values).toContain('%album%');
-      expect(idSql.values).toContain('photocards');
-      expect(idSql.values).toContain('bts');
+      expect(idSql.values).toContain("%album%");
+      expect(idSql.values).toContain("photocards");
+      expect(idSql.values).toContain("bts");
       expect(prisma.category.findMany).toHaveBeenCalledWith({
         where: {
-          storeId: 'store-1',
+          storeId: "store-1",
           OR: [
-            { slug: { in: ['photocards', 'bts'] } },
-            { parent: { slug: { in: ['photocards', 'bts'] } } },
+            { slug: { in: ["photocards", "bts"] } },
+            { parent: { slug: { in: ["photocards", "bts"] } } },
           ],
         },
         select: { slug: true },
       });
       expect(result).toEqual({
         items: [
-          { id: 'product-1', name: 'Album', variants: [], categories: [] },
+          { id: "product-1", name: "Album", variants: [], categories: [] },
         ],
         total: 1,
         page: 2,
@@ -948,121 +948,121 @@ describe('StoresService', () => {
     });
 
     it.each([
-      ['recientes', 'p."createdAt" DESC'],
-      ['precio_asc', 'COALESCE'],
-      ['precio_desc', 'COALESCE'],
-      ['nombre_asc', 'LOWER(p."name") ASC'],
-    ] as const)('applies %s ordering', async (sort, expectedSql) => {
+      ["recientes", 'p."createdAt" DESC'],
+      ["precio_asc", "COALESCE"],
+      ["precio_desc", "COALESCE"],
+      ["nombre_asc", 'LOWER(p."name") ASC'],
+    ] as const)("applies %s ordering", async (sort, expectedSql) => {
       prisma.$queryRaw.mockReset();
       prisma.$queryRaw
         .mockResolvedValueOnce([{ total: 0n }])
         .mockResolvedValueOnce([]);
-      await service.findPublicCatalog('my-store', {
+      await service.findPublicCatalog("my-store", {
         ...query,
         q: undefined,
         categories: [],
         sort,
       });
-      expect(prisma.$queryRaw.mock.calls[1][0].strings.join(' ')).toContain(
+      expect(prisma.$queryRaw.mock.calls[1][0].strings.join(" ")).toContain(
         expectedSql,
       );
     });
 
-    it('escapes LIKE metacharacters and drops catalog IDs missing from the detail read', async () => {
+    it("escapes LIKE metacharacters and drops catalog IDs missing from the detail read", async () => {
       prisma.$queryRaw.mockReset();
       prisma.$queryRaw
         .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([{ id: 'deleted-after-query' }]);
+        .mockResolvedValueOnce([{ id: "deleted-after-query" }]);
       prisma.product.findMany.mockResolvedValue([]);
 
-      const result = await service.findPublicCatalog('my-store', {
+      const result = await service.findPublicCatalog("my-store", {
         ...query,
-        q: '50%_\\',
+        q: "50%_\\",
         categories: [],
       });
 
       const idSql = prisma.$queryRaw.mock.calls[1][0];
-      expect(idSql.values).toContain('%50\\%\\_\\\\%');
+      expect(idSql.values).toContain("%50\\%\\_\\\\%");
       expect(result).toEqual({ items: [], total: 0, page: 2, limit: 12 });
     });
 
-    it('hides a nonexistent or nonpublic store', async () => {
+    it("hides a nonexistent or nonpublic store", async () => {
       prisma.store.findFirst.mockResolvedValue(null);
-      await expect(service.findPublicCatalog('missing', query)).rejects.toThrow(
+      await expect(service.findPublicCatalog("missing", query)).rejects.toThrow(
         NotFoundException,
       );
       expect(prisma.$queryRaw).not.toHaveBeenCalled();
     });
   });
 
-  describe('findCategoriesPublic', () => {
-    it('returns public categories with published product counts', async () => {
-      prisma.store.findFirst.mockResolvedValue({ id: 'store-1' });
+  describe("findCategoriesPublic", () => {
+    it("returns public categories with published product counts", async () => {
+      prisma.store.findFirst.mockResolvedValue({ id: "store-1" });
       prisma.category.findMany.mockResolvedValue([
         {
-          id: 'category-1',
-          name: 'Photocards',
-          slug: 'photocards',
+          id: "category-1",
+          name: "Photocards",
+          slug: "photocards",
           parentId: null,
           imageUrl: null,
           products: [
             {
-              productId: 'p1',
-              product: { images: ['https://cdn.test/p1.jpg'] },
+              productId: "p1",
+              product: { images: ["https://cdn.test/p1.jpg"] },
             },
-            { productId: 'p2', product: { images: [] } },
+            { productId: "p2", product: { images: [] } },
           ],
         },
         {
-          id: 'category-2',
-          name: 'Subcategory',
-          slug: 'subcategory',
-          parentId: 'category-1',
+          id: "category-2",
+          name: "Subcategory",
+          slug: "subcategory",
+          parentId: "category-1",
           imageUrl: null,
           products: [
             {
-              productId: 'p2',
-              product: { images: ['https://cdn.test/p2.jpg'] },
+              productId: "p2",
+              product: { images: ["https://cdn.test/p2.jpg"] },
             },
-            { productId: 'p3', product: { images: [] } },
+            { productId: "p3", product: { images: [] } },
           ],
         },
         {
-          id: 'empty',
-          name: 'Empty',
-          slug: 'empty',
+          id: "empty",
+          name: "Empty",
+          slug: "empty",
           parentId: null,
           imageUrl: null,
           products: [],
         },
       ]);
 
-      const result = await service.findCategoriesPublic('my-store');
+      const result = await service.findCategoriesPublic("my-store");
 
       expect(prisma.store.findFirst).toHaveBeenCalledWith({
-        where: { slug: 'my-store' },
+        where: { slug: "my-store" },
         select: { id: true },
       });
 
       expect(prisma.category.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { storeId: 'store-1' },
-          orderBy: { name: 'asc' },
+          where: { storeId: "store-1" },
+          orderBy: { name: "asc" },
         }),
       );
       expect(result).toEqual([
         {
-          id: 'category-1',
-          name: 'Photocards',
-          slug: 'photocards',
+          id: "category-1",
+          name: "Photocards",
+          slug: "photocards",
           parentId: null,
-          imageUrl: 'https://cdn.test/p1.jpg',
+          imageUrl: "https://cdn.test/p1.jpg",
           productCount: 3,
         },
         {
-          id: 'empty',
-          name: 'Empty',
-          slug: 'empty',
+          id: "empty",
+          name: "Empty",
+          slug: "empty",
           parentId: null,
           imageUrl: null,
           productCount: 0,
@@ -1071,73 +1071,73 @@ describe('StoresService', () => {
     });
   });
 
-  describe('findPublicProduct', () => {
-    it('throws NotFoundException when the store does not exist', async () => {
+  describe("findPublicProduct", () => {
+    it("throws NotFoundException when the store does not exist", async () => {
       prisma.store.findUnique.mockResolvedValue(null);
       await expect(
-        service.findPublicProduct('missing', 'product-1'),
+        service.findPublicProduct("missing", "product-1"),
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('throws NotFoundException when the product belongs to a different store', async () => {
+    it("throws NotFoundException when the product belongs to a different store", async () => {
       prisma.store.findUnique.mockResolvedValue({
-        id: 'store-1',
-        slug: 'my-store',
-        name: 'My Store',
+        id: "store-1",
+        slug: "my-store",
+        name: "My Store",
         logoUrl: null,
       });
       prisma.product.findUnique.mockResolvedValue({
-        id: 'product-1',
-        storeId: 'other-store',
-        status: 'PUBLISHED',
+        id: "product-1",
+        storeId: "other-store",
+        status: "PUBLISHED",
         deletedAt: null,
       });
 
       await expect(
-        service.findPublicProduct('my-store', 'product-1'),
+        service.findPublicProduct("my-store", "product-1"),
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('throws NotFoundException for a DRAFT or soft-deleted product', async () => {
+    it("throws NotFoundException for a DRAFT or soft-deleted product", async () => {
       prisma.store.findUnique.mockResolvedValue({
-        id: 'store-1',
-        slug: 'my-store',
-        name: 'My Store',
+        id: "store-1",
+        slug: "my-store",
+        name: "My Store",
         logoUrl: null,
       });
       prisma.product.findUnique.mockResolvedValue({
-        id: 'product-1',
-        storeId: 'store-1',
-        status: 'DRAFT',
+        id: "product-1",
+        storeId: "store-1",
+        status: "DRAFT",
         deletedAt: null,
       });
 
       await expect(
-        service.findPublicProduct('my-store', 'product-1'),
+        service.findPublicProduct("my-store", "product-1"),
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('returns the store summary and product for a published, owned product', async () => {
+    it("returns the store summary and product for a published, owned product", async () => {
       prisma.store.findUnique.mockResolvedValue({
-        id: 'store-1',
-        slug: 'my-store',
-        name: 'My Store',
+        id: "store-1",
+        slug: "my-store",
+        name: "My Store",
         logoUrl: null,
       });
       prisma.product.findUnique.mockResolvedValue({
-        id: 'product-1',
-        storeId: 'store-1',
-        status: 'PUBLISHED',
+        id: "product-1",
+        storeId: "store-1",
+        status: "PUBLISHED",
         deletedAt: null,
-        name: 'Album',
+        name: "Album",
         variants: [],
       });
 
-      const result = await service.findPublicProduct('my-store', 'product-1');
+      const result = await service.findPublicProduct("my-store", "product-1");
 
       expect(result).toEqual({
-        store: { name: 'My Store', slug: 'my-store', logoUrl: null },
-        product: expect.objectContaining({ id: 'product-1', name: 'Album' }),
+        store: { name: "My Store", slug: "my-store", logoUrl: null },
+        product: expect.objectContaining({ id: "product-1", name: "Album" }),
       });
     });
   });

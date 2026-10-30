@@ -9,21 +9,22 @@ import {
   UseGuards,
   UploadedFile,
   UseInterceptors,
-} from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiConsumes } from '@nestjs/swagger';
-import { AuthGuard, Session } from '@thallesp/nestjs-better-auth';
-import type { UserSession } from '@thallesp/nestjs-better-auth';
-import { CategoriesService } from './categories.service.js';
-import { CreateCategoryDto } from './dto/create-category.dto.js';
-import { UpdateCategoryDto } from './dto/update-category.dto.js';
-import type { CategoryResponseDto } from './dto/category-response.dto.js';
-import { StorageService } from '../../storage/storage.service.js';
+} from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { ApiConsumes } from "@nestjs/swagger";
+import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
+import type { UserSession } from "@thallesp/nestjs-better-auth";
+import { CategoriesService } from "./categories.service.js";
+import { CreateCategoryDto } from "./dto/create-category.dto.js";
+import { UpdateCategoryDto } from "./dto/update-category.dto.js";
+import type { CategoryResponseDto } from "./dto/category-response.dto.js";
+import { StorageService } from "../../storage/storage.service.js";
 import {
   IMAGE_UPLOAD_MIME_TYPES,
+  MAX_UPLOAD_SIZE_BYTES,
   UploadedFileValidationPipe,
   type ValidatedUploadedFile,
-} from '../../common/uploaded-file-validation.pipe.js';
+} from "../../common/uploaded-file-validation.pipe.js";
 
 const CATEGORY_IMAGE_PIPE = new UploadedFileValidationPipe({
   allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
@@ -49,7 +50,7 @@ function toCategoryDto(category: CategoryRow): CategoryResponseDto {
   };
 }
 
-@Controller('stores/:storeId/categories')
+@Controller("stores/:storeId/categories")
 @UseGuards(AuthGuard)
 export class CategoriesController {
   constructor(
@@ -59,7 +60,7 @@ export class CategoriesController {
 
   @Post()
   async create(
-    @Param('storeId') storeId: string,
+    @Param("storeId") storeId: string,
     @Session() session: UserSession,
     @Body() dto: CreateCategoryDto,
   ): Promise<CategoryResponseDto> {
@@ -73,7 +74,7 @@ export class CategoriesController {
 
   @Get()
   async findAll(
-    @Param('storeId') storeId: string,
+    @Param("storeId") storeId: string,
     @Session() session: UserSession,
   ): Promise<CategoryResponseDto[]> {
     const categories = await this.categories.findAllForStore(
@@ -83,10 +84,10 @@ export class CategoriesController {
     return categories.map(toCategoryDto);
   }
 
-  @Patch(':categoryId')
+  @Patch(":categoryId")
   async update(
-    @Param('storeId') storeId: string,
-    @Param('categoryId') categoryId: string,
+    @Param("storeId") storeId: string,
+    @Param("categoryId") categoryId: string,
     @Session() session: UserSession,
     @Body() dto: UpdateCategoryDto,
   ): Promise<CategoryResponseDto> {
@@ -99,10 +100,10 @@ export class CategoriesController {
     return toCategoryDto(category);
   }
 
-  @Delete(':categoryId')
+  @Delete(":categoryId")
   async delete(
-    @Param('storeId') storeId: string,
-    @Param('categoryId') categoryId: string,
+    @Param("storeId") storeId: string,
+    @Param("categoryId") categoryId: string,
     @Session() session: UserSession,
   ): Promise<CategoryResponseDto> {
     const category = await this.categories.delete(
@@ -113,12 +114,16 @@ export class CategoriesController {
     return toCategoryDto(category);
   }
 
-  @Post(':categoryId/image')
-  @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('file'))
+  @Post(":categoryId/image")
+  @ApiConsumes("multipart/form-data")
+  @UseInterceptors(
+    FileInterceptor("file", {
+      limits: { fileSize: MAX_UPLOAD_SIZE_BYTES + 1 },
+    }),
+  )
   async uploadImage(
-    @Param('storeId') storeId: string,
-    @Param('categoryId') categoryId: string,
+    @Param("storeId") storeId: string,
+    @Param("categoryId") categoryId: string,
     @Session() session: UserSession,
     @UploadedFile(CATEGORY_IMAGE_PIPE) file: ValidatedUploadedFile,
   ): Promise<CategoryResponseDto> {

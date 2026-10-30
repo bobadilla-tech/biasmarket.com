@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service.js';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
 // Mirrors expire-orders.usecase.ts's role for the orders domain: nothing
 // else resets User.plan back to "basic" once premiumUntil naturally
@@ -16,10 +16,10 @@ export class ExpirePremiumUseCase {
   async execute(): Promise<{ expired: number }> {
     const result = await this.prisma.user.updateMany({
       where: {
-        plan: 'premium',
+        plan: "premium",
         premiumUntil: { lt: new Date() },
       },
-      data: { plan: 'basic', premiumUntil: null },
+      data: { plan: "basic", premiumUntil: null },
     });
 
     return { expired: result.count };

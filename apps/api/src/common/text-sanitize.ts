@@ -13,8 +13,8 @@ const TRAILING_ZWJ = /\u200D+$/u;
  */
 export function normalizeOperationCode(value: string): string {
   return value
-    .normalize('NFKC')
-    .replace(/[^A-Za-z0-9]/g, '')
+    .normalize("NFKC")
+    .replace(/[^A-Za-z0-9]/g, "")
     .toUpperCase();
 }
 
@@ -32,12 +32,12 @@ export function hasForbiddenChars(value: string): boolean {
  * finds it.
  */
 export function normalizeOperationCodeForStorage(value: string): string {
-  return value.normalize('NFKC').trim();
+  return value.normalize("NFKC").trim();
 }
 
 /** NFC + trim, for display text only. */
 export function normalizeText(value: string): string {
-  return value.normalize('NFC').trim();
+  return value.normalize("NFC").trim();
 }
 
 /**
@@ -52,20 +52,20 @@ export function sanitizeDisplayText(
   if (value == null) return null;
   const collapsed = value
     .slice(0, max * 4)
-    .normalize('NFC')
+    .normalize("NFC")
     // Format characters first: JS `\s` treats U+FEFF as whitespace.
-    .replace(DANGEROUS_FORMAT_CHARS, '')
-    .replace(WHITESPACE_RUNS, ' ')
-    .replace(CONTROL_CHARS, '');
-  const cut = Array.from(collapsed).slice(0, max).join('');
-  const result = cut.replace(TRAILING_ZWJ, '').trim();
-  return result === '' ? null : result;
+    .replace(DANGEROUS_FORMAT_CHARS, "")
+    .replace(WHITESPACE_RUNS, " ")
+    .replace(CONTROL_CHARS, "");
+  const cut = Array.from(collapsed).slice(0, max).join("");
+  const result = cut.replace(TRAILING_ZWJ, "").trim();
+  return result === "" ? null : result;
 }
 
 export const MAX_NOTE_LENGTH = 500;
-export const NOTE_TOO_LONG_MESSAGE = 'La nota no puede superar 500 caracteres';
+export const NOTE_TOO_LONG_MESSAGE = "La nota no puede superar 500 caracteres";
 
 /** Counts code points, the same unit `sanitizeDisplayText` truncates by. */
 export function isNoteTooLong(note: unknown): boolean {
-  return typeof note === 'string' && Array.from(note).length > MAX_NOTE_LENGTH;
+  return typeof note === "string" && Array.from(note).length > MAX_NOTE_LENGTH;
 }

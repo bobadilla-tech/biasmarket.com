@@ -1,12 +1,12 @@
-import { Test, type TestingModule } from '@nestjs/testing';
-import { type Mock, vi } from 'vitest';
-import { CancelOrderUseCase } from './cancel-order.usecase.js';
-import { PrismaService } from '../../../prisma/prisma.service.js';
-import { OrderRepository } from '../infrastructure/order.repository.js';
-import { NotificationsService } from '../../notifications/notifications.service.js';
-import { OrderEventsService } from './order-events.service.js';
+import { Test, type TestingModule } from "@nestjs/testing";
+import { type Mock, vi } from "vitest";
+import { CancelOrderUseCase } from "./cancel-order.usecase.js";
+import { PrismaService } from "../../../prisma/prisma.service.js";
+import { OrderRepository } from "../infrastructure/order.repository.js";
+import { NotificationsService } from "../../notifications/notifications.service.js";
+import { OrderEventsService } from "./order-events.service.js";
 
-describe('CancelOrderUseCase', () => {
+describe("CancelOrderUseCase", () => {
   let useCase: CancelOrderUseCase;
   let events: { record: Mock };
   let prisma: {
@@ -19,7 +19,7 @@ describe('CancelOrderUseCase', () => {
     prisma = {
       order: {
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-        findUniqueOrThrow: vi.fn().mockResolvedValue({ id: 'order-1' }),
+        findUniqueOrThrow: vi.fn().mockResolvedValue({ id: "order-1" }),
       },
       auditLog: { create: vi.fn() },
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
@@ -34,10 +34,10 @@ describe('CancelOrderUseCase', () => {
           useValue: {
             assertOwnership: vi.fn(),
             findRowByIdForStore: vi.fn().mockResolvedValue({
-              id: 'order-1',
-              storeId: 'store-1',
-              paymentStatus: 'VERIFIED',
-              fulfillmentStatus: 'ORDERING',
+              id: "order-1",
+              storeId: "store-1",
+              paymentStatus: "VERIFIED",
+              fulfillmentStatus: "ORDERING",
               paidAmount: 0,
               items: [],
             }),
@@ -53,17 +53,17 @@ describe('CancelOrderUseCase', () => {
     useCase = module.get(CancelOrderUseCase);
   });
 
-  it('records ORDER_CANCELLED in the cancellation transaction', async () => {
-    await useCase.execute('order-1', 'store-1', 'seller-1', {
-      resolution: 'REFUNDED',
+  it("records ORDER_CANCELLED in the cancellation transaction", async () => {
+    await useCase.execute("order-1", "store-1", "seller-1", {
+      resolution: "REFUNDED",
     });
 
     expect(events.record).toHaveBeenCalledWith(prisma, {
-      orderId: 'order-1',
-      storeId: 'store-1',
-      type: 'ORDER_CANCELLED',
-      actor: 'SELLER',
-      payload: { resolution: 'REFUNDED' },
+      orderId: "order-1",
+      storeId: "store-1",
+      type: "ORDER_CANCELLED",
+      actor: "SELLER",
+      payload: { resolution: "REFUNDED" },
     });
   });
 });

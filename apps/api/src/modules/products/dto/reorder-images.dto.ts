@@ -1,16 +1,16 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from "@nestjs/swagger";
 import {
   ArrayMaxSize,
   ArrayNotEmpty,
   IsArray,
   IsString,
-} from 'class-validator';
-import { MAX_PRODUCT_IMAGES } from '../product-images.constants.js';
+} from "class-validator";
+import { MAX_PRODUCT_IMAGES } from "../product-images.constants.js";
 
 export class ReorderImagesDto {
   @ApiProperty({
     type: [String],
-    description: 'Exact image URLs in the desired order',
+    description: "Exact image URLs in the desired order",
     minItems: 1,
     maxItems: MAX_PRODUCT_IMAGES,
   })

@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from "@nestjs/swagger";
 
 // Shared between `CustomerAuth` (this module — `me`) and `CustomerAccount`
 // (`orders/infrastructure/customer-account.controller.ts` — `confirm`):
@@ -12,24 +12,24 @@ export class AccountOrderResponseDto {
 
   @ApiProperty({
     enum: [
-      'PENDING_PAYMENT',
-      'PARTIALLY_PAID',
-      'PAYMENT_SUBMITTED',
-      'VERIFIED',
-      'REJECTED',
-      'CANCELLED',
+      "PENDING_PAYMENT",
+      "PARTIALLY_PAID",
+      "PAYMENT_SUBMITTED",
+      "VERIFIED",
+      "REJECTED",
+      "CANCELLED",
     ],
   })
   paymentStatus:
-    | 'PENDING_PAYMENT'
-    | 'PARTIALLY_PAID'
-    | 'PAYMENT_SUBMITTED'
-    | 'VERIFIED'
-    | 'REJECTED'
-    | 'CANCELLED';
+    | "PENDING_PAYMENT"
+    | "PARTIALLY_PAID"
+    | "PAYMENT_SUBMITTED"
+    | "VERIFIED"
+    | "REJECTED"
+    | "CANCELLED";
 
-  @ApiProperty({ enum: ['ORDERING', 'IN_TRANSIT', 'READY', 'COMPLETED'] })
-  fulfillmentStatus: 'ORDERING' | 'IN_TRANSIT' | 'READY' | 'COMPLETED';
+  @ApiProperty({ enum: ["ORDERING", "IN_TRANSIT", "READY", "COMPLETED"] })
+  fulfillmentStatus: "ORDERING" | "IN_TRANSIT" | "READY" | "COMPLETED";
 
   @ApiProperty({ type: String })
   totalAmount: string;
@@ -37,7 +37,7 @@ export class AccountOrderResponseDto {
   @ApiProperty()
   currency: string;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   createdAt: string;
 
   @ApiProperty({ type: Number })
@@ -50,12 +50,12 @@ export class AccountOrderResponseDto {
   paidPercentage: number;
 
   @ApiProperty({
-    enum: ['MARKETPLACE', 'VENDOR_ASSISTED'],
-    description: 'VENDOR_ASSISTED = created by the store for the buyer.',
+    enum: ["MARKETPLACE", "VENDOR_ASSISTED"],
+    description: "VENDOR_ASSISTED = created by the store for the buyer.",
   })
-  source: 'MARKETPLACE' | 'VENDOR_ASSISTED';
+  source: "MARKETPLACE" | "VENDOR_ASSISTED";
 
-  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  @ApiProperty({ type: String, format: "date-time", nullable: true })
   claimedAt: string | null;
 }
 
@@ -91,16 +91,16 @@ export function toAccountOrderDto(
   return {
     id: order.id,
     paymentStatus:
-      order.paymentStatus as AccountOrderResponseDto['paymentStatus'],
+      order.paymentStatus as AccountOrderResponseDto["paymentStatus"],
     fulfillmentStatus:
-      order.fulfillmentStatus as AccountOrderResponseDto['fulfillmentStatus'],
+      order.fulfillmentStatus as AccountOrderResponseDto["fulfillmentStatus"],
     totalAmount: order.totalAmount.toString(),
     currency: order.currency,
     createdAt: order.createdAt.toISOString(),
     paidAmount: order.paidAmount,
     pendingAmount: order.pendingAmount,
     paidPercentage: order.paidPercentage,
-    source: order.source as AccountOrderResponseDto['source'],
+    source: order.source as AccountOrderResponseDto["source"],
     claimedAt: order.claimedAt?.toISOString() ?? null,
   };
 }

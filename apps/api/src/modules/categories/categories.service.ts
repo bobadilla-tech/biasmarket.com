@@ -4,18 +4,18 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service.js';
-import { slugify } from '@biasmarket/utils/strings';
-import type { CreateCategoryDto } from './dto/create-category.dto.js';
-import type { UpdateCategoryDto } from './dto/update-category.dto.js';
+} from "@nestjs/common";
+import { PrismaService } from "../../prisma/prisma.service.js";
+import { slugify } from "@biasmarket/utils/strings";
+import type { CreateCategoryDto } from "./dto/create-category.dto.js";
+import type { UpdateCategoryDto } from "./dto/update-category.dto.js";
 
 @Injectable()
 export class CategoriesService {
   constructor(private prisma: PrismaService) {}
 
   private async uniqueSlug(storeId: string, name: string) {
-    const base = slugify(name) || 'categoria';
+    const base = slugify(name) || "categoria";
     const siblings = await this.prisma.category.findMany({
       where: { storeId, slug: { startsWith: base } },
       select: { slug: true },
@@ -31,9 +31,9 @@ export class CategoriesService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException('Store no encontrada');
+    if (!store) throw new NotFoundException("Store no encontrada");
     if (store.ownerId !== userId) {
-      throw new ForbiddenException('No sos dueño de esta store');
+      throw new ForbiddenException("No sos dueño de esta store");
     }
     return store;
   }
@@ -48,7 +48,7 @@ export class CategoriesService {
       where: { id: categoryId },
     });
     if (!category || category.storeId !== storeId) {
-      throw new NotFoundException('Categoría no encontrada');
+      throw new NotFoundException("Categoría no encontrada");
     }
     return category;
   }
@@ -58,7 +58,7 @@ export class CategoriesService {
       where: { id: parentId },
     });
     if (!parent || parent.storeId !== storeId) {
-      throw new BadRequestException('Categoría padre inválida');
+      throw new BadRequestException("Categoría padre inválida");
     }
   }
 
@@ -92,7 +92,7 @@ export class CategoriesService {
     if (dto.parentId) {
       if (dto.parentId === categoryId) {
         throw new BadRequestException(
-          'Una categoría no puede ser su propio padre',
+          "Una categoría no puede ser su propio padre",
         );
       }
       await this.assertParentInStore(dto.parentId, storeId);
@@ -152,7 +152,7 @@ export class CategoriesService {
     ]);
     if (childCount > 0 || productCount > 0) {
       throw new ConflictException(
-        'No se puede eliminar: la categoría tiene subcategorías o productos asociados',
+        "No se puede eliminar: la categoría tiene subcategorías o productos asociados",
       );
     }
     return this.prisma.category.delete({ where: { id: categoryId } });

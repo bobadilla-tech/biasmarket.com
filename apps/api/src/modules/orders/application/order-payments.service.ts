@@ -1,12 +1,12 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../prisma/prisma.service.js';
+import { BadRequestException, Injectable } from "@nestjs/common";
+import { PrismaService } from "../../../prisma/prisma.service.js";
 import {
   hasForbiddenChars,
   normalizeOperationCode,
   normalizeOperationCodeForStorage,
-} from '../../../common/text-sanitize.js';
+} from "../../../common/text-sanitize.js";
 
-const PAYMENT_METHODS = ['YAPE', 'PLIN', 'TRANSFER', 'CASH'] as const;
+const PAYMENT_METHODS = ["YAPE", "PLIN", "TRANSFER", "CASH"] as const;
 export type SellerPaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 // Digits with at most two decimals, never exponent/hex/sign/whitespace.
@@ -45,43 +45,43 @@ export function assertSellerPaymentInput(
   input: SellerPaymentInput,
   now: Date = new Date(),
 ): ValidSellerPayment {
-  if (typeof input.amount !== 'string' || !AMOUNT_PATTERN.test(input.amount)) {
-    throw new BadRequestException('Monto inválido');
+  if (typeof input.amount !== "string" || !AMOUNT_PATTERN.test(input.amount)) {
+    throw new BadRequestException("Monto inválido");
   }
   const amountCents = Math.round(Number(input.amount) * 100);
-  if (amountCents < 1) throw new BadRequestException('Monto inválido');
+  if (amountCents < 1) throw new BadRequestException("Monto inválido");
 
   if (
-    typeof input.method !== 'string' ||
+    typeof input.method !== "string" ||
     !(PAYMENT_METHODS as readonly string[]).includes(input.method)
   ) {
-    throw new BadRequestException('Selecciona un método de pago');
+    throw new BadRequestException("Selecciona un método de pago");
   }
   const method = input.method as SellerPaymentMethod;
-  if (method !== 'CASH' && !input.hasCapture) {
-    throw new BadRequestException('Adjunta la captura del pago');
+  if (method !== "CASH" && !input.hasCapture) {
+    throw new BadRequestException("Adjunta la captura del pago");
   }
 
   let operationCode: string | null = null;
   if (input.operationCode != null) {
     const invalid = () =>
-      new BadRequestException('Código de operación inválido');
-    if (typeof input.operationCode !== 'string') throw invalid();
-    if (input.operationCode.trim() !== '') {
+      new BadRequestException("Código de operación inválido");
+    if (typeof input.operationCode !== "string") throw invalid();
+    if (input.operationCode.trim() !== "") {
       if (hasForbiddenChars(input.operationCode)) throw invalid();
       const stored = normalizeOperationCodeForStorage(input.operationCode);
       if (stored.length > MAX_OPERATION_CODE_LENGTH) throw invalid();
       // "---" or "ÁÉ" would normalize to '' and match every symbol-only code.
-      if (normalizeOperationCode(stored) === '') throw invalid();
+      if (normalizeOperationCode(stored) === "") throw invalid();
       operationCode = stored;
     }
   }
 
   let paidAt = now;
-  if (input.paidAt != null && input.paidAt !== '') {
-    const invalid = () => new BadRequestException('Fecha de pago inválida');
+  if (input.paidAt != null && input.paidAt !== "") {
+    const invalid = () => new BadRequestException("Fecha de pago inválida");
     if (
-      typeof input.paidAt !== 'string' ||
+      typeof input.paidAt !== "string" ||
       !ISO_WITH_OFFSET.test(input.paidAt)
     ) {
       throw invalid();
@@ -89,7 +89,7 @@ export function assertSellerPaymentInput(
     const parsed = new Date(input.paidAt);
     if (Number.isNaN(parsed.getTime())) throw invalid();
     if (parsed.getTime() > now.getTime() + PAID_AT_SKEW_MS) {
-      throw new BadRequestException('La fecha de pago no puede ser futura');
+      throw new BadRequestException("La fecha de pago no puede ser futura");
     }
     paidAt = parsed;
   }
@@ -100,7 +100,7 @@ export function assertSellerPaymentInput(
     method,
     operationCode,
     paidAt,
-    confirmDuplicate: input.confirmDuplicate === 'true',
+    confirmDuplicate: input.confirmDuplicate === "true",
   };
 }
 
@@ -116,7 +116,7 @@ export function reservedPendingCents(
   }[],
 ): number {
   return payments
-    .filter((p) => p.voidedAt == null && p.reviewStatus === 'PENDING_REVIEW')
+    .filter((p) => p.voidedAt == null && p.reviewStatus === "PENDING_REVIEW")
     .reduce((sum, p) => sum + toCents(p.amount), 0);
 }
 
@@ -127,14 +127,14 @@ export function assertAcceptsSellerPayments(state: {
   fulfillmentStatus: string;
   pendingAmount: number;
 }) {
-  if (state.status === 'CANCELLED' || state.paymentStatus === 'CANCELLED') {
+  if (state.status === "CANCELLED" || state.paymentStatus === "CANCELLED") {
     throw new BadRequestException(
-      'No se pueden registrar abonos en una orden cancelada',
+      "No se pueden registrar abonos en una orden cancelada",
     );
   }
-  if (state.paymentStatus === 'REJECTED') {
+  if (state.paymentStatus === "REJECTED") {
     throw new BadRequestException(
-      'No se pueden registrar abonos en una orden rechazada',
+      "No se pueden registrar abonos en una orden rechazada",
     );
   }
   // A VERIFIED order only closes to further payments once its balance is
@@ -142,16 +142,16 @@ export function assertAcceptsSellerPayments(state: {
   // approved with zero money) leaves `pendingAmount > 0`, and the seller must
   // be able to keep registering the remainder — mirrors the frontend
   // `paymentsLocked` rule (features/orders/lib/order-status.ts).
-  if (state.paymentStatus === 'VERIFIED' && state.pendingAmount <= 0) {
-    throw new BadRequestException('La orden ya está pagada');
+  if (state.paymentStatus === "VERIFIED" && state.pendingAmount <= 0) {
+    throw new BadRequestException("La orden ya está pagada");
   }
   if (
-    state.fulfillmentStatus === 'IN_TRANSIT' ||
-    state.fulfillmentStatus === 'READY' ||
-    state.fulfillmentStatus === 'COMPLETED'
+    state.fulfillmentStatus === "IN_TRANSIT" ||
+    state.fulfillmentStatus === "READY" ||
+    state.fulfillmentStatus === "COMPLETED"
   ) {
     throw new BadRequestException(
-      'No se pueden registrar abonos en una orden enviada',
+      "No se pueden registrar abonos en una orden enviada",
     );
   }
 }
@@ -170,8 +170,8 @@ export function assertWithinSellerLimit(
   if (amountCents > pendingCents - reservedCents) {
     throw new BadRequestException(
       reservedCents > 0 && amountCents <= pendingCents
-        ? 'Rechaza o valida el comprobante pendiente antes de registrar este pago'
-        : 'El abono excede el saldo pendiente',
+        ? "Rechaza o valida el comprobante pendiente antes de registrar este pago"
+        : "El abono excede el saldo pendiente",
     );
   }
 }

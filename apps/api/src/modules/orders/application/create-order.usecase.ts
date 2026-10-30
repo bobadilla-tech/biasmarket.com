@@ -1,18 +1,18 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from "@nestjs/common";
 import {
   buildWhatsAppOrderMessage,
   buildWhatsAppUrl,
-} from '@biasmarket/utils/whatsapp';
-import { normalizePhone } from '@biasmarket/utils/phone-country';
-import { PrismaService } from '../../../prisma/prisma.service.js';
-import type { CreateOrderDto } from '../dto/create-order.dto.js';
-import { NotificationsService } from '../../notifications/notifications.service.js';
-import { CustomerAccountService } from './customer-account.service.js';
+} from "@biasmarket/utils/whatsapp";
+import { normalizePhone } from "@biasmarket/utils/phone-country";
+import { PrismaService } from "../../../prisma/prisma.service.js";
+import type { CreateOrderDto } from "../dto/create-order.dto.js";
+import { NotificationsService } from "../../notifications/notifications.service.js";
+import { CustomerAccountService } from "./customer-account.service.js";
 import {
   lockAndValidate,
   reserveItems,
   validateDeliveryPreTx,
-} from './order-creation.core.js';
+} from "./order-creation.core.js";
 
 @Injectable()
 export class CreateOrderUseCase {
@@ -36,7 +36,7 @@ export class CreateOrderUseCase {
     session?: { buyerAccountId: string; passwordVersion: number },
   ) {
     const store = await this.prisma.store.findUnique({ where: { slug } });
-    if (!store) throw new NotFoundException('Tienda no encontrada');
+    if (!store) throw new NotFoundException("Tienda no encontrada");
 
     const pre = await validateDeliveryPreTx(this.prisma, store, dto);
 
@@ -51,7 +51,7 @@ export class CreateOrderUseCase {
       let customerId: string | undefined;
       let buyerAccountId: string | undefined;
       let pendingVerificationCustomer: Awaited<
-        ReturnType<CustomerAccountService['findOrCreateCustomer']>
+        ReturnType<CustomerAccountService["findOrCreateCustomer"]>
       > | null = null;
       if (dto.customerEmail) {
         pendingVerificationCustomer =
@@ -102,17 +102,17 @@ export class CreateOrderUseCase {
             currency: order.currency,
             method: dto.paymentMethod,
             imageUrl: proof.imageUrl,
-            source: 'BUYER_SUBMITTED',
-            reviewStatus: 'PENDING_REVIEW',
+            source: "BUYER_SUBMITTED",
+            reviewStatus: "PENDING_REVIEW",
           },
         });
         await this.notifications.createIfNotOpen(
           {
             storeId: store.id,
-            type: 'PAYMENT_PROOF_SUBMITTED',
-            entityType: 'Order',
+            type: "PAYMENT_PROOF_SUBMITTED",
+            entityType: "Order",
             entityId: order.id,
-            title: 'Comprobante de pago recibido',
+            title: "Comprobante de pago recibido",
             body: `El comprador envió un comprobante de ${order.currency} ${requiredAmount} para revisar.`,
           },
           tx,
@@ -133,7 +133,7 @@ export class CreateOrderUseCase {
     const orderTemplate = store.whatsappNumber
       ? await this.prisma.whatsAppMessageTemplate.findUnique({
           where: {
-            storeId_type: { storeId: store.id, type: 'NEW_ORDER' },
+            storeId_type: { storeId: store.id, type: "NEW_ORDER" },
           },
         })
       : null;

@@ -8,22 +8,22 @@
 //
 // Usage: pnpm --filter api exec node scripts/measure-sub-bar-stores.ts
 
-import { PrismaClient } from '@biasmarket/db';
-import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from "@biasmarket/db";
+import { PrismaPg } from "@prisma/adapter-pg";
 import {
   isStoreIndexable,
   MIN_INDEXABLE_PRODUCTS,
-} from '../src/common/store-indexability.js';
+} from "../src/common/store-indexability.js";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 function textBlockBody(content: unknown): string {
-  if (content !== null && typeof content === 'object' && 'body' in content) {
+  if (content !== null && typeof content === "object" && "body" in content) {
     const { body } = content as { body: unknown };
-    if (typeof body === 'string') return body.trim();
+    if (typeof body === "string") return body.trim();
   }
-  return '';
+  return "";
 }
 
 const stores = await prisma.store.findMany({
@@ -37,7 +37,7 @@ const stores = await prisma.store.findMany({
     aboutMarkdown: true,
     owner: { select: { banned: true } },
     sections: {
-      where: { type: 'TEXT_BLOCK', hidden: false },
+      where: { type: "TEXT_BLOCK", hidden: false },
       select: { content: true },
     },
   },
@@ -50,7 +50,7 @@ const failOwnerBanned: string[] = [];
 
 for (const s of stores) {
   const hasRealTextBlockSection = s.sections.some(
-    (section) => textBlockBody(section.content) !== '',
+    (section) => textBlockBody(section.content) !== "",
   );
   const ownerBanned = s.owner?.banned === true;
   const indexable = isStoreIndexable({
@@ -83,7 +83,7 @@ console.log(`Public non-demo stores:            ${total}`);
 console.log(`  pass isStoreIndexable:           ${pass}`);
 console.log(
   `  FAIL (sub-bar):                  ${fail}` +
-    (total > 0 ? `  (${((fail / total) * 100).toFixed(1)}%)` : ''),
+    (total > 0 ? `  (${((fail / total) * 100).toFixed(1)}%)` : ""),
 );
 console.log(
   `    - below ${MIN_INDEXABLE_PRODUCTS}-product bar:          ${failBelowProductBar.length}`,
@@ -91,10 +91,10 @@ console.log(
 console.log(`    - no prose (bio/about/TEXT_BLOCK): ${failNoProse.length}`);
 console.log(`    - owner banned:                  ${failOwnerBanned.length}`);
 console.log(
-  '\n(a store can fail on more than one axis, so the sub-counts overlap)',
+  "\n(a store can fail on more than one axis, so the sub-counts overlap)",
 );
 if (fail > 0) {
-  console.log('\nsub-bar slugs:');
+  console.log("\nsub-bar slugs:");
   for (const slug of new Set([
     ...failBelowProductBar,
     ...failNoProse,

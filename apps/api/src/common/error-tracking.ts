@@ -1,116 +1,24 @@
-import { Logger } from '@nestjs/common';
-import * as Sentry from '@sentry/node';
-import type { Event } from '@sentry/node';
-import { scrubRequestUrl } from './scrub-request-url.js';
-
-const PUBLIC_ORDER_PATH = /\/public\/orders\//i;
-const ASSISTED_ORDER_PATH = /\/pedido\//i;
-
-function scrubTrackedUrl(value: string): string {
-  let scrubbed = value;
-  if (PUBLIC_ORDER_PATH.test(scrubbed)) {
-    scrubbed = scrubRequestUrl(scrubbed);
-  }
-  if (ASSISTED_ORDER_PATH.test(scrubbed)) {
-    scrubbed = scrubbed
-      .split(/[?#]/)[0]!
-      .replace(/(\/pedido\/)[^/]+/gi, '$1:token');
-  }
-  return scrubbed;
-}
-
-function scrubTrackedText(value: string): string {
-  return value
-    .replace(/(\/public\/orders\/)[^/\s?#"'<>),;]+/gi, '$1:token')
-    .replace(/(\/pedido\/)[^/\s?#"'<>),;]+/gi, '$1:token');
-}
-
-function scrubDeep(
-  value: unknown,
-  depth = 0,
-  seen = new WeakSet<object>(),
-  key?: string,
-): unknown {
-  if (depth > 10) return '[Truncated]';
-  if (typeof value === 'string') {
-    return key && /(?:url|uri|target|path|referer)/i.test(key)
-      ? scrubTrackedUrl(value)
-      : scrubTrackedText(value);
-  }
-  if (value === null || typeof value !== 'object') return value;
-  if (seen.has(value)) return value;
-  seen.add(value);
-
-  if (Array.isArray(value)) {
-    value.forEach((item, index) => {
-      value[index] = scrubDeep(item, depth + 1, seen);
-    });
-    return value;
-  }
-
-  const record = value as Record<string, unknown>;
-  for (const key of Object.keys(record)) {
-    record[key] = scrubDeep(record[key], depth + 1, seen, key);
-  }
-  return value;
-}
+import { Logger } from "@nestjs/common";
+import * as Sentry from "@sentry/node";
+import type { Event } from "@sentry/node";
+import { scrubOrDrop } from "@biasmarket/utils/sentry-scrub";
+import { isFrameworkLog } from "@biasmarket/utils/log-forwarding";
+import { tracesSampler } from "@biasmarket/utils/traces-sampler";
 
 // The exception filter scrubs stdout and the JSON `path`. Sentry/GlitchTip
 // still copy the raw URL into request.url, the transaction name, url tags,
-// and span descriptions (about 1% of requests are traced). Same replacement
-// as the filter, including dropping the query string.
-export function scrubSentryEvent<T extends Event>(event: T): T {
-  if (event.request?.url) {
-    const rawUrl = event.request.url;
-    event.request.url = scrubTrackedUrl(rawUrl);
-    if (PUBLIC_ORDER_PATH.test(rawUrl)) {
-      delete event.request.query_string;
-    }
-  }
-  if (typeof event.transaction === 'string') {
-    event.transaction = scrubTrackedUrl(event.transaction);
-  }
-  if (event.tags) {
-    for (const [key, value] of Object.entries(event.tags)) {
-      if (typeof value === 'string') {
-        event.tags[key] = /(?:url|uri|target|path)/i.test(key)
-          ? scrubTrackedUrl(value)
-          : scrubTrackedText(value);
-      }
-    }
-  }
-  const traceData = event.contexts?.trace?.data;
-  if (traceData) {
-    if (
-      Object.values(traceData).some(
-        (value) => typeof value === 'string' && PUBLIC_ORDER_PATH.test(value),
-      )
-    ) {
-      delete traceData['url.query'];
-      delete traceData['http.query'];
-    }
-    for (const [key, value] of Object.entries(traceData)) {
-      if (typeof value === 'string') {
-        traceData[key] = /(?:url|uri|target|path)/i.test(key)
-          ? scrubTrackedUrl(value)
-          : scrubTrackedText(value);
-      }
-    }
-  }
-  for (const span of event.spans ?? []) {
-    if (typeof span.description === 'string') {
-      span.description = scrubTrackedUrl(span.description);
-    }
-    for (const [key, value] of Object.entries(span.data)) {
-      if (typeof value === 'string') {
-        span.data[key] = /(?:url|uri|target|path)/i.test(key)
-          ? scrubTrackedUrl(value)
-          : scrubTrackedText(value);
-      }
-    }
-  }
-  scrubDeep(event);
-  return event;
+// and span descriptions (about 1% of requests are traced), so every event
+// goes through the shared scrubber and is dropped if scrubbing fails.
+function scrubEvent<T extends Event>(event: T): T | null {
+  return scrubOrDrop(event, (message) => Logger.warn(message, "ErrorTracking"));
+}
+
+// Logs are forwarded to GlitchTip too (see logger.config.ts). A scrub failure
+// must not warn through the logger: that warning would itself be forwarded and
+// fail again, in a loop. Dropping the line silently is the safe default.
+function scrubLog<T extends object>(log: T): T | null {
+  if (isFrameworkLog(log)) return null;
+  return scrubOrDrop(log, () => undefined);
 }
 
 // Environment-gated error tracking (GlitchTip is Sentry-protocol-compatible,
@@ -119,19 +27,30 @@ export function scrubSentryEvent<T extends Event>(event: T): T {
 export function initErrorTracking(): void {
   const dsn = process.env.SENTRY_DSN;
   if (!dsn) {
-    Logger.log('SENTRY_DSN not set — error tracking disabled', 'ErrorTracking');
+    Logger.log("SENTRY_DSN not set — error tracking disabled", "ErrorTracking");
     return;
   }
 
   Sentry.init({
     dsn,
-    tracesSampleRate: 0.01,
-    beforeSend(event) {
-      return scrubSentryEvent(event);
-    },
-    beforeSendTransaction(event) {
-      return scrubSentryEvent(event);
-    },
+    // Per-route rates (never health, always money paths, 10% otherwise, parent
+    // decision inherited) instead of a flat 1%, see traces-sampler.
+    tracesSampler,
+    beforeSend: scrubEvent,
+    beforeSendTransaction: scrubEvent,
+    // Ship the pino lines (request log, Nest Logger calls) to GlitchTip so they
+    // survive container recreation and are searchable next to errors and
+    // traces. info and above only: debug/trace would cost storage for little
+    // signal. `error.levels: []` (also the default) keeps pino error lines from
+    // becoming duplicate issues, the exception filter already reports those.
+    enableLogs: true,
+    integrations: [
+      Sentry.pinoIntegration({
+        log: { levels: ["info", "warn", "error", "fatal"] },
+        error: { levels: [] },
+      }),
+    ],
+    beforeSendLog: scrubLog,
   });
 }
 

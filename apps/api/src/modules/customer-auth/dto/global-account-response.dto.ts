@@ -1,9 +1,9 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from "@nestjs/swagger";
 import {
   AccountOrderResponseDto,
   type AccountOrderRow,
-} from './account-order-response.dto.js';
-import { PublicOrderTimelineItemDto } from '../../orders/dto/public-order-response.dto.js';
+} from "./account-order-response.dto.js";
+import { PublicOrderTimelineItemDto } from "../../orders/dto/public-order-response.dto.js";
 
 export class LinkedStoreResponseDto {
   @ApiProperty()
@@ -65,28 +65,28 @@ export class GlobalAccountOrderItemResponseDto {
 // Origin, amount and void state only: the proof image, the reviewer, the
 // rejection note and the void reason stay on the seller side.
 export class GlobalAccountOrderPaymentResponseDto {
-  @ApiProperty({ enum: ['SELLER_RECORDED', 'BUYER_SUBMITTED'] })
-  source: 'SELLER_RECORDED' | 'BUYER_SUBMITTED';
+  @ApiProperty({ enum: ["SELLER_RECORDED", "BUYER_SUBMITTED"] })
+  source: "SELLER_RECORDED" | "BUYER_SUBMITTED";
 
   @ApiProperty({ type: String })
   amount: string;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   createdAt: string;
 
-  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  @ApiProperty({ type: String, format: "date-time", nullable: true })
   voidedAt: string | null;
 
   @ApiProperty({
-    enum: ['N_A', 'PENDING_REVIEW', 'APPROVED', 'REJECTED'],
+    enum: ["N_A", "PENDING_REVIEW", "APPROVED", "REJECTED"],
   })
-  reviewStatus: 'N_A' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED';
+  reviewStatus: "N_A" | "PENDING_REVIEW" | "APPROVED" | "REJECTED";
 }
 
 // `GET account/orders/:orderId` — one order of the signed-in buyer account.
 export class GlobalAccountOrderDetailResponseDto extends GlobalAccountOrderResponseDto {
-  @ApiProperty({ enum: ['ACTIVE', 'CANCELLED'] })
-  status: 'ACTIVE' | 'CANCELLED';
+  @ApiProperty({ enum: ["ACTIVE", "CANCELLED"] })
+  status: "ACTIVE" | "CANCELLED";
 
   @ApiProperty({ type: String })
   requiredAmount: string;
@@ -97,7 +97,7 @@ export class GlobalAccountOrderDetailResponseDto extends GlobalAccountOrderRespo
   @ApiProperty({ type: String, nullable: true })
   trackingUrl: string | null;
 
-  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  @ApiProperty({ type: String, format: "date-time", nullable: true })
   receiptConfirmedAt: string | null;
 
   @ApiProperty({ type: [GlobalAccountOrderItemResponseDto] })
@@ -108,7 +108,7 @@ export class GlobalAccountOrderDetailResponseDto extends GlobalAccountOrderRespo
 
   @ApiProperty({
     type: [PublicOrderTimelineItemDto],
-    description: 'Dated buyer-visible steps, oldest first.',
+    description: "Dated buyer-visible steps, oldest first.",
   })
   timeline: PublicOrderTimelineItemDto[];
 }
@@ -128,9 +128,9 @@ export function toGlobalAccountOrderDto(
   return {
     id: order.id,
     paymentStatus:
-      order.paymentStatus as GlobalAccountOrderResponseDto['paymentStatus'],
+      order.paymentStatus as GlobalAccountOrderResponseDto["paymentStatus"],
     fulfillmentStatus:
-      order.fulfillmentStatus as GlobalAccountOrderResponseDto['fulfillmentStatus'],
+      order.fulfillmentStatus as GlobalAccountOrderResponseDto["fulfillmentStatus"],
     totalAmount: order.totalAmount.toString(),
     currency: order.currency,
     createdAt: order.createdAt.toISOString(),
@@ -139,7 +139,7 @@ export function toGlobalAccountOrderDto(
     paidPercentage: order.paidPercentage,
     storeSlug: order.storeSlug,
     storeName: order.storeName,
-    source: order.source as GlobalAccountOrderResponseDto['source'],
+    source: order.source as GlobalAccountOrderResponseDto["source"],
     claimedAt: order.claimedAt?.toISOString() ?? null,
   };
 }

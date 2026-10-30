@@ -1,18 +1,18 @@
-import { BadRequestException } from '@nestjs/common';
-import { Prisma } from '@biasmarket/db';
-import { assistedRequiredAmountCents } from '@biasmarket/utils/assisted-order-payment';
+import { BadRequestException } from "@nestjs/common";
+import { Prisma } from "@biasmarket/db";
+import { assistedRequiredAmountCents } from "@biasmarket/utils/assisted-order-payment";
 import type {
   CourierConfig,
   DeliveryMethodConfig,
   PickupPoint,
   ProductVariant,
   Store,
-} from '@biasmarket/db';
-import { PrismaService } from '../../../prisma/prisma.service.js';
-import { getBusinessDate } from '../../../common/business-time.js';
-import { NotificationsService } from '../../notifications/notifications.service.js';
-import type { CreateOrderItemDto } from '../dto/create-order.dto.js';
-import type { ShippingAddressDto } from '../dto/create-order.dto.js';
+} from "@biasmarket/db";
+import { PrismaService } from "../../../prisma/prisma.service.js";
+import { getBusinessDate } from "../../../common/business-time.js";
+import { NotificationsService } from "../../notifications/notifications.service.js";
+import type { CreateOrderItemDto } from "../dto/create-order.dto.js";
+import type { ShippingAddressDto } from "../dto/create-order.dto.js";
 
 // Shared by the checkout (`CreateOrderUseCase`) and the seller-assisted order
 // flow. Plain functions rather than an injectable so each caller keeps its own
@@ -23,17 +23,17 @@ import type { ShippingAddressDto } from '../dto/create-order.dto.js';
 type Tx = Prisma.TransactionClient;
 
 export interface DeliveryInput {
-  deliveryMethodType: 'PICKUP' | 'COURIER';
+  deliveryMethodType: "PICKUP" | "COURIER";
   pickupPointId?: string;
   pickupDate?: string;
   courierName?: string;
-  courierModality?: 'AGENCY' | 'HOME';
+  courierModality?: "AGENCY" | "HOME";
   shippingAddress?: ShippingAddressDto;
 }
 
 export interface DeliveryPreTx {
   deliveryConfig: DeliveryMethodConfig;
-  courierModalityType: 'AGENCY' | 'HOME' | null;
+  courierModalityType: "AGENCY" | "HOME" | null;
   pickupPointId: string | undefined;
 }
 
@@ -45,14 +45,14 @@ export interface LockedDelivery {
 
 export interface ReserveItemsInput extends Omit<
   DeliveryInput,
-  'pickupDate' | 'pickupPointId'
+  "pickupDate" | "pickupPointId"
 > {
   items: CreateOrderItemDto[];
-  paymentMethod?: 'YAPE' | 'PLIN' | 'TRANSFER' | 'CASH';
-  paymentType?: 'FULL' | 'PARTIAL';
+  paymentMethod?: "YAPE" | "PLIN" | "TRANSFER" | "CASH";
+  paymentType?: "FULL" | "PARTIAL";
   deliveryConfig: DeliveryMethodConfig;
-  courierModalityType: 'AGENCY' | 'HOME' | null;
-  pickupPoint: LockedDelivery['pickupPoint'];
+  courierModalityType: "AGENCY" | "HOME" | null;
+  pickupPoint: LockedDelivery["pickupPoint"];
   pickupDate: Date | null;
   courierConfig: CourierConfig | null;
 }
@@ -109,40 +109,40 @@ export async function validateDeliveryPreTx(
     },
   });
   if (!deliveryConfig?.enabled) {
-    throw new BadRequestException('Método de entrega no disponible');
+    throw new BadRequestException("Método de entrega no disponible");
   }
 
   // COURIER orders now require a seller-defined courier name and modality
   // (issue #99). Validate DTO fields here; the actual courier lookup + lock
   // happens inside the transaction to prevent stale reads.
-  let courierModalityType: 'AGENCY' | 'HOME' | null = null;
-  if (dto.deliveryMethodType === 'COURIER') {
+  let courierModalityType: "AGENCY" | "HOME" | null = null;
+  if (dto.deliveryMethodType === "COURIER") {
     if (!dto.courierName) {
       throw new BadRequestException(
-        'Debes seleccionar un courier para envío a domicilio',
+        "Debes seleccionar un courier para envío a domicilio",
       );
     }
     if (!dto.courierModality) {
       throw new BadRequestException(
-        'Debes seleccionar una modalidad (Agencia o Domicilio)',
+        "Debes seleccionar una modalidad (Agencia o Domicilio)",
       );
     }
     courierModalityType = dto.courierModality;
 
     // Validate modality-specific shipping fields
     const addr = dto.shippingAddress;
-    if (dto.courierModality === 'HOME') {
+    if (dto.courierModality === "HOME") {
       if (!addr?.line1) {
         throw new BadRequestException(
-          'HOME delivery requires a shipping address (line1)',
+          "HOME delivery requires a shipping address (line1)",
         );
       }
       if (!addr?.city) {
-        throw new BadRequestException('HOME delivery requires a city/district');
+        throw new BadRequestException("HOME delivery requires a city/district");
       }
     }
-    if (dto.courierModality === 'AGENCY' && !addr?.agencyName) {
-      throw new BadRequestException('AGENCY delivery requires an agency name');
+    if (dto.courierModality === "AGENCY" && !addr?.agencyName) {
+      throw new BadRequestException("AGENCY delivery requires an agency name");
     }
   }
 
@@ -152,13 +152,13 @@ export async function validateDeliveryPreTx(
   // concurrent seller edit (disable / closedOverride) can't land between
   // validation and order persistence.
   let pickupPointId: string | undefined;
-  if (dto.deliveryMethodType === 'PICKUP') {
+  if (dto.deliveryMethodType === "PICKUP") {
     const hasPoints = await prisma.pickupPoint.count({
       where: { storeId: store.id, enabled: true },
     });
     if (hasPoints > 0) {
       if (!dto.pickupPointId) {
-        throw new BadRequestException('Debes seleccionar un punto de recojo');
+        throw new BadRequestException("Debes seleccionar un punto de recojo");
       }
       pickupPointId = dto.pickupPointId;
     }
@@ -170,7 +170,7 @@ export async function validateDeliveryPreTx(
   // silently dropping a field the client believed it committed to.
   if (dto.pickupDate && !pickupPointId) {
     throw new BadRequestException(
-      'La fecha de recojo solo aplica a pedidos con punto de recojo',
+      "La fecha de recojo solo aplica a pedidos con punto de recojo",
     );
   }
 
@@ -203,12 +203,12 @@ export async function lockAndValidate(
       PickupPoint[]
     >`SELECT * FROM "PickupPoint" WHERE id = ${pickupPointId} FOR UPDATE`;
     if (!point || point.storeId !== store.id || !point.enabled) {
-      throw new BadRequestException('Punto de recojo no disponible');
+      throw new BadRequestException("Punto de recojo no disponible");
     }
     if (point.closedOverride) {
       // A manually closed point has no future date to offer either —
       // matches getPickupAvailability()'s nextAvailableDay: null case.
-      throw new BadRequestException('Punto de recojo no disponible');
+      throw new BadRequestException("Punto de recojo no disponible");
     }
 
     // "Today" means the calendar date in the business timezone
@@ -230,12 +230,12 @@ export async function lockAndValidate(
       const candidate = parsePickupDate(dto.pickupDate);
       if (!candidate) {
         throw new BadRequestException(
-          'La fecha de recojo seleccionada no es válida',
+          "La fecha de recojo seleccionada no es válida",
         );
       }
       if (!isAfterBusinessDate(candidate, businessDate)) {
         throw new BadRequestException(
-          'La fecha de recojo debe ser posterior a la fecha actual',
+          "La fecha de recojo debe ser posterior a la fecha actual",
         );
       }
       if (
@@ -243,7 +243,7 @@ export async function lockAndValidate(
         !point.openDays.includes(candidate.weekday)
       ) {
         throw new BadRequestException(
-          'La fecha de recojo seleccionada no está disponible para este punto',
+          "La fecha de recojo seleccionada no está disponible para este punto",
         );
       }
       pickupDate = new Date(
@@ -251,7 +251,7 @@ export async function lockAndValidate(
       );
     } else if (!openToday) {
       throw new BadRequestException(
-        'Debes seleccionar una fecha de recojo para este punto',
+        "Debes seleccionar una fecha de recojo para este punto",
       );
     }
     pickupPoint = { id: point.id, label: point.label };
@@ -275,7 +275,7 @@ export async function lockAndValidate(
          FOR UPDATE`;
     if (!lockedConfig) {
       throw new BadRequestException(
-        'El courier seleccionado no está disponible para esta tienda',
+        "El courier seleccionado no está disponible para esta tienda",
       );
     }
     courierConfig = lockedConfig;
@@ -292,7 +292,7 @@ export async function reserveItems(
   notifications: NotificationsService,
   store: Store,
   input: ReserveItemsInput,
-  paymentRule: 'STORE_CONFIG' | 'ASSISTED_ORDER_V1' = 'STORE_CONFIG',
+  paymentRule: "STORE_CONFIG" | "ASSISTED_ORDER_V1" = "STORE_CONFIG",
 ) {
   const { deliveryConfig, courierConfig, pickupPoint, pickupDate } = input;
   const messageItems: {
@@ -317,7 +317,7 @@ export async function reserveItems(
     if (
       !product ||
       product.storeId !== store.id ||
-      product.status !== 'PUBLISHED' ||
+      product.status !== "PUBLISHED" ||
       product.deletedAt ||
       product.discontinued
     ) {
@@ -379,7 +379,7 @@ export async function reserveItems(
 
     if (currency && currency !== product.currency) {
       throw new BadRequestException(
-        'No se pueden combinar productos con distinta moneda en un mismo pedido',
+        "No se pueden combinar productos con distinta moneda en un mismo pedido",
       );
     }
     currency = product.currency;
@@ -422,8 +422,8 @@ export async function reserveItems(
   // offered a partial option it shouldn't have, so reject instead of
   // silently re-pricing the order as FULL.
   let requiredAmount = finalAmount;
-  if (input.paymentType === 'PARTIAL') {
-    if (paymentRule === 'ASSISTED_ORDER_V1') {
+  if (input.paymentType === "PARTIAL") {
+    if (paymentRule === "ASSISTED_ORDER_V1") {
       if (
         assistedRequiredAmountCents(
           finalAmount.times(100).toNumber(),
@@ -432,12 +432,12 @@ export async function reserveItems(
         ) === null
       ) {
         throw new BadRequestException(
-          'Los pedidos por courier requieren el pago completo',
+          "Los pedidos por courier requieren el pago completo",
         );
       }
-      if (!input.paymentMethod || input.paymentMethod === 'CASH') {
+      if (!input.paymentMethod || input.paymentMethod === "CASH") {
         throw new BadRequestException(
-          'Selecciona un método electrónico para registrar el adelanto',
+          "Selecciona un método electrónico para registrar el adelanto",
         );
       }
     }
@@ -454,14 +454,14 @@ export async function reserveItems(
     if (
       !paymentConfig ||
       !paymentConfig.enabled ||
-      paymentConfig.method === 'CASH' ||
-      (paymentRule === 'STORE_CONFIG' && paymentConfig.depositPercent >= 100)
+      paymentConfig.method === "CASH" ||
+      (paymentRule === "STORE_CONFIG" && paymentConfig.depositPercent >= 100)
     ) {
       throw new BadRequestException(
-        'Este método de pago no soporta pago parcial',
+        "Este método de pago no soporta pago parcial",
       );
     }
-    if (paymentRule === 'ASSISTED_ORDER_V1') {
+    if (paymentRule === "ASSISTED_ORDER_V1") {
       const amountCents = assistedRequiredAmountCents(
         finalAmount.times(100).toNumber(),
         input.deliveryMethodType,
@@ -469,7 +469,7 @@ export async function reserveItems(
       );
       if (amountCents === null) {
         throw new BadRequestException(
-          'Los pedidos por courier requieren el pago completo',
+          "Los pedidos por courier requieren el pago completo",
         );
       }
       requiredAmount = new Prisma.Decimal(amountCents).div(100);
@@ -493,7 +493,7 @@ export async function reserveItems(
           ...((deliveryConfig.details as Record<string, unknown>) ?? {}),
           pickupPointLabel: pickupPoint.label,
         }
-      : input.deliveryMethodType === 'COURIER'
+      : input.deliveryMethodType === "COURIER"
         ? {
             ...(courierConfig
               ? {

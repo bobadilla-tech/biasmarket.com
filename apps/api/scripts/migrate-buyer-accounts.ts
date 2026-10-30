@@ -76,7 +76,8 @@ async function migrateGroup(
       phone,
       status: "skipped-collision",
       customerCount: customers.length,
-      reason: "Multiple distinct non-null emails on file for this phone — " +
+      reason:
+        "Multiple distinct non-null emails on file for this phone — " +
         "left unmigrated for manual review. Customer ids: " +
         customers.map((c) => c.id).join(", "),
     };
@@ -162,8 +163,8 @@ async function main() {
   }
 
   const merged = results.filter((r) => r.status === "merged");
-  const alreadyMigrated = results.filter((r) =>
-    r.status === "already-migrated"
+  const alreadyMigrated = results.filter(
+    (r) => r.status === "already-migrated",
   );
   const skipped = results.filter((r) => r.status === "skipped-collision");
 

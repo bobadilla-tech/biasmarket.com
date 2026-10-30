@@ -2,14 +2,14 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
+} from "@nestjs/common";
 import {
   computePaymentSummary,
   countsTowardPaid,
-} from '../../../common/payment-summary.js';
-import { PrismaService } from '../../../prisma/prisma.service.js';
-import { OrderRepository } from '../infrastructure/order.repository.js';
-import { OrderEventsService } from './order-events.service.js';
+} from "../../../common/payment-summary.js";
+import { PrismaService } from "../../../prisma/prisma.service.js";
+import { OrderRepository } from "../infrastructure/order.repository.js";
+import { OrderEventsService } from "./order-events.service.js";
 
 const toCents = (amount: number) => Math.round(amount * 100);
 
@@ -31,7 +31,7 @@ export class VoidOrderPaymentUseCase {
     await this.orders.assertOwnership(storeId, userId);
     const voidReason = reason.trim();
     if (!voidReason) {
-      throw new BadRequestException('Indica el motivo de la anulación');
+      throw new BadRequestException("Indica el motivo de la anulación");
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -40,7 +40,7 @@ export class VoidOrderPaymentUseCase {
         WHERE "id" = ${orderId} AND "storeId" = ${storeId}
         FOR UPDATE
       `;
-      if (!lockedOrder) throw new NotFoundException('Orden no encontrada');
+      if (!lockedOrder) throw new NotFoundException("Orden no encontrada");
 
       const order = await tx.order.findFirst({
         where: { id: orderId, storeId },
@@ -51,23 +51,23 @@ export class VoidOrderPaymentUseCase {
           currency: true,
         },
       });
-      if (!order) throw new NotFoundException('Orden no encontrada');
-      if (order.fulfillmentStatus !== 'ORDERING') {
+      if (!order) throw new NotFoundException("Orden no encontrada");
+      if (order.fulfillmentStatus !== "ORDERING") {
         throw new BadRequestException(
-          'Solo se pueden anular pagos antes de iniciar la preparación del pedido',
+          "Solo se pueden anular pagos antes de iniciar la preparación del pedido",
         );
       }
       if (
-        order.paymentStatus === 'CANCELLED' ||
-        order.paymentStatus === 'REJECTED'
+        order.paymentStatus === "CANCELLED" ||
+        order.paymentStatus === "REJECTED"
       ) {
         throw new BadRequestException(
-          'No se pueden anular pagos de una orden cancelada o rechazada',
+          "No se pueden anular pagos de una orden cancelada o rechazada",
         );
       }
-      if (order.paymentStatus === 'VERIFIED') {
+      if (order.paymentStatus === "VERIFIED") {
         throw new BadRequestException(
-          'No se pueden anular pagos de una orden ya verificada',
+          "No se pueden anular pagos de una orden ya verificada",
         );
       }
 
@@ -81,13 +81,13 @@ export class VoidOrderPaymentUseCase {
           voidedAt: true,
         },
       });
-      if (!payment) throw new NotFoundException('Pago no encontrado');
+      if (!payment) throw new NotFoundException("Pago no encontrado");
       if (payment.voidedAt) {
-        throw new BadRequestException('Este pago ya fue anulado');
+        throw new BadRequestException("Este pago ya fue anulado");
       }
       if (!countsTowardPaid(payment)) {
         throw new BadRequestException(
-          'Solo se pueden anular pagos registrados o comprobantes aprobados',
+          "Solo se pueden anular pagos registrados o comprobantes aprobados",
         );
       }
 
@@ -110,17 +110,17 @@ export class VoidOrderPaymentUseCase {
       const hasPendingProof = payments.some(
         (candidate) =>
           candidate.voidedAt == null &&
-          candidate.source === 'BUYER_SUBMITTED' &&
-          candidate.reviewStatus === 'PENDING_REVIEW',
+          candidate.source === "BUYER_SUBMITTED" &&
+          candidate.reviewStatus === "PENDING_REVIEW",
       );
       const paymentStatus =
         toCents(summary.paidAmount) >= toCents(Number(order.requiredAmount))
-          ? 'VERIFIED'
+          ? "VERIFIED"
           : summary.paidAmount > 0
-            ? 'PARTIALLY_PAID'
+            ? "PARTIALLY_PAID"
             : hasPendingProof
-              ? 'PAYMENT_SUBMITTED'
-              : 'PENDING_PAYMENT';
+              ? "PAYMENT_SUBMITTED"
+              : "PENDING_PAYMENT";
 
       await tx.order.update({
         where: { id: orderId },
@@ -131,8 +131,8 @@ export class VoidOrderPaymentUseCase {
       await this.events.record(tx, {
         orderId,
         storeId,
-        type: 'PAYMENT_VOIDED',
-        actor: 'SELLER',
+        type: "PAYMENT_VOIDED",
+        actor: "SELLER",
         payload: {
           amount: Number(payment.amount),
           currency: order.currency,
@@ -143,8 +143,8 @@ export class VoidOrderPaymentUseCase {
         data: {
           actorId: userId,
           storeId,
-          action: 'payment.voided',
-          entityType: 'OrderPayment',
+          action: "payment.voided",
+          entityType: "OrderPayment",
           entityId: paymentId,
           metadata: { orderId, reason: voidReason },
         },
