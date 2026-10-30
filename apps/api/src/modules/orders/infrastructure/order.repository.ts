@@ -257,6 +257,7 @@ export class OrderRepository {
     data: {
       paymentStatus?: PaymentStatus;
       fulfillmentStatus?: FulfillmentStatus;
+      closedAt?: Date;
     },
     tx: Prisma.TransactionClient | PrismaService = this.prisma,
   ) {
