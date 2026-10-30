@@ -1048,29 +1048,32 @@ describe('OrderController.shipping', () => {
       { trackingNumber: 'TRK-OLD', trackingUrl: 'https://old.example/x' },
       { trackingUrl: 'https://new.example/private' },
     ],
-  ])('audits assisted tracking details when %s', async (_label, before, dto) => {
-    tx.order.findFirst.mockResolvedValueOnce({
-      ...before,
-      source: 'VENDOR_ASSISTED',
-    });
+  ])(
+    'audits assisted tracking details when %s',
+    async (_label, before, dto) => {
+      tx.order.findFirst.mockResolvedValueOnce({
+        ...before,
+        source: 'VENDOR_ASSISTED',
+      });
 
-    await controller.updateShipping(storeId, orderId, session, dto as any);
+      await controller.updateShipping(storeId, orderId, session, dto as any);
 
-    expect(events.record).not.toHaveBeenCalled();
-    expect(tx.auditLog.create).toHaveBeenCalledWith({
-      data: {
-        actorId: userId,
-        storeId,
-        action: 'order.tracking_updated',
-        entityType: 'Order',
-        entityId: orderId,
-        metadata: {},
-      },
-    });
-    expect(JSON.stringify(tx.auditLog.create.mock.calls)).not.toMatch(
-      /TRK-OLD|old\.example|new\.example|private/,
-    );
-  });
+      expect(events.record).not.toHaveBeenCalled();
+      expect(tx.auditLog.create).toHaveBeenCalledWith({
+        data: {
+          actorId: userId,
+          storeId,
+          action: 'order.tracking_updated',
+          entityType: 'Order',
+          entityId: orderId,
+          metadata: {},
+        },
+      });
+      expect(JSON.stringify(tx.auditLog.create.mock.calls)).not.toMatch(
+        /TRK-OLD|old\.example|new\.example|private/,
+      );
+    },
+  );
 
   it('does not audit an unchanged assisted tracking value', async () => {
     tx.order.findFirst.mockResolvedValueOnce({
