@@ -568,8 +568,10 @@ describe('assisted orders (e2e)', () => {
     const sharedPhone = `+519${String(randomInt(1e8)).padStart(8, '0')}`;
     const first = await post(body({ customerPhone: sharedPhone })).expect(201);
     const second = await post(body({ customerPhone: sharedPhone })).expect(201);
-    const customerId = first.body.order.customerId as string;
-    expect(second.body.order.customerId).toBe(customerId);
+    const firstRow = await prisma.order.findUniqueOrThrow({ where: { id: first.body.order.id } });
+    const secondRow = await prisma.order.findUniqueOrThrow({ where: { id: second.body.order.id } });
+    const customerId = firstRow.customerId!;
+    expect(secondRow.customerId).toBe(customerId);
 
     await prisma.order.update({
       where: { id: first.body.order.id },
