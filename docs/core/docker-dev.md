@@ -47,9 +47,11 @@ automatically, via a `concurrently`-run pipeline in each service's container:
 
 - `nodemon --legacy-watch` running `turbo run build --filter=...` — rebuilds a
   package's `dist/` shortly after its source changes (scoped to whichever
-  packages that service actually imports, see each `*-dev.sh`). Not `turbo
-watch`: its daemon fails on Docker Desktop bind mounts with "filewatching
-  failed to start: waiting for cookie timed out", which kills the container.
+  packages that service actually imports, see each `*-dev.sh`). Not
+  `turbo
+watch`: its daemon fails on Docker Desktop bind mounts with
+  "filewatching failed to start: waiting for cookie timed out", which kills the
+  container.
 - `web`: Next/Turbopack's own dev server already watches the resolved real path
   of symlinked workspace packages (pnpm symlinks resolve outside
   `node_modules`'s literal path), so a `dist/` rebuild alone is enough — no
