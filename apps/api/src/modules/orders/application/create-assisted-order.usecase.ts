@@ -1,5 +1,10 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import type { Store } from '@biasmarket/db';
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+} from '@nestjs/common';
+import type { Prisma, Store } from '@biasmarket/db';
 import { validatePhone } from '@biasmarket/utils/phone-country';
 import {
   AssistedOrderInvariantError,
@@ -20,6 +25,13 @@ import {
   reserveItems,
   validateDeliveryPreTx,
 } from './order-creation.core.js';
+
+// A seller may create assisted orders for up to five distinct recipients per
+// store in a rolling ten-minute window. Repeated orders for a recipient
+// already seen in that window remain allowed. The check uses the normalized
+// phone already stored on assisted orders; it does not persist or log keys.
+export const ASSISTED_ORDER_RECIPIENT_LIMIT = 5;
+export const ASSISTED_ORDER_RECIPIENT_WINDOW_MS = 10 * 60_000;
 
 // A seller creates an order for a buyer known only by WhatsApp number and gets
 // back a private link. The caller has already verified that `userId` owns
@@ -74,6 +86,7 @@ export class CreateAssistedOrderUseCase {
       order = await this.prisma.$transaction(
         async (tx) => {
           const locked = await lockAndValidate(tx, store, dto, pre);
+          await this.enforceRecipientLimit(tx, store.id, userId, phone);
           const customer = await upsertAssistedCustomer(
             tx,
             store.id,
@@ -181,5 +194,44 @@ export class CreateAssistedOrderUseCase {
       select: { id: true },
     });
     if (existing) throw new DuplicateIdempotencyKeyException(existing.id);
+  }
+
+  private async enforceRecipientLimit(
+    tx: Prisma.TransactionClient,
+    storeId: string,
+    userId: string,
+    normalizedPhone: string,
+  ) {
+    // Serialize only assisted-order admission for this seller. PostgreSQL's
+    // transaction-scoped lock is released on commit/rollback and keeps the
+    // count-and-create decision atomic across API instances.
+    await tx.$executeRaw`
+      SELECT pg_advisory_xact_lock(hashtextextended(${`assisted-order:${storeId}:${userId}`}, 0))
+    `;
+
+    const since = new Date(Date.now() - ASSISTED_ORDER_RECIPIENT_WINDOW_MS);
+    const recentRecipients = await tx.order.findMany({
+      where: {
+        source: 'VENDOR_ASSISTED',
+        storeId,
+        createdByUserId: userId,
+        createdAt: { gte: since },
+        customerPhoneNormalized: { not: null },
+      },
+      select: { customerPhoneNormalized: true },
+      distinct: ['customerPhoneNormalized'],
+    });
+
+    if (
+      recentRecipients.length >= ASSISTED_ORDER_RECIPIENT_LIMIT &&
+      !recentRecipients.some(
+        (recipient) => recipient.customerPhoneNormalized === normalizedPhone,
+      )
+    ) {
+      throw new HttpException(
+        'Límite temporal de nuevos destinatarios para pedidos asistidos',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
   }
 }
