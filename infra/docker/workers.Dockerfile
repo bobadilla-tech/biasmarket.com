@@ -70,8 +70,9 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm-store \
       --reporter=append-only --store-dir=/pnpm-store
 
 # ---------------------------------------------------------------------------
-# runtime: prod image, non-root, only what workers needs at boot — no
-# migrate-on-boot step (that's api's job, workers has no database).
+# runtime: prod image, non-root, only what workers needs at boot. Nothing
+# migrates on boot (infra/vps/deploy.sh runs migrations; workers has no
+# database).
 # ---------------------------------------------------------------------------
 FROM base AS runtime
 ENV NODE_ENV=production

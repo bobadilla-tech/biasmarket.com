@@ -16,14 +16,14 @@ through Sanity.
 From the repository root:
 
 ```bash
-pnpm --filter project-cerise-globe dev        # sanity dev, local studio
-pnpm --filter project-cerise-globe build      # sanity build
-pnpm --filter project-cerise-globe deploy     # sanity deploy (hosted studio)
-pnpm --filter project-cerise-globe lint
-pnpm --filter project-cerise-globe typecheck
+pnpm --filter @biasmarket/sanity dev        # sanity dev, local studio
+pnpm --filter @biasmarket/sanity build      # sanity build
+pnpm --filter @biasmarket/sanity deploy     # sanity deploy (hosted studio)
+pnpm --filter @biasmarket/sanity lint
+pnpm --filter @biasmarket/sanity typecheck
 ```
 
-`project-cerise-globe` is the package name in `package.json`. The package also
+`@biasmarket/sanity` is the package name in `package.json`. The package also
 defines `start` and `deploy-graphql`.
 
 ## How web reads it
