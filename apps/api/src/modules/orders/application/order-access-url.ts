@@ -5,5 +5,7 @@ import { requiredEnv } from '../../../config/env.validation.js';
 // params. Single source of truth for the buyer URL shape.
 export function buildOrderAccessUrl(token: string, storeSlug: string): string {
   const base = requiredEnv('WEB_URL').replace(/\/+$/, '');
-  return `${base}/es/store/${encodeURIComponent(storeSlug)}/pedido/${encodeURIComponent(token)}`;
+  return `${base}/es/store/${encodeURIComponent(storeSlug)}/pedido/${encodeURIComponent(
+    token,
+  )}`;
 }

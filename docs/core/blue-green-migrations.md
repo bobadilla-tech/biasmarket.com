@@ -1,15 +1,18 @@
-# Blue/green deploys, VPS provisioning, and migration discipline
+# Blue/green deploy mechanics and migrations
 
-Covers the only supported production deploy flow: GitHub push to `main` →
-`ci.yml` → `cd.yml` builds and pushes images to GHCR → SSHes to the VPS →
-`infra/vps/deploy.sh` deploys the inactive color, health-checks it, smoke-tests
-it, canary-switches Caddy, verifies, then fully switches — leaving the previous
-color running as a fast rollback target until a later scheduled cleanup. Full
-design rationale (7-lens multi-agent review, every HIGH finding and how it was
-resolved) lives in
+How a production deploy runs once the server exists: the only supported flow is
+a GitHub push to `main` → `ci.yml` → `cd.yml` builds and pushes images to GHCR →
+SSHes to the VPS → `infra/vps/deploy.sh` deploys the inactive color,
+health-checks it, smoke-tests it, canary-switches Caddy, verifies, then fully
+switches — leaving the previous color running as a fast rollback target until a
+later scheduled cleanup. This doc also holds the migration discipline
+(expand/contract). Server setup and the first production cutover are in
+[provisioning.md](provisioning.md); the CI/CD chain, variables and state files
+are in [deploy.md](deploy.md). Full design rationale (7-lens multi-agent review,
+every HIGH finding and how it was resolved) lives in
 [`.artifacts/2026/08/20260810--bluegreen-zero-downtime-deploy/plan.md`](../../.artifacts/2026/08/20260810--bluegreen-zero-downtime-deploy/plan.md)
-— this doc is the operator-facing "how it actually works and how to run it"
-companion, not a restatement of that plan's reasoning.
+as history — this doc is the operator-facing "how it actually works and how to
+run it" companion, not a restatement of that plan's reasoning.
 
 ## How a deploy actually runs
 
@@ -49,41 +52,24 @@ the actual implementation, this is the summary):
    retry with backoff.
 8. Write a weighted-canary Caddy config (10% to the candidate), reload, hold
    briefly, re-run smoke tests against the **public** domain, 3x retry.
-
-   `state/current_color`/`current_sha`/`rollback_target`, append to
-   `releases/history.log`. Previous color is left running as the rollback target
-   — `deploy.sh` also schedules its own cleanup of it ~30 minutes later (see
+9. After the canary is verified, write the 100% candidate Caddy config, reload,
+   then commit `state/current_color`/`current_sha`/`rollback_target` and append
+   to `releases/history.log`. `deploy.sh` runs no further smoke test after this
+   full switch. The previous color is left running as the rollback target;
+   `deploy.sh` also schedules its own cleanup of it ~30 minutes later (see
    "Scheduled cleanup" below), best-effort and non-fatal to the deploy if
    scheduling itself fails.
-
-9. On any failure at steps 4–8: tear down **only** the candidate; the previous
-   color and its Caddy routing are never touched.
-10. Always, on every exit path: write `state/last_deploy_result` (SHA, outcome,
+10. On any failure at steps 4–9: tear down **only** the candidate; the previous
+    color and its Caddy routing are never touched.
+11. Always, on every exit path: write `state/last_deploy_result` (SHA, outcome,
     phase, timestamp — nothing from `env/*.env`).
-11. On success only, right after committing state (step 8): self-schedule the
-    old color's cleanup 30 minutes out — `setsid`-detached, same shape as the
-    SSH dispatcher's own `launch()` (`lib/cleanup_schedule.sh`'s
-    `schedule_cleanup`), superseding (`cancel_scheduled_cleanup`) any
-    still-pending schedule from a prior deploy first. Never fatal to the deploy
-    itself if scheduling fails — see the plan doc referenced below. Three state
-    files, same "who/what/since when" spirit as `state/deploy.lock.meta`, none
-    of them secret, none deleted on normal completion (left as a breadcrumb):
-    - `state/scheduled_cleanup.pid` — the backgrounded process's PID.
-    - `state/scheduled_cleanup.meta` — `pid=`, `scheduled_by=<sha>`,
-      `scheduled_at=`/`fires_at=` (UTC), and
-      `rollback_target_at_schedule=<blue|green>`, the color this schedule
-      intends to tear down. **This last field is a snapshot, not authoritative**
-      — the cleanup that actually fires re-reads `state/rollback_target` fresh
-      (step 12), so if a `--rollback` happened in between, the real target can
-      differ from what's recorded here.
-    - `state/scheduled_cleanup.log` — the backgrounded process's own
-      stdout/stderr, overwritten fresh on every new schedule.
-
-    A stray orphaned `flock` process transiently visible in `ps` shortly after
-    one schedule supersedes another is expected (a `kill -TERM` racing a process
-    already blocked inside `acquire_deploy_lock`), not a symptom to chase.
-
-12. `deploy.sh --cleanup` (whether fired by step 11's schedule, the hourly
+12. On success only, right after committing state (step 9): self-schedule the
+    old color's cleanup 30 minutes out (`lib/cleanup_schedule.sh`'s
+    `schedule_cleanup`), superseding any still-pending schedule from a prior
+    deploy first. Never fatal to the deploy itself if scheduling fails. The
+    mechanism and its three state files are described in
+    [Scheduled cleanup](#scheduled-cleanup) below.
+13. `deploy.sh --cleanup` (whether fired by step 12's schedule, the hourly
     `cleanup-fallback.yml`, or run manually) always re-reads
     `state/current_color`/`state/rollback_target` fresh at invocation time —
     never trusts anything captured when it was scheduled — and no-ops safely if
@@ -92,6 +78,11 @@ the actual implementation, this is the summary):
     `rollback_target` to whatever's now correctly benched, and whichever cleanup
     eventually fires tears down the right color regardless of what was true when
     it was scheduled.
+
+`deploy.sh` reports each phase with phase and total elapsed seconds. Health
+waits also emit a bounded progress line every 15 seconds, so image pulls,
+migrations, and container health checks are visibly active without inventing a
+misleading percentage.
 
 Full design, including the state-machine edge cases (VPS reboot mid-window, two
 deploys landing in rapid succession, `deploy.sh` itself being rsynced
@@ -287,372 +278,12 @@ needed) for at least one full deploy cycle — the schema only becomes required 
 a later deploy, once you're confident no old-color consumer is still in
 rotation.
 
-## VPS provisioning (one-time, or after a VPS rebuild)
-
-Production runs on a Contabo Cloud VPS (Ubuntu 26.04, x86_64) provisioned with
-Terraform from [`infra/terraform/`](../../infra/terraform/). Terraform plus
-cloud-init perform steps 1-6 below, so a normal rebuild is `terraform apply`
-followed by steps 7-8 and the cutover:
-
-| Step | What it does                         | Done by (Terraform path)                                                                 |
-| ---- | ------------------------------------ | ---------------------------------------------------------------------------------------- |
-| 1    | packages, Docker, `deploy` user      | `cloud-init.yaml.tftpl` (`user_data`)                                                    |
-| 2    | `rrsync`                             | cloud-init symlink: on Ubuntu 26.04 `rsync` installs `/usr/bin/rrsync` (no `rrsync.gz`)  |
-| 3    | the two deploy SSH keys              | `tls_private_key` resources in `contabo.tf`                                              |
-| 4    | restricted `authorized_keys`         | cloud-init, using the public keys from step 3                                            |
-| 5    | pin `known_hosts`                    | the server's host key is generated by Terraform and injected, so it is known before boot |
-| 6    | GitHub secrets/variables/environment | `github.tf`                                                                              |
-
-Changing `user_data`, `image_id` or the SSH keys on the instance **reinstalls
-the server**, see the guide. The numbered steps below stay as the manual
-reference (for another provider, or to understand what cloud-init does); they
-were written for Ubuntu 24.04 on Oracle Ampere A1 (arm64) and the 26.04 / x86_64
-differences are noted where they matter. Run manual steps in order; each depends
-on the one before it. Commands prefixed `# local:` run on your own machine, not
-the VPS.
-
-Directory layout this builds toward, under a dedicated low-privilege `deploy` OS
-user (Docker-group member — **this is root-equivalent in practice**, not a
-containment boundary; the real security boundary is SSH-key secrecy and
-CI-runner integrity, see the plan doc's decision 10):
-
-```
-/home/deploy/biasmarket/
-  docker-compose.yml, Caddyfile, deploy.sh, lib/*.sh, bin/*.sh   <- synced by cd.yml (rsync, key A)
-  env/{shared,blue.runtime,green.runtime,watchdog}.env            <- real secrets, NEVER synced/committed
-  caddy/active/{api,web}.caddy                                    <- generated by deploy.sh, NEVER synced/committed
-  state/                                                          <- deploy.sh's own state, NEVER synced/committed
-  releases/                                                       <- history.log + pre-migration snapshots
-```
-
-### Step 1 — packages, Docker, the `deploy` user
-
-```bash
-sudo apt-get update
-sudo apt-get install -y rsync openssh-server curl
-
-# Docker Engine + Compose plugin — same install this repo already documents
-# in deploy.md step 3:
-curl -fsSL https://get.docker.com | sudo sh
-# (see https://docs.docker.com/engine/install/ubuntu/ for the manual/apt-repo
-# alternative if you'd rather not pipe a script to sh)
-
-sudo useradd --create-home --shell /bin/bash deploy
-sudo usermod -aG docker deploy
-newgrp docker   # only needed in your own shell if you're testing as `deploy` interactively
-
-sudo mkdir -p /home/deploy/biasmarket/{env,caddy/active,state,releases}
-sudo chown -R deploy:deploy /home/deploy/biasmarket
-```
-
-### Step 2 — install `rrsync`
-
-> Ubuntu 26.04: the `rsync` package (3.4.1) already installs `/usr/bin/rrsync`
-> and there is no `rrsync.gz`. Skip the `gunzip` below and run
-> `sudo ln -sf /usr/bin/rrsync /usr/local/bin/rrsync` so the `authorized_keys`
-> lines keep working unchanged. The gunzip form applies to Ubuntu 24.04.
-
-Ubuntu's `rsync` package ships `rrsync` gzipped, not on `PATH` — unpack it once
-([Ubuntu manpage](https://manpages.ubuntu.com/manpages/noble/man1/rrsync.1.html)):
-
-```bash
-sudo sh -c 'gunzip -c /usr/share/doc/rsync/scripts/rrsync.gz > /usr/local/bin/rrsync'
-sudo chmod 755 /usr/local/bin/rrsync
-rrsync --help   # confirm it runs
-```
-
-### Step 3 — generate the two deploy SSH keys
-
-Both ed25519, both **without a passphrase** (used non-interactively by CI).
-Generate them somewhere you control — your own machine is fine, they never need
-to leave it except as pasted GitHub secrets:
-
-```bash
-# local:
-ssh-keygen -t ed25519 -N "" -C "biasmarket-deploy-key-a-rsync" -f biasmarket_key_a
-ssh-keygen -t ed25519 -N "" -C "biasmarket-deploy-key-b-dispatch" -f biasmarket_key_b
-```
-
-This produces 4 files: `biasmarket_key_a[.pub]`, `biasmarket_key_b[.pub]`. The
-two **private** key files' contents go into GitHub secrets (Step 6). The two
-**public** key files go into the VPS's `authorized_keys` (next step).
-
-### Step 4 — restrict both keys via `authorized_keys`
-
-A single forced-command key restricted to "run deploy.sh" would silently break
-the rsync step (`rrsync` and a `command=` dispatcher can't be composed on one
-key) — that's why there are two. As the `deploy` user on the VPS:
-
-```bash
-sudo -iu deploy
-mkdir -p ~/.ssh && chmod 700 ~/.ssh
-```
-
-Append two lines to `~/.ssh/authorized_keys` (paste each `.pub` file's content
-after the `command=...` prefix shown — see
-[sshd's `AUTHORIZED_KEYS FILE FORMAT`](https://man.openbsd.org/sshd#AUTHORIZED_KEYS_FILE_FORMAT)
-for what these options mean):
-
-```
-command="/usr/local/bin/rrsync /home/deploy/biasmarket/",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-ed25519 AAAA...key-a-contents... biasmarket-deploy-key-a-rsync
-command="/home/deploy/biasmarket/bin/ssh-deploy-dispatcher.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-ed25519 AAAA...key-b-contents... biasmarket-deploy-key-b-dispatch
-```
-
-```bash
-chmod 600 ~/.ssh/authorized_keys
-exit   # back to your own sudo-capable user
-```
-
-Key B's target script (`/home/deploy/biasmarket/bin/ssh-deploy-dispatcher.sh`)
-won't exist yet — it arrives via key A's first rsync (`cd.yml`'s
-`sync-and-deploy` job, or a manual first sync, see Step 8). Make it executable
-once it lands:
-`sudo -u deploy chmod +x /home/deploy/biasmarket/bin/ssh-deploy-dispatcher.sh`.
-The dispatcher script itself documents its exact allowlist (see the file's
-header comment) — it never `eval`s `$SSH_ORIGINAL_COMMAND`, only matches it
-against anchored regexes for the handful of literal shapes `cd.yml` sends.
-
-### Step 5 — pin `known_hosts`
-
-Capture once, **verified out-of-band via your provider's console** (Contabo: the
-VNC console in the customer panel; not needed on the Terraform path, where the
-host key is generated by Terraform and known in advance) (not blind
-first-`ssh-keyscan` trust — an attacker in a position to MITM the very first
-connection is exactly the threat model host-key pinning exists for):
-
-```bash
-# local:
-ssh-keyscan -t ed25519 <vps-ip> > known_hosts_candidate
-cat known_hosts_candidate
-```
-
-Then, separately, open the VPS's console (Contabo: VNC in the customer panel),
-log in, run `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub`, and confirm the
-fingerprint matches `known_hosts_candidate` before trusting it. The verified
-file's contents become the `DEPLOY_SSH_KNOWN_HOSTS` GitHub secret (Step 6).
-
-### Step 6 — GitHub: secrets, variables, the `production` environment
-
-Create the environment first — Settings → Environments → New environment → name
-it `production`
-([GitHub docs](https://docs.github.com/en/actions/how-tos/manage-environments/create-environment)).
-`cd.yml`'s `sync-and-deploy` job and `cleanup-fallback.yml`'s job both declare
-`environment: production`, which is what makes environment-scoped secrets the
-right place (and gives you an optional required-reviewers approval gate for free
-if you want one later).
-
-Inside that environment (Settings → Environments → `production` → add secret —
-[secrets docs](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions)):
-
-| Name                      | Value                                        |
-| ------------------------- | -------------------------------------------- |
-| `DEPLOY_SSH_HOST`         | VPS hostname/IP                              |
-| `DEPLOY_SSH_USER`         | `deploy`                                     |
-| `DEPLOY_SSH_KNOWN_HOSTS`  | Contents of the verified file from Step 5    |
-| `DEPLOY_SSH_KEY_RSYNC`    | Contents of `biasmarket_key_a` (private key) |
-| `DEPLOY_SSH_KEY_DISPATCH` | Contents of `biasmarket_key_b` (private key) |
-
-Repo-level, Settings → Secrets and variables → Actions → **Variables** tab, not
-Secrets
-([variables docs](https://docs.github.com/en/actions/learn-github-actions/variables))
-— `NEXT_PUBLIC_API_URL`/`NEXT_PUBLIC_SENTRY_DSN` are baked into the `web` image
-as build ARGs (see `infra/docker/web.Dockerfile`) and are already public,
-shipped in every browser bundle, so they don't belong alongside genuinely
-sensitive values:
-
-| Name                     |
-| ------------------------ |
-| `NEXT_PUBLIC_API_URL`    |
-| `NEXT_PUBLIC_SENTRY_DSN` |
-
-Set both before the first `cd.yml` run that builds `web`.
-
-### Step 7 — GHCR package visibility (one-time, manual, after the first build)
-
-`cd.yml`'s `build-push` job needs to run once (any push to `main`) before these
-packages exist. After that first successful run creates the 3 packages
-(`biasmarket-api`, `biasmarket-web`, `biasmarket-workers`), set each to
-**public** visibility — this does **not** auto-inherit from the repo being
-public
-([GitHub docs](https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility)):
-
-1. `https://github.com/orgs/bobadilla-tech/packages` (or
-   `https://github.com/bobadilla-tech?tab=packages` if it's a user account, not
-   an org) → click each of the 3 packages.
-2. Package settings (right sidebar) → Danger Zone → Change visibility → Public.
-
-This is what lets the VPS pull images with zero registry credentials. If you
-need to keep them private instead, `deploy.sh`/the compose file would need a
-`docker login` step added on the VPS with a PAT — not the default path, not
-implemented here.
-
-### Step 8 — first sync, env files, systemd units, Kuma monitors
-
-With keys and secrets in place, either push to `main` (lets `cd.yml` do the
-first rsync automatically) or sync once by hand to bootstrap faster:
-
-```bash
-# local, using key A directly (bypasses CI for a one-time manual bootstrap):
-rsync -az \
-  --exclude 'env/*.env' \
-  --exclude 'state/' \
-  --exclude 'caddy/active/*.caddy' \
-  --exclude 'releases/' \
-  -e "ssh -i biasmarket_key_a -o StrictHostKeyChecking=yes" \
-  infra/vps/ deploy@<vps-ip>:.
-```
-
-Then, on the VPS as `deploy` (`sudo -iu deploy`, from
-`/home/deploy/biasmarket`):
-
-```bash
-chmod +x bin/ssh-deploy-dispatcher.sh bin/migration-watchdog.sh deploy.sh
-
-# populate real env files — see each .example's header comment for what
-# goes in it. These are production secrets and must be provisioned securely;
-# they are never committed or synced by CD.
-cp env/shared.env.example env/shared.env       # then edit
-cp env/blue.runtime.env.example env/blue.runtime.env
-cp env/green.runtime.env.example env/green.runtime.env
-cp env/watchdog.env.example env/watchdog.env   # KUMA_MIGRATION_PUSH_URL comes after Kuma is up, see below
-```
-
-Install the migration-watchdog systemd units:
-
-```bash
-sudo cp /home/deploy/biasmarket/systemd/biasmarket-migration-watchdog.{service,timer} /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now biasmarket-migration-watchdog.timer
-sudo systemctl status biasmarket-migration-watchdog.timer   # should show "active (waiting)"
-```
-
-This timer is deliberately **not** part of `deploy.sh` itself — a wedged deploy
-must not be able to silence its own stuck-migration alarm. If it later fails
-silently, check with:
-`sudo journalctl -u biasmarket-migration-watchdog.service --since "10 min ago"`.
-
-`uptime-kuma` itself only comes up as part of the
-[first production cutover](#first-production-cutover-t11) below
-(`deploy.sh --bootstrap` starts it alongside the other always-on infra services,
-before the `blue` color) — so `scripts/setup-kuma.ts` can't be run until that's
-done. Come back to this once `--bootstrap` has completed: run it from your own
-machine or the VPS, wherever you have `pnpm`/`node` and network access to
-`https://status.biasmarket.com`:
-
-```bash
-KUMA_USERNAME=admin KUMA_PASSWORD='<pick or reuse the existing password>' node scripts/setup-kuma.ts
-```
-
-Creates/updates: 4 static per-color internal monitors
-(`api-blue`/`api-green`/`web-blue`/`web-green`, replacing the two bare
-`api`/`web` hostnames that stop resolving once only the colored services exist),
-the external API/Web monitors (unchanged), DB/MinIO (unchanged, no color split),
-and the new `migration_pending watchdog` push monitor. The script prints that
-push monitor's URL on creation — copy it into
-`/home/deploy/biasmarket/env/watchdog.env`'s `KUMA_MIGRATION_PUSH_URL` on the
-VPS, then `sudo systemctl restart biasmarket-migration-watchdog.timer` to pick
-it up. See [`incident-response.md`](incident-response.md) for what fires when it
-misses a heartbeat. Re-run this script again after any VPS rebuild.
-
 ## First production cutover (T11)
 
-Manual, supervised, during a low-traffic window — the one deliberate exception
-to "no maintenance windows needed" in this whole design, since it's also the
-first real end-to-end validation of the mechanism against production data.
-
-Gate on all of (VPS provisioning Steps 1–8 above, in order):
-
-- [ ] `env/shared.env` populated with the reviewed production secrets. See
-      `infra/vps/env/shared.env.example`'s header comment; never generate or
-      commit production secrets from a local dev env file.
-- [ ] `infra/vps/docker-compose.yml`'s first line is `name: biasmarket` (verify
-      you haven't accidentally edited this).
-- [ ] Two SSH keys provisioned, `known_hosts` pinned, GitHub secrets/variables
-      set (Steps 3–6).
-- [ ] GHCR packages public, or a documented alternative in place (Step 7 — note
-      this needs at least one `cd.yml` run first, so it's normally done right
-      after the first `main` push post-setup, before this cutover).
-
-Then, on the VPS as the `deploy` user, from `/home/deploy/biasmarket` (already
-synced by an initial manual rsync, or a first `cd.yml` run — either way,
-`--bootstrap` only works once, before `state/current_color` exists):
-
-```bash
-./deploy.sh --bootstrap <current main HEAD sha>
-```
-
-Immediately after `--bootstrap` succeeds, finish Step 8's Kuma setup
-(`scripts/setup-kuma.ts`, then paste the push monitor URL into
-`env/watchdog.env` and restart the watchdog timer) — this is the earliest point
-it can run, since `uptime-kuma` only just came up.
-
-Verify:
-
-```bash
-  docker volume ls | grep '^local\s*biasmarket_'   # production volumes
-curl -I https://biasmarket.com                    # 200
-curl https://api.biasmarket.com/api/health         # {"status":"ok",...}
-```
-
-### Bootstrap lessons and operational deviations
-
-The first production bootstrap (on Oracle, before the move to Contabo) exposed a
-few details worth making explicit:
-
-- The forced rsync key uses
-  `command="/usr/local/bin/rrsync /home/deploy/biasmarket/"`. With this
-  restriction, the rsync destination must be relative: `deploy@<vps-ip>:.`.
-  Passing `/home/deploy/biasmarket/` makes `rrsync` try to resolve
-  `/home/deploy/biasmarket/home/deploy/biasmarket` and fails. The CD workflow
-  uses `:.` for the same reason.
-- Run operator commands with a single login-shell command, for example
-  `sudo -iu deploy bash -lc 'cd /home/deploy/biasmarket && ./deploy.sh --bootstrap <sha>'`.
-  Commands typed after an interactive `sudo -iu deploy` are easy to run in the
-  wrong shell or directory.
-- First deploy on a never-deployed server: `cd.yml`'s staleness guard SSHes with
-  the dispatch key before the rsync step has delivered
-  `bin/ssh-deploy-dispatcher.sh`. The guard treats ssh exit `127` (script not
-  installed yet) as "first deploy, skip the ancestry check", so the rsync step
-  installs everything on that first run; a connection failure (exit `255`) or
-  any other error still fails the job. That first CD run still ends red at the
-  last step (`deploy.sh` refuses with "never been bootstrapped"), by design:
-  `--bootstrap` is manual-only. Then run `--bootstrap <sha>` yourself. (Before
-  this guard existed, the first run failed earlier and needed a manual first
-  sync.)
-- If you ever sync by hand, do it from Linux (or a container), not macOS:
-  `/usr/bin/rsync` on macOS is Apple's openrsync, which the Python `rrsync` on
-  Ubuntu 26.04 rejects (`invalid rsync-command syntax or options`). Example:
-  `docker run --rm -v "$PWD/infra/vps":/src:ro ... ubuntu:24.04` with `rsync`
-  and `openssh-client` installed.
-- MinIO no longer publishes images on Docker Hub, and `quay.io/minio/*` now
-  returns 401 for anonymous pulls. Compose pins Coolify's rebuild
-  `ghcr.io/coollabsio/minio:RELEASE.2025-10-15T17-29-55Z` (digest-pinned, same
-  ref as `scripts/ci/e2e-images.sh`) for both the `minio` server and
-  `minio-init` (`mc` is in that image). A stale `minio/minio` or Quay tag fails
-  bootstrap on a fresh machine.
-- Point DNS at the new VPS before `--bootstrap`, so Caddy can complete ACME
-  issuance as soon as it starts.
-- The private key and public key must be one matching pair. If a key is
-  regenerated, replace both its public line in `authorized_keys` and its
-  corresponding GitHub secret. Never paste private key contents into chat, logs,
-  commits, or issue reports; rotate any key that was exposed.
-- `env/shared.env`, `env/blue.runtime.env`, `env/green.runtime.env`, and
-  `env/watchdog.env` are intentionally absent from rsync and must be created on
-  the VPS before bootstrap from the reviewed production secret values.
-- An apt lock held by another `apt-get` process is not fixed by deleting the
-  lock file. Wait for the package operation to finish and retry if needed.
-- A `Found orphan containers` warning means an unexpected Compose project is
-  present. Stop and investigate it; do not use `--remove-orphans` blindly.
-
-`deploy.sh` reports each phase with phase and total elapsed seconds. Health
-waits also emit a bounded progress line every 15 seconds, so image pulls,
-migrations, and container health checks are visibly active without inventing a
-misleading percentage.
-
-There is no supported legacy production stack. If blue/green rollback is not
-enough, recover manually using the same `infra/vps/docker-compose.yml`,
-`infra/vps/Caddyfile`, and `deploy.sh` files used by CD. Never start a second
-Compose project against the production volumes.
+Moved to [provisioning.md](provisioning.md#first-production-cutover-t11): the
+gate checklist, the `deploy.sh --bootstrap` command, the verify block and the
+bootstrap lessons. Server provisioning (Terraform, cloud-init and the manual
+steps) lives there too.
 
 ## Manual operations reference
 
@@ -667,8 +298,20 @@ Compose project against the production volumes.
 ./deploy.sh --cleanup                                       # tear down the sidelined color now
 ./deploy.sh --print-current-sha                             # read-only
 ./deploy.sh --wait-for-result <sha> [timeout-seconds]        # read-only, blocks
-./deploy.sh --bootstrap <sha>                                # from-scratch/DR only
+./deploy.sh --bootstrap <sha>                                # first cutover only, see provisioning.md
 ```
+
+`--bootstrap` refuses to run once `state/current_color` exists, so it is not a
+disaster-recovery shortcut on a live server; for recovery from a lost server see
+[operations.md](operations.md#restore).
 
 See [`incident-response.md`](incident-response.md) for the rollback runbook and
 what happens when a deploy gets stuck.
+
+## Related
+
+- [deploy.md](deploy.md) for the CI/CD chain, variables, state files and the
+  runtime layout.
+- [provisioning.md](provisioning.md) for server setup and the first cutover.
+- [operations.md](operations.md) for the shared services and restore.
+- [incident-response.md](incident-response.md) for rollback and alerts.

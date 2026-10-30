@@ -5,6 +5,48 @@ keep it honest. `CI Success` is the only required check; it fails if any
 path-filtered job that should run did not succeed
 (`scripts/ci/check-ci-success.sh`).
 
+## Workflows
+
+| Workflow                                              | Triggers                                                                | What it does                                                                                                                                                                                                       |
+| ----------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ci.yml` (CI)                                         | push to `main` (not markdown-only), every pull request, manual dispatch | The jobs in the next section. Concurrent runs for the same ref cancel the older one.                                                                                                                               |
+| `cd.yml` (CD)                                         | completion of a CI run                                                  | Deploys only a successful CI `push` run on `main` from this repository: a gate job, a build-and-push matrix (`api`, `web`, `workers` images to GHCR), then sync and deploy to the VPS. See [deploy.md](deploy.md). |
+| `cleanup-fallback.yml`                                | hourly cron, manual dispatch                                            | Runs `deploy.sh --cleanup` over SSH as a backstop for the server-side scheduled cleanup; a no-op unless a cleanup is due. See [blue-green-migrations.md](blue-green-migrations.md#scheduled-cleanup).              |
+| `dependabot-automerge.yml`                            | pull requests opened, reopened or updated                               | For Dependabot PRs only, enables auto-merge (squash) on patch and minor updates. The merge still waits for the required `CI Success` check.                                                                        |
+| `mobile-release.yml`                                  | a published release, manual dispatch                                    | Builds the mobile app for Android and iOS and attaches the outputs to the release. See [mobile-release.md](mobile-release.md).                                                                                     |
+| `.github/actions/deploy-ssh-setup` (composite action) | used by `cd.yml` and `cleanup-fallback.yml`                             | Writes the pinned `known_hosts`, the two restricted deploy keys and SSH keepalive settings, and exports the host and user to later steps.                                                                          |
+
+## Jobs in `ci.yml`
+
+- `detect-changes` computes one path-filter output per job below (the filter
+  list lives in the `filters:` block of that job).
+- One job per workspace that has a `package.json` runs only when its filter
+  matches: `api`, `web`, `mobile`, `workers`, `db`, `i18n`, `queue`, `types`,
+  `design-tokens`, `utils`, `validation`, `query`, `sanity`. Which steps each
+  runs is in the matrix below.
+- `hygiene` always runs: the workspace-scripts guard and its tests, `actionlint`
+  over `.github/workflows` (pinned and checksum-verified by
+  `scripts/ci/install-actionlint.sh`), and `shellcheck` over `scripts/ci/*.sh`.
+  Production scripts under `infra/vps` are deliberately not shell-checked here.
+- `e2e` (API E2E) boots the API and workers against real Postgres, Redis and
+  MinIO started by `scripts/ci/e2e-datastores.sh` and `minio-e2e.sh`. It runs on
+  every push to `main`, on pull requests whose changes match the `api_e2e`
+  filter, and on a manual dispatch that sets `run_e2e`. It uploads logs as an
+  artifact when it fails. It never sets `continue-on-error`, so a red E2E run
+  blocks `CI Success` and therefore CD.
+- `web-e2e` (accessibility) builds and starts the API and web apps, seeds, and
+  runs the browser accessibility and keyboard smoke tests with Playwright
+  (`scripts/ci/web-e2e.sh`). It is filtered by `web_e2e`.
+- `migration-safety` runs on pull requests that change `packages/db`. If a new
+  migration contains destructive statements
+  (`scripts/ci/check-destructive-migrations.sh`) it lists them in the job
+  summary and the job turns red, so the author sees it before merge. It is not
+  in `ci-success.needs`, so it does not block merging: a destructive migration
+  can be legitimate (see the expand/contract rules in
+  [blue-green-migrations.md](blue-green-migrations.md)).
+- `ci-success` (`CI Success`) always runs and fails if any job that should have
+  run did not succeed.
+
 ## Per-workspace matrix
 
 | Workspace                               | lint          | typecheck | tests + coverage (Codecov flag) |
@@ -20,9 +62,10 @@ path-filtered job that should run did not succeed
 | `packages/design-tokens`                | root config   | yes       | `test:cov`, `design-tokens`     |
 | `packages/db`, `i18n`, `queue`, `query` | root config   | yes       | none (no tests yet)             |
 
-Every workspace defines `lint` and `typecheck`; `pnpm turbo run lint` must print
-`Tasks: N successful, N total` with N equal to the number of `package.json`
-files in `apps/*` and `packages/*` (never "No tasks were executed").
+Every workspace defines `lint` and `typecheck`; `pnpm turbo run lint` must
+report as many successful tasks as there are workspaces (one per directory with
+a `package.json` under `apps/` and `packages/`) and never "No tasks were
+executed".
 
 ## Lint
 
@@ -48,11 +91,14 @@ files in `apps/*` and `packages/*` (never "No tasks were executed").
 
 - Every vitest config sets a literal `coverage.include` (so files no test loads
   count) and `coverage.thresholds`, a hard gate: a regression fails the job and
-  therefore `CI Success`. Floors are `floor(CI-measured - 3)` per metric.
+  therefore `CI Success`. The floors live in each workspace's
+  `vitest.config.ts`; they are set from CI-measured coverage and are not
+  repeated here because the numbers change.
 - `apps/mobile` measures only the three logic files that have tests
   (`session-storage`, `cart-storage`, `pagination`); the UI is untested, so its
-  floor means "no regression". `packages/types` gates `lines` only (35
-  statements, generated code deliberately unmeasured).
+  floor means "no regression". The `types` workspace gates `lines` only (the
+  value is in `packages/types/vitest.config.ts`); generated code is deliberately
+  unmeasured.
 - turbo `test:cov` has `outputs: ["coverage/**"]` so a cache hit restores
   `lcov.info`. New upload steps are preceded by
   `test -f <pkg>/coverage/lcov.info`.
@@ -118,6 +164,36 @@ suite stays authoritative for rules; flows cover what a person sees.
   WhatsApp links, the KoreaLexa pilot, seller-side Google login and iOS Safari
   same-site behavior.
 
+### Extra guards
+
+Besides the `hygiene` scripts, three scripts under `scripts/ci/` keep committed
+artifacts and migrations honest:
+
+- `check-openapi-drift.sh` (in the `api` job): regenerates the OpenAPI spec and
+  fails if it differs, ignoring key order, from the committed
+  `apps/api/openapi.json`.
+- `check-types-sdk-drift.sh` (in the `types` job): regenerates the Orval SDK in
+  `packages/types/generated` and fails if the result differs from what is
+  committed.
+- `check-destructive-migrations.sh` (the `migration-safety` job above).
+
+## Changing the API contract
+
+The OpenAPI spec and the generated SDK are committed, so `web` can build and
+typecheck without booting the API. After changing a controller or a response DTO
+of a migrated module:
+
+1. `pnpm --filter api generate:openapi` (builds the API and writes
+   `apps/api/openapi.json`).
+2. `pnpm --filter @biasmarket/types generate` (regenerates
+   `packages/types/generated/**` with Orval, whose version is pinned).
+3. Commit both diffs together with the code change.
+
+If you forget, `check-openapi-drift.sh` or `check-types-sdk-drift.sh` fails the
+PR and prints the commands above. Never edit `packages/types/generated/**` or
+`apps/api/openapi.json` by hand. Details on the SDK shape are in
+[`apps/web/AGENTS.md`](../../apps/web/AGENTS.md).
+
 ## Adding a path-filtered job (wiring list)
 
 A new path-filtered job must be added in seven places, in one PR: (1) the
@@ -128,9 +204,24 @@ in a filter key makes the script fail on every run and blocks CD. The always-run
 `hygiene` job has no changed output; it only has `HYGIENE_RESULT`. Add
 `eslint.config.mjs` and `scripts/lint-changed-files.mjs` to package filters.
 
+Two things are special-cased and do not follow the list above exactly: the `e2e`
+job's result is checked against an expectation derived from the event type and
+the `api_e2e` output rather than a plain changed/skipped pair
+(`check-ci-success.sh`), and `web-e2e` is an ordinary filtered job with its own
+`web_e2e` filter. Also, `mobile-release.yml` reads the `mobile` filter out of
+`ci.yml` at the release tag (`scripts/ci/mobile-release-changes.sh`), so
+renaming or restructuring that filter changes which releases build the mobile
+app.
+
 ## Emergency path
 
 `CI Success` gates `cd.yml` (push to `main` only). If a flaky floor or a
 `hygiene` regression blocks a needed deploy, fix or lower the floor in a PR; the
-supervised manual path is `infra/vps/deploy.sh` (see `docs/core/deploy.md`). The
-ruleset has admin bypass, so `CI Success` is not an absolute barrier.
+supervised manual path is `infra/vps/deploy.sh` (see [deploy.md](deploy.md)).
+The ruleset has admin bypass, so `CI Success` is not an absolute barrier.
+
+## Related
+
+- [deploy.md](deploy.md) for what CD does after `CI Success`.
+- [mobile-release.md](mobile-release.md) for release builds.
+- [docker-dev.md](docker-dev.md) for running the same checks locally.

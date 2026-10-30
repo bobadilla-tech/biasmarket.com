@@ -49,7 +49,10 @@ export class ExpireOrdersProcessor extends WorkerHost {
     }
 
     const result = (await response.json()) as
-      { cancelled: number } | { anonymized: number };
+      | { cancelled: number }
+      | {
+          anonymized: number;
+        };
     if ("cancelled" in result) {
       this.logger.log(
         `Expire-sweep job ${job.id} cancelled ${result.cancelled} order(s)`,

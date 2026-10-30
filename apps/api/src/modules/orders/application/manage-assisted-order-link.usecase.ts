@@ -8,8 +8,8 @@ import type { Prisma, Store } from '@biasmarket/db';
 import { validatePhone } from '@biasmarket/utils/phone-country';
 import type { WHATSAPP_BUYER_NOTICE_TYPES } from '@biasmarket/utils/whatsapp';
 import {
-  AssistedOrderInvariantError,
   assertVendorAssistedOrder,
+  AssistedOrderInvariantError,
   createOrderAccessToken,
 } from '@biasmarket/utils/assisted-order';
 import { PrismaService } from '../../../prisma/prisma.service.js';

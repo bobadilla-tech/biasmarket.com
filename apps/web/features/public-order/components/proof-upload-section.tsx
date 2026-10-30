@@ -47,7 +47,9 @@ export function ProofUploadSection({
       {inReview && (
         <p role="status" className="text-sm text-sky-800">
           {t("upload.inReview", {
-            amount: `${order.currency} ${(reservedPendingAmount(order) / 100).toFixed(2)}`,
+            amount: `${order.currency} ${(
+              reservedPendingAmount(order) / 100
+            ).toFixed(2)}`,
           })}
         </p>
       )}

@@ -16,6 +16,17 @@ Deploys atomically replace the active fragments and reload Caddy without
 restarting it. Development uses `infra/docker/docker-compose.dev.yml` and does
 not use Caddy.
 
+## Edge
+
+Public traffic reaches Caddy through Cloudflare. The global options block in the
+Caddyfile trusts Cloudflare's proxy ranges (strictly, as a chain read from the
+right) and takes the client IP from `CF-Connecting-IP`; a direct connection to
+the origin is not trusted, so a forged header is ignored. The API trusts exactly
+one proxy hop (Caddy), so the address Caddy settles on is the one rate limits
+use (see [security-payments.md](security-payments.md#74-abuse-prevention)). The
+Caddyfile and `infra/terraform/cloudflare.tf` hold the exact ranges, routes and
+records.
+
 ## Access logs and token redaction
 
 Caddy logs requests for `api.biasmarket.com` and `biasmarket.com` (the
@@ -47,3 +58,11 @@ Local check (no VPS needed): `caddy validate` the whole file with
 point `reverse_proxy` at a dead upstream, request `/api/public/orders/SECRET`,
 `/es/store/x/pedido/SECRET?x=1` and a request with `Referer: .../pedido/SECRET`,
 and assert `SECRET` is absent from `docker logs`.
+
+## Related
+
+- [deploy.md](deploy.md) for how a Caddyfile change ships and the deploy flow.
+- [operations.md](operations.md) for the `caddy` service and the other shared
+  services.
+- [security-payments.md](security-payments.md) for the token-redaction rationale
+  and rate limiting.

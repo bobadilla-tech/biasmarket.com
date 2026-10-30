@@ -177,7 +177,9 @@ export function AuthEditorialLayout({
         {benefits.map(([icon, title, sub], i) => (
           <div
             key={icon}
-            className={`flex items-center gap-2 px-2 sm:gap-3 sm:px-4 ${i % 2 === 0 ? "border-r border-[#796aa3]/40" : ""} ${i === 1 ? "sm:border-r sm:border-[#796aa3]/40" : ""}`}
+            className={`flex items-center gap-2 px-2 sm:gap-3 sm:px-4 ${
+              i % 2 === 0 ? "border-r border-[#796aa3]/40" : ""
+            } ${i === 1 ? "sm:border-r sm:border-[#796aa3]/40" : ""}`}
           >
             <span aria-hidden="true" className="text-xl sm:text-2xl">
               {icon}

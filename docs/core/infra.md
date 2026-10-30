@@ -1,29 +1,30 @@
 # infra
 
-Docker-based development plus the immutable blue/green VPS production stack.
+Overview of the `infra/` folder: Docker-based development plus the immutable
+blue/green VPS production stack. This doc also lists the seeded dev accounts and
+known dev issues.
 
 - `infra/docker/` — development Compose file, Dockerfiles, healthcheck, and safe
-  local env defaults. See [readme.md](readme.md).
+  local env defaults. See [docker-dev.md](docker-dev.md) for the dev workflow
+  and [docker.md](docker.md) for how the images are built.
 - `infra/vps/` — the only production Compose file, deploy state machine, Caddy,
   runtime env templates, and operational scripts. See [deploy.md](deploy.md).
 
 Deploying to production? The VPS is provisioned with Terraform from
-`infra/terraform/` (walkthrough:
-[oracle-to-contabo-terraform.md](../../.artifacts/guides/oracle-to-contabo-terraform.md)).
-See [deploy.md](deploy.md) and
-[blue-green-migrations.md](blue-green-migrations.md) for provisioning, secrets,
-DNS, deployment, and verification.
+`infra/terraform/` (see [provisioning.md](provisioning.md)). See
+[deploy.md](deploy.md) and [blue-green-migrations.md](blue-green-migrations.md)
+for deployment, secrets, and verification.
 
 ## Quick start (dev)
 
 ```bash
-docker compose -f infra/docker/docker-compose.dev.yml up --build
+pnpm docker:dev
 ```
 
-This is the primary, sanctioned dev workflow: Postgres, the NestJS API, and the
-Next.js web app all start from one command, with zero manual `.env` setup —
-`infra/docker/.env.example` is committed with working dev defaults and is loaded
-automatically.
+This is the primary, sanctioned dev workflow: the whole stack (see
+[docker-dev.md](docker-dev.md)) starts from one command, with zero manual `.env`
+setup — `infra/docker/.env.example` is committed with working dev defaults and
+is loaded automatically.
 
 The `api` container also runs the base seed on every boot
 (`apps/api/scripts/seed/run.ts`, idempotent — every fixture is upserted, so
@@ -52,7 +53,9 @@ same command is also safe to run manually against prod as an explicit operator
 action; see [admin-access.md](admin-access.md).
 
 Running `pnpm dev` natively on the host (outside Docker) is possible but
-**unsupported** — it only starts `api`/`web` (no Postgres, no MinIO), and
+**unsupported** — it runs every workspace's `dev` script
+(`turbo run dev
+--parallel`) but starts no Postgres, Redis or MinIO, and
 requires manually recreating your own gitignored `.env` files (root,
 `apps/api/.env`, `apps/web/.env`, `packages/db/.env`) since no example template
 exists for host mode — everything documented here assumes `docker:dev`.
@@ -73,7 +76,9 @@ exists for host mode — everything documented here assumes `docker:dev`.
 infra/docker/docker-compose.dev.yml exec api pnpm --filter @biasmarket/db
 exec prisma <command>`
   so they run inside the container against the Docker-internal `db` hostname.
-- ~~Edited `schema.prisma`, API isn't picking it up~~ — fixed: the `api`
-  container watches `schema.prisma` and re-runs `prisma generate` automatically,
-  restarting the app once the client regenerates. No manual restart needed
-  anymore (see [readme.md](readme.md)'s hot-reload section).
+
+## Related
+
+- [docker-dev.md](docker-dev.md): dev workflow, hot reload, scripts.
+- [provisioning.md](provisioning.md): server setup with Terraform.
+- [admin-access.md](admin-access.md): admin accounts and the seed in production.

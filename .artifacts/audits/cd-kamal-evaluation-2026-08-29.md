@@ -247,7 +247,7 @@ use the secret-manager adapters, so CI-driven deploys install the gem):
 - **`kamal lock` / auto-lock** — server-side deploy lock.
 - **Hooks** —
   `.kamal/hooks/{docker-setup,pre-connect,pre-build,pre-deploy,
-  post-deploy,pre-app-boot,post-app-boot,pre-proxy-reboot,post-proxy-reboot}`,
+post-deploy,pre-app-boot,post-app-boot,pre-proxy-reboot,post-proxy-reboot}`,
   plain executables. Every `kamal deploy` fires `pre-deploy`/`post-deploy`
   (including a `--roles=workers` run), so a `pre-deploy` migration hook must be
   idempotent — `prisma migrate deploy` is.
@@ -453,7 +453,7 @@ hostnames to kamal-proxy.
 
 - **Deletes:** `deploy.sh`,
   `lib/{state,lock,compose,caddy,health,smoke,
-  cleanup_schedule}.sh`,
+cleanup_schedule}.sh`,
   `bin/ssh-deploy-dispatcher.sh`, `cleanup-fallback.yml`, most of `cd.yml`, the
   6 blue/green services (→ 3 roles), the 2-key SSH model.
 - **Keeps unchanged:** the `Caddyfile` + four-hostname routing;
@@ -564,7 +564,7 @@ No Kamal. Shrink the current system toward what it actually needs.
   <https://kamal-deploy.org/docs/commands/deploy/>
 - **Container retention is count-only in Kamal 2.12.0**
   (`lib/kamal/commands/
-  prune.rb#app_containers` — `tail -n +#{retain+1}`, no
+prune.rb#app_containers` — `tail -n +#{retain+1}`, no
   age filter). The "pruned after 3 days" line in `rollback.md` is stale relative
   to the code. <https://github.com/basecamp/kamal>
 - Dockerized Kamal cannot use secret adapters.

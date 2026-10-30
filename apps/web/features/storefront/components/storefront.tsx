@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { type KeyboardEvent as ReactKeyboardEvent, useState } from "react";
 import { useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -332,7 +332,11 @@ export function StoreTabs({ showAbout = false }: { showAbout?: boolean }) {
               tabIndex={active === tab ? 0 : -1}
               onClick={() => selectTab(tab)}
               onKeyDown={(event) => handleKeyDown(event, index)}
-              className={`min-h-11 shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition-[background-color,color,box-shadow] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) motion-reduce:transition-none ${active === tab ? "bg-(--store-primary) text-(--store-primary-text) shadow-sm" : "text-(--store-muted) hover:bg-(--store-surface) hover:text-(--store-text)"}`}
+              className={`min-h-11 shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition-[background-color,color,box-shadow] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) motion-reduce:transition-none ${
+                active === tab
+                  ? "bg-(--store-primary) text-(--store-primary-text) shadow-sm"
+                  : "text-(--store-muted) hover:bg-(--store-surface) hover:text-(--store-text)"
+              }`}
             >
               {labels[tab]}
             </button>
@@ -410,7 +414,11 @@ export function CategoryFilter({
         type="button"
         aria-pressed={selected.length === 0}
         onClick={() => onChange([])}
-        className={`min-h-10 shrink-0 rounded-full border px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) ${selected.length === 0 ? "border-transparent bg-(--store-tab-active) text-(--store-on-active)" : "border-(--store-border) bg-(--store-card) text-(--store-muted) hover:border-(--store-primary)"}`}
+        className={`min-h-10 shrink-0 rounded-full border px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) ${
+          selected.length === 0
+            ? "border-transparent bg-(--store-tab-active) text-(--store-on-active)"
+            : "border-(--store-border) bg-(--store-card) text-(--store-muted) hover:border-(--store-primary)"
+        }`}
       >
         {t("allCategories")}
       </button>
@@ -425,7 +433,11 @@ export function CategoryFilter({
             onClick={() =>
               onChange(active && selected.length === 1 ? [] : [id])
             }
-            className={`min-h-10 shrink-0 rounded-full border px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) ${active ? "border-transparent bg-(--store-tab-active) text-(--store-on-active)" : "border-(--store-border) bg-(--store-card) text-(--store-muted) hover:border-(--store-primary)"}`}
+            className={`min-h-10 shrink-0 rounded-full border px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) ${
+              active
+                ? "border-transparent bg-(--store-tab-active) text-(--store-on-active)"
+                : "border-(--store-border) bg-(--store-card) text-(--store-muted) hover:border-(--store-primary)"
+            }`}
           >
             {category.name}
           </button>

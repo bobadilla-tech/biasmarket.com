@@ -16,12 +16,16 @@ export function safeTrackingUrl(raw: string | null | undefined): string | null {
 // `no-store`, `no-referrer`, `CORP: cross-origin`). The page itself fetches
 // in the browser, so the public API origin is the right base.
 export function packedPhotoSrc(token: string): string {
-  return `${publicApiBase()}/api/public/orders/${encodeURIComponent(token)}/packed-photo`;
+  return `${publicApiBase()}/api/public/orders/${encodeURIComponent(
+    token,
+  )}/packed-photo`;
 }
 
 // The buyer's own uploaded proof, token-authorized like the packed photo.
 export function paymentProofSrc(token: string, paymentId: string): string {
-  return `${publicApiBase()}/api/public/orders/${encodeURIComponent(token)}/payments/${encodeURIComponent(paymentId)}/image`;
+  return `${publicApiBase()}/api/public/orders/${encodeURIComponent(
+    token,
+  )}/payments/${encodeURIComponent(paymentId)}/image`;
 }
 
 // The browser-reachable API origin. The claim ticket POST and the OAuth start

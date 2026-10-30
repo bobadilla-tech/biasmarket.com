@@ -189,8 +189,9 @@ describe('public proof upload (e2e)', () => {
     let req = request(app.getHttpServer())
       .post(`/api/public/orders/${token}/payments`)
       .set('X-Forwarded-For', nextIp());
-    for (const [key, value] of Object.entries(fields))
+    for (const [key, value] of Object.entries(fields)) {
       req = req.field(key, value);
+    }
     return req.attach('file', png, 'proof.png');
   };
 

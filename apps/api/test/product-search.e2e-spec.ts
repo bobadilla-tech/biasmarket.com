@@ -171,7 +171,9 @@ describe('product search (e2e)', () => {
 
     const storePage = await request(app.getHttpServer())
       .get(
-        `/products/search?store=product-search-e2e-${runId}&q=${encodeURIComponent(imagelessName)}`,
+        `/products/search?store=product-search-e2e-${runId}&q=${encodeURIComponent(
+          imagelessName,
+        )}`,
       )
       .expect(200);
     expect(storePage.body.products.map((p: { id: string }) => p.id)).toEqual([
