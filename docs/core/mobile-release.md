@@ -26,9 +26,9 @@ as a mobile change for release builds.
 Unlike PR CI, a release is compared against the **newest earlier release that
 has both mobile assets**, not the previous release. A release that skipped or
 failed its mobile build leaves no assets, so its changes are picked up by the
-next release instead of being lost. If no earlier release has mobile assets,
-the build runs. Android and iOS are built together or not at all, and a release
-with unrelated changes only skips both (the macOS runner never starts).
+next release instead of being lost. If no earlier release has mobile assets, the
+build runs. Android and iOS are built together or not at all, and a release with
+unrelated changes only skips both (the macOS runner never starts).
 
 Manual run (also the way to rebuild): Actions → "Mobile Release" → Run workflow
 with an existing tag. Tick `force` to build even when nothing mobile changed.
@@ -36,8 +36,8 @@ with an existing tag. Tick `force` to build even when nothing mobile changed.
 ## Android APK
 
 Download `mobile-android-<tag>-debug.apk` from the release, copy it to the
-phone, and open it (allow "install unknown apps" for your browser/files app),
-or `adb install mobile-android-<tag>-debug.apk`.
+phone, and open it (allow "install unknown apps" for your browser/files app), or
+`adb install mobile-android-<tag>-debug.apk`.
 
 It is an optimized (`assembleRelease`) build, JS bundled in, but signed with the
 Expo template's **debug keystore** because no production key exists. It covers
@@ -51,10 +51,9 @@ future production-signed build cannot update over it; uninstall first.
 `BiasMarket.app` for `iphoneos`, dSYMs and archive metadata. Its purpose is to
 prove the iOS app compiles and to be signed later.
 
-An iPhone only runs apps signed with a certificate and provisioning profile
-from an Apple Developer account. This archive has neither, so it cannot be
-installed on a normal device (nor via TestFlight). It is not a simulator build
-either.
+An iPhone only runs apps signed with a certificate and provisioning profile from
+an Apple Developer account. This archive has neither, so it cannot be installed
+on a normal device (nor via TestFlight). It is not a simulator build either.
 
 ## Rerunning
 
@@ -66,9 +65,8 @@ is created. The baseline for change detection never moves on a rerun.
 ## Adding production signing later (not implemented)
 
 - Android: create an upload keystore, store it and its passwords as repository
-  secrets, add a `release` signing config in the prebuild step (e.g. via an
-  Expo config plugin), and switch to `assembleRelease` + `bundleRelease` for
-  Play.
+  secrets, add a `release` signing config in the prebuild step (e.g. via an Expo
+  config plugin), and switch to `assembleRelease` + `bundleRelease` for Play.
 - iOS: join the Apple Developer Program, add a distribution certificate and
   provisioning profile as secrets, import them into a temporary keychain, and
   drop `CODE_SIGNING_ALLOWED=NO` for `xcodebuild -exportArchive` to make an

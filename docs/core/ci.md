@@ -2,7 +2,8 @@
 
 What `.github/workflows/ci.yml` guarantees per workspace, and the rules that
 keep it honest. `CI Success` is the only required check; it fails if any
-path-filtered job that should run did not succeed (`scripts/ci/check-ci-success.sh`).
+path-filtered job that should run did not succeed
+(`scripts/ci/check-ci-success.sh`).
 
 ## Per-workspace matrix
 
@@ -27,13 +28,15 @@ files in `apps/*` and `packages/*` (never "No tasks were executed").
 
 - Root `eslint.config.mjs` serves workspaces without a local config (ESLint
   resolves the nearest config upward from the cwd). It parses TypeScript with
-  `@babel/eslint-parser` because `typescript-eslint` cannot load on TypeScript 7.
+  `@babel/eslint-parser` because `typescript-eslint` cannot load on
+  TypeScript 7.
   `no-undef`/`no-unused-vars`/`no-redeclare`/`no-dupe-class-members` are off;
   `tsc` is the authority. `.ts` is parsed without `jsx` (it mis-parses `<T>x`).
 - `web` and `mobile` keep local configs that import `baseRules` from the root
   config and add react-hooks (`exhaustive-deps` is a warning, so no
   `--max-warnings 0`). `sanity` keeps `@sanity/eslint-config-studio`.
-- Backend and package lint = `node ../../scripts/lint-changed-files.mjs <dir> && eslint . --max-warnings 0`.
+- Backend and package lint =
+  `node ../../scripts/lint-changed-files.mjs <dir> && eslint . --max-warnings 0`.
   The first half is the Prettier check on files changed against `BASE_REF`
   (`origin/<PR base>` on pull requests, `origin/main` otherwise), so the job
   needs `fetch-depth: 0`. Do not add a root `lint` script running `eslint .`: it
@@ -51,7 +54,8 @@ files in `apps/*` and `packages/*` (never "No tasks were executed").
   floor means "no regression". `packages/types` gates `lines` only (35
   statements, generated code deliberately unmeasured).
 - turbo `test:cov` has `outputs: ["coverage/**"]` so a cache hit restores
-  `lcov.info`. New upload steps are preceded by `test -f <pkg>/coverage/lcov.info`.
+  `lcov.info`. New upload steps are preceded by
+  `test -f <pkg>/coverage/lcov.info`.
 - Codecov upload uses `fail_ci_if_error: false` and Codecov statuses are not
   required checks; the floors are the real gate. Unverified: whether the Codecov
   GitHub App posts statuses/comments on PRs.
@@ -64,8 +68,8 @@ files in `apps/*` and `packages/*` (never "No tasks were executed").
 a workspace lacks `lint`/`typecheck`, if a workspace with a `test` script is not
 run by a single-line `run:` in `ci.yml` (`--filter <name>` + `test`/`test:cov`,
 no `exec`), or if a test script uses `--passWithNoTests`. It checks that the
-text exists, not that the job can trigger, and does not see multi-line
-`run: |` blocks. Tests: `node --test scripts/ci/check-workspace-scripts.test.mjs`
+text exists, not that the job can trigger, and does not see multi-line `run: |`
+blocks. Tests: `node --test scripts/ci/check-workspace-scripts.test.mjs`
 (fixtures in `scripts/ci/fixtures/workspace-scripts/`).
 
 ## Adding a path-filtered job (wiring list)
@@ -73,10 +77,10 @@ text exists, not that the job can trigger, and does not see multi-line
 A new path-filtered job must be added in seven places, in one PR: (1) the
 `detect-changes` job `outputs`, (2) its `filters:` block, (3) the job, (4)
 `ci-success.needs`, (5) the `X_RESULT` env entry, (6) the `X_CHANGED` env entry,
-(7) `package_names`/`package_keys` in `scripts/ci/check-ci-success.sh`. A typo in
-a filter key makes the script fail on every run and blocks CD. The always-run
-`hygiene` job has no changed output; it only has `HYGIENE_RESULT`.
-Add `eslint.config.mjs` and `scripts/lint-changed-files.mjs` to package filters.
+(7) `package_names`/`package_keys` in `scripts/ci/check-ci-success.sh`. A typo
+in a filter key makes the script fail on every run and blocks CD. The always-run
+`hygiene` job has no changed output; it only has `HYGIENE_RESULT`. Add
+`eslint.config.mjs` and `scripts/lint-changed-files.mjs` to package filters.
 
 ## Emergency path
 

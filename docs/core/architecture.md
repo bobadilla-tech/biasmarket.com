@@ -154,7 +154,7 @@ per service method, in the flat `controller/service` modules:
   `categories`, `collections`, `store-sections`, `payment-config`,
   `delivery-config`, `pickup-points`, `notifications`, `stats`, `orders`,
   `customers`, `stores`, `customer-auth`) with **zero IDOR gaps** —
-  `docs/audits/audit-2026-08-08.md` §5, §13.
+  `.artifacts/audits/audit-2026-08-08.md` §5, §13.
 
 Tradeoff vs. a middleware layer: tenant safety is enforced by convention (every
 new service method must call the helper) rather than by a structural guarantee

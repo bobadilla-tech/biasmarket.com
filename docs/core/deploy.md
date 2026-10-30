@@ -117,10 +117,11 @@ sudo -iu deploy bash -lc 'cd /home/deploy/biasmarket && cat state/current_sha'
 A change to `infra/vps/Caddyfile` (for example the access-log redaction, see
 [caddy.md](caddy.md)) is not picked up by a normal deploy: the single-file bind
 mount can keep the old inode and `deploy.sh` only reloads. Recreate the
-container once after such a change: `docker compose up -d --force-recreate
-caddy` (through `lib/compose.sh`), then check
-`docker exec <caddy> cat /etc/caddy/Caddyfile`. Merge Caddyfile changes alone,
-after the other pending deploys have finished.
+container once after such a change:
+`docker compose up -d --force-recreate
+caddy` (through `lib/compose.sh`), then
+check `docker exec <caddy> cat /etc/caddy/Caddyfile`. Merge Caddyfile changes
+alone, after the other pending deploys have finished.
 
 For health, migration, rollback, and incident procedures, see
 [blue-green-migrations.md](blue-green-migrations.md) and

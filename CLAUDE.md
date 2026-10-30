@@ -58,10 +58,10 @@ build-generated — deliberately, to keep `web`'s build/typecheck independent of
 `apps/api` (no turbo cross-package dependency, no live app boot needed in CI).
 Regenerate both by hand after changing a migrated module's response DTOs:
 `pnpm --filter api generate:openapi && pnpm --filter @biasmarket/types generate`,
-then commit the diff.
-`orval` is pinned to an exact version in `packages/types` (a different version
-renames generated operations); CI's `check-types-sdk-drift.sh` fails when the
-committed SDK differs from a fresh `generate`.
+then commit the diff. `orval` is pinned to an exact version in `packages/types`
+(a different version renames generated operations); CI's
+`check-types-sdk-drift.sh` fails when the committed SDK differs from a fresh
+`generate`.
 
 Inside `apps/api`:
 
