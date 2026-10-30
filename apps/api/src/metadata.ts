@@ -2053,7 +2053,7 @@ export default async () => {
             SubmitPublicPaymentResponseDto: {
               id: { required: true, type: () => String },
               amount: { required: true, type: () => String },
-              reviewStatus: { required: true, type: () => String },
+              reviewStatus: { required: true, enum: ['PENDING_REVIEW'] },
               createdAt: { required: true, type: () => String },
             },
           },

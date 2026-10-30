@@ -1,6 +1,7 @@
 import { expect, test } from "vitest";
 import {
   scrubBreadcrumb,
+  scrubOrDrop,
   scrubSentryEvent,
   scrubTokenText,
   scrubTokenUrl,
@@ -130,4 +131,27 @@ test("scrubTokenText replaces only the token segment", () => {
     "see /pedido/:token/x and more",
   );
   expect(scrubTokenText("nothing here")).toBe("nothing here");
+});
+
+test("does not throw on getter-only properties or walk SDK internals", () => {
+  const scope = {};
+  Object.defineProperty(scope, "$", { get: () => "live", enumerable: true });
+  const event = {
+    transaction: "GET /api/health",
+    extra: { holder: scope },
+    sdkProcessingMetadata: { capturedSpanScope: scope },
+  };
+
+  expect(() => scrubSentryEvent(event)).not.toThrow();
+  expect(event.extra.holder).toBe(scope);
+});
+
+test("scrubOrDrop drops the event when a changed value cannot be written back", () => {
+  const holder = {};
+  Object.defineProperty(holder, "url", {
+    get: () => `/pedido/${TOKEN}`,
+    enumerable: true,
+  });
+
+  expect(scrubOrDrop({ extra: { holder } })).toBeNull();
 });

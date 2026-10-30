@@ -76,12 +76,16 @@ describe('CustomerAccountService', () => {
 
     // Tagged-template calls arrive as (strings, ...values).
     const statements = () =>
-      prisma.$executeRaw.mock.calls.map(
-        ([strings, ...values]: [TemplateStringsArray, ...unknown[]]) => ({
+      prisma.$executeRaw.mock.calls.map((call: unknown[]) => {
+        const [strings, ...values] = call as [
+          TemplateStringsArray,
+          ...unknown[],
+        ];
+        return {
           sql: strings.join('?').replace(/\s+/g, ' ').trim(),
           values,
-        }),
-      );
+        };
+      });
     const insertInto = (table: string) =>
       statements().filter((s) => s.sql.includes(`INSERT INTO "${table}"`));
 

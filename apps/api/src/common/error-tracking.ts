@@ -25,6 +25,11 @@ function scrubTrackedText(value: string): string {
     .replace(/(\/pedido\/)[^/\s?#"'<>),;]+/gi, '$1:token');
 }
 
+// Sentry attaches live Scope/Client objects here (getter-only properties, big
+// graphs) and strips the key before the event is sent, so there is nothing to
+// scrub and walking it only risks throwing.
+const SDK_INTERNAL_KEYS = new Set(['sdkProcessingMetadata']);
+
 function scrubDeep(
   value: unknown,
   depth = 0,
@@ -43,14 +48,20 @@ function scrubDeep(
 
   if (Array.isArray(value)) {
     value.forEach((item, index) => {
-      value[index] = scrubDeep(item, depth + 1, seen);
+      const next = scrubDeep(item, depth + 1, seen);
+      if (next !== item) value[index] = next;
     });
     return value;
   }
 
   const record = value as Record<string, unknown>;
   for (const key of Object.keys(record)) {
-    record[key] = scrubDeep(record[key], depth + 1, seen, key);
+    if (SDK_INTERNAL_KEYS.has(key)) continue;
+    const current = record[key];
+    const next = scrubDeep(current, depth + 1, seen, key);
+    // Only write back a changed value: re-assigning an untouched property
+    // throws on getter-only ones, which dropped every traced event.
+    if (next !== current) record[key] = next;
   }
   return value;
 }
@@ -113,6 +124,21 @@ export function scrubSentryEvent<T extends Event>(event: T): T {
   return event;
 }
 
+// A scrubber that throws makes the SDK drop the event anyway, so fail closed
+// on purpose (an unscrubbed event may carry a private order link) and say so
+// instead of reporting the failure as yet another application error.
+function failClosed<T extends Event>(event: T): T | null {
+  try {
+    return scrubSentryEvent(event);
+  } catch (error) {
+    Logger.warn(
+      `Dropped a telemetry event, scrubbing failed: ${error instanceof Error ? error.message : String(error)}`,
+      'ErrorTracking',
+    );
+    return null;
+  }
+}
+
 // Environment-gated error tracking (GlitchTip is Sentry-protocol-compatible,
 // see docs/core/deploy.md / the observability plan). No-op unless a DSN is
 // configured, so local dev and CI never need a GlitchTip account.
@@ -126,12 +152,8 @@ export function initErrorTracking(): void {
   Sentry.init({
     dsn,
     tracesSampleRate: 0.01,
-    beforeSend(event) {
-      return scrubSentryEvent(event);
-    },
-    beforeSendTransaction(event) {
-      return scrubSentryEvent(event);
-    },
+    beforeSend: failClosed,
+    beforeSendTransaction: failClosed,
   });
 }
 

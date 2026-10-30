@@ -22,14 +22,14 @@ export async function register() {
   }
 
   const Sentry = await import("@sentry/node");
-  const { scrubSentryEvent } = await import("@/lib/scrub-sentry");
+  const { scrubOrDrop } = await import("@/lib/scrub-sentry");
   Sentry.init({
     dsn,
     tracesSampleRate: 0.01,
     // The private order link (`/pedido/:token`) must not reach the tracker
     // through a request path, span or exception message either.
-    beforeSend: (event) => scrubSentryEvent(event),
-    beforeSendTransaction: (event) => scrubSentryEvent(event),
+    beforeSend: (event) => scrubOrDrop(event),
+    beforeSendTransaction: (event) => scrubOrDrop(event),
   });
 }
 

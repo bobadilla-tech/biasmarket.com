@@ -3,7 +3,7 @@
 // Standalone equivalent of the @nestjs/swagger CLI plugin for apps/api's SWC
 // build (nest-cli.json: builder "swc", typeCheck false — SWC never runs the
 // tsc/webpack transformer the CLI plugin hooks into). Runs PluginMetadataGenerator
-// against apps/api's own typescript@5.9.3 (a real devDependency, independent of
+// against apps/api's own typescript (6.x) (a real devDependency, independent of
 // the root/web TS7 pin) to statically infer @ApiProperty-equivalent metadata
 // from class-validator decorators and TS types, writing it to src/metadata.ts.
 // PluginMetadataGenerator lives in @nestjs/cli, not @nestjs/swagger — only
@@ -59,7 +59,7 @@ generator.generate({
   ],
   outputDir: srcDir,
   filename: 'metadata.ts',
-  tsconfigPath: 'tsconfig.json',
+  tsconfigPath: 'tsconfig.metadata.json',
   printDiagnostics: true,
 });
 

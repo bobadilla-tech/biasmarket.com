@@ -38,6 +38,11 @@ export function scrubTokenText(value: string): string {
 
 // Any other field the SDK fills (request headers such as Referer, exception
 // values, span data, contexts, extra) goes through the same replacement.
+// Sentry attaches live Scope/Client objects here (getter-only properties, big
+// graphs) and strips the key before the event is sent, so there is nothing to
+// scrub and walking it only risks throwing.
+const SDK_INTERNAL_KEYS = new Set(["sdkProcessingMetadata"]);
+
 function scrubDeep(value: Json, depth = 0, seen = new WeakSet<object>()): Json {
   if (depth > 10) return "[Truncated]";
   if (typeof value === "string") return scrubTokenText(value);
@@ -46,13 +51,19 @@ function scrubDeep(value: Json, depth = 0, seen = new WeakSet<object>()): Json {
   seen.add(value);
   if (Array.isArray(value)) {
     value.forEach((item, i) => {
-      value[i] = scrubDeep(item, depth + 1, seen);
+      const next = scrubDeep(item, depth + 1, seen);
+      if (next !== item) value[i] = next;
     });
     return value;
   }
   const record = value as Record<string, Json>;
   for (const key of Object.keys(record)) {
-    record[key] = scrubDeep(record[key], depth + 1, seen);
+    if (SDK_INTERNAL_KEYS.has(key)) continue;
+    const current = record[key];
+    const next = scrubDeep(current, depth + 1, seen);
+    // Only write back a changed value: re-assigning an untouched property
+    // throws on getter-only ones, which dropped every traced event.
+    if (next !== current) record[key] = next;
   }
   return value;
 }
@@ -92,4 +103,19 @@ export function scrubSentryEvent<T extends object>(input: T): T {
     }
   }
   return scrubDeep(event) as T;
+}
+
+// A scrubber that throws makes the SDK drop the event anyway, so fail closed
+// on purpose (an unscrubbed event may carry a private order link) and say so
+// instead of reporting the failure as yet another application error.
+export function scrubOrDrop<T extends object>(event: T): T | null {
+  try {
+    return scrubSentryEvent(event);
+  } catch (error) {
+    console.warn(
+      "[sentry] dropped a telemetry event, scrubbing failed:",
+      error instanceof Error ? error.message : error,
+    );
+    return null;
+  }
 }
