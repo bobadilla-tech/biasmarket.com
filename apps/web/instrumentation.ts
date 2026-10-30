@@ -23,10 +23,13 @@ export async function register() {
 
   const Sentry = await import("@sentry/node");
   const { scrubOrDrop } = await import("@biasmarket/utils/sentry-scrub");
+  const { tracesSampler } = await import("@biasmarket/utils/traces-sampler");
   const warn = (message: string) => console.warn("[sentry]", message);
   Sentry.init({
     dsn,
-    tracesSampleRate: 0.01,
+    // Per-route rates (never health, always checkout/order pages, 10%
+    // otherwise, parent decision inherited), see traces-sampler.
+    tracesSampler,
     // The private order link (`/pedido/:token`) must not reach the tracker
     // through a request path, span or exception message either.
     beforeSend: (event) => scrubOrDrop(event, warn),
