@@ -1,6 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { normalizePhone, validatePhone } from '@biasmarket/utils/phone-country';
+import type { Prisma } from '@biasmarket/db';
 import { PrismaService } from '../../../prisma/prisma.service.js';
+import { lockAssistedCustomer } from './assisted-customer.js';
 
 export const ASSISTED_ORDER_IDENTITY_RETENTION_DAYS = 90;
 const RETENTION_BATCH_SIZE = 500;
@@ -10,6 +12,10 @@ type RequestAuditContext = { operatorId: string; requestReference: string };
 
 @Injectable()
 export class AssistedOrderIdentityRetentionUseCase {
+  private readonly logger = new Logger(
+    AssistedOrderIdentityRetentionUseCase.name,
+  );
+
   constructor(private readonly prisma: PrismaService) {}
 
   // Called by an authorized support operator after verifying the buyer's
@@ -87,14 +93,34 @@ export class AssistedOrderIdentityRetentionUseCase {
     });
     if (contact) {
       await this.prisma.$transaction(async (tx) => {
-        const remainingOrders = await tx.order.count({
-          where: {
-            customerId: contact.id,
-            storeId,
-            buyerIdentityErasedAt: null,
-          },
+        const customerBefore = await tx.customer.findUnique({
+          where: { id: contact.id },
+          select: { id: true, storeId: true, phone: true, identityErasedAt: true },
         });
-        if (remainingOrders > 0) return;
+        if (
+          !customerBefore ||
+          customerBefore.storeId !== storeId ||
+          customerBefore.phone !== phone.phone ||
+          customerBefore.identityErasedAt
+        ) {
+          return;
+        }
+
+        await lockAssistedCustomer(tx, storeId, customerBefore.phone);
+        const customerAfter = await tx.customer.findUnique({
+          where: { id: customerBefore.id },
+          select: { id: true, storeId: true, phone: true, identityErasedAt: true },
+        });
+        if (
+          !customerAfter ||
+          customerAfter.storeId !== storeId ||
+          customerAfter.phone !== customerBefore.phone ||
+          customerAfter.identityErasedAt ||
+          (await hasRemainingCustomerOrders(tx, customerAfter))
+        ) {
+          return;
+        }
+
         const changed = await tx.customer.updateMany({
           where: {
             id: contact.id,
@@ -160,7 +186,14 @@ export class AssistedOrderIdentityRetentionUseCase {
 
     let anonymized = 0;
     for (const order of candidates) {
-      if (await this.eraseOrder(order, 'RETENTION', cutoff)) anonymized++;
+      try {
+        if (await this.eraseOrder(order, 'RETENTION', cutoff)) anonymized++;
+      } catch {
+        // Record only the stable order ID; database errors can include query values.
+        this.logger.error(
+          `Assisted-order identity cleanup failed; orderId=${order.id}`,
+        );
+      }
     }
     return { anonymized };
   }
@@ -184,6 +217,60 @@ export class AssistedOrderIdentityRetentionUseCase {
   ): Promise<boolean> {
     const erasedAt = new Date();
     return this.prisma.$transaction(async (tx) => {
+      const orderPhone =
+        order.customerPhoneNormalized ??
+        (order.customerPhone?.trim()
+          ? normalizePhone(order.customerPhone)
+          : null);
+      const customerBefore = order.customerId
+        ? await tx.customer.findUnique({
+            where: { id: order.customerId },
+            select: {
+              id: true,
+              storeId: true,
+              phone: true,
+              identityErasedAt: true,
+            },
+          })
+        : orderPhone
+          ? await tx.customer.findUnique({
+              where: {
+                storeId_phone: { storeId: order.storeId, phone: orderPhone },
+              },
+              select: {
+                id: true,
+                storeId: true,
+                phone: true,
+                identityErasedAt: true,
+              },
+            })
+          : null;
+      let customerForErasure: typeof customerBefore = null;
+      if (
+        customerBefore &&
+        customerBefore.storeId === order.storeId &&
+        !customerBefore.identityErasedAt
+      ) {
+        await lockAssistedCustomer(tx, order.storeId, customerBefore.phone);
+        const customerAfter = await tx.customer.findUnique({
+          where: { id: customerBefore.id },
+          select: {
+            id: true,
+            storeId: true,
+            phone: true,
+            identityErasedAt: true,
+          },
+        });
+        if (
+          customerAfter &&
+          customerAfter.storeId === order.storeId &&
+          customerAfter.phone === customerBefore.phone &&
+          !customerAfter.identityErasedAt
+        ) {
+          customerForErasure = customerAfter;
+        }
+      }
+
       const changed = await tx.order.updateMany({
         where: {
           id: order.id,
@@ -217,25 +304,19 @@ export class AssistedOrderIdentityRetentionUseCase {
       });
       if (changed.count === 0) return false;
 
-      if (order.customerId) {
-        const remainingOrders = await tx.order.count({
+      if (
+        customerForErasure &&
+        !(await hasRemainingCustomerOrders(tx, customerForErasure, order.id))
+      ) {
+        await tx.customer.updateMany({
           where: {
-            id: { not: order.id },
-            customerId: order.customerId,
-            storeId: order.storeId,
-            buyerIdentityErasedAt: null,
+            id: customerForErasure.id,
+            storeId: customerForErasure.storeId,
+            phone: customerForErasure.phone,
+            identityErasedAt: null,
           },
+          data: erasedCustomerData(customerForErasure.id, erasedAt),
         });
-        if (remainingOrders === 0) {
-          await tx.customer.updateMany({
-            where: {
-              id: order.customerId,
-              storeId: order.storeId,
-              identityErasedAt: null,
-            },
-            data: erasedCustomerData(order.customerId, erasedAt),
-          });
-        }
       }
 
       await tx.auditLog.create({
@@ -264,6 +345,49 @@ export class AssistedOrderIdentityRetentionUseCase {
       return true;
     });
   }
+}
+
+async function hasRemainingCustomerOrders(
+  tx: Prisma.TransactionClient,
+  customer: { id: string; storeId: string; phone: string },
+  excludingOrderId?: string,
+): Promise<boolean> {
+  const baseWhere = {
+    storeId: customer.storeId,
+    buyerIdentityErasedAt: null,
+    ...(excludingOrderId ? { id: { not: excludingOrderId } } : {}),
+  };
+  const linkedOrders = await tx.order.count({
+    where: { ...baseWhere, customerId: customer.id },
+  });
+  if (linkedOrders > 0) return true;
+
+  const normalizedUnlinkedOrders = await tx.order.count({
+    where: {
+      ...baseWhere,
+      customerId: null,
+      customerPhoneNormalized: customer.phone,
+    },
+  });
+  if (normalizedUnlinkedOrders > 0) return true;
+
+  // Normalize only legacy rows. A saturated scan conservatively retains the
+  // Customer instead of risking erasure while a matching order still uses it.
+  const legacyUnlinkedOrders = await tx.order.findMany({
+    where: {
+      ...baseWhere,
+      customerId: null,
+      customerPhoneNormalized: null,
+    },
+    select: { customerPhone: true },
+    take: RETENTION_BATCH_SIZE + 1,
+  });
+  if (legacyUnlinkedOrders.length > RETENTION_BATCH_SIZE) return true;
+  return legacyUnlinkedOrders.some(
+    (row) =>
+      row.customerPhone.trim() !== '' &&
+      normalizePhone(row.customerPhone) === customer.phone,
+  );
 }
 
 function isClosed(status: string, fulfillmentStatus: string): boolean {
