@@ -504,11 +504,23 @@ export class OrderController {
     }
 
     await this.prisma.$transaction(async (tx) => {
+      const locked = await tx.$queryRaw<Array<{ id: string }>>`
+        SELECT id FROM "Order" WHERE id = ${orderId} AND "storeId" = ${storeId} FOR UPDATE
+      `;
+      if (!locked.length) throw new NotFoundException('Orden no encontrada');
+
       const order = await tx.order.findFirst({
         where: { id: orderId, storeId },
-        select: { trackingNumber: true, source: true },
+        select: { trackingNumber: true, trackingUrl: true, source: true },
       });
       if (!order) throw new NotFoundException('Orden no encontrada');
+
+      const trackingNumberChanged =
+        dto.trackingNumber !== undefined &&
+        dto.trackingNumber !== order.trackingNumber;
+      const trackingUrlChanged =
+        dto.trackingUrl !== undefined && dto.trackingUrl !== order.trackingUrl;
+      if (!trackingNumberChanged && !trackingUrlChanged) return;
 
       const data = {
         ...(dto.trackingNumber !== undefined && {
@@ -524,25 +536,28 @@ export class OrderController {
         throw new NotFoundException('Orden no encontrada');
       }
 
-      if (dto.trackingNumber && dto.trackingNumber !== order.trackingNumber) {
+      if (trackingNumberChanged && dto.trackingNumber) {
         await this.events.record(tx, {
           orderId,
           storeId,
           type: 'TRACKING_ADDED',
           actor: 'SELLER',
         });
-        if (order.source === 'VENDOR_ASSISTED') {
-          await tx.auditLog.create({
-            data: {
-              actorId: session.user.id,
-              storeId,
-              action: 'order.tracking_added',
-              entityType: 'Order',
-              entityId: orderId,
-              metadata: {},
-            },
-          });
-        }
+      }
+      if (
+        order.source === 'VENDOR_ASSISTED' &&
+        (trackingNumberChanged || trackingUrlChanged)
+      ) {
+        await tx.auditLog.create({
+          data: {
+            actorId: session.user.id,
+            storeId,
+            action: 'order.tracking_updated',
+            entityType: 'Order',
+            entityId: orderId,
+            metadata: {},
+          },
+        });
       }
     });
 
@@ -571,39 +586,44 @@ export class OrderController {
       file.detectedMimeType,
     );
 
-    await this.prisma.$transaction(async (tx) => {
-      const order = await tx.order.findFirst({
-        where: { id: orderId, storeId },
-        select: { source: true },
-      });
-      if (!order) throw new NotFoundException('Orden no encontrada');
-
-      const updated = await tx.order.updateMany({
-        where: { id: orderId, storeId },
-        data: { packedPhotoUrl: imageUrl },
-      });
-      if (updated.count !== 1) {
-        throw new NotFoundException('Orden no encontrada');
-      }
-      await this.events.record(tx, {
-        orderId,
-        storeId,
-        type: 'PACKED_PHOTO_ADDED',
-        actor: 'SELLER',
-      });
-      if (order.source === 'VENDOR_ASSISTED') {
-        await tx.auditLog.create({
-          data: {
-            actorId: session.user.id,
-            storeId,
-            action: 'order.packed_photo_added',
-            entityType: 'Order',
-            entityId: orderId,
-            metadata: {},
-          },
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        const order = await tx.order.findFirst({
+          where: { id: orderId, storeId },
+          select: { source: true },
         });
-      }
-    });
+        if (!order) throw new NotFoundException('Orden no encontrada');
+
+        const updated = await tx.order.updateMany({
+          where: { id: orderId, storeId },
+          data: { packedPhotoUrl: imageUrl },
+        });
+        if (updated.count !== 1) {
+          throw new NotFoundException('Orden no encontrada');
+        }
+        await this.events.record(tx, {
+          orderId,
+          storeId,
+          type: 'PACKED_PHOTO_ADDED',
+          actor: 'SELLER',
+        });
+        if (order.source === 'VENDOR_ASSISTED') {
+          await tx.auditLog.create({
+            data: {
+              actorId: session.user.id,
+              storeId,
+              action: 'order.packed_photo_added',
+              entityType: 'Order',
+              entityId: orderId,
+              metadata: {},
+            },
+          });
+        }
+      });
+    } catch (error) {
+      await this.storage.deleteImage(imageUrl).catch(() => undefined);
+      throw error;
+    }
 
     return toOrderDetailDto(
       await this.orders.findRowByIdForStore(orderId, storeId),
