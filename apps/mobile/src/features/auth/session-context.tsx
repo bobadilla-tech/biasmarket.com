@@ -13,13 +13,13 @@ import {
   deleteBuyerSession,
   readBuyerSession,
   writeBuyerSession,
-} from "./session-storage.js";
+} from "./session-storage";
 import {
   isCurrentMobileAuthorization,
   setMobileBearerToken,
   setSessionRefreshHandler,
   setUnauthorizedHandler,
-} from "./api-client.js";
+} from "./api-client";
 
 type SessionStatus = "loading" | "authenticated" | "unauthenticated";
 
