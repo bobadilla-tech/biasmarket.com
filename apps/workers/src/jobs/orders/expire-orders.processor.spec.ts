@@ -1,6 +1,10 @@
 import type { Job } from "bullmq";
 import { type Mock, vi } from "vitest";
-import { INTERNAL_JOBS_SECRET_HEADER } from "@biasmarket/queue";
+import {
+  ASSISTED_IDENTITY_RETENTION_JOB_NAME,
+  EXPIRE_ORDERS_JOB_NAME,
+  INTERNAL_JOBS_SECRET_HEADER,
+} from "@biasmarket/queue";
 import { ExpireOrdersProcessor } from "./expire-orders.processor.js";
 
 describe("ExpireOrdersProcessor", () => {
@@ -24,7 +28,7 @@ describe("ExpireOrdersProcessor", () => {
       ok: true,
       json: async () => ({ cancelled: 3 }),
     });
-    const job = { id: "1" } as Job;
+    const job = { id: "1", name: EXPIRE_ORDERS_JOB_NAME } as Job;
 
     const result = await processor.process(job);
 
@@ -44,8 +48,27 @@ describe("ExpireOrdersProcessor", () => {
       status: 401,
       statusText: "Unauthorized",
     });
-    const job = { id: "2" } as Job;
+    const job = { id: "2", name: EXPIRE_ORDERS_JOB_NAME } as Job;
 
     await expect(processor.process(job)).rejects.toThrow(/401/);
+  });
+
+  it("calls the secret-guarded identity-retention endpoint for its scheduled job", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ anonymized: 2 }),
+    });
+    const job = { id: "3", name: ASSISTED_IDENTITY_RETENTION_JOB_NAME } as Job;
+
+    const result = await processor.process(job);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://api:3000/internal/orders/assisted-identity-retention-sweep",
+      {
+        method: "POST",
+        headers: { [INTERNAL_JOBS_SECRET_HEADER]: "test-secret" },
+      },
+    );
+    expect(result).toEqual({ anonymized: 2 });
   });
 });

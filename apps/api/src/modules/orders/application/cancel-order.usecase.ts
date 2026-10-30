@@ -100,6 +100,7 @@ export class CancelOrderUseCase {
         },
         data: {
           status: 'CANCELLED',
+          closedAt: new Date(),
           paymentStatus: entity.currentPaymentStatus,
           cancellationResolution: dto.resolution,
           cancellationReason: dto.reason ?? null,

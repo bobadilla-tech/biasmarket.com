@@ -23,8 +23,13 @@ describe('upsertAssistedCustomer', () => {
       ' Sofi ',
     );
     expect(result).toEqual({ id: 'c1' });
-    const sql = (tx.$executeRaw.mock.calls[0]![0] as string[]).join('?');
-    expect(sql).toContain('ON CONFLICT ("storeId", "phone") DO NOTHING');
+    const statements = tx.$executeRaw.mock.calls.map(([query]) =>
+      (query as string[]).join('?'),
+    );
+    expect(statements[0]).toContain('pg_advisory_xact_lock');
+    expect(statements[1]).toContain(
+      'ON CONFLICT ("storeId", "phone") DO NOTHING',
+    );
     expect(tx.customer.updateMany).toHaveBeenCalledWith({
       where: { id: 'c1', storeId: 'store1', name: null },
       data: { name: 'Sofi' },
@@ -46,7 +51,7 @@ describe('upsertAssistedCustomer', () => {
       null,
     );
     expect(result).toEqual({ id: 'c2' });
-    expect(tx.$executeRaw).toHaveBeenCalledTimes(2);
+    expect(tx.$executeRaw).toHaveBeenCalledTimes(3);
   });
 
   it('throws a 409 that does not carry the phone after a second miss', async () => {

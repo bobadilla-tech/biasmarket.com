@@ -131,7 +131,9 @@ export class OrderRepository {
       }),
     ]);
     const legacyMatches = legacy.filter(
-      (row) => normalizePhone(row.customerPhone) === phone,
+      (row) =>
+        row.customerPhone.trim() !== '' &&
+        normalizePhone(row.customerPhone) === phone,
     );
 
     const items = [...indexed, ...legacyMatches]
@@ -257,6 +259,7 @@ export class OrderRepository {
     data: {
       paymentStatus?: PaymentStatus;
       fulfillmentStatus?: FulfillmentStatus;
+      closedAt?: Date;
     },
     tx: Prisma.TransactionClient | PrismaService = this.prisma,
   ) {

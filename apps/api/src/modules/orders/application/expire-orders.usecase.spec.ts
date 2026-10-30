@@ -84,6 +84,7 @@ describe('ExpireOrdersUseCase', () => {
       },
       data: {
         status: 'CANCELLED',
+        closedAt: expect.any(Date),
         paymentStatus: 'CANCELLED',
         cancellationResolution: 'RETAINED',
         retainedAmount: new Prisma.Decimal(0),
@@ -189,6 +190,7 @@ describe('ExpireOrdersUseCase', () => {
       },
       data: {
         status: 'CANCELLED',
+        closedAt: expect.any(Date),
         paymentStatus: 'CANCELLED',
         cancellationResolution: 'RETAINED',
         retainedAmount: new Prisma.Decimal(30),
