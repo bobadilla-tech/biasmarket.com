@@ -37,6 +37,7 @@
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.29.7",
+    "@babel/plugin-transform-react-jsx": "7.29.7",
     "@types/react": "^19.2.18",
     "babel-preset-expo": "57.0.16",
     "eslint": "^9.39.5",
