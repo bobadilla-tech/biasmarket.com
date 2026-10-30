@@ -9,8 +9,8 @@ import {
   CustomerAuthService,
 } from './customer-auth.service.js';
 import {
-  createBuyerGoogleState,
   BUYER_GOOGLE_STATE_COOKIE,
+  createBuyerGoogleState,
 } from './buyer-google-oauth.js';
 import { CLAIM_TICKET_COOKIE, signClaimTicket } from './claim-ticket.js';
 import { CUSTOMER_SESSION_COOKIE } from './customer-session.constants.js';
@@ -133,7 +133,9 @@ describe('BuyerGoogleController claim flow', () => {
     ) =>
       request(app.getHttpServer())
         .get(
-          `/api/account/google/callback?${code ? `code=${code}&` : ''}state=${encodeURIComponent(state)}`,
+          `/api/account/google/callback?${code ? `code=${code}&` : ''}state=${encodeURIComponent(
+            state,
+          )}`,
         )
         .set('Cookie', [`${BUYER_GOOGLE_STATE_COOKIE}=${nonce}`, ...extra]);
 

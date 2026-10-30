@@ -54,7 +54,9 @@ describe("buildAssistedLinkMessage", () => {
       "Hola & ¡qué tal? #1",
     );
     expect(url).toBe(
-      `https://wa.me/51987654321?text=${encodeURIComponent("Hola & ¡qué tal? #1")}`,
+      `https://wa.me/51987654321?text=${encodeURIComponent(
+        "Hola & ¡qué tal? #1",
+      )}`,
     );
   });
 });

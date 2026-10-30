@@ -702,8 +702,9 @@ export class OrderController {
         input.operationCode,
         { currentOrderId: orderId },
       );
-      if (duplicate)
+      if (duplicate) {
         throw new DuplicateOperationCodeException(duplicate.orderId);
+      }
     }
 
     let imageUrl: string | null = null;

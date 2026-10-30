@@ -72,7 +72,9 @@ export function RelatedOrders({
                 <li key={item.id}>
                   {slug ? (
                     <Link
-                      href={`/${locale}/dashboard/${slug}/orders?order=${encodeURIComponent(item.id)}`}
+                      href={`/${locale}/dashboard/${slug}/orders?order=${encodeURIComponent(
+                        item.id,
+                      )}`}
                       className={`${className} underline-offset-2 hover:underline`}
                     >
                       {content}

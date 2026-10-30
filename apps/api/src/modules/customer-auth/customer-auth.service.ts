@@ -19,7 +19,7 @@ import { OrderRepository } from '../orders/infrastructure/order.repository.js';
 import { OrderEventsService } from '../orders/application/order-events.service.js';
 import { toPublicTimeline } from '../orders/application/public-order-timeline.js';
 import { countsTowardPaid } from '../../common/payment-summary.js';
-import { linkFingerprint, type ClaimTicket } from './claim-ticket.js';
+import { type ClaimTicket, linkFingerprint } from './claim-ticket.js';
 import { requiredEnv } from '../../config/env.validation.js';
 import { withPaymentSummary } from '../../common/payment-summary.js';
 import { toAccountOrderDto } from './dto/account-order-response.dto.js';

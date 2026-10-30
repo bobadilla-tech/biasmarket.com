@@ -104,7 +104,7 @@ version and plugin revisions used in the spike. Prove these repo-specific items:
   commit's image. Runtime secrets stay Dokku config values, not build args.
 - Dokku's predeploy task runs
   `pnpm --filter @biasmarket/db exec prisma migrate
-  deploy` using the new API
+deploy` using the new API
   image and the production-like `DATABASE_URL`, before replacement API
   containers start. A failed migration leaves the old API live.
 - Dokku health checks cover API `/api/health`, web readiness, and the workers'

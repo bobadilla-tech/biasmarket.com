@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { INVITE_CONFIG, type InviteConfig } from "./invite-config";
-import { pickInviteMoment, type InviteInput } from "./invite-rules";
+import { type InviteInput, pickInviteMoment } from "./invite-rules";
 
 const DAY = 24 * 60 * 60 * 1000;
 const NOW = Date.UTC(2026, 9, 28, 12);

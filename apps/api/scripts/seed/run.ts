@@ -15,8 +15,9 @@
 // on top of the base fixtures without touching them. Rerunning with the same
 // label repairs that batch in place; a new label adds a separate batch.
 //
-// Reachable in production by running the seed command inside the currently
-// live `api-<color>` container; see docs/core/admin-access.md. The operation is
+// Refuses to run when NODE_ENV is "production" (the production image sets it),
+// because every seeded user gets the published SEED_PASSWORD. A deliberate run
+// needs `--allow-production`; see docs/core/admin-access.md. The operation is
 // idempotent, additive-only, and has no destructive mode.
 
 import { createSeedClient } from './client.ts';
@@ -37,6 +38,17 @@ const batch = args
 
 if (append && !batch) {
   console.error('Usage: node scripts/seed/run.ts --append --batch=<label>');
+  process.exit(1);
+}
+
+if (
+  process.env.NODE_ENV === 'production' &&
+  !args.includes('--allow-production')
+) {
+  console.error(
+    'Refusing to seed: NODE_ENV is "production" and seeded users get the ' +
+      'published seed password. Pass --allow-production to override.',
+  );
   process.exit(1);
 }
 

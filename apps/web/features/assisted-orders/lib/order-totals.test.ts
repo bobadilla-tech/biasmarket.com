@@ -4,9 +4,9 @@ import {
   buildAssistedOrderPayload,
   hasMixedCurrencies,
   orderCurrency,
+  type PricedProduct,
   subtotalCents,
   unitPriceCents,
-  type PricedProduct,
 } from "./order-totals";
 
 const album: PricedProduct = {

@@ -82,3 +82,10 @@ is created. The baseline for change detection never moves on a rerun.
   (`expo prebuild`); they are gitignored and never committed.
 - Release runs execute on the tag ref, so GitHub cache entries they write are
   only reusable by reruns of that tag; caches written by `main` are readable.
+
+## Related
+
+- [ci.md](ci.md) for the `mobile` path filter this workflow reuses and the CI
+  jobs that gate PRs.
+- [deploy.md](deploy.md) for how the server-side apps ship (mobile builds are
+  independent of the production deploy).

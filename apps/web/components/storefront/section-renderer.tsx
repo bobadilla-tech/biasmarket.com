@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowUpRight, Images, Search, Shapes } from "lucide-react";
@@ -10,9 +10,9 @@ import {
   CategoryFilter,
   DesktopCategoryFilter,
   normalizeStoreTab,
+  type StorefrontCategory,
   StoreSearchBar,
   StoreTabs,
-  type StorefrontCategory,
 } from "@/features/storefront/components/storefront";
 
 export interface RenderableSectionVariant {
@@ -56,20 +56,24 @@ function parseCategorySlugs(value: string | null): string[] {
   ];
 }
 
-function mergeCatalogPages(
-  previous: RenderableSection[],
-  next: RenderableSection[],
+export function mergeCatalogPages(
+  pages: ReadonlyMap<number, RenderableSection[]>,
 ): RenderableSection[] {
   const products = new Map<
     string,
     { productId: string; product: RenderableSectionProduct }
   >();
-  for (const section of [...previous, ...next]) {
-    for (const item of section.collection?.products ?? []) {
-      products.set(item.productId, item);
+  let section: RenderableSection | undefined;
+  for (const [, pageSections] of [...pages.entries()].sort(
+    ([pageA], [pageB]) => pageA - pageB,
+  )) {
+    section ??= pageSections[0];
+    for (const currentSection of pageSections) {
+      for (const item of currentSection.collection?.products ?? []) {
+        if (!products.has(item.productId)) products.set(item.productId, item);
+      }
     }
   }
-  const section = next[0] ?? previous[0];
   if (!section) return [];
   return [
     {
@@ -80,6 +84,22 @@ function mergeCatalogPages(
       },
     },
   ];
+}
+
+function catalogSectionsForPage(page: number, sections: RenderableSection[]) {
+  return new Map<number, RenderableSection[]>([[page, sections]]);
+}
+
+/* Keep loaded pages keyed by their server page so backward navigation cannot
+ * discard products or reorder them relative to the selected server sort. */
+function addCatalogPage(
+  pages: ReadonlyMap<number, RenderableSection[]>,
+  page: number,
+  sections: RenderableSection[],
+) {
+  const next = new Map(pages);
+  next.set(page, sections);
+  return next;
 }
 
 export interface RenderableSection {
@@ -143,13 +163,14 @@ export function StoreSectionRenderer({
   const catalogQueryKey = new URLSearchParams(searchString);
   catalogQueryKey.delete("page");
   const catalogKey = catalogQueryKey.toString();
+  const currentPage = catalogPagination?.page ?? 1;
   const [loadedCatalog, setLoadedCatalog] = useState({
     key: catalogKey,
-    sections,
+    pages: catalogSectionsForPage(currentPage, sections),
   });
   const displayedSections =
     serverSorted && loadedCatalog.key === catalogKey
-      ? loadedCatalog.sections
+      ? mergeCatalogPages(loadedCatalog.pages)
       : sections;
   useEffect(() => {
     setCategoryIds(parseCategorySlugs(searchParams?.get("categoria") ?? null));
@@ -160,20 +181,25 @@ export function StoreSectionRenderer({
   useEffect(() => {
     setIsLoadingMore(false);
     if (!serverSorted) {
-      setLoadedCatalog({ key: catalogKey, sections });
+      setLoadedCatalog({
+        key: catalogKey,
+        pages: catalogSectionsForPage(currentPage, sections),
+      });
       return;
     }
 
     setLoadedCatalog((previous) => {
-      if (previous.key !== catalogKey || (catalogPagination?.page ?? 1) <= 1) {
-        return { key: catalogKey, sections };
-      }
+      if (previous.key !== catalogKey)
+        return {
+          key: catalogKey,
+          pages: catalogSectionsForPage(currentPage, sections),
+        };
       return {
         key: catalogKey,
-        sections: mergeCatalogPages(previous.sections, sections),
+        pages: addCatalogPage(previous.pages, currentPage, sections),
       };
     });
-  }, [catalogKey, catalogPagination?.page, sections, serverSorted]);
+  }, [catalogKey, currentPage, sections, serverSorted]);
 
   useEffect(() => {
     if (!catalogControls) return;
@@ -280,12 +306,15 @@ export function StoreSectionRenderer({
                   Number(variant.priceOverride ?? product.price),
                 ),
               );
-            if (sort === "precio_asc")
+            if (sort === "precio_asc") {
               return effectivePrice(a.product) - effectivePrice(b.product);
-            if (sort === "precio_desc")
+            }
+            if (sort === "precio_desc") {
               return effectivePrice(b.product) - effectivePrice(a.product);
-            if (sort === "nombre_asc")
+            }
+            if (sort === "nombre_asc") {
               return a.product.name.localeCompare(b.product.name);
+            }
             return (
               Number(isProductOutOfStock(a.product)) -
               Number(isProductOutOfStock(b.product))
@@ -299,14 +328,16 @@ export function StoreSectionRenderer({
           if (
             cp.product.discontinued ||
             (!catalogControls && isProductOutOfStock(cp.product))
-          )
+          ) {
             return false;
+          }
           if (
             !serverSorted &&
             normalizedQuery &&
             !normalizeSearchText(cp.product.name).includes(normalizedQuery)
-          )
+          ) {
             return false;
+          }
           if (
             catalogControls &&
             !serverSorted &&
@@ -314,8 +345,9 @@ export function StoreSectionRenderer({
             !cp.product.categories?.some((item) =>
               categoryIds.includes(item.category.slug ?? item.category.id),
             )
-          )
+          ) {
             return false;
+          }
           return true;
         });
         if (visible.length === 0) return null;
@@ -328,7 +360,11 @@ export function StoreSectionRenderer({
               </h2>
             )}
             <div
-              className={`grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 ${catalogControls ? "lg:grid-cols-4 xl:grid-cols-5" : "lg:grid-cols-4"}`}
+              className={`grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 ${
+                catalogControls
+                  ? "lg:grid-cols-4 xl:grid-cols-5"
+                  : "lg:grid-cols-4"
+              }`}
             >
               {visible.map((cp) => (
                 <ProductCard
@@ -395,7 +431,11 @@ export function StoreSectionRenderer({
               onSortChange={setSort}
             />
             <div
-              className={`grid items-start gap-5 ${productCategories.length > 0 ? "md:grid-cols-[13rem_minmax(0,1fr)] lg:grid-cols-[14rem_minmax(0,1fr)] xl:grid-cols-[15rem_minmax(0,1fr)]" : ""}`}
+              className={`grid items-start gap-5 ${
+                productCategories.length > 0
+                  ? "md:grid-cols-[13rem_minmax(0,1fr)] lg:grid-cols-[14rem_minmax(0,1fr)] xl:grid-cols-[15rem_minmax(0,1fr)]"
+                  : ""
+              }`}
             >
               {productCategories.length > 0 && (
                 <>
@@ -443,13 +483,48 @@ export function StoreSectionRenderer({
                     {t("noProducts")}
                   </p>
                 ) : null}
-                {catalogPagination &&
-                  catalogPagination.page * catalogPagination.limit <
-                    catalogPagination.total && (
-                    <nav
-                      aria-label={t("catalogPagination")}
-                      className="flex justify-center pt-2"
-                    >
+                {catalogPagination && catalogPagination.total > 0 && (
+                  <nav
+                    aria-label={t("catalogPagination")}
+                    className="flex flex-wrap items-center justify-center gap-3 pt-2"
+                  >
+                    {catalogPagination.page > 1 && (
+                      <button
+                        type="button"
+                        disabled={isLoadingMore}
+                        onClick={() => {
+                          const params = new URLSearchParams(searchString);
+                          const previousPage = catalogPagination.page - 1;
+                          if (previousPage === 1) params.delete("page");
+                          else params.set("page", String(previousPage));
+                          setIsLoadingMore(true);
+                          router.push(`${pathname}?${params.toString()}`, {
+                            scroll: false,
+                          });
+                        }}
+                        className="min-h-11 rounded-full border border-(--store-border) px-5 text-sm font-semibold text-(--store-text) disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {t("previousPage")}
+                      </button>
+                    )}
+                    {catalogPagination.page <=
+                      Math.ceil(
+                        catalogPagination.total / catalogPagination.limit,
+                      ) && (
+                      <span
+                        className="text-sm text-(--store-muted)"
+                        aria-live="polite"
+                      >
+                        {t("pageOf", {
+                          page: catalogPagination.page,
+                          pages: Math.ceil(
+                            catalogPagination.total / catalogPagination.limit,
+                          ),
+                        })}
+                      </span>
+                    )}
+                    {catalogPagination.page * catalogPagination.limit <
+                      catalogPagination.total && (
                       <button
                         type="button"
                         disabled={isLoadingMore}
@@ -468,8 +543,9 @@ export function StoreSectionRenderer({
                       >
                         {isLoadingMore ? t("loadingMore") : t("loadMore")}
                       </button>
-                    </nav>
-                  )}
+                    )}
+                  </nav>
+                )}
               </div>
             </div>
           </div>
@@ -549,7 +625,9 @@ export function StoreSectionRenderer({
                 .map((category) => (
                   <a
                     key={category.id}
-                    href={`?tab=productos&categoria=${encodeURIComponent(category.slug ?? category.id)}`}
+                    href={`?tab=productos&categoria=${encodeURIComponent(
+                      category.slug ?? category.id,
+                    )}`}
                     className="group flex min-h-[76px] items-center gap-3 rounded-2xl border border-(--store-border) bg-(--store-card) p-3 text-left text-sm font-semibold text-(--store-text) shadow-sm transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-(--store-primary) hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) motion-reduce:transform-none motion-reduce:transition-none"
                   >
                     <span

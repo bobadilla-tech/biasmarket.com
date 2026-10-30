@@ -17,6 +17,6 @@ export {
   isPartialAvailable,
   pickupDateBlocking,
   pointsRequiringDate,
-  unconfiguredManualMethods,
   type ShippingFormValues,
+  unconfiguredManualMethods,
 } from "./lib/delivery-rules";
