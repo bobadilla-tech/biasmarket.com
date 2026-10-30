@@ -144,9 +144,11 @@ describe('OrderRepository.findRelatedForStore', () => {
     expect(result.total).toBe(11);
   });
   it('does not match blank erased phone values to a legacy current order', async () => {
-    prisma.order.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([
-      row('erased-order', '2026-09-02T00:00:00.000Z', { customerPhone: '' }),
-    ]);
+    prisma.order.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        row('erased-order', '2026-09-02T00:00:00.000Z', { customerPhone: '' }),
+      ]);
     prisma.order.count.mockResolvedValue(0);
 
     const result = await repo.findRelatedForStore('store-1', {
@@ -157,5 +159,4 @@ describe('OrderRepository.findRelatedForStore', () => {
 
     expect(result).toEqual({ items: [], total: 0 });
   });
-
 });
