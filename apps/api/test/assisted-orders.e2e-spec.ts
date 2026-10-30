@@ -564,12 +564,18 @@ describe('assisted orders (e2e)', () => {
     });
   });
 
-  it('keeps a shared Customer while another assisted order is active, then erases it after closure', async () => {
+  it(
+    'keeps a shared Customer while another assisted order is active, then erases it after closure',
+    async () => {
     const sharedPhone = `+519${String(randomInt(1e8)).padStart(8, '0')}`;
     const first = await post(body({ customerPhone: sharedPhone })).expect(201);
     const second = await post(body({ customerPhone: sharedPhone })).expect(201);
-    const firstRow = await prisma.order.findUniqueOrThrow({ where: { id: first.body.order.id } });
-    const secondRow = await prisma.order.findUniqueOrThrow({ where: { id: second.body.order.id } });
+    const firstRow = await prisma.order.findUniqueOrThrow({
+      where: { id: first.body.order.id },
+    });
+    const secondRow = await prisma.order.findUniqueOrThrow({
+      where: { id: second.body.order.id },
+    });
     const customerId = firstRow.customerId!;
     expect(secondRow.customerId).toBe(customerId);
 
@@ -611,10 +617,17 @@ describe('assisted orders (e2e)', () => {
     expect(erasedCustomer.phone).toBe(`erased:${customerId}`);
     expect(erasedCustomer.identityErasedAt).toBeInstanceOf(Date);
     const audit = await prisma.auditLog.findFirstOrThrow({
-      where: { entityId: second.body.order.id, action: 'order.assisted_identity_erased' },
+      where: {
+        entityId: second.body.order.id,
+        action: 'order.assisted_identity_erased',
+      },
     });
     expect(audit.actorId).toBe('support-operator-1');
-    expect(audit.metadata).toMatchObject({ cause: 'BUYER_REQUEST', requestReference: 'PRIV-460' });
-  });
+    expect(audit.metadata).toMatchObject({
+      cause: 'BUYER_REQUEST',
+      requestReference: 'PRIV-460',
+    });
+    },
+  );
 });
 
