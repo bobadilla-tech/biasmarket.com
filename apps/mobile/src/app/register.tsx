@@ -9,8 +9,8 @@ import {
   customerLoginSchema,
   customerRegisterSchema,
 } from "@biasmarket/validation";
-import { useBuyerSession } from "../features/auth/session-context.js";
-import { useMobileI18n } from "../i18n/mobile-i18n.js";
+import { useBuyerSession } from "../features/auth/session-context";
+import { useMobileI18n } from "../i18n/mobile-i18n";
 
 const registerFormSchema = customerRegisterSchema.extend({
   storeSlug: z.string().min(1),

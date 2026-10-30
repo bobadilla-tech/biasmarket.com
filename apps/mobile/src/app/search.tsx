@@ -17,7 +17,7 @@ import {
   flattenProductPages,
   nextProductSearchPage,
 } from "../features/catalog/pagination";
-import { useMobileI18n } from "../i18n/mobile-i18n.js";
+import { useMobileI18n } from "../i18n/mobile-i18n";
 
 const PAGE_SIZE = 24;
 

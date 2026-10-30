@@ -13,7 +13,7 @@ import {
 } from "@biasmarket/utils/cart";
 import { formatPrice } from "../../features/catalog/catalog-ui";
 import { useStoreCart } from "../../features/cart/use-store-cart";
-import { useMobileI18n } from "../../i18n/mobile-i18n.js";
+import { useMobileI18n } from "../../i18n/mobile-i18n";
 
 export default function CartScreen() {
   const { storeSlug } = useLocalSearchParams<{ storeSlug: string }>();
