@@ -2,9 +2,10 @@
 
 ## Mission
 
-Fix `workers-dev.sh: 5: set: Illegal option -` / `api-dev.sh: 7: set: Illegal option -`
-when running `pnpm docker:dev` from a Windows checkout, by adding a root
-`.gitattributes` forcing LF, plus a short docs note.
+Fix `workers-dev.sh: 5: set: Illegal option -` /
+`api-dev.sh: 7: set: Illegal option -` when running `pnpm docker:dev` from a
+Windows checkout, by adding a root `.gitattributes` forcing LF, plus a short
+docs note.
 
 ## Context
 
@@ -17,7 +18,8 @@ when running `pnpm docker:dev` from a Windows checkout, by adding a root
 
 ## Decisions already made
 
-- Fix with `.gitattributes`, not by editing scripts or compose, no `tr -d '\r'` wrapper.
+- Fix with `.gitattributes`, not by editing scripts or compose, no `tr -d '\r'`
+  wrapper.
 - No new CI job.
 
 ## Reviewed plan
@@ -26,7 +28,8 @@ Follow plan.md sections 3, 5, 6 in order.
 
 ## Review findings to preserve
 
-review-log.md: only self-review was done; step 2 (renormalize shows no other diff) is the key guard.
+review-log.md: only self-review was done; step 2 (renormalize shows no other
+diff) is the key guard.
 
 ## Verification
 
@@ -44,7 +47,8 @@ plan.md section 9.
 - pnpm only; don't touch the `packageManager` pin.
 - If renormalize touches files other than `.gitattributes`, stop and ask
   (default: narrow to `*.sh text eol=lf` only).
-- Do not touch the user's checkout state beyond the branch; use scratch dirs for clones.
+- Do not touch the user's checkout state beyond the branch; use scratch dirs for
+  clones.
 
 ## Stack base policy
 
@@ -57,4 +61,5 @@ for existing Windows clones.
 
 ## First action
 
-Read plan.md, `git status`, confirm branch is clean `main`, create the branch, do step 1.
+Read plan.md, `git status`, confirm branch is clean `main`, create the branch,
+do step 1.

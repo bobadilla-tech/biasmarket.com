@@ -1,7 +1,7 @@
 # Plan: fix `set: Illegal option -` in docker dev scripts on Windows
 
-Status: ready (self-reviewed only, see review-log.md)
-Date: 2026-10-29. No ticket (reported by Daniel Jacquin in chat).
+Status: ready (self-reviewed only, see review-log.md) Date: 2026-10-29. No
+ticket (reported by Daniel Jacquin in chat).
 
 ## 1. Context and outcome
 
@@ -20,13 +20,13 @@ settings (`core.autocrlf=true`) without manual steps.
 
 ## 2. Root cause (fact, reproduced)
 
-- The scripts are bind-mounted (`infra/docker/docker-compose.dev.yml:96,135,170`,
-  `- ../..:/app`) and run with `sh` in `node:24-slim` (`workers.Dockerfile:11`),
-  i.e. dash.
+- The scripts are bind-mounted
+  (`infra/docker/docker-compose.dev.yml:96,135,170`, `- ../..:/app`) and run
+  with `sh` in `node:24-slim` (`workers.Dockerfile:11`), i.e. dash.
 - Line 5 of `workers-dev.sh` and line 7 of `api-dev.sh` are exactly `set -e`.
-  With CRLF endings the argument is `-e\r`; dash prints
-  `set: Illegal option -` and the `\r` returns the cursor so `e` is hidden.
-  That is why the message ends in a bare `-`.
+  With CRLF endings the argument is `-e\r`; dash prints `set: Illegal option -`
+  and the `\r` returns the cursor so `e` is hidden. That is why the message ends
+  in a bare `-`.
 - Repo has **no `.gitattributes`**. Index blobs are LF (`git ls-files --eol`
   shows `i/lf w/lf` for all three scripts), but a Windows clone with
   `core.autocrlf=true` (Git for Windows default) checks them out as CRLF.
@@ -36,12 +36,12 @@ settings (`core.autocrlf=true`) without manual steps.
 Probe (scratchpad, not committed):
 `/private/tmp/claude-501/-Users-ultirequiem-ulti-biasmarket-com/498a6d99-5d0b-41bc-9a22-d3c4e75f8b4f/scratchpad/crlf.sh`
 = `workers-dev.sh` with `\r` appended per line. `dash crlf.sh` prints
-`crlf.sh: 5: set: Illegal option -`. Matches the report character for
-character. Result: root cause confirmed; no need to ask Daniel for more logs.
+`crlf.sh: 5: set: Illegal option -`. Matches the report character for character.
+Result: root cause confirmed; no need to ask Daniel for more logs.
 
-Other exposed files: every tracked `*.sh` (`infra/vps/**`, `scripts/ci/**`)
-plus anything executed in Linux containers/VPS. Windows contributors running
-those locally hit the same class of bug.
+Other exposed files: every tracked `*.sh` (`infra/vps/**`, `scripts/ci/**`) plus
+anything executed in Linux containers/VPS. Windows contributors running those
+locally hit the same class of bug.
 
 ## 3. Design
 
@@ -57,10 +57,10 @@ Add a root `.gitattributes`:
 `git ls-files --eol | grep -- '-text'` for other binaries and list extensions
 explicitly only if `git add --renormalize .` shows unwanted diffs.)
 
-Non-goals: no change to the scripts, compose file, Dockerfiles; no CRLF-stripping
-wrapper (`tr -d '\r'`) in compose, which would hide the real problem; no new
-CI job (the 7-place wiring in `docs/core/ci.md` is not worth it for this; the
-attribute is the guard).
+Non-goals: no change to the scripts, compose file, Dockerfiles; no
+CRLF-stripping wrapper (`tr -d '\r'`) in compose, which would hide the real
+problem; no new CI job (the 7-place wiring in `docs/core/ci.md` is not worth it
+for this; the attribute is the guard).
 
 ## 4. Files
 
@@ -92,9 +92,8 @@ runs on PRs to `main` (`ci.yml` `on:`), fine for a single PR.
 Planned, not run in the plan session:
 
 - Simulate Windows: `git -c core.autocrlf=true clone . <scratch>/win` after the
-  `.gitattributes` commit exists; then
-  `git ls-files --eol` in the clone must show `w/lf` for `*.sh`, and
-  `sh -n infra/docker/scripts/*.sh` passes.
+  `.gitattributes` commit exists; then `git ls-files --eol` in the clone must
+  show `w/lf` for `*.sh`, and `sh -n infra/docker/scripts/*.sh` passes.
 - Negative control on `main` (no attributes): same clone shows `w/crlf`, and
   `dash infra/docker/scripts/workers-dev.sh` prints the Illegal option error.
 - `pnpm lint` untouched files; no unit tests affected.
@@ -133,6 +132,6 @@ the same three commands. Or work inside WSL.
 1. Scope of the attribute: recommended default is `* text=auto eol=lf` +
    `*.sh text eol=lf`. A narrower `*.sh text eol=lf` only is also safe; use it
    if step 2 shows unexpected diffs.
-2. Confirm Daniel is on Windows with default autocrlf (strong inference from
-   the dash `\r` symptom and Docker Desktop UI; not verified). If he is on
+2. Confirm Daniel is on Windows with default autocrlf (strong inference from the
+   dash `\r` symptom and Docker Desktop UI; not verified). If he is on
    macOS/Linux, stop and re-investigate (`file infra/docker/scripts/*.sh`).

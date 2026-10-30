@@ -1,6 +1,7 @@
 # Bias Market
 
 [![codecov](https://codecov.io/gh/bobadilla-tech/biasmarket.com/graph/badge.svg)](https://codecov.io/gh/bobadilla-tech/biasmarket.com)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/bobadilla-tech/biasmarket.com)
 
 Storefronts for the K-pop commerce world: GOMs, photocard sellers, album group
 orders, comeback drops, and fan merch shops. Manual payment-first (bank
