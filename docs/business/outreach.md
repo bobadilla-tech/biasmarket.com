@@ -168,7 +168,8 @@ Goal: → 5–10 ACTIVE users
 
 - “I’ll set it up for you”
 - “Use it for your next GO”
-- “No cost for early users”
+- “Early access: I’ll set it up and you try it on one drop (pricing isn’t set
+  yet)”
 
 ---
 

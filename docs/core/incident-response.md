@@ -1,7 +1,7 @@
 # Incident response
 
-Single-operator runbook for the Uptime Kuma monitoring setup described in
-[`.artifacts/2026/08/20260809--uptime-kuma-monitoring/plan.md`](../../.artifacts/2026/08/20260809--uptime-kuma-monitoring/plan.md),
+Single-operator runbook for the Uptime Kuma monitoring setup (design history:
+[`.artifacts/2026/08/20260809--uptime-kuma-monitoring/plan.md`](../../.artifacts/2026/08/20260809--uptime-kuma-monitoring/plan.md)),
 updated for the blue/green production stack described in
 [`blue-green-migrations.md`](blue-green-migrations.md). No on-call rotation or
 escalation policy here — this is a runbook, not a paging schedule.
@@ -32,7 +32,8 @@ generates no down-migrations for `migrate deploy`. If the incident is
 migration-related (the new schema broke something), the pre-migration snapshot
 in `/home/deploy/biasmarket/releases/pre-migrate-*.sql.gz` is the real recovery
 path, and it's a manual, deliberate restore — not something
-`deploy.sh --rollback` attempts automatically. See
+`deploy.sh --rollback` attempts automatically. The restore procedure is in
+[`operations.md`](operations.md#restore). See
 [`blue-green-migrations.md`](blue-green-migrations.md#migration-discipline-expandcontract)
 for why expand/contract discipline is the actual prevention here, not the
 recovery mechanism.
@@ -62,10 +63,10 @@ releases on its own once that process's file descriptor closes.
 
 ## The monitors
 
-Updated for blue/green (see
-[`blue-green-migrations.md`](blue-green-migrations.md#uptime-kuma-monitors)):
-the old bare-hostname internal monitors (`api`/`web`) stopped resolving once
-only the colored services exist, replaced by 4 static per-color monitors.
+Set up by `scripts/setup-kuma.ts` (see
+[`operations.md`](operations.md#uptime-kuma)). With blue/green, the old
+bare-hostname internal monitors (`api`/`web`) no longer resolve because only the
+colored services exist, so each app has one static internal monitor per color.
 
 | Monitor                      | Target                                  | Proves                                  |
 | ---------------------------- | --------------------------------------- | --------------------------------------- |
@@ -105,8 +106,10 @@ before doing anything else:
 
 ## Common fixes
 
-On the blue/green stack (from `/home/deploy/biasmarket` — **never** run a bare
-`docker compose down`):
+Restarting or inspecting the shared services (`db`, `redis`, `minio`,
+`uptime-kuma`, `caddy`), disk-full handling and image pruning are in
+[`operations.md`](operations.md). For the app colors, on the blue/green stack
+(from `/home/deploy/biasmarket` — **never** run a bare `docker compose down`):
 
 ```bash
 # which color is live right now
@@ -139,6 +142,41 @@ retries per its own policy — the Slack/Discord alert still fires because it's 
 independent path. This is an accepted gap, not a bug: you're never blind, you
 just might be missing one history row for that specific incident. Not solved
 further (see the plan doc's "Decision" sections for why).
+
+## Error tracking and redaction
+
+`api` and `web` can report unhandled errors to a GlitchTip project (a
+Sentry-protocol-compatible tracker). It is opt-in per process through a DSN
+variable, and a process with no DSN set sends nothing (errors still reach stdout
+and the container logs):
+
+| Process       | Variable                 | Code                                                                                                 |
+| ------------- | ------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `api`         | `SENTRY_DSN`             | `apps/api/src/common/error-tracking.ts`                                                              |
+| `web` server  | `WEB_SENTRY_DSN`         | `apps/web/instrumentation.ts`                                                                        |
+| `web` browser | `NEXT_PUBLIC_SENTRY_DSN` | `apps/web/instrumentation-client.ts` (a build arg, see [deploy.md](deploy.md#variables-and-secrets)) |
+
+Assisted-order private links carry a secret token in the URL path
+(`/public/orders/:token` on the API, `/store/<slug>/pedido/:token` on the web).
+That token must not reach a log line or an error event, so several layers
+rewrite the token segment to a placeholder before anything is written or sent:
+
+- **API logs and error responses:** `scrubRequestUrl`
+  (`apps/api/src/common/scrub-request-url.ts`), used by the exception filter,
+  replaces the token and drops the query string.
+- **API error events:** `scrubSentryEvent` in `error-tracking.ts` runs on every
+  error and transaction event. It scrubs the request URL, transaction name,
+  tags, trace data and span descriptions, then walks the remaining string fields
+  of the event. The query string is dropped when the URL carried a token.
+- **Web error events:** `scrubSentryEvent` and `scrubBreadcrumb` in
+  `apps/web/lib/scrub-sentry.ts`, wired into both the server and browser
+  initialization (the browser also scrubs each breadcrumb as it is recorded).
+- **Caddy access logs:** redacted separately in the Caddyfile, see
+  [caddy.md](caddy.md#access-logs-and-token-redaction).
+
+If a new route ever carries a secret in its path or query, add it to each of
+these layers; they do not share one list. The scrubbers have unit tests next to
+the code.
 
 ## Rotating `MONITORING_WEBHOOK_SECRET`
 
@@ -185,6 +223,15 @@ Deliberately not fixed by this migration — documented tradeoffs, not bugs:
 ## Status page
 
 `https://status.biasmarket.com` shows only the two external monitors (API, Web)
-— the user-facing surfaces. The other four (internal API/web, DB, MinIO) are
-intentionally left off any public page and are only visible in Kuma's main
-dashboard, used for triage.
+— the user-facing surfaces. All monitors except the external ones (the internal
+API and web checks, DB, MinIO and the watchdog push monitor) are intentionally
+left off any public page and are only visible in Kuma's main dashboard, used for
+triage.
+
+## Related
+
+- [operations.md](operations.md) for service restarts, disk-full handling, Kuma
+  setup and restore.
+- [blue-green-migrations.md](blue-green-migrations.md) for how deploys and
+  rollbacks work.
+- [deploy.md](deploy.md) for the manual deploy and verification commands.

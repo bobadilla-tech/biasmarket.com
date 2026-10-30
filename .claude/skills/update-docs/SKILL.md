@@ -131,8 +131,9 @@ Check the navigation structure, not only individual facts:
   Each folder `readme.md` is an index of its docs with one line each and "read
   this when ..." guidance. Note that `docs/core/readme.md` must index core docs,
   not hold the content of one topic: if a topic's content sits in a `readme.md`,
-  propose moving it to a named file (for example `docker.md`) and rebuilding the
-  index.
+  propose moving it to a named file (for example `docker-dev.md`) and rebuilding
+  the index. `docs/readme.md`, `docs/core/provisioning.md` and
+  `docs/core/operations.md` are expected docs, not orphans.
 - **Layering**: overview first, then topic docs, then depth (tradeoffs, state
   machines, failure modes, runbooks). A reader should know where to go next at
   the end of each doc: add "Next / Related" links.
@@ -252,7 +253,7 @@ updates over full sweeps:
   `docs/core/architecture.md` module list, and `docs/core/security-payments.md`
   if it touches money, roles, or tenant data.
 - New or changed model/enum: data-model section, state-machine description.
-- New env var or script: the doc that owns setup (`docs/core/docker.md`,
+- New env var or script: the doc that owns setup (`docs/core/docker-dev.md`,
   `deploy.md`, or `ci.md`) and `.env.example` consistency.
 - New workspace or CI job: architecture monorepo tree, `docs/core/ci.md`'s
   wiring list, and the root index.

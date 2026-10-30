@@ -367,8 +367,8 @@ ESLint + vitest-axe + scoped-Playwright harness with the missing jsdom stubs.
 - **Fix:** Shared `SkipLink` (plain `<a href="#main-content">`, sr-only +
   `focus:not-sr-only`, a client leaf — must **not** add `"use client"` to the
   root layout). Add `id="main-content"
-tabIndex={-1}` to the **existing**
-  mains: pass through to `SidebarInset` in `admin/layout.tsx`, set on
+tabIndex={-1}` to the **existing** mains:
+  pass through to `SidebarInset` in `admin/layout.tsx`, set on
   `StoreThemeFrame`'s `<main>`. Add a **new** real `<main>` only to `/account`
   and the storefront checkout/cart/account page bodies. Create
   `(onboarding)/layout.tsx` as **structure-only**
@@ -475,11 +475,11 @@ tabIndex={-1}` to the **existing**
 
 - **Component:** `features/products/components/product-tile.tsx:78`.
   `<Card role="button"
-tabIndex={0} onClick onKeyDown>` **contains**
-  `<Button>` Publish/Edit/Delete (`:100`–`133`). `onKeyDown` handles `" "`
-  **without `preventDefault()`** → page scrolls on Space. (No `"use
-client"` —
-  works transitively.)
+tabIndex={0} onClick onKeyDown>` **contains** `<Button>`
+  Publish/Edit/Delete (`:100`–`133`). `onKeyDown` handles `" "` **without
+  `preventDefault()`** → page scrolls on Space. (No `"use
+client"` — works
+  transitively.)
 - **WCAG:** 4.1.2 (`nested-interactive`), 2.1.1.
 - **Automated:** Yes.
 - **Fix:** Make `Card` a plain container; a single real control for "open"

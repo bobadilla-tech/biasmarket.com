@@ -127,8 +127,8 @@ no `storageState`, no dashboard or `pedido` coverage (`smoke.spec.ts:5-8`).
   `apps/web/public/og-image.png` is a 99,012-byte PNG (fine). The upload is a
   cross-origin `POST <api>/api/public/orders/:token/payments`,
   `credentials:
-"omit"`; CORS takes a single origin, so API `WEB_URL` must
-  equal the page origin exactly.
+"omit"`; CORS takes a single origin, so API `WEB_URL` must equal
+  the page origin exactly.
 - **Seller approves a buyer proof** with the per-proof **"Aprobar"** inside the
   "Historial de pagos" container (`payment-history-list.tsx`; shown for
   `BUYER_SUBMITTED` + `PENDING_REVIEW`, next to "Rechazar"). A full-balance
@@ -381,10 +381,10 @@ from the intercepted URL>`.
   script tests" and before "Install actionlint" (`ci.yml` ~1102, 5-min job):
   `node --check scripts/ci/google-stub.mjs`,
   `node --test
-scripts/ci/google-stub.test.mjs` (two cases only: non-Google
-  URL passes through unchanged; no-op without `E2E_GOOGLE_STUB=1`), then the
-  greps. Env is added to the existing `exec env PORT=3000 WEB_URL=… node …` line
-  in `web-e2e.sh` (define the run id with a default; `set -u` is on).
+scripts/ci/google-stub.test.mjs` (two cases only: non-Google URL
+  passes through unchanged; no-op without `E2E_GOOGLE_STUB=1`), then the greps.
+  Env is added to the existing `exec env PORT=3000 WEB_URL=… node …` line in
+  `web-e2e.sh` (define the run id with a default; `set -u` is on).
 
 ### 3.5 In-app browsers
 

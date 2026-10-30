@@ -10,7 +10,8 @@ required.
 
 ## Stack
 
-Next.js · NestJS · Prisma · PostgreSQL · Docker · Resend
+Next.js · NestJS · Prisma · PostgreSQL · Redis · BullMQ · MinIO · better-auth ·
+Expo · Sanity · Caddy · Docker · Resend
 
 ## Getting started
 
@@ -20,15 +21,16 @@ Prerequisites: Docker, Node 24 LTS, [pnpm](https://pnpm.io).
 pnpm docker:dev
 ```
 
-This is the only sanctioned dev workflow, one command brings up Postgres, the
-NestJS API, and the Next.js web app with working dev defaults, no manual `.env`
-setup required. Details, seeded accounts, and hot-reload behavior:
-[docs/core/infra.md](docs/core/infra.md).
+This is the only sanctioned dev workflow, one command brings up Postgres, Redis,
+MinIO, the NestJS API, the workers, and the Next.js web app with working dev
+defaults, no manual `.env` setup required. Hot reload and scripts:
+[docs/core/docker-dev.md](docs/core/docker-dev.md). Seeded accounts and known
+issues: [docs/core/infra.md](docs/core/infra.md).
 
 Running the apps directly on the host (`pnpm dev`) is possible but unsupported,
-it starts `api`/`web` only, with no database, and needs you to hand-build your
-own `.env` files. Use `pnpm docker:dev` unless you have a specific reason not
-to.
+it runs every workspace's `dev` script (`turbo run dev --parallel`) with no
+database, Redis or MinIO, and needs you to hand-build your own `.env` files. Use
+`pnpm docker:dev` unless you have a specific reason not to.
 
 ## Monorepo index
 
@@ -59,6 +61,10 @@ pnpm workspaces + Turborepo.
 
 ## Docs
 
-- [docs/core/](docs/core/) — architecture, product spec, security & payments,
-  i18n, deploy runbooks. Mobile APK/iOS release builds:
+Start at [docs/readme.md](docs/readme.md).
+
+- [docs/core/](docs/core/readme.md) — architecture, product spec, security &
+  payments, i18n, deploy runbooks. Mobile APK/iOS release builds:
   [docs/core/mobile-release.md](docs/core/mobile-release.md).
+- [docs/business/](docs/business/readme.md) — who Bias Market is for,
+  go-to-market, and the buyer and seller flows.

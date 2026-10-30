@@ -71,7 +71,7 @@ quick question — are you still using forms + sheets + dms to manage everything
 i'm working on something that replaces all of that (buyers order + upload
 payment in one place)
 
-i can set it up for your next drop for free if you want to try 🙌
+i can set it up for your next drop if you want to try 🙌
 
 ## Rules
 
@@ -190,7 +190,8 @@ happy to set it up for you to test on one drop if you want
 
 ## “Is it free?”
 
-yeah for now i’m setting it up for early users for free
+right now i’m setting it up with early users to try on one drop, pricing isn’t
+set yet
 
 main goal is helping you run smoother drops
 
