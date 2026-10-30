@@ -72,6 +72,52 @@ text exists, not that the job can trigger, and does not see multi-line `run: |`
 blocks. Tests: `node --test scripts/ci/check-workspace-scripts.test.mjs`
 (fixtures in `scripts/ci/fixtures/workspace-scripts/`).
 
+## Web E2E (`Web E2E (a11y)` job)
+
+`scripts/ci/web-e2e.sh` starts Postgres, Redis and MinIO, builds `api` + `web`,
+seeds, boots both (`api` :3000, `web` :3001) and runs Playwright
+(`apps/web/playwright.config.ts`). The job keeps the name `Web E2E (a11y)` so
+`check-ci-success.sh` still matches it. It runs when its `web_e2e` path filter
+matches, so on a PR check that it was not skipped. Timeout is 35 min; the
+Playwright `globalTimeout` is 20 min.
+
+Projects: `mobile-375`, `tablet-768` and `desktop` run the unauthenticated a11y
+and responsive specs (they ignore `e2e/flows/`). `setup` logs the seeded seller
+in once (`e2e/auth.setup.ts` -> gitignored `e2e/.auth/seller.json`). `flows`
+(375x812, Spanish, `retries: 0`) runs the assisted-order journeys in
+`e2e/flows/*.spec.ts`: each test creates its own throwaway store and products
+through the seller API (web never talks to Postgres), uses a unique phone and a
+unique Google code, and finds its rows by those, never by position. The API E2E
+suite stays authoritative for rules; flows cover what a person sees.
+
+- **One host.** web, API, `BETTER_AUTH_URL` and `WEB_URL` all use `127.0.0.1`,
+  set on the exec lines of `web-e2e.sh` (never in `e2e.env.example`, which feeds
+  the API E2E job). A page and API on different hosts are cross-site, so
+  `SameSite=Lax` auth and claim cookies would not be sent.
+- **Google is simulated.** The API process alone is started with
+  `E2E_GOOGLE_STUB=1`, fake `GOOGLE_CLIENT_ID/SECRET` (`*.invalid`) and
+  `NODE_OPTIONS=--import scripts/ci/google-stub.mjs`, which answers the OAuth
+  token call for codes starting `e2e-`. Playwright cannot route the server-side
+  redirect to Google, so `e2e/flows/helpers/google.ts` intercepts the API's own
+  `/api/account/google` response and swaps its `Location` for the API callback.
+  If the OAuth code starts verifying signatures, flows fail loudly: update the
+  stub. The `hygiene` job syntax-checks it, runs its self-test, and fails if
+  `google-stub`/`E2E_GOOGLE_STUB` appear outside `scripts/ci`, `apps/web/e2e`,
+  `docs` and `ci.yml`, or if `GOOGLE_*` appears in `e2e.env.example`.
+- **Rate limits.** All browser contexts share one IP and the in-memory
+  throttler. Claims happen in one test; keep new flows well under the per-IP
+  caps (claim-ticket, Google start/callback and proof upload are 10/min).
+- **Artifacts.** The report and `test-results` are uploaded for 3 days. Traces
+  (`retain-on-failure`) can contain cookies, private links and the seed
+  password; that is acceptable only because everything is disposable. Never use
+  `trace: "on"` or `video: "on"`, and keep `.auth` out of the upload paths.
+- **Local run.** `bash scripts/ci/web-e2e.sh` needs Docker; pass
+  `WEB_E2E_PLAYWRIGHT_ARGS="--project=flows --repeat-each=3 --workers=1"` to
+  narrow it, and `E2E_POSTGRES_PORT`/`E2E_REDIS_PORT` if the defaults are taken.
+- **Not covered:** real Google, real phones and in-app browser engines,
+  WhatsApp links, the KoreaLexa pilot, seller-side Google login and iOS Safari
+  same-site behavior.
+
 ## Adding a path-filtered job (wiring list)
 
 A new path-filtered job must be added in seven places, in one PR: (1) the
