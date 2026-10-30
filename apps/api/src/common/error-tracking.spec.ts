@@ -10,11 +10,8 @@ vi.mock('@sentry/node', () => ({
 }));
 
 import * as Sentry from '@sentry/node';
-import {
-  captureException,
-  initErrorTracking,
-  scrubSentryEvent,
-} from './error-tracking.js';
+import { scrubSentryEvent } from '@biasmarket/utils/sentry-scrub';
+import { captureException, initErrorTracking } from './error-tracking.js';
 
 const ORIGINAL_DSN = process.env.SENTRY_DSN;
 const TOKEN = 'sekret-token';
@@ -203,7 +200,7 @@ describe('scrubSentryEvent', () => {
       transaction: 'GET /api/health',
       extra: { holder: scope },
       sdkProcessingMetadata: { capturedSpanScope: scope },
-    } as Event;
+    } as unknown as Event;
 
     expect(() => scrubSentryEvent(event)).not.toThrow();
     expect(event.extra?.holder).toBe(scope);

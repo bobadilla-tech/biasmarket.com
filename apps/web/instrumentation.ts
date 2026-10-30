@@ -22,14 +22,15 @@ export async function register() {
   }
 
   const Sentry = await import("@sentry/node");
-  const { scrubOrDrop } = await import("@/lib/scrub-sentry");
+  const { scrubOrDrop } = await import("@biasmarket/utils/sentry-scrub");
+  const warn = (message: string) => console.warn("[sentry]", message);
   Sentry.init({
     dsn,
     tracesSampleRate: 0.01,
     // The private order link (`/pedido/:token`) must not reach the tracker
     // through a request path, span or exception message either.
-    beforeSend: (event) => scrubOrDrop(event),
-    beforeSendTransaction: (event) => scrubOrDrop(event),
+    beforeSend: (event) => scrubOrDrop(event, warn),
+    beforeSendTransaction: (event) => scrubOrDrop(event, warn),
   });
 }
 
@@ -47,7 +48,7 @@ export const onRequestError: Instrumentation.onRequestError = async (
   if (!process.env.WEB_SENTRY_DSN) return;
 
   const Sentry = await import("@sentry/node");
-  const { scrubTokenUrl } = await import("@/lib/scrub-sentry");
+  const { scrubTokenUrl } = await import("@biasmarket/utils/sentry-scrub");
   // Only the HTTP method, the pathname without its query string, and the
   // route context are reported — never headers, cookies, authorization
   // credentials, or query-string data.

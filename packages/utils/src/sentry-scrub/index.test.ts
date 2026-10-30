@@ -1,11 +1,10 @@
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import {
-  scrubBreadcrumb,
   scrubOrDrop,
   scrubSentryEvent,
   scrubTokenText,
   scrubTokenUrl,
-} from "./scrub-sentry";
+} from "./index";
 
 const TOKEN = "tok_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abc";
 
@@ -50,7 +49,7 @@ test("scrubs request url, transaction, tags, breadcrumbs and spans", () => {
 });
 
 test("a single breadcrumb is scrubbed in place", () => {
-  const crumb = scrubBreadcrumb({
+  const crumb = scrubSentryEvent({
     message: `GET /public/orders/${TOKEN}`,
     data: { url: `/public/orders/${TOKEN}`, status_code: 200 },
   });
@@ -147,11 +146,43 @@ test("does not throw on getter-only properties or walk SDK internals", () => {
 });
 
 test("scrubOrDrop drops the event when a changed value cannot be written back", () => {
+  const warn = vi.fn();
   const holder = {};
   Object.defineProperty(holder, "url", {
     get: () => `/pedido/${TOKEN}`,
     enumerable: true,
   });
 
-  expect(scrubOrDrop({ extra: { holder } })).toBeNull();
+  expect(scrubOrDrop({ extra: { holder } }, warn)).toBeNull();
+  expect(warn).toHaveBeenCalledOnce();
+});
+
+test("drops the query string and trace query data beside a token URL", () => {
+  const event = {
+    request: {
+      url: `https://api.biasmarket.com/api/public/orders/${TOKEN}?token=x`,
+      query_string: "token=x",
+    },
+    contexts: {
+      trace: {
+        data: {
+          "http.target": `/api/public/orders/${TOKEN}?token=x`,
+          "http.query": "token=x",
+          "url.query": "token=x",
+        },
+      },
+    },
+    spans: [
+      {
+        description: `GET /api/public/orders/${TOKEN}?token=x`,
+        data: { "http.url": `/api/public/orders/${TOKEN}?token=x` },
+      },
+    ],
+  };
+
+  const out = scrubSentryEvent(event);
+
+  expect(JSON.stringify(out)).not.toContain(TOKEN);
+  expect(JSON.stringify(out)).not.toContain("token=x");
+  expect(out.request.query_string).toBeUndefined();
 });
