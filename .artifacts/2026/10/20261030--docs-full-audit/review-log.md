@@ -164,3 +164,18 @@ Executed by six writers with disjoint file sets, then integrated by the lead:
 Not done: F61 (caddy "Local check" recipe stays), Q12, and the code follow-ups
 (seller-throttler comment, Dockerfile comments, `packages/ui` empty dir,
 `seed:base` reachable in production).
+
+## Post-apply independent review
+
+Reviewer found no blocking issues; 22 claims confirmed against code. Fixed:
+coupon redemption moved out of the "public" throttle row (it needs a signed-in
+seller); §7.4 no longer claims limits are "deliberately not copied" (§9.3.1
+keeps its existing numbers); broken inline code spans re-wrapped; `packages/ui`
+wording; module-catalog header/prefix note; restore step 2 now confirms no
+other-color containers hold connections. Rejected: renaming "First production
+cutover (T11)" (earlier work records link to that anchor on purpose). Not done:
+the stale comment in `seller-throttler.guard.ts` (code, listed as a follow-up).
+
+Also added after owner input: Q5 `CLAUDE.md` exception wording for `apps/web`;
+Q12 production guard in `apps/api/scripts/seed/run.ts` (`NODE_ENV=production`
+refuses unless `--allow-production`) and the matching `admin-access.md` text.

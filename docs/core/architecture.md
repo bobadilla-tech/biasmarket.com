@@ -69,7 +69,7 @@ Routes sit under the global `api` prefix, and prefixes below are full paths
 route). `/internal/*` routes are outside it. Module folders are
 `apps/api/src/modules/<module>`.
 
-| Module               | Controller prefix                                                                     | Owning model                                                   | Where documented                                                                                                           |
+| Module               | Controller prefix                                                                     | Owning model                                                   | Where documented / notes                                                                                                   |
 | -------------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | `addresses`          | `stores/:slug/account/addresses`                                                      | `Address`                                                      | Buyer shipping addresses per store account                                                                                 |
 | `categories`         | `stores/:storeId/categories`                                                          | `Category`                                                     | [product.md §5.9](product.md#59-seller-panel-management)                                                                   |
