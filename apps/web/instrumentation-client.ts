@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/react";
-import { scrubBreadcrumb, scrubSentryEvent } from "@/lib/scrub-sentry";
+import { scrubOrDrop, scrubSentryEvent } from "@biasmarket/utils/sentry-scrub";
 
 // Client-side error tracking (GlitchTip). Runs in the browser before React
 // hydrates — sets up the global window error / unhandledrejection handlers so
@@ -7,6 +7,7 @@ import { scrubBreadcrumb, scrubSentryEvent } from "@/lib/scrub-sentry";
 // forward to. Env-gated on NEXT_PUBLIC_SENTRY_DSN (NEXT_PUBLIC_ prefix so it
 // gets inlined into the client bundle at build time).
 if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
+  const warn = (message: string) => console.warn("[sentry]", message);
   Sentry.init({
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
     tracesSampleRate: 0.01,
@@ -18,8 +19,8 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
     ignoreErrors: [/reading 'startTime'/, /reportAllChanges/],
     // The private order link (`/pedido/:token`, `/public/orders/:token`) must
     // never reach the tracker through a URL, breadcrumb or transaction name.
-    beforeSend: (event) => scrubSentryEvent(event),
-    beforeSendTransaction: (event) => scrubSentryEvent(event),
-    beforeBreadcrumb: (breadcrumb) => scrubBreadcrumb(breadcrumb),
+    beforeSend: (event) => scrubOrDrop(event, warn),
+    beforeSendTransaction: (event) => scrubOrDrop(event, warn),
+    beforeBreadcrumb: (breadcrumb) => scrubSentryEvent(breadcrumb),
   });
 }

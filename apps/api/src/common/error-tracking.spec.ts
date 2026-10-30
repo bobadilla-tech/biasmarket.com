@@ -10,11 +10,8 @@ vi.mock('@sentry/node', () => ({
 }));
 
 import * as Sentry from '@sentry/node';
-import {
-  captureException,
-  initErrorTracking,
-  scrubSentryEvent,
-} from './error-tracking.js';
+import { scrubSentryEvent } from '@biasmarket/utils/sentry-scrub';
+import { captureException, initErrorTracking } from './error-tracking.js';
 
 const ORIGINAL_DSN = process.env.SENTRY_DSN;
 const TOKEN = 'sekret-token';
@@ -194,5 +191,50 @@ describe('scrubSentryEvent', () => {
 
     expect(JSON.stringify(event)).not.toContain(TOKEN);
     expect(JSON.stringify(event)).toContain('[Truncated]');
+  });
+
+  it('does not throw on getter-only properties or walk SDK internals', () => {
+    const scope = {};
+    Object.defineProperty(scope, '$', { get: () => 'live', enumerable: true });
+    const event = {
+      transaction: 'GET /api/health',
+      extra: { holder: scope },
+      sdkProcessingMetadata: { capturedSpanScope: scope },
+    } as unknown as Event;
+
+    expect(() => scrubSentryEvent(event)).not.toThrow();
+    expect(event.extra?.holder).toBe(scope);
+  });
+
+  it('still scrubs a changed string next to a getter-only property', () => {
+    const holder: Record<string, unknown> = {
+      url: `/api/public/orders/${TOKEN}`,
+    };
+    Object.defineProperty(holder, '$', { get: () => 'live', enumerable: true });
+    const event = { extra: { holder } } as Event;
+
+    scrubSentryEvent(event);
+
+    expect(JSON.stringify(event)).not.toContain(TOKEN);
+  });
+});
+
+describe('initErrorTracking hooks', () => {
+  it('drops the event instead of throwing when scrubbing fails', () => {
+    process.env.SENTRY_DSN = 'https://key@glitchtip.example/1';
+    initMock.mockClear();
+    initErrorTracking();
+    const { beforeSend } = initMock.mock.calls[0]![0] as {
+      beforeSend: (event: Event) => Event | null;
+    };
+    // A getter-only property whose string must change cannot be written back.
+    const holder = {};
+    Object.defineProperty(holder, 'url', {
+      get: () => `/api/public/orders/${TOKEN}`,
+      enumerable: true,
+    });
+
+    expect(beforeSend({ extra: { holder } } as Event)).toBeNull();
+    process.env.SENTRY_DSN = ORIGINAL_DSN;
   });
 });

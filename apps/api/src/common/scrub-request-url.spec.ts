@@ -1,5 +1,5 @@
 import { scrubRequestUrl } from './scrub-request-url.js';
-import { scrubSentryEvent } from './error-tracking.js';
+import { scrubSentryEvent } from '@biasmarket/utils/sentry-scrub';
 
 describe('scrubRequestUrl for the proof upload routes', () => {
   const TOKEN = 'tok_SECRET-123';

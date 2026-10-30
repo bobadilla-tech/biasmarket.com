@@ -9342,8 +9342,8 @@
             "type": "string"
           },
           "reviewStatus": {
-            "type": "string",
-            "enum": ["PENDING_REVIEW"]
+            "enum": ["PENDING_REVIEW"],
+            "type": "string"
           },
           "createdAt": {
             "type": "string",
