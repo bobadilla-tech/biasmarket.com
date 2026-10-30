@@ -95,7 +95,12 @@ export class AssistedOrderIdentityRetentionUseCase {
       await this.prisma.$transaction(async (tx) => {
         const customerBefore = await tx.customer.findUnique({
           where: { id: contact.id },
-          select: { id: true, storeId: true, phone: true, identityErasedAt: true },
+          select: {
+            id: true,
+            storeId: true,
+            phone: true,
+            identityErasedAt: true,
+          },
         });
         if (
           !customerBefore ||
@@ -109,7 +114,12 @@ export class AssistedOrderIdentityRetentionUseCase {
         await lockAssistedCustomer(tx, storeId, customerBefore.phone);
         const customerAfter = await tx.customer.findUnique({
           where: { id: customerBefore.id },
-          select: { id: true, storeId: true, phone: true, identityErasedAt: true },
+          select: {
+            id: true,
+            storeId: true,
+            phone: true,
+            identityErasedAt: true,
+          },
         });
         if (
           !customerAfter ||
@@ -281,7 +291,10 @@ export class AssistedOrderIdentityRetentionUseCase {
           claimedAt: order.claimedAt,
           status: order.status as 'ACTIVE' | 'CANCELLED',
           fulfillmentStatus: order.fulfillmentStatus as
-            'ORDERING' | 'IN_TRANSIT' | 'READY' | 'COMPLETED',
+            | 'ORDERING'
+            | 'IN_TRANSIT'
+            | 'READY'
+            | 'COMPLETED',
           ...(cause === 'RETENTION'
             ? {
                 claimedAt: null,
