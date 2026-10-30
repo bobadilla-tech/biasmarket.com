@@ -320,7 +320,7 @@ export function StoreTabs({ showAbout = false }: { showAbout?: boolean }) {
               tabIndex={active === tab ? 0 : -1}
               onClick={() => selectTab(tab)}
               onKeyDown={(event) => handleKeyDown(event, index)}
-              className={`min-h-11 shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition-[background-color,color,box-shadow] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) motion-reduce:transition-none ${active === tab ? "bg-(--store-primary) text-(--store-primary-text) shadow-sm" : "text-(--store-muted) hover:bg-(--store-surface) hover:text-(--store-text)"}`}
+              className={`min-h-11 shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition-[background-color,color,box-shadow] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) motion-reduce:transition-none ${active === tab ? "bg-(--store-primary) text-white shadow-sm" : "text-(--store-muted) hover:bg-(--store-surface) hover:text-(--store-text)"}`}
             >
               {labels[tab]}
             </button>

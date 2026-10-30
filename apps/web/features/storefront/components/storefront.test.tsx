@@ -459,6 +459,12 @@ describe("storefront tabs", () => {
     const view = withMessages(<StoreTabs />);
 
     fireEvent.click(screen.getByRole("tab", { name: "Categorías" }));
+    expect(screen.getByRole("tab", { name: "Categorías" }).className).toContain(
+      "text-white",
+    );
+    expect(screen.getByRole("tab", { name: "Productos" }).className).toContain(
+      "text-(--store-muted)",
+    );
     expect(navigation.push).toHaveBeenCalledWith(
       "/es/store/tienda?orden_productos=recientes&tab=categorias&orden=nombre_asc",
       { scroll: false },
