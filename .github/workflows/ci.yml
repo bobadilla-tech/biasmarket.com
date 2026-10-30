@@ -220,6 +220,13 @@ jobs:
               - 'scripts/ci/web-e2e.sh'
               - 'scripts/ci/load-e2e-env.sh'
               - 'scripts/ci/e2e.env.example'
+              # The flows project claims an order through the Google stub, which
+              # mirrors the OAuth code and the order/auth surface it drives, so
+              # drift in any of them is caught on the PR that causes it.
+              - 'scripts/ci/google-stub.mjs'
+              - 'apps/api/src/modules/customer-auth/**'
+              - 'apps/api/src/modules/orders/**'
+              - 'apps/api/src/auth/**'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
               - 'turbo.json'
@@ -1120,6 +1127,27 @@ jobs:
       - name: Guard script tests
         run: node --test scripts/ci/check-workspace-scripts.test.mjs
 
+      # The Google stub is a Node preload used by the web E2E job only. It has
+      # no linter of its own (neither shellcheck nor the web ESLint config
+      # covers scripts/ci/*.mjs), so syntax-check it and run its self-test.
+      - name: Google stub syntax and self-test
+        run: |
+          node --check scripts/ci/google-stub.mjs
+          node --test scripts/ci/google-stub.test.mjs
+
+      # The stub and its fake credentials must never leave the CI web E2E
+      # script: not in app code, deploy workflows or env examples.
+      - name: Google stub stays out of production paths
+        run: |
+          if git grep -n "google-stub\|E2E_GOOGLE_STUB" -- . ':!scripts/ci' ':!apps/web/e2e' ':!docs' ':!.github/workflows/ci.yml' ':!.artifacts'; then
+            echo "::error::google-stub / E2E_GOOGLE_STUB referenced outside the CI web E2E files"
+            exit 1
+          fi
+          if git grep -nE "GOOGLE_CLIENT_ID|GOOGLE_CLIENT_SECRET" -- scripts/ci/e2e.env.example; then
+            echo "::error::GOOGLE_* must not be in scripts/ci/e2e.env.example (it feeds the API E2E job)"
+            exit 1
+          fi
+
       - name: Install actionlint
         run: bash scripts/ci/install-actionlint.sh "$RUNNER_TEMP/actionlint"
 
@@ -1249,13 +1277,13 @@ jobs:
     if: needs.detect-changes.outputs.web_e2e == 'true'
     runs-on: ubuntu-latest
     # Builds api + web, migrates + seeds, boots both servers, downloads a
-    # browser, then runs the axe/keyboard smoke. Realistically +6–12 min over a
-    # package job; keep headroom.
-    timeout-minutes: 25
-    # This job is a blocking PR gate (it is in `ci-success.needs`). Phase 7
-    # adds route-specific marketing/onboarding axe coverage to the existing
-    # keyboard smoke suite; authenticated dashboard coverage remains a
-    # follow-up until CI has stable seeded sessions.
+    # browser, then runs the axe/keyboard smoke and the assisted-order journeys
+    # (`flows` project). Invariant: install + build + migrate + seed + the
+    # Playwright `globalTimeout` (20 min) + 5 min of slack must fit in this
+    # timeout; keep the headroom when adding specs.
+    timeout-minutes: 35
+    # This job is a blocking PR gate (it is in `ci-success.needs`). The name
+    # stays "Web E2E (a11y)" so check-ci-success.sh keeps matching it.
     # Sidecars are script-managed (see the E2E (API) job).
     steps:
       - uses: actions/checkout@v7
