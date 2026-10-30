@@ -37,7 +37,14 @@ function tokenEvent(): ErrorEvent {
     request: {
       url: `https://api.biasmarket.com/api/public/orders/${TOKEN}?token=also-secret`,
       query_string: 'token=also-secret',
+      headers: {
+        Referer: `https://biasmarket.com/es/store/k/pedido/${TOKEN}?from=whatsapp`,
+      },
     },
+    exception: {
+      values: [{ value: `Failed to process /api/public/orders/${TOKEN}` }],
+    },
+    extra: { nested: { source: `/api/public/orders/${TOKEN}/payments` } },
     transaction: `GET /api/public/orders/${TOKEN}`,
     contexts: {
       trace: {
@@ -135,6 +142,57 @@ describe('scrubSentryEvent', () => {
       'https://api.biasmarket.com/api/public/orders/:token',
     );
     expect(event.spans?.[0]?.data['http.status_code']).toBe(500);
+    expect(event.request?.headers?.Referer).toBe(
+      'https://biasmarket.com/es/store/k/pedido/:token',
+    );
     expect(JSON.stringify(event)).not.toContain(TOKEN);
+  });
+
+  it('keeps diagnostic text around both assisted-order path tokens', () => {
+    const event = {
+      exception: {
+        values: [
+          {
+            value: `Error at /store/k/pedido/${TOKEN} while parsing: unexpected #1 in body`,
+          },
+          {
+            value: `GET /pedido/${TOKEN} failed (status=500) retry?yes`,
+          },
+          {
+            value: `message: see /pedido/${TOKEN}, then /pedido/${TOKEN}/pago`,
+          },
+          {
+            value: `API failed at /public/orders/${TOKEN} while parsing: unexpected #1 in body`,
+          },
+        ],
+      },
+    } as ErrorEvent;
+
+    scrubSentryEvent(event);
+
+    expect(event.exception?.values?.map(({ value }) => value)).toEqual([
+      'Error at /store/k/pedido/:token while parsing: unexpected #1 in body',
+      'GET /pedido/:token failed (status=500) retry?yes',
+      'message: see /pedido/:token, then /pedido/:token/pago',
+      'API failed at /public/orders/:token while parsing: unexpected #1 in body',
+    ]);
+    expect(JSON.stringify(event)).not.toContain(TOKEN);
+  });
+
+  it('truncates over-depth event data instead of preserving an unsanitized value', () => {
+    const deep: Record<string, unknown> = {};
+    let current = deep;
+    for (let i = 0; i < 12; i += 1) {
+      const child: Record<string, unknown> = {};
+      current.n = child;
+      current = child;
+    }
+    current.token = TOKEN;
+    const event = { extra: { deep } } as ErrorEvent;
+
+    scrubSentryEvent(event);
+
+    expect(JSON.stringify(event)).not.toContain(TOKEN);
+    expect(JSON.stringify(event)).toContain('[Truncated]');
   });
 });
