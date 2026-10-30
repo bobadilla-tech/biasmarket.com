@@ -179,3 +179,11 @@ the stale comment in `seller-throttler.guard.ts` (code, listed as a follow-up).
 Also added after owner input: Q5 `CLAUDE.md` exception wording for `apps/web`;
 Q12 production guard in `apps/api/scripts/seed/run.ts` (`NODE_ENV=production`
 refuses unless `--allow-production`) and the matching `admin-access.md` text.
+
+## Follow-ups fixed after owner approval
+
+- `seller-throttler.guard.ts` header comment rewritten (it said `trust proxy` was never set; `main.ts` sets it).
+- `api.Dockerfile` and `workers.Dockerfile` runtime-stage comments no longer mention migrate-on-boot.
+- `apps/sanity` package renamed `project-cerise-globe` -> `@biasmarket/sanity` (package.json, `ci.yml` filters, sanity README). Plain `sanity` was avoided: it would collide with the `sanity` dependency.
+- Removed the untracked `packages/ui` directory (only stale install symlinks and a typecheck log); architecture note updated.
+- `pnpm exec tsc --noEmit` in `apps/api` and `apps/sanity` pass; `turbo --filter=@biasmarket/sanity` resolves; link check 0 broken.

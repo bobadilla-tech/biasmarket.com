@@ -74,8 +74,9 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm-store \
       --reporter=append-only --store-dir=/pnpm-store
 
 # ---------------------------------------------------------------------------
-# runtime: prod image, non-root, only what api needs at boot (still needs
-# pnpm — the CMD below shells out to it for `prisma migrate deploy`).
+# runtime: prod image, non-root, only what api needs at boot. It keeps pnpm
+# for the one-off ops scripts below; the CMD runs the app directly and does not
+# migrate (migrations run in the candidate phase of infra/vps/deploy.sh).
 # ---------------------------------------------------------------------------
 FROM base AS runtime
 ENV NODE_ENV=production

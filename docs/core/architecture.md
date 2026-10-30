@@ -59,8 +59,7 @@ keeps multi-tenant isolation enforceable in one place instead of two.
 | `packages/i18n`          | ES/EN dictionaries                           | `web`, `mobile`        | See [i18n.md](i18n.md)                       |
 | `packages/query`         | React Query client defaults                  | `web`, `mobile`        | Client-side only                             |
 
-`packages/ui` is untracked and not a workspace member; web UI primitives live in
-`apps/web/components/ui`.
+Web UI primitives live in `apps/web/components/ui`; there is no shared UI package.
 
 ### API module catalog
 

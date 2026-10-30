@@ -1099,11 +1099,11 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint
-        run: pnpm turbo run lint --filter=project-cerise-globe
+        run: pnpm turbo run lint --filter=@biasmarket/sanity
 
       # No `sanity build`: it needs project credentials.
       - name: Typecheck
-        run: pnpm turbo run typecheck --filter=project-cerise-globe
+        run: pnpm turbo run typecheck --filter=@biasmarket/sanity
 
   # Always runs (no path filter): repo-wide guards that need no install.
   hygiene:
