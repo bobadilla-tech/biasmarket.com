@@ -4,6 +4,7 @@ import request from 'supertest';
 import { createHash, randomInt, randomUUID } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { PrismaService } from '../src/prisma/prisma.service.js';
+import { AssistedOrderIdentityRetentionUseCase } from '../src/modules/orders/application/assisted-order-identity-retention.usecase.js';
 import { AppModule } from './../src/app.module.js';
 import {
   deleteOrders,
@@ -561,5 +562,56 @@ describe('assisted orders (e2e)', () => {
         }),
       ).toBe(1);
     });
+  });
+
+  it('keeps a shared Customer while another assisted order is active, then erases it after closure', async () => {
+    const sharedPhone = `+519${String(randomInt(1e8)).padStart(8, '0')}`;
+    const first = await post(body({ customerPhone: sharedPhone })).expect(201);
+    const second = await post(body({ customerPhone: sharedPhone })).expect(201);
+    const customerId = first.body.order.customerId as string;
+    expect(second.body.order.customerId).toBe(customerId);
+
+    await prisma.order.update({
+      where: { id: first.body.order.id },
+      data: { status: 'CANCELLED', closedAt: new Date() },
+    });
+
+    const retention = app.get(AssistedOrderIdentityRetentionUseCase);
+    const firstPass = await retention.eraseOnBuyerRequest(
+      storeId,
+      sharedPhone,
+      'support-operator-1',
+      'PRIV-460',
+    );
+    expect(firstPass).toEqual({ anonymized: 1, deferred: 1 });
+
+    const customerAfterFirstPass = await prisma.customer.findUniqueOrThrow({
+      where: { id: customerId },
+    });
+    expect(customerAfterFirstPass.phone).toBe(sharedPhone);
+    expect(customerAfterFirstPass.identityErasedAt).toBeNull();
+
+    await prisma.order.update({
+      where: { id: second.body.order.id },
+      data: { status: 'CANCELLED', closedAt: new Date() },
+    });
+    const secondPass = await retention.eraseOnBuyerRequest(
+      storeId,
+      sharedPhone,
+      'support-operator-1',
+      'PRIV-460',
+    );
+    expect(secondPass).toEqual({ anonymized: 1, deferred: 0 });
+
+    const erasedCustomer = await prisma.customer.findUniqueOrThrow({
+      where: { id: customerId },
+    });
+    expect(erasedCustomer.phone).toBe(`erased:${customerId}`);
+    expect(erasedCustomer.identityErasedAt).toBeInstanceOf(Date);
+    const audit = await prisma.auditLog.findFirstOrThrow({
+      where: { entityId: second.body.order.id, action: 'order.assisted_identity_erased' },
+    });
+    expect(audit.actorId).toBe('support-operator-1');
+    expect(audit.metadata).toMatchObject({ cause: 'BUYER_REQUEST', requestReference: 'PRIV-460' });
   });
 });
