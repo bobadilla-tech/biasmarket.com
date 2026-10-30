@@ -597,7 +597,11 @@ describe('CustomersService', () => {
       });
       expect(prisma.order.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { storeId, customerId: null },
+          where: {
+            storeId,
+            customerId: null,
+            buyerIdentityErasedAt: null,
+          },
         }),
       );
       expect(result.customer).toEqual({
@@ -668,7 +672,7 @@ describe('CustomersService', () => {
       );
 
       expect(prisma.customer.findUnique).toHaveBeenLastCalledWith({
-        where: { id: 'customer-1' },
+        where: { id: 'customer-1', identityErasedAt: null },
       });
       expect(result.customer.id).toBe('customer-1');
       expect(result.orders).toEqual([
