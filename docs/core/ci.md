@@ -160,9 +160,9 @@ suite stays authoritative for rules; flows cover what a person sees.
 - **Local run.** `bash scripts/ci/web-e2e.sh` needs Docker; pass
   `WEB_E2E_PLAYWRIGHT_ARGS="--project=flows --repeat-each=3 --workers=1"` to
   narrow it, and `E2E_POSTGRES_PORT`/`E2E_REDIS_PORT` if the defaults are taken.
-- **Not covered:** real Google, real phones and in-app browser engines,
-  WhatsApp links, the KoreaLexa pilot, seller-side Google login and iOS Safari
-  same-site behavior.
+- **Not covered:** real Google, real phones and in-app browser engines, WhatsApp
+  links, the KoreaLexa pilot, seller-side Google login and iOS Safari same-site
+  behavior.
 
 ### Extra guards
 
