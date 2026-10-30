@@ -182,7 +182,9 @@ export function AssistedOrderSection({
       {slug && locale ? (
         order.customerId ? (
           <Link
-            href={`/${locale}/dashboard/${slug}/customers?customer=${encodeURIComponent(order.customerId)}`}
+            href={`/${locale}/dashboard/${slug}/customers?customer=${encodeURIComponent(
+              order.customerId,
+            )}`}
             className="inline-flex min-h-11 items-center text-sm font-medium text-[#5a3d82] underline"
           >
             {t("customers")}

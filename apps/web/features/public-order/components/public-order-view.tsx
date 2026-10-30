@@ -123,7 +123,9 @@ export function PublicOrderView({
 
       <div
         role="status"
-        className={`purchase-milestone flex items-center gap-2.5 rounded-2xl border p-4 text-sm font-semibold ${BANNER_TONE[bannerKey]}`}
+        className={`purchase-milestone flex items-center gap-2.5 rounded-2xl border p-4 text-sm font-semibold ${
+          BANNER_TONE[bannerKey]
+        }`}
       >
         {isMilestone && (
           <Sparkles
@@ -327,7 +329,9 @@ export function PublicOrderView({
                       ? t("payments.bySelf")
                       : t("payments.byStore")}
                     {payment.method
-                      ? ` · ${tMethods(`paymentMethodLabels.${payment.method}`)}`
+                      ? ` · ${tMethods(
+                          `paymentMethodLabels.${payment.method}`,
+                        )}`
                       : ""}
                     {" · "}
                     {formatOrderDate(

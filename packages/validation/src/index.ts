@@ -42,7 +42,7 @@ export {
 } from "./payments/seller-payment.schema.js";
 
 export {
-  buildAssistedOrderSchema,
   type AssistedOrderFormInput,
   type AssistedOrderItemInput,
+  buildAssistedOrderSchema,
 } from "./assisted-order/assisted-order.schema.js";

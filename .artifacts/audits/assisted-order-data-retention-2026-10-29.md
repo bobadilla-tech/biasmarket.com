@@ -93,6 +93,7 @@ in [issue #479](https://github.com/bobadilla-tech/biasmarket.com/issues/479).
    the Node command text. The secret is read from the API container environment
    and is not placed in the host command or history. The endpoint requires
    `INTERNAL_JOBS_SECRET` and is excluded from public Swagger.
+
 3. Review only the returned `anonymized` and `deferred` counts. The raw phone is
    neither logged nor returned. If `deferred` is non-zero, retry after the
    affected orders close.

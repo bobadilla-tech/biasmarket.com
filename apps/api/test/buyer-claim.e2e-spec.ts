@@ -13,8 +13,8 @@ import {
 } from '../src/modules/customer-auth/customer-auth.service.js';
 import {
   CLAIM_TICKET_COOKIE,
-  verifyClaimTicket,
   type ClaimTicket,
+  verifyClaimTicket,
 } from '../src/modules/customer-auth/claim-ticket.js';
 import { createOrderAccessToken } from '@biasmarket/utils/assisted-order';
 import { createCustomerSessionToken } from '@biasmarket/utils/customer-account-token';

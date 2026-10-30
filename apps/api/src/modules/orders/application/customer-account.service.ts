@@ -184,7 +184,9 @@ export class CustomerAccountService {
 
         await tx.$executeRaw`
           INSERT INTO "BuyerAccount" ("id", "phone", "email", "name", "emailVerified")
-          VALUES (${randomUUID()}, ${normalizedPhone}, ${email}, ${name ?? null}::text, false)
+          VALUES (${randomUUID()}, ${normalizedPhone}, ${email}, ${
+            name ?? null
+          }::text, false)
           ON CONFLICT ("phone") DO NOTHING
         `;
         buyerAccount = await tx.buyerAccount.findUnique({

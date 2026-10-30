@@ -14,8 +14,8 @@ import {
 import { isPaymentMethodConfigured } from "@biasmarket/utils/payment-methods";
 import type { CreateAssistedOrderResponseDto } from "@biasmarket/types";
 import {
-  buildAssistedOrderSchema,
   type AssistedOrderFormInput,
+  buildAssistedOrderSchema,
 } from "@biasmarket/validation";
 import { Button } from "@/components/ui/button";
 import { PhoneInput } from "@/components/ui/phone-input";
@@ -45,9 +45,9 @@ import {
   centsToAmount,
   hasMixedCurrencies,
   orderCurrency,
+  type PricedProduct,
   subtotalCents,
   unitPriceCents,
-  type PricedProduct,
 } from "../lib/order-totals";
 import { OrderItemRow } from "./order-item-row";
 
@@ -441,7 +441,9 @@ export function AssistedOrderForm({
       />
       {replayOrderId && slug ? (
         <Link
-          href={`/${locale}/dashboard/${slug}/orders?order=${encodeURIComponent(replayOrderId)}`}
+          href={`/${locale}/dashboard/${slug}/orders?order=${encodeURIComponent(
+            replayOrderId,
+          )}`}
           className="-mt-3 text-sm font-semibold text-[#341b55] underline underline-offset-2"
         >
           {t("errors.viewExistingOrder")}

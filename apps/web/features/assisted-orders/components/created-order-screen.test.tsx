@@ -164,7 +164,9 @@ test("a custom template reaches the wa.me text once loaded", async () => {
     await screen.findByRole("button", { name: "Sí, abrir WhatsApp" }),
   );
   expect(open).toHaveBeenCalledWith(
-    `https://wa.me/51987654321?text=${encodeURIComponent(`Custom #ABCDEF ${link}`)}`,
+    `https://wa.me/51987654321?text=${encodeURIComponent(
+      `Custom #ABCDEF ${link}`,
+    )}`,
     "_blank",
     "noopener,noreferrer",
   );

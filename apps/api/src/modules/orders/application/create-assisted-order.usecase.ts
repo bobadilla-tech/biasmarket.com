@@ -7,8 +7,8 @@ import {
 import type { Prisma, Store } from '@biasmarket/db';
 import { validatePhone } from '@biasmarket/utils/phone-country';
 import {
-  AssistedOrderInvariantError,
   assertVendorAssistedOrder,
+  AssistedOrderInvariantError,
   createOrderAccessToken,
 } from '@biasmarket/utils/assisted-order';
 import { PrismaService } from '../../../prisma/prisma.service.js';

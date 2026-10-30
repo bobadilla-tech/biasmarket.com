@@ -700,7 +700,7 @@ It lives in `infra/vps/bin/`, which CD already syncs to `/opt/biasmarket/bin/`
 on every deploy, so it is automatically there and never a manual step. Run it as
 root (or `deploy`) from any directory:
 
->>>>>>> d4ebaf7 (artifacts guidelines)
+> > > > > > > d4ebaf7 (artifacts guidelines)
 
 ```bash
 ssh root@161.97.113.35
@@ -714,7 +714,7 @@ ssh root@161.97.113.35
 Or in one line from your laptop:
 `ssh root@161.97.113.35 /opt/biasmarket/bin/admin.sh create you@example.com "Your Name"`.
 
->>>>>>> d4ebaf7 (artifacts guidelines)
+> > > > > > > d4ebaf7 (artifacts guidelines)
 
 - It prints a generated password **once**. Copy it, then sign in at
   `https://biasmarket.com/es/login` and open `/es/admin` (users, stores,

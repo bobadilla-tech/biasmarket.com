@@ -332,7 +332,9 @@ export class BuyerPaymentProofService {
             entityType: 'Order',
             entityId: order.id,
             title: 'Comprobante de pago recibido',
-            body: `El comprador envió un comprobante de ${order.currency} ${Number(parsed.value)} para revisar.`,
+            body: `El comprador envió un comprobante de ${order.currency} ${Number(
+              parsed.value,
+            )} para revisar.`,
           },
           tx,
         );

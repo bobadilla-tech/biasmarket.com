@@ -1771,6 +1771,31 @@ export default async () => {
           },
         ],
         [
+          import('./modules/orders/dto/assisted-order-identity-erasure.dto.js'),
+          {
+            AssistedOrderIdentityErasureDto: {
+              storeId: { required: true, type: () => String, maxLength: 64 },
+              customerPhone: {
+                required: true,
+                type: () => String,
+                maxLength: 32,
+              },
+              operatorId: {
+                required: true,
+                type: () => String,
+                maxLength: 80,
+                pattern: '^[A-Za-z0-9._-]+$',
+              },
+              requestReference: {
+                required: true,
+                type: () => String,
+                maxLength: 120,
+                pattern: '^[A-Za-z0-9._/#-]+$',
+              },
+            },
+          },
+        ],
+        [
           import('./modules/orders/dto/public-order-response.dto.js'),
           {
             PublicOrderStoreResponseDto: {
@@ -3515,7 +3540,13 @@ export default async () => {
         ],
         [
           import('./modules/orders/infrastructure/internal-jobs.controller.js'),
-          { InternalJobsController: { expireSweep: {} } },
+          {
+            InternalJobsController: {
+              expireSweep: {},
+              assistedIdentityRetentionSweep: {},
+              eraseAssistedIdentityRequest: {},
+            },
+          },
         ],
         [
           import('./modules/orders/infrastructure/public-order-events.controller.js'),

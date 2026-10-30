@@ -86,8 +86,9 @@ export function useSaveInvite({
     sendInviteEvent(token, "INVITE_SHOWN", moment);
     // "First open after validation" is remembered once the block was shown,
     // so the next visit gets the quiet banner instead.
-    if (moment === "pago_validado")
+    if (moment === "pago_validado") {
       inviteStorage.setFirstSeen(slug, orderNumber);
+    }
   }, [moment, token, slug, orderNumber]);
 
   const clicked = useCallback(() => {

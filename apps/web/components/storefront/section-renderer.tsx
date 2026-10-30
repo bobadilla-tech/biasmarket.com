@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowUpRight, Images, Search, Shapes } from "lucide-react";
@@ -10,9 +10,9 @@ import {
   CategoryFilter,
   DesktopCategoryFilter,
   normalizeStoreTab,
+  type StorefrontCategory,
   StoreSearchBar,
   StoreTabs,
-  type StorefrontCategory,
 } from "@/features/storefront/components/storefront";
 
 export interface RenderableSectionVariant {
@@ -280,12 +280,15 @@ export function StoreSectionRenderer({
                   Number(variant.priceOverride ?? product.price),
                 ),
               );
-            if (sort === "precio_asc")
+            if (sort === "precio_asc") {
               return effectivePrice(a.product) - effectivePrice(b.product);
-            if (sort === "precio_desc")
+            }
+            if (sort === "precio_desc") {
               return effectivePrice(b.product) - effectivePrice(a.product);
-            if (sort === "nombre_asc")
+            }
+            if (sort === "nombre_asc") {
               return a.product.name.localeCompare(b.product.name);
+            }
             return (
               Number(isProductOutOfStock(a.product)) -
               Number(isProductOutOfStock(b.product))
@@ -299,14 +302,16 @@ export function StoreSectionRenderer({
           if (
             cp.product.discontinued ||
             (!catalogControls && isProductOutOfStock(cp.product))
-          )
+          ) {
             return false;
+          }
           if (
             !serverSorted &&
             normalizedQuery &&
             !normalizeSearchText(cp.product.name).includes(normalizedQuery)
-          )
+          ) {
             return false;
+          }
           if (
             catalogControls &&
             !serverSorted &&
@@ -314,8 +319,9 @@ export function StoreSectionRenderer({
             !cp.product.categories?.some((item) =>
               categoryIds.includes(item.category.slug ?? item.category.id),
             )
-          )
+          ) {
             return false;
+          }
           return true;
         });
         if (visible.length === 0) return null;
@@ -328,7 +334,11 @@ export function StoreSectionRenderer({
               </h2>
             )}
             <div
-              className={`grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 ${catalogControls ? "lg:grid-cols-4 xl:grid-cols-5" : "lg:grid-cols-4"}`}
+              className={`grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 ${
+                catalogControls
+                  ? "lg:grid-cols-4 xl:grid-cols-5"
+                  : "lg:grid-cols-4"
+              }`}
             >
               {visible.map((cp) => (
                 <ProductCard
@@ -395,7 +405,11 @@ export function StoreSectionRenderer({
               onSortChange={setSort}
             />
             <div
-              className={`grid items-start gap-5 ${productCategories.length > 0 ? "md:grid-cols-[13rem_minmax(0,1fr)] lg:grid-cols-[14rem_minmax(0,1fr)] xl:grid-cols-[15rem_minmax(0,1fr)]" : ""}`}
+              className={`grid items-start gap-5 ${
+                productCategories.length > 0
+                  ? "md:grid-cols-[13rem_minmax(0,1fr)] lg:grid-cols-[14rem_minmax(0,1fr)] xl:grid-cols-[15rem_minmax(0,1fr)]"
+                  : ""
+              }`}
             >
               {productCategories.length > 0 && (
                 <>
@@ -549,7 +563,9 @@ export function StoreSectionRenderer({
                 .map((category) => (
                   <a
                     key={category.id}
-                    href={`?tab=productos&categoria=${encodeURIComponent(category.slug ?? category.id)}`}
+                    href={`?tab=productos&categoria=${encodeURIComponent(
+                      category.slug ?? category.id,
+                    )}`}
                     className="group flex min-h-[76px] items-center gap-3 rounded-2xl border border-(--store-border) bg-(--store-card) p-3 text-left text-sm font-semibold text-(--store-text) shadow-sm transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-(--store-primary) hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) motion-reduce:transform-none motion-reduce:transition-none"
                   >
                     <span
