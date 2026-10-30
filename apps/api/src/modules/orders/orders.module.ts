@@ -17,6 +17,7 @@ import { ReviewPaymentUseCase } from './application/review-payment.usecase.js';
 import { AdvanceFulfillmentUseCase } from './application/advance-fulfillment.usecase.js';
 import { CancelOrderUseCase } from './application/cancel-order.usecase.js';
 import { ExpireOrdersUseCase } from './application/expire-orders.usecase.js';
+import { AssistedOrderIdentityRetentionUseCase } from './application/assisted-order-identity-retention.usecase.js';
 import { CustomerAccountService } from './application/customer-account.service.js';
 import { OrderEventsService } from './application/order-events.service.js';
 import { PublicOrderTokenGuard } from './infrastructure/public-order-token.guard.js';
@@ -53,6 +54,7 @@ import { PaymentConfigModule } from '../payment-config/payment-config.module.js'
     AdvanceFulfillmentUseCase,
     CancelOrderUseCase,
     ExpireOrdersUseCase,
+    AssistedOrderIdentityRetentionUseCase,
     InternalJobsSecretGuard,
     CustomerAccountService,
     CustomersService,
