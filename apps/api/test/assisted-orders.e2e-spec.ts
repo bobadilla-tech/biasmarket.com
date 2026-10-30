@@ -4,6 +4,7 @@ import request from 'supertest';
 import { createHash, randomInt, randomUUID } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { PrismaService } from '../src/prisma/prisma.service.js';
+import { AssistedOrderIdentityRetentionUseCase } from '../src/modules/orders/application/assisted-order-identity-retention.usecase.js';
 import { AppModule } from './../src/app.module.js';
 import {
   deleteOrders,
@@ -722,6 +723,128 @@ describe('assisted orders (e2e)', () => {
           where: { orderId: noticeOrderId, type: 'BUYER_NOTIFIED' },
         }),
       ).toBe(1);
+    });
+  });
+
+  describe('identity retention', () => {
+    beforeAll(async () => {
+      sellerCookie = await signUp('retention');
+      const store = await seedStore(
+        sellerCookie,
+        `assisted-retention-${runId}`,
+      );
+      storeId = store.storeId;
+      productId = store.productId;
+      variantId = store.variantId;
+      extraStoreIds.push(storeId);
+    });
+
+    it('keeps a shared Customer while another assisted order is active, then erases it after closure', async () => {
+      const sharedPhone = `+519${String(randomInt(1e8)).padStart(8, '0')}`;
+      const first = await post(body({ customerPhone: sharedPhone })).expect(
+        201,
+      );
+      const second = await post(body({ customerPhone: sharedPhone })).expect(
+        201,
+      );
+      const firstRow = await prisma.order.findUniqueOrThrow({
+        where: { id: first.body.order.id },
+      });
+      const secondRow = await prisma.order.findUniqueOrThrow({
+        where: { id: second.body.order.id },
+      });
+      const customerId = firstRow.customerId!;
+      expect(secondRow.customerId).toBe(customerId);
+
+      await prisma.order.update({
+        where: { id: first.body.order.id },
+        data: { status: 'CANCELLED', closedAt: new Date() },
+      });
+
+      const retention = app.get(AssistedOrderIdentityRetentionUseCase);
+      const firstPass = await retention.eraseOnBuyerRequest(
+        storeId,
+        sharedPhone,
+        'support-operator-1',
+        'PRIV-460',
+      );
+      expect(firstPass).toEqual({ anonymized: 1, deferred: 1 });
+
+      const customerAfterFirstPass = await prisma.customer.findUniqueOrThrow({
+        where: { id: customerId },
+      });
+      expect(customerAfterFirstPass.phone).toBe(sharedPhone);
+      expect(customerAfterFirstPass.identityErasedAt).toBeNull();
+
+      await prisma.order.update({
+        where: { id: second.body.order.id },
+        data: { status: 'CANCELLED', closedAt: new Date() },
+      });
+      const secondPass = await retention.eraseOnBuyerRequest(
+        storeId,
+        sharedPhone,
+        'support-operator-1',
+        'PRIV-460',
+      );
+      expect(secondPass).toEqual({ anonymized: 1, deferred: 0 });
+
+      const erasedCustomer = await prisma.customer.findUniqueOrThrow({
+        where: { id: customerId },
+      });
+      expect(erasedCustomer.phone).toBe(`erased:${customerId}`);
+      expect(erasedCustomer.identityErasedAt).toBeInstanceOf(Date);
+      const audit = await prisma.auditLog.findFirstOrThrow({
+        where: {
+          entityId: second.body.order.id,
+          action: 'order.assisted_identity_erased',
+        },
+      });
+      expect(audit.actorId).toBe('support-operator-1');
+      expect(audit.metadata).toMatchObject({
+        cause: 'BUYER_REQUEST',
+        requestReference: 'PRIV-460',
+      });
+    });
+    it('keeps a Customer used by an unlinked active order during the retention sweep', async () => {
+      const sharedPhone = `+519${String(randomInt(1e8)).padStart(8, '0')}`;
+      const first = await post(body({ customerPhone: sharedPhone })).expect(
+        201,
+      );
+      const second = await post(body({ customerPhone: sharedPhone })).expect(
+        201,
+      );
+      const firstRow = await prisma.order.findUniqueOrThrow({
+        where: { id: first.body.order.id },
+      });
+      const secondRow = await prisma.order.findUniqueOrThrow({
+        where: { id: second.body.order.id },
+      });
+      const customerId = firstRow.customerId!;
+      expect(secondRow.customerId).toBe(customerId);
+
+      const now = new Date();
+      const closedAt = new Date(now.getTime() - 91 * 24 * 60 * 60 * 1000);
+      await prisma.order.update({
+        where: { id: first.body.order.id },
+        data: { status: 'CANCELLED', closedAt },
+      });
+      await prisma.order.update({
+        where: { id: second.body.order.id },
+        data: { customerId: null },
+      });
+
+      const retention = app.get(AssistedOrderIdentityRetentionUseCase);
+      await retention.eraseExpiredUnclaimedIdentities(now);
+
+      const customer = await prisma.customer.findUniqueOrThrow({
+        where: { id: customerId },
+      });
+      expect(customer.phone).toBe(sharedPhone);
+      expect(customer.identityErasedAt).toBeNull();
+      const unlinked = await prisma.order.findUniqueOrThrow({
+        where: { id: second.body.order.id },
+      });
+      expect(unlinked.buyerIdentityErasedAt).toBeNull();
     });
   });
 });

@@ -55,7 +55,7 @@ export class CustomersService {
 
     const [customers, orderGroups, payments, guestOrders] = await Promise.all([
       this.prisma.customer.findMany({
-        where: { storeId },
+        where: { storeId, identityErasedAt: null },
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.order.groupBy({
@@ -88,7 +88,11 @@ export class CustomersService {
         },
       }),
       this.prisma.order.findMany({
-        where: { storeId, customerId: null },
+        where: {
+          storeId,
+          customerId: null,
+          buyerIdentityErasedAt: null,
+        },
         select: {
           customerPhone: true,
           customerName: true,
@@ -260,7 +264,11 @@ export class CustomersService {
       });
       if (!existing) {
         const orders = await this.prisma.order.findMany({
-          where: { storeId, customerId: null },
+          where: {
+            storeId,
+            customerId: null,
+            buyerIdentityErasedAt: null,
+          },
           orderBy: { createdAt: 'desc' },
           include: {
             items: { include: { product: true, variant: true } },
@@ -295,7 +303,7 @@ export class CustomersService {
     }
 
     const customer = await this.prisma.customer.findUnique({
-      where: { id: customerId },
+      where: { id: customerId, identityErasedAt: null },
     });
     if (!customer || customer.storeId !== storeId) {
       throw new NotFoundException('Cliente no encontrado');
