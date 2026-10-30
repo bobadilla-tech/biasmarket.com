@@ -7,6 +7,7 @@ import { isStorefrontRedesignEnabled } from "@/lib/storefront-redesign";
 import { ProductCard } from "@/components/storefront/product-card";
 import { StoreSectionRenderer } from "@/components/storefront/section-renderer";
 import { StorePublicProfile } from "@/features/storefront/components/storefront";
+import { apiClient } from "@/lib/api-client";
 import { buildProductJsonLd, serializeJsonLd } from "@/lib/product-json-ld";
 import {
   firstStoreMarkdownImage,
@@ -109,23 +110,24 @@ async function getPublicCategories(slug: string) {
 }
 
 async function getPublicReferences(slug: string, order: string, page: string) {
-  const configuredApiUrl =
-    process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
-  if (!configuredApiUrl || !STORE_SLUG_PATTERN.test(slug)) return null;
+  if (!STORE_SLUG_PATTERN.test(slug)) return null;
   try {
-    const apiBase = new URL(configuredApiUrl);
-    const basePath = apiBase.pathname.endsWith("/")
-      ? apiBase.pathname
-      : `${apiBase.pathname}/`;
-    const endpoint = new URL(
-      `api/stores/${encodeURIComponent(slug)}/references/public`,
-      new URL(basePath, apiBase.origin),
+    const references = await apiClient.storeReferences.findPublic(
+      slug,
+      {
+        orden: order === "antiguas" ? "antiguas" : "recientes",
+        page: Math.max(1, Number.parseInt(page, 10) || 1),
+        limit: 24,
+      },
+      { cache: "no-store" },
     );
-    endpoint.searchParams.set("orden", order);
-    endpoint.searchParams.set("page", page);
-    endpoint.searchParams.set("limit", "24");
-    const response = await fetch(endpoint, { cache: "no-store" });
-    return response.ok ? await response.json() : null;
+    return {
+      ...references,
+      items: references.items.map((reference) => ({
+        ...reference,
+        caption: reference.caption ?? null,
+      })),
+    };
   } catch {
     return null;
   }
