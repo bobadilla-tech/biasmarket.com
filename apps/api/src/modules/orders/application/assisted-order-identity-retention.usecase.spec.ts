@@ -116,6 +116,7 @@ describe('AssistedOrderIdentityRetentionUseCase', () => {
         where: {
           id: 'customer-1',
           storeId: 'store-1',
+          phone: '+51987654321',
           identityErasedAt: null,
         },
         data: expect.objectContaining({
