@@ -47,3 +47,25 @@ This document records source evidence only. It does not certify deployed behavio
 | Buyer claim | `order.claimed` | Claiming buyer (`BuyerAccount.id`) | Actor type only; email, Google subject, phone, token, and claim-ticket data are excluded |
 
 The tracking, packed-photo, and claim AuditLog inserts share the corresponding successful write transaction. Tracking writes lock the order before reading current values, so concurrent duplicate updates do not create duplicate audit rows. The buyer-facing tracking event remains limited to adding or replacing a non-empty number; clearing the number and URL-only edits are seller-audited without a buyer event. Rejected or repeated claims write no new audit row. Tracking/photo audit rows are limited to `VENDOR_ASSISTED` orders so marketplace paths do not gain unrelated duplicate audit records. Focused tests cover attribution, sensitive-value exclusion, no-op changes, and rejected claims; photo cleanup on transaction failure is also covered.
+
+## Issue #463: production redaction verification (2026-10-29)
+
+### Deployment revision evidence
+
+- GitHub Actions CD run [#935](https://github.com/bobadilla-tech/biasmarket.com/actions/runs/40946588942) completed successfully at 2026-10-29 20:20:59 UTC. It built/pushed the API, web, and worker images and its “Sync & deploy” job succeeded for revision `5e2eac4760ddce72868988e6194cb9428a9967f6`.
+- The later CD run [#936](https://github.com/bobadilla-tech/biasmarket.com/actions/runs/40960679403) was skipped; it does not provide newer deployment evidence.
+- The VPS `state/current_sha`, active Caddy config, and running container config could not be read: the only configured SSH route returned `Operation not permitted` under this execution environment. The workflow result is evidence of a successful deployment operation, not direct confirmation of the VPS state.
+
+### Source and synthetic-token checks
+
+- `infra/vps/Caddyfile` applies the same two path replacements in both the global logger (for reverse-proxy runtime errors) and `(redact_log)` (for API/web access logs): `/public/orders/<segment>` and `/pedido/<segment>` become `REDACTED`. Both logger layers delete `request>headers>Referer` before writing a log line. The blue/green active fragments contain only upstream selection, so they do not override those logger rules.
+- API and web source initializes Sentry-compatible clients with scrub callbacks before sending errors and transactions. The web browser client also scrubs breadcrumbs. These clients are environment-gated; production DSN presence and live event delivery could not be inspected here.
+- API review found the Sentry scrubber did not traverse nested event fields. It now recursively scrubs synthetic public-order token strings in request headers, exception data, and extra/context fields as well as the explicit URL, transaction, tag, trace, and span fields. This change is source-only until deployed.
+- Synthetic-token unit checks passed: API `error-tracking.spec.ts` and `scrub-request-url.spec.ts` (2 files, 8 tests); web `scrub-sentry.test.ts` (1 file, 6 tests). The API event checks assert the token is absent from the serialized event, including a Referer and nested error context. No real buyer URL or token was used.
+- No production access-log line or GlitchTip event was collected. Therefore redaction in production access logs and error-tracking payloads is not confirmed.
+
+### Drift and remaining production check
+
+- No mismatch was found between the checked-in Caddy logger rules and their source documentation/templates.
+- Production application code is associated with the successful CD revision above, but the active Caddy config may have drifted: `docs/core/caddy.md` records that the Caddyfile is bind-mounted as a single file and an rsync inode replacement can leave the container reading the old file. The normal deploy job syncs `infra/vps/` and deploys but does not recreate Caddy. Without reading `/etc/caddy/Caddyfile` inside the running container, it is not possible to establish whether the redaction rules are loaded.
+- The production VPS and error-tracking projects were not changed. Issue #463 remains open until an operator can read the running Caddy config and error-tracking settings, then inspect only synthetic-token log/event samples and record the sanitized result.
