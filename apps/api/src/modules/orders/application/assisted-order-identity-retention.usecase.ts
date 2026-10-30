@@ -69,7 +69,9 @@ export class AssistedOrderIdentityRetentionUseCase {
           operatorId,
           requestReference,
         })
-      ) anonymized++;
+      ) {
+        anonymized++;
+      }
     }
 
     // Keep the store contact available while any matched order is still active.
@@ -227,8 +229,8 @@ export class AssistedOrderIdentityRetentionUseCase {
         if (remainingOrders === 0) {
           await tx.customer.updateMany({
             where: {
-            id: order.customerId,
-            storeId: order.storeId,
+              id: order.customerId,
+              storeId: order.storeId,
               identityErasedAt: null,
             },
             data: erasedCustomerData(order.customerId, erasedAt),
@@ -245,7 +247,9 @@ export class AssistedOrderIdentityRetentionUseCase {
           entityId: order.id,
           metadata: {
             cause,
-            ...(requestAudit ? { requestReference: requestAudit.requestReference } : {}),
+            ...(requestAudit
+              ? { requestReference: requestAudit.requestReference }
+              : {}),
             fields: [
               'customerPhone',
               'customerName',
