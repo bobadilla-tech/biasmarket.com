@@ -570,8 +570,12 @@ describe('assisted orders (e2e)', () => {
     'keeps a shared Customer while another assisted order is active, then erases it after closure',
     async () => {
       const sharedPhone = `+519${String(randomInt(1e8)).padStart(8, '0')}`;
-      const first = await post(body({ customerPhone: sharedPhone })).expect(201);
-      const second = await post(body({ customerPhone: sharedPhone })).expect(201);
+      const first = await post(
+        body({ customerPhone: sharedPhone }),
+      ).expect(201);
+      const second = await post(
+        body({ customerPhone: sharedPhone }),
+      ).expect(201);
       const firstRow = await prisma.order.findUniqueOrThrow({
         where: { id: first.body.order.id },
       });
