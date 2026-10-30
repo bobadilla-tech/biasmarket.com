@@ -205,7 +205,7 @@ export class CreateAssistedOrderUseCase {
     // Serialize only assisted-order admission for this seller. PostgreSQL's
     // transaction-scoped lock is released on commit/rollback and keeps the
     // count-and-create decision atomic across API instances.
-    await tx.$queryRaw`
+    await tx.$executeRaw`
       SELECT pg_advisory_xact_lock(hashtextextended(${`assisted-order:${storeId}:${userId}`}, 0))
     `;
 

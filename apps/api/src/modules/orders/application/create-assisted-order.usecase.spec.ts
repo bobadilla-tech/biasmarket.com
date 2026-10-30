@@ -35,7 +35,7 @@ function setup(finalAmount: { lte: (n: number) => boolean }) {
       create: vi.fn().mockResolvedValue({ id: 'o1' }),
       findMany: vi.fn().mockResolvedValue([]),
     },
-    $queryRaw: vi.fn().mockResolvedValue([]),
+    $executeRaw: vi.fn().mockResolvedValue(1),
     auditLog: { create: vi.fn() },
   };
   const prisma = {
@@ -187,7 +187,7 @@ describe('CreateAssistedOrderUseCase', () => {
             }),
           }),
         );
-        expect(tx.$queryRaw).toHaveBeenCalledTimes(1);
+        expect(tx.$executeRaw).toHaveBeenCalledTimes(1);
       } finally {
         vi.useRealTimers();
       }

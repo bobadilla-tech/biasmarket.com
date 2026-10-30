@@ -454,16 +454,29 @@ describe('assisted orders (e2e)', () => {
     });
 
     it('does not deadlock against a concurrent checkout for the same phone and product', async () => {
+      // Give this distinct-phone batch its own quota so its result cannot
+      // depend on recipient creation from earlier tests in this describe.
+      const raceCookie = await signUp('lock-race');
+      const raceSlug = `assisted-lock-race-${runId}`;
+      const raceStore = await seedStore(raceCookie, raceSlug);
+      extraStoreIds.push(raceStore.storeId);
+
       const checkout = (phone: string) =>
         request(app.getHttpServer())
-          .post(`/stores/${storeSlug}/checkout`)
+          .post(`/stores/${raceSlug}/checkout`)
           .set('X-Forwarded-For', nextIp())
           .field('deliveryMethodType', 'PICKUP')
           .field('customerPhone', phone)
           .field('customerEmail', `race-${ipCounter}-${runId}@example.com`)
           .field(
             'items',
-            JSON.stringify([{ productId, variantId, quantity: 1 }]),
+            JSON.stringify([
+              {
+                productId: raceStore.productId,
+                variantId: raceStore.variantId,
+                quantity: 1,
+              },
+            ]),
           );
 
       for (let i = 0; i < 5; i++) {
@@ -472,14 +485,24 @@ describe('assisted orders (e2e)', () => {
         // race (P2002 when two requests create the same new phone), so the
         // contact exists up front. A null name makes the assisted flow update
         // the row too, which is the Customer-then-stock ordering under test.
-        await prisma.customer.create({ data: { storeId, phone } });
+        await prisma.customer.create({
+          data: { storeId: raceStore.storeId, phone },
+        });
         const [assisted, checkoutRes] = await Promise.all([
           post(
             body({
               customerPhone: phone,
               customerName: 'Race',
-              items: [{ productId, variantId, quantity: 1 }],
+              items: [
+                {
+                  productId: raceStore.productId,
+                  variantId: raceStore.variantId,
+                  quantity: 1,
+                },
+              ],
             }),
+            raceCookie,
+            raceStore.storeId,
           ),
           checkout(phone),
         ]);
@@ -487,6 +510,145 @@ describe('assisted orders (e2e)', () => {
         expect(checkoutRes.status).toBe(201);
       }
     });
+  });
+
+  describe('distinct recipient limit', () => {
+    let limitCookie: string;
+    let limitStoreId: string;
+    let limitProductId: string;
+    let limitVariantId: string;
+    let parallelCookie: string;
+    let parallelStoreId: string;
+    let parallelProductId: string;
+    let parallelVariantId: string;
+
+    beforeAll(async () => {
+      limitCookie = await signUp('recipient-limit');
+      ({
+        storeId: limitStoreId,
+        productId: limitProductId,
+        variantId: limitVariantId,
+      } = await seedStore(limitCookie, `assisted-limit-${runId}`));
+      extraStoreIds.push(limitStoreId);
+
+      parallelCookie = await signUp('recipient-parallel');
+      ({
+        storeId: parallelStoreId,
+        productId: parallelProductId,
+        variantId: parallelVariantId,
+      } = await seedStore(parallelCookie, `assisted-parallel-${runId}`));
+      extraStoreIds.push(parallelStoreId);
+    });
+
+    const freshPhone = () => `+519${String(randomInt(1e8)).padStart(8, '0')}`;
+    const counts = async (targetStoreId: string) => ({
+      orders: await prisma.order.count({
+        where: { storeId: targetStoreId, source: 'VENDOR_ASSISTED' },
+      }),
+      customers: await prisma.customer.count({
+        where: { storeId: targetStoreId },
+      }),
+      events: await prisma.orderEvent.count({
+        where: { order: { is: { storeId: targetStoreId } } },
+      }),
+      audits: await prisma.auditLog.count({
+        where: { storeId: targetStoreId, action: 'order.assisted_created' },
+      }),
+    });
+
+    it('rejects a sixth distinct recipient without side effects and allows a repeat', async () => {
+      const phones = Array.from({ length: 5 }, freshPhone);
+      for (const customerPhone of phones) {
+        await post(
+          body({
+            customerPhone,
+            items: [
+              {
+                productId: limitProductId,
+                variantId: limitVariantId,
+                quantity: 1,
+              },
+            ],
+          }),
+          limitCookie,
+          limitStoreId,
+        ).expect(201);
+      }
+
+      const beforeRejected = await counts(limitStoreId);
+      const reservedBeforeRejected = (await variantRow(limitVariantId))
+        .reserved;
+      await post(
+        body({
+          customerPhone: freshPhone(),
+          items: [
+            {
+              productId: limitProductId,
+              variantId: limitVariantId,
+              quantity: 1,
+            },
+          ],
+        }),
+        limitCookie,
+        limitStoreId,
+      ).expect(429);
+      expect(await counts(limitStoreId)).toEqual(beforeRejected);
+      expect((await variantRow(limitVariantId)).reserved).toBe(
+        reservedBeforeRejected,
+      );
+
+      await post(
+        body({
+          customerPhone: phones[0],
+          items: [
+            {
+              productId: limitProductId,
+              variantId: limitVariantId,
+              quantity: 1,
+            },
+          ],
+        }),
+        limitCookie,
+        limitStoreId,
+      ).expect(201);
+      expect(await counts(limitStoreId)).toEqual({
+        orders: beforeRejected.orders + 1,
+        customers: beforeRejected.customers,
+        events: beforeRejected.events + 1,
+        audits: beforeRejected.audits + 1,
+      });
+    }, 60_000);
+
+    it('admits at most five of eight parallel distinct recipients', async () => {
+      const results = await Promise.all(
+        Array.from({ length: 8 }, () =>
+          post(
+            body({
+              customerPhone: freshPhone(),
+              items: [
+                {
+                  productId: parallelProductId,
+                  variantId: parallelVariantId,
+                  quantity: 1,
+                },
+              ],
+            }),
+            parallelCookie,
+            parallelStoreId,
+          ),
+        ),
+      );
+
+      expect(results.filter((result) => result.status === 201)).toHaveLength(5);
+      expect(results.filter((result) => result.status === 429)).toHaveLength(3);
+      expect(await counts(parallelStoreId)).toEqual({
+        orders: 5,
+        customers: 5,
+        events: 5,
+        audits: 5,
+      });
+      expect((await variantRow(parallelVariantId)).reserved).toBe(5);
+    }, 60_000);
   });
 
   // The seller routes allow 20 requests/min per user (4xx included), so this
