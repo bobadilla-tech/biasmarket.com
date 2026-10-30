@@ -26,6 +26,7 @@ import { AddressesModule } from './modules/addresses/addresses.module.js';
 import { MonitoringModule } from './modules/monitoring/monitoring.module.js';
 import { CouponsModule } from './modules/coupons/coupons.module.js';
 import { CouriersModule } from './modules/couriers/couriers.module.js';
+import { StoreReferencesModule } from './modules/store-references/store-references.module.js';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { CouriersModule } from './modules/couriers/couriers.module.js';
     MonitoringModule,
     CouponsModule,
     CouriersModule,
+    StoreReferencesModule,
   ],
   controllers: [AppController],
 })

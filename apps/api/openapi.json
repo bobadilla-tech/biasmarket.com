@@ -3633,6 +3633,42 @@
         "tags": ["Categories"]
       }
     },
+    "/stores/{storeId}/categories/{categoryId}/image": {
+      "post": {
+        "operationId": "CategoriesController_uploadImage",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Categories"]
+      }
+    },
     "/stores/{storeId}/collections": {
       "post": {
         "operationId": "CollectionsController_create",
@@ -5595,6 +5631,287 @@
         },
         "tags": ["PublicCouriers"]
       }
+    },
+    "/stores/{storeId}/references": {
+      "get": {
+        "operationId": "StoreReferencesController_findAll",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StoreReferenceResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StoreReferences"]
+      },
+      "post": {
+        "operationId": "StoreReferencesController_create",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file", "takenAt", "width", "height"],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "takenAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "caption": {
+                    "type": "string",
+                    "maxLength": 240
+                  },
+                  "width": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 12000
+                  },
+                  "height": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 12000
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreReferenceResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StoreReferences"]
+      }
+    },
+    "/stores/{storeId}/references/{referenceId}": {
+      "patch": {
+        "operationId": "StoreReferencesController_update",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "referenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStoreReferenceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreReferenceResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StoreReferences"]
+      },
+      "delete": {
+        "operationId": "StoreReferencesController_delete",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "referenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreReferenceResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StoreReferences"]
+      }
+    },
+    "/admin/store-references/{referenceId}/hide": {
+      "patch": {
+        "operationId": "StoreReferencesController_hide",
+        "parameters": [
+          {
+            "name": "referenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreReferenceResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StoreReferences"]
+      }
+    },
+    "/admin/store-references/{referenceId}/unhide": {
+      "patch": {
+        "operationId": "StoreReferencesController_unhide",
+        "parameters": [
+          {
+            "name": "referenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreReferenceResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StoreReferences"]
+      }
+    },
+    "/stores/{slug}/references/public": {
+      "get": {
+        "operationId": "StoreReferencesController_findPublic",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "orden",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": ["recientes", "antiguas"],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicStoreReferencesResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StoreReferences"]
+      }
     }
   },
   "info": {
@@ -6569,11 +6886,22 @@
             "type": "string",
             "nullable": true
           },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true
+          },
           "productCount": {
             "type": "number"
           }
         },
-        "required": ["id", "name", "slug", "parentId", "productCount"]
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "parentId",
+          "imageUrl",
+          "productCount"
+        ]
       },
       "PublicProductStoreResponseDto": {
         "type": "object",
@@ -9734,15 +10062,31 @@
           "name": {
             "type": "string"
           },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true
+          },
           "slug": {
             "type": "string"
+          },
+          "productCount": {
+            "type": "number"
           },
           "createdAt": {
             "type": "string",
             "format": "date-time"
           }
         },
-        "required": ["id", "storeId", "parentId", "name", "slug", "createdAt"]
+        "required": [
+          "id",
+          "storeId",
+          "parentId",
+          "name",
+          "imageUrl",
+          "slug",
+          "productCount",
+          "createdAt"
+        ]
       },
       "UpdateCategoryDto": {
         "type": "object",
@@ -9753,6 +10097,14 @@
           },
           "parentId": {
             "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true
           }
         }
       },
@@ -11636,6 +11988,90 @@
           }
         },
         "required": ["id", "name", "modalities"]
+      },
+      "StoreReferenceResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "storeId": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "width": {
+            "type": "number"
+          },
+          "height": {
+            "type": "number"
+          },
+          "takenAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "enum": ["STORE", "BUYER"],
+            "type": "string"
+          },
+          "caption": {
+            "type": "string",
+            "nullable": true
+          },
+          "hidden": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "storeId",
+          "imageUrl",
+          "width",
+          "height",
+          "takenAt",
+          "source",
+          "hidden",
+          "createdAt"
+        ]
+      },
+      "UpdateStoreReferenceDto": {
+        "type": "object",
+        "properties": {
+          "takenAt": {
+            "type": "string"
+          },
+          "caption": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 240
+          }
+        }
+      },
+      "PublicStoreReferencesResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StoreReferenceResponseDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": ["items", "total", "page", "limit"]
       }
     }
   }

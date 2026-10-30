@@ -1,4 +1,4 @@
-import { IsOptional, IsString, MinLength } from 'class-validator';
+import { IsOptional, IsString, Matches, MinLength } from 'class-validator';
 
 export class UpdateCategoryDto {
   @IsOptional()
@@ -9,4 +9,13 @@ export class UpdateCategoryDto {
   @IsOptional()
   @IsString()
   parentId?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+  slug?: string;
+
+  @IsOptional()
+  @IsString()
+  imageUrl?: string | null;
 }

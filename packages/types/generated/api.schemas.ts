@@ -372,6 +372,8 @@ export interface PublicCategoryResponseDto {
   slug: string;
   /** @nullable */
   parentId: string | null;
+  /** @nullable */
+  imageUrl: string | null;
   productCount: number;
 }
 
@@ -2417,7 +2419,10 @@ export interface CategoryResponseDto {
   /** @nullable */
   parentId: string | null;
   name: string;
+  /** @nullable */
+  imageUrl: string | null;
   slug: string;
+  productCount: number;
   createdAt: string;
 }
 
@@ -2425,6 +2430,10 @@ export interface UpdateCategoryDto {
   /** @minLength 1 */
   name?: string;
   parentId?: string;
+  /** @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$ */
+  slug?: string;
+  /** @nullable */
+  imageUrl?: string | null;
 }
 
 export interface CreateCollectionDto {
@@ -3310,6 +3319,44 @@ export interface PublicCourierDto {
   modalities: PublicCourierModalityDto[];
 }
 
+export type StoreReferenceResponseDtoSource =
+  (typeof StoreReferenceResponseDtoSource)[keyof typeof StoreReferenceResponseDtoSource];
+
+export const StoreReferenceResponseDtoSource = {
+  STORE: "STORE",
+  BUYER: "BUYER",
+} as const;
+
+export interface StoreReferenceResponseDto {
+  id: string;
+  storeId: string;
+  imageUrl: string;
+  width: number;
+  height: number;
+  takenAt: string;
+  source: StoreReferenceResponseDtoSource;
+  /** @nullable */
+  caption?: string | null;
+  hidden: boolean;
+  createdAt: string;
+}
+
+export interface UpdateStoreReferenceDto {
+  takenAt?: string;
+  /**
+   * @maxLength 240
+   * @nullable
+   */
+  caption?: string | null;
+}
+
+export interface PublicStoreReferencesResponseDto {
+  items: StoreReferenceResponseDto[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export type StoresControllerfindPublicSitemapPageParams = {
   offset: string;
   limit: string;
@@ -3409,3 +3456,34 @@ export type MonitoringControllerfindAllParams = {
   limit?: string;
   page?: string;
 };
+
+export type StoreReferencesControllercreateBody = {
+  file: Blob;
+  takenAt: string;
+  /** @maxLength 240 */
+  caption?: string;
+  /**
+   * @minimum 1
+   * @maximum 12000
+   */
+  width: number;
+  /**
+   * @minimum 1
+   * @maximum 12000
+   */
+  height: number;
+};
+
+export type StoreReferencesControllerfindPublicParams = {
+  limit?: number;
+  page?: number;
+  orden?: StoreReferencesControllerfindPublicOrden;
+};
+
+export type StoreReferencesControllerfindPublicOrden =
+  (typeof StoreReferencesControllerfindPublicOrden)[keyof typeof StoreReferencesControllerfindPublicOrden];
+
+export const StoreReferencesControllerfindPublicOrden = {
+  recientes: "recientes",
+  antiguas: "antiguas",
+} as const;

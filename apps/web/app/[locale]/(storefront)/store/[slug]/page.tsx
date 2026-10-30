@@ -108,6 +108,29 @@ async function getPublicCategories(slug: string) {
   }
 }
 
+async function getPublicReferences(slug: string, order: string, page: string) {
+  const configuredApiUrl =
+    process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
+  if (!configuredApiUrl || !STORE_SLUG_PATTERN.test(slug)) return null;
+  try {
+    const apiBase = new URL(configuredApiUrl);
+    const basePath = apiBase.pathname.endsWith("/")
+      ? apiBase.pathname
+      : `${apiBase.pathname}/`;
+    const endpoint = new URL(
+      `api/stores/${encodeURIComponent(slug)}/references/public`,
+      new URL(basePath, apiBase.origin),
+    );
+    endpoint.searchParams.set("orden", order);
+    endpoint.searchParams.set("page", page);
+    endpoint.searchParams.set("limit", "24");
+    const response = await fetch(endpoint, { cache: "no-store" });
+    return response.ok ? await response.json() : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Collects unique active products that belong in the main catalog. */
 function collectProducts(store: any): any[] {
   const seen = new Map<string, any>();
@@ -329,16 +352,31 @@ export default async function StorePage({
       : {}),
     ...(typeof queryParams.page === "string" ? { page: queryParams.page } : {}),
   };
-  const [store, t, catalog, publicCategories, firstPageCatalog] =
-    await Promise.all([
-      getStore(slug),
-      getTranslations({ locale, namespace: "storefront" }),
-      redesignedStore && tab === "productos"
-        ? getCatalog(slug, catalogQuery)
-        : Promise.resolve(null),
-      redesignedStore ? getPublicCategories(slug) : Promise.resolve([]),
-      redesignedStore ? getCatalog(slug, {}) : Promise.resolve(null),
-    ]);
+  const [
+    store,
+    t,
+    catalog,
+    publicCategories,
+    publicReferences,
+    firstPageCatalog,
+  ] = await Promise.all([
+    getStore(slug),
+    getTranslations({ locale, namespace: "storefront" }),
+    redesignedStore && tab === "productos"
+      ? getCatalog(slug, catalogQuery)
+      : Promise.resolve(null),
+    redesignedStore ? getPublicCategories(slug) : Promise.resolve([]),
+    redesignedStore && tab === "referencias"
+      ? getPublicReferences(
+          slug,
+          typeof queryParams.orden === "string"
+            ? queryParams.orden
+            : "recientes",
+          typeof queryParams.page === "string" ? queryParams.page : "1",
+        )
+      : Promise.resolve(null),
+    redesignedStore ? getCatalog(slug, {}) : Promise.resolve(null),
+  ]);
 
   if (!store) {
     return (
@@ -467,6 +505,16 @@ export default async function StorePage({
           showAbout={redesignedStore && hasAboutContent}
           sections={productSections}
           storeCategories={publicCategories}
+          storeReferences={publicReferences?.items ?? []}
+          referencesPagination={
+            publicReferences
+              ? {
+                  page: publicReferences.page,
+                  limit: publicReferences.limit,
+                  total: publicReferences.total,
+                }
+              : null
+          }
           catalogPagination={
             catalog
               ? {

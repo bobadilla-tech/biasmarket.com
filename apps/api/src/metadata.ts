@@ -57,6 +57,8 @@ export default async () => {
       await import('./modules/couriers/dto/public-courier-response.dto.js'),
     ['./modules/couriers/dto/bulk-save-couriers.dto.js']:
       await import('./modules/couriers/dto/bulk-save-couriers.dto.js'),
+    ['./modules/store-references/dto/store-reference-response.dto.js']:
+      await import('./modules/store-references/dto/store-reference-response.dto.js'),
     ['./modules/notifications/dto/notification-response.dto.js']:
       await import('./modules/notifications/dto/notification-response.dto.js'),
     ['./modules/users/dto/user-store-count-response.dto.js']:
@@ -297,6 +299,7 @@ export default async () => {
               name: { required: true, type: () => String },
               slug: { required: true, type: () => String },
               parentId: { required: true, type: () => String, nullable: true },
+              imageUrl: { required: true, type: () => String, nullable: true },
               productCount: { required: true, type: () => Number },
             },
             PublicProductVariantResponseDto: {
@@ -2222,6 +2225,12 @@ export default async () => {
             UpdateCategoryDto: {
               name: { required: false, type: () => String, minLength: 1 },
               parentId: { required: false, type: () => String },
+              slug: {
+                required: false,
+                type: () => String,
+                pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$',
+              },
+              imageUrl: { required: false, type: () => String, nullable: true },
             },
           },
         ],
@@ -2233,7 +2242,9 @@ export default async () => {
               storeId: { required: true, type: () => String },
               parentId: { required: true, type: () => String, nullable: true },
               name: { required: true, type: () => String },
+              imageUrl: { required: true, type: () => String, nullable: true },
               slug: { required: true, type: () => String },
+              productCount: { required: true, type: () => Number },
               createdAt: { required: true, type: () => String },
             },
           },
@@ -3150,6 +3161,71 @@ export default async () => {
             },
           },
         ],
+        [
+          import('./modules/store-references/dto/create-store-reference.dto.js'),
+          {
+            CreateStoreReferenceDto: {
+              takenAt: { required: true, type: () => String },
+              caption: { required: false, type: () => String },
+              width: {
+                required: true,
+                type: () => Number,
+                minimum: 1,
+                maximum: 12000,
+              },
+              height: {
+                required: true,
+                type: () => Number,
+                minimum: 1,
+                maximum: 12000,
+              },
+            },
+          },
+        ],
+        [
+          import('./modules/store-references/dto/update-store-reference.dto.js'),
+          {
+            UpdateStoreReferenceDto: {
+              takenAt: { required: false, type: () => String },
+              caption: {
+                required: false,
+                type: () => String,
+                nullable: true,
+                maxLength: 240,
+              },
+            },
+          },
+        ],
+        [
+          import('./modules/store-references/dto/store-reference-response.dto.js'),
+          {
+            StoreReferenceResponseDto: {
+              id: { required: true, type: () => String },
+              storeId: { required: true, type: () => String },
+              imageUrl: { required: true, type: () => String },
+              width: { required: true, type: () => Number },
+              height: { required: true, type: () => Number },
+              takenAt: { required: true, type: () => String },
+              source: { required: true, enum: ['BUYER', 'STORE'] },
+              caption: { required: true, type: () => String, nullable: true },
+              hidden: { required: true, type: () => Boolean },
+              createdAt: { required: true, type: () => String },
+            },
+            PublicStoreReferencesResponseDto: {
+              items: {
+                required: true,
+                type: () => [
+                  t[
+                    './modules/store-references/dto/store-reference-response.dto.js'
+                  ].StoreReferenceResponseDto,
+                ],
+              },
+              total: { required: true, type: () => Number },
+              page: { required: true, type: () => Number },
+              limit: { required: true, type: () => Number },
+            },
+          },
+        ],
       ],
       controllers: [
         [import('./app.controller.js'), { AppController: { root: {} } }],
@@ -3716,6 +3792,10 @@ export default async () => {
                 type: t['./modules/categories/dto/category-response.dto.js']
                   .CategoryResponseDto,
               },
+              uploadImage: {
+                type: t['./modules/categories/dto/category-response.dto.js']
+                  .CategoryResponseDto,
+              },
             },
           },
         ],
@@ -4069,6 +4149,50 @@ export default async () => {
                   t['./modules/couriers/dto/public-courier-response.dto.js']
                     .PublicCourierDto,
                 ],
+              },
+            },
+          },
+        ],
+        [
+          import('./modules/store-references/store-references.controller.js'),
+          {
+            StoreReferencesController: {
+              findAll: {
+                type: [
+                  t[
+                    './modules/store-references/dto/store-reference-response.dto.js'
+                  ].StoreReferenceResponseDto,
+                ],
+              },
+              create: {
+                type: t[
+                  './modules/store-references/dto/store-reference-response.dto.js'
+                ].StoreReferenceResponseDto,
+              },
+              update: {
+                type: t[
+                  './modules/store-references/dto/store-reference-response.dto.js'
+                ].StoreReferenceResponseDto,
+              },
+              delete: {
+                type: t[
+                  './modules/store-references/dto/store-reference-response.dto.js'
+                ].StoreReferenceResponseDto,
+              },
+              hide: {
+                type: t[
+                  './modules/store-references/dto/store-reference-response.dto.js'
+                ].StoreReferenceResponseDto,
+              },
+              unhide: {
+                type: t[
+                  './modules/store-references/dto/store-reference-response.dto.js'
+                ].StoreReferenceResponseDto,
+              },
+              findPublic: {
+                type: t[
+                  './modules/store-references/dto/store-reference-response.dto.js'
+                ].PublicStoreReferencesResponseDto,
               },
             },
           },

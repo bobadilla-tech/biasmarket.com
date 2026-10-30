@@ -16,8 +16,14 @@ export class CategoryResponseDto {
   @ApiProperty()
   name: string;
 
+  @ApiProperty({ type: String, nullable: true })
+  imageUrl: string | null;
+
   @ApiProperty()
   slug: string;
+
+  @ApiProperty()
+  productCount: number;
 
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt: string;

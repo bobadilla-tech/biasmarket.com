@@ -31,6 +31,20 @@ export function DashboardNav({
           },
         ]
       : []),
+    ...(isStorefrontRedesignEnabled(slug)
+      ? [
+          {
+            key: "categories",
+            label: t("categories"),
+            href: `/dashboard/${slug}/categories`,
+          },
+          {
+            key: "references",
+            label: t("references"),
+            href: `/dashboard/${slug}/references`,
+          },
+        ]
+      : []),
   ];
 
   return (

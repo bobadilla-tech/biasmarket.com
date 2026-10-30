@@ -27,7 +27,7 @@ export class CategoriesService {
     return `${base}-${suffix}`;
   }
 
-  private async assertOwnership(storeId: string, userId: string) {
+  async assertOwnership(storeId: string, userId: string) {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
@@ -75,7 +75,11 @@ export class CategoriesService {
 
   async findAllForStore(storeId: string, userId: string) {
     await this.assertOwnership(storeId, userId);
-    return this.prisma.category.findMany({ where: { storeId } });
+    return this.prisma.category.findMany({
+      where: { storeId },
+      include: { _count: { select: { products: true } } },
+      orderBy: { name: 'asc' },
+    });
   }
 
   async update(
@@ -93,9 +97,29 @@ export class CategoriesService {
       }
       await this.assertParentInStore(dto.parentId, storeId);
     }
+    if (dto.slug) {
+      const existing = await this.prisma.category.findFirst({
+        where: { storeId, slug: dto.slug, NOT: { id: categoryId } },
+        select: { id: true },
+      });
+      if (existing) throw new ConflictException('El slug ya está en uso');
+    }
     return this.prisma.category.update({
       where: { id: categoryId },
       data: dto,
+    });
+  }
+
+  async updateImage(
+    categoryId: string,
+    storeId: string,
+    userId: string,
+    imageUrl: string | null,
+  ) {
+    await this.findOwnedCategory(categoryId, storeId, userId);
+    return this.prisma.category.update({
+      where: { id: categoryId },
+      data: { imageUrl },
     });
   }
 

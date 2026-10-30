@@ -125,6 +125,7 @@ model Store {
 
   owner             User                      @relation(fields: [ownerId], references: [id])
   products          Product[]
+  references        StoreReference[]
   orders            Order[]
   categories        Category[]
   collections       Collection[]
@@ -217,6 +218,7 @@ model Category {
   parentId  String?
   name      String
   slug      String
+  imageUrl  String?
   createdAt DateTime @default(now())
 
   store    Store             @relation(fields: [storeId], references: [id])
@@ -228,6 +230,29 @@ model Category {
   @@unique([storeId, slug])
   @@index([storeId])
   @@index([parentId])
+}
+
+enum StoreReferenceSource {
+  STORE
+  BUYER
+}
+
+model StoreReference {
+  id        String               @id @default(cuid())
+  storeId   String
+  imageUrl  String
+  width     Int
+  height    Int
+  takenAt   DateTime
+  source    StoreReferenceSource @default(STORE)
+  caption   String?
+  hidden    Boolean              @default(false)
+  createdAt DateTime             @default(now())
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, takenAt])
+  @@index([storeId, hidden, takenAt])
 }
 
 model ProductCategory {
