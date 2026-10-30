@@ -636,5 +636,43 @@ describe('assisted orders (e2e)', () => {
 
     },
   );
+  it('keeps a Customer used by an unlinked active order during the retention sweep', async () => {
+    const sharedPhone = `+519${String(randomInt(1e8)).padStart(8, '0')}`;
+    const first = await post(body({ customerPhone: sharedPhone })).expect(201);
+    const second = await post(body({ customerPhone: sharedPhone })).expect(201);
+    const firstRow = await prisma.order.findUniqueOrThrow({
+      where: { id: first.body.order.id },
+    });
+    const secondRow = await prisma.order.findUniqueOrThrow({
+      where: { id: second.body.order.id },
+    });
+    const customerId = firstRow.customerId!;
+    expect(secondRow.customerId).toBe(customerId);
+
+    const now = new Date();
+    const closedAt = new Date(now.getTime() - 91 * 24 * 60 * 60 * 1000);
+    await prisma.order.update({
+      where: { id: first.body.order.id },
+      data: { status: 'CANCELLED', closedAt },
+    });
+    await prisma.order.update({
+      where: { id: second.body.order.id },
+      data: { customerId: null },
+    });
+
+    const retention = app.get(AssistedOrderIdentityRetentionUseCase);
+    await retention.eraseExpiredUnclaimedIdentities(now);
+
+    const customer = await prisma.customer.findUniqueOrThrow({
+      where: { id: customerId },
+    });
+    expect(customer.phone).toBe(sharedPhone);
+    expect(customer.identityErasedAt).toBeNull();
+    const unlinked = await prisma.order.findUniqueOrThrow({
+      where: { id: second.body.order.id },
+    });
+    expect(unlinked.buyerIdentityErasedAt).toBeNull();
+  });
+
 });
 
