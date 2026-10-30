@@ -36,7 +36,10 @@ export class AdvanceFulfillmentUseCase {
     return this.prisma.$transaction(async (tx) => {
       const updated = await this.orders.saveStatus(
         orderId,
-        { fulfillmentStatus: toStatus },
+        {
+          fulfillmentStatus: toStatus,
+          ...(toStatus === 'COMPLETED' ? { closedAt: new Date() } : {}),
+        },
         tx,
       );
 
