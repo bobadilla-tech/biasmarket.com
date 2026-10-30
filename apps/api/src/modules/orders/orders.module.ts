@@ -17,8 +17,11 @@ import { ReviewPaymentUseCase } from './application/review-payment.usecase.js';
 import { AdvanceFulfillmentUseCase } from './application/advance-fulfillment.usecase.js';
 import { CancelOrderUseCase } from './application/cancel-order.usecase.js';
 import { ExpireOrdersUseCase } from './application/expire-orders.usecase.js';
+import { AssistedOrderIdentityRetentionUseCase } from './application/assisted-order-identity-retention.usecase.js';
 import { CustomerAccountService } from './application/customer-account.service.js';
 import { OrderEventsService } from './application/order-events.service.js';
+import { PublicOrderTokenGuard } from './infrastructure/public-order-token.guard.js';
+import { BuyerPaymentProofService } from './application/buyer-payment-proof.service.js';
 import { OrderPaymentsService } from './application/order-payments.service.js';
 import { VoidOrderPaymentUseCase } from './application/void-order-payment.usecase.js';
 import { PublicOrderService } from './application/public-order.service.js';
@@ -51,14 +54,22 @@ import { PaymentConfigModule } from '../payment-config/payment-config.module.js'
     AdvanceFulfillmentUseCase,
     CancelOrderUseCase,
     ExpireOrdersUseCase,
+    AssistedOrderIdentityRetentionUseCase,
     InternalJobsSecretGuard,
     CustomerAccountService,
     CustomersService,
     OrderEventsService,
+    BuyerPaymentProofService,
+    PublicOrderTokenGuard,
     OrderPaymentsService,
     VoidOrderPaymentUseCase,
     PublicOrderService,
   ],
-  exports: [CustomerAccountService, OrderRepository, OrderPaymentsService],
+  exports: [
+    CustomerAccountService,
+    OrderRepository,
+    OrderPaymentsService,
+    OrderEventsService,
+  ],
 })
 export class OrdersModule {}

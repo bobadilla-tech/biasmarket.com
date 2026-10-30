@@ -85,17 +85,17 @@ Add:
 Public IP limits follow the visitor, not the proxy. The path is client →
 Cloudflare → Caddy → API.
 
-`infra/vps/Caddyfile` trusts only [Cloudflare's published ranges](https://www.cloudflare.com/ips/)
-and reads `CF-Connecting-IP`. Cloudflare sets that header and a direct
-connection to the origin is not in the trusted list, so a forged
-`CF-Connecting-IP` or `X-Forwarded-For` is ignored. Caddy then sends that one
-address to the API.
+`infra/vps/Caddyfile` trusts only
+[Cloudflare's published ranges](https://www.cloudflare.com/ips/) and reads
+`CF-Connecting-IP`. Cloudflare sets that header and a direct connection to the
+origin is not in the trusted list, so a forged `CF-Connecting-IP` or
+`X-Forwarded-For` is ignored. Caddy then sends that one address to the API.
 
-The API sets Express `trust proxy` to `1` (`apps/api/src/main.ts`), so
-`req.ip` is the address Caddy added. It is not `true`: that setting uses the
-leftmost `X-Forwarded-For` entry, which the visitor can choose. Two different
-rightmost addresses are two throttle buckets; a spoofed prefix on the same
-rightmost address is still one bucket.
+The API sets Express `trust proxy` to `1` (`apps/api/src/main.ts`), so `req.ip`
+is the address Caddy added. It is not `true`: that setting uses the leftmost
+`X-Forwarded-For` entry, which the visitor can choose. Two different rightmost
+addresses are two throttle buckets; a spoofed prefix on the same rightmost
+address is still one bucket.
 
 ---
 
@@ -188,12 +188,12 @@ as a confirmed sale at each step.
    ownership-checked endpoint above. A partial amount → `PARTIALLY_PAID`;
    recording enough to reach `requiredAmount` routes straight through the
    approve path (next step) → `VERIFIED`
-   - A seller may void a recorded or approved payment only while fulfillment
-     is still `ORDERING` and before the order is `VERIFIED`. Voiding records
-     the actor, timestamp and reason,
-     keeps the payment in history, and recalculates the payment status from the
-     remaining non-voided payments. The result may be `PARTIALLY_PAID`,
-     `PAYMENT_SUBMITTED` when an unreviewed proof remains, or `PENDING_PAYMENT`.
+   - A seller may void a recorded or approved payment only while fulfillment is
+     still `ORDERING` and before the order is `VERIFIED`. Voiding records the
+     actor, timestamp and reason, keeps the payment in history, and recalculates
+     the payment status from the remaining non-voided payments. The result may
+     be `PARTIALLY_PAID`, `PAYMENT_SUBMITTED` when an unreviewed proof remains,
+     or `PENDING_PAYMENT`.
 4. **Seller approves / rejects** —
    `PATCH /stores/:storeId/orders/:orderId/review`
    (`review-payment.usecase.ts`):
@@ -236,6 +236,60 @@ as a confirmed sale at each step.
 
 The buyer follows the order from `PENDING_PAYMENT` to `COMPLETED` on
 `/store/[slug]/account` (single-store buyer order history).
+
+### 9.3.1 Buyer proof upload by private link
+
+An assisted order's buyer has no account, only the private link. Two public
+routes (both in `public-order-events.controller.ts`) let them pay without one:
+
+- `POST /public/orders/:token/payments` (multipart: `amount`, `method`, optional
+  `operationCode` and `note`, `file`).
+- `GET /public/orders/:token/payments/:paymentId/image` (the buyer's own proof).
+
+Guard order is fixed: `ThrottlerGuard` (10/min per IP for the upload, 30/min for
+the image), then `PublicOrderTokenGuard`, then Multer. The guard resolves the
+token with the same single hash lookup and the same `404 Pedido no encontrado`
+as `GET /public/orders/:token`, so an unknown or revoked token gets that answer
+before any multipart body is parsed, even with an invalid file. A `POST` that is
+not `multipart/form-data` gets `415` (after the 404 check; the image `GET` is
+never 415).
+
+Limits and rules, shared with the session upload through
+`BuyerPaymentProofService`:
+
+- JPEG or PNG only, by magic bytes, up to 5 MB; Multer cuts off anything larger
+  (`PAYMENT_PROOF_UPLOAD_LIMITS`: 1 file, 8 fields, 4096-byte fields).
+- `amount` is a string `^\d{1,9}(\.\d{1,2})?$` of at least one cent.
+- The balance is `pending - pending proofs`, from `computePaymentSummary`
+  (voided payments never count). At most 5 proofs may wait for review.
+- Cancelled, rejected, settled, shipped, or expired-but-unswept orders get a
+  `400` and nothing is uploaded. The guard's copy of the order is only used for
+  these pre-checks: the service re-reads status, expiry and payments under
+  `SELECT ... FOR UPDATE` and re-applies every rule, and deletes the uploaded
+  object if the transaction fails.
+- The row is `BUYER_SUBMITTED` / `PENDING_REVIEW`; `paymentStatus` does not
+  change. The buyer page derives "in review" from the pending proof.
+- The `PAYMENT_SUBMITTED` event payload has exactly `paymentId, amount, method`.
+  The operation code, the note, the original file name, the IP and the user
+  agent never reach events, audit logs, notifications or logs.
+
+The image route runs one compound query (`id`, `orderId` of the token's order,
+`source = BUYER_SUBMITTED`, image present). Every miss (other order, other
+store, seller capture, no image, unknown id) is the same
+`404 Comprobante no
+encontrado`. The content type is forced from an allow-list
+(`image/jpeg`, `image/png`) and the response carries
+`Cross-Origin-Resource-Policy:
+cross-origin` (the web app and the API are
+different origins), `nosniff`, a `default-src 'none'; sandbox` CSP,
+`Cache-Control: private, no-store` and `Referrer-Policy: no-referrer`. Browsers
+must not send custom request headers to these routes: a preflight would be
+rejected by `allowedHeaders`.
+
+PDF proofs are not accepted here (the checkout route still takes them). To
+enable them later, use `PROOF_UPLOAD_MIME_TYPES` on the upload route, extend the
+image route's content-type allow-list, and render PDFs as a download link in
+both the buyer and the seller viewers.
 
 ### 9.4 Future Upgrade Path
 

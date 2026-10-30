@@ -14,15 +14,17 @@ import type {
   PublicStoreListingResponseDto,
   SitemapStoreCountDto,
   SitemapStorePageDto,
+  StoreCatalogResponseDto,
   StoreContentImageResponseDto,
   StoreDirectoryResponseDto,
-  StoreCatalogResponseDto,
   StorePublicDetailResponseDto,
   StoreResponseDto,
   StoreWithOwnerResponseDto,
+  StorefrontCatalogRequestDto,
+  StorefrontRequestDto,
   StoresControllerfindDirectoryParams,
-  StoresControllerfindPublicCatalogParams,
   StoresControllerfindFeaturedParams,
+  StoresControllerfindPublicCatalogParams,
   StoresControllerfindPublicSitemapPageParams,
   UpdateStoreDto,
 } from "../api.schemas.js";
@@ -229,6 +231,64 @@ export const findDirectory = async (
   });
 };
 
+export const getFindPublicCatalogUrl = (
+  slug: string,
+  params?: StoresControllerfindPublicCatalogParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    const explodeParameters = ["categorias"];
+
+    if (Array.isArray(value) && explodeParameters.includes(key)) {
+      value.forEach((v) => {
+        normalizedParams.append(key, v === null ? "null" : String(v));
+      });
+      return;
+    }
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/stores/${slug}/products/public?${stringifiedParams}`
+    : `/stores/${slug}/products/public`;
+};
+
+export const findPublicCatalog = async (
+  slug: string,
+  params?: StoresControllerfindPublicCatalogParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StoreCatalogResponseDto> => {
+  return customFetch<StoreCatalogResponseDto>(
+    getFindPublicCatalogUrl(slug, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getFindStorefrontCatalogUrl = () => {
+  return `/stores/storefront/catalog`;
+};
+
+export const findStorefrontCatalog = async (
+  storefrontCatalogRequestDto: StorefrontCatalogRequestDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StoreCatalogResponseDto> => {
+  return customFetch<StoreCatalogResponseDto>(getFindStorefrontCatalogUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(storefrontCatalogRequestDto),
+  });
+};
+
 export const getFindPublicUrl = (slug: string) => {
   return `/stores/${slug}/public`;
 };
@@ -243,32 +303,22 @@ export const findPublic = async (
   });
 };
 
-export const getFindPublicCatalogUrl = (
-  slug: string,
-  params?: StoresControllerfindPublicCatalogParams,
-) => {
-  const normalizedParams = new URLSearchParams();
-  Object.entries(params || {}).forEach(([key, value]) => {
-    if (value === undefined) return;
-    if (Array.isArray(value)) {
-      value.forEach((item) => normalizedParams.append(key, item));
-      return;
-    }
-    normalizedParams.append(key, value === null ? "null" : String(value));
-  });
-  const stringifiedParams = normalizedParams.toString();
-  const path = `/stores/${slug}/products/public`;
-  return stringifiedParams.length > 0 ? `${path}?${stringifiedParams}` : path;
+export const getFindStorefrontPublicUrl = () => {
+  return `/stores/storefront/public`;
 };
 
-export const findPublicCatalog = async (
-  slug: string,
-  params?: StoresControllerfindPublicCatalogParams,
+export const findStorefrontPublic = async (
+  storefrontRequestDto: StorefrontRequestDto,
   options?: Parameters<typeof customFetch>[1],
-): Promise<StoreCatalogResponseDto> => {
-  return customFetch<StoreCatalogResponseDto>(
-    getFindPublicCatalogUrl(slug, params),
-    { ...options, method: "GET" },
+): Promise<StorePublicDetailResponseDto> => {
+  return customFetch<StorePublicDetailResponseDto>(
+    getFindStorefrontPublicUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(storefrontRequestDto),
+    },
   );
 };
 
@@ -285,6 +335,25 @@ export const findCategoriesPublic = async (
     {
       ...options,
       method: "GET",
+    },
+  );
+};
+
+export const getFindStorefrontCategoriesUrl = () => {
+  return `/stores/storefront/categories`;
+};
+
+export const findStorefrontCategories = async (
+  storefrontRequestDto: StorefrontRequestDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PublicCategoryResponseDto[]> => {
+  return customFetch<PublicCategoryResponseDto[]>(
+    getFindStorefrontCategoriesUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(storefrontRequestDto),
     },
   );
 };
@@ -316,6 +385,34 @@ export const uploadLogo = async (
   options?: Parameters<typeof customFetch>[1],
 ): Promise<StoreResponseDto> => {
   return customFetch<StoreResponseDto>(getUploadLogoUrl(storeId), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getUploadBannerUrl = (storeId: string) => {
+  return `/stores/${storeId}/banner`;
+};
+
+export const uploadBanner = async (
+  storeId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StoreResponseDto> => {
+  return customFetch<StoreResponseDto>(getUploadBannerUrl(storeId), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getUploadPublicOwnerAvatarUrl = (storeId: string) => {
+  return `/stores/${storeId}/public-owner-avatar`;
+};
+
+export const uploadPublicOwnerAvatar = async (
+  storeId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<StoreResponseDto> => {
+  return customFetch<StoreResponseDto>(getUploadPublicOwnerAvatarUrl(storeId), {
     ...options,
     method: "POST",
   });

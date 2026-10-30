@@ -1,7 +1,12 @@
 import { Processor, WorkerHost } from "@nestjs/bullmq";
 import { Logger } from "@nestjs/common";
 import type { Job } from "bullmq";
-import { INTERNAL_JOBS_SECRET_HEADER, QUEUE_NAMES } from "@biasmarket/queue";
+import {
+  ASSISTED_IDENTITY_RETENTION_JOB_NAME,
+  EXPIRE_ORDERS_JOB_NAME,
+  INTERNAL_JOBS_SECRET_HEADER,
+  QUEUE_NAMES,
+} from "@biasmarket/queue";
 import { requiredEnv } from "../../config/env.validation.js";
 
 // apps/workers owns *scheduling* only — this processor does nothing more
@@ -14,12 +19,23 @@ import { requiredEnv } from "../../config/env.validation.js";
 export class ExpireOrdersProcessor extends WorkerHost {
   private readonly logger = new Logger(ExpireOrdersProcessor.name);
 
-  async process(job: Job): Promise<{ cancelled: number }> {
+  async process(
+    job: Job,
+  ): Promise<{ cancelled: number } | { anonymized: number }> {
     const internalApiUrl = requiredEnv("INTERNAL_API_URL");
     const secret = requiredEnv("INTERNAL_JOBS_SECRET");
+    const endpoint =
+      job.name === ASSISTED_IDENTITY_RETENTION_JOB_NAME
+        ? "assisted-identity-retention-sweep"
+        : job.name === EXPIRE_ORDERS_JOB_NAME
+          ? "expire-sweep"
+          : null;
+    if (!endpoint) {
+      throw new Error(`Unsupported orders job: ${job.name}`);
+    }
 
     const response = await fetch(
-      `${internalApiUrl}/internal/orders/expire-sweep`,
+      `${internalApiUrl}/internal/orders/${endpoint}`,
       {
         method: "POST",
         headers: { [INTERNAL_JOBS_SECRET_HEADER]: secret },
@@ -32,10 +48,20 @@ export class ExpireOrdersProcessor extends WorkerHost {
       );
     }
 
-    const result = (await response.json()) as { cancelled: number };
-    this.logger.log(
-      `Expire-sweep job ${job.id} cancelled ${result.cancelled} order(s)`,
-    );
+    const result = (await response.json()) as
+      | { cancelled: number }
+      | {
+          anonymized: number;
+        };
+    if ("cancelled" in result) {
+      this.logger.log(
+        `Expire-sweep job ${job.id} cancelled ${result.cancelled} order(s)`,
+      );
+    } else {
+      this.logger.log(
+        `Assisted identity-retention job ${job.id} anonymized ${result.anonymized} order(s)`,
+      );
+    }
     return result;
   }
 }

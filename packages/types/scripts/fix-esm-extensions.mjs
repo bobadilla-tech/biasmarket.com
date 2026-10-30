@@ -6,7 +6,7 @@
 // small postprocess pass over its output, run right after `orval` in the
 // `generate` script — same "wrap the tool with a script" shape as
 // apps/api's swagger-metadata/openapi-spec generators.
-import { readdir, readFile, writeFile } from "node:fs/promises";
+import { readdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -43,3 +43,7 @@ async function walk(dir) {
 }
 
 await walk(generatedDir);
+
+// Orval 8.43+ emits a barrel `generated/index.ts` that this repo never used;
+// drop it so a version drift cannot add an untracked file.
+await rm(path.join(generatedDir, "index.ts"), { force: true });

@@ -221,6 +221,7 @@ describe('orders + checkout (e2e)', () => {
     }
     const res = await req.expect(201);
     assertMatchesSchema(res.body, checkoutResultSchema, openapi.components);
+    expect(res.body.order).not.toHaveProperty('buyerAccountId');
     expect(typeof res.body.order.totalAmount).toBe('string');
     const orderId = res.body.order.id as string;
     orderIds.push(orderId);
@@ -255,6 +256,7 @@ describe('orders + checkout (e2e)', () => {
     expect(typeof listed.paidAmount).toBe('number');
     for (const order of listRes.body) {
       assertMatchesSchema(order, orderSchema, openapi.components);
+      expect(order).not.toHaveProperty('buyerAccountId');
     }
 
     const findOneRes = await request(app.getHttpServer())
@@ -262,6 +264,7 @@ describe('orders + checkout (e2e)', () => {
       .set('Cookie', sessionCookie)
       .expect(200);
     assertMatchesSchema(findOneRes.body, orderDetailSchema, openapi.components);
+    expect(findOneRes.body).not.toHaveProperty('buyerAccountId');
     expect(findOneRes.body.paymentStatus).toBe('PENDING_PAYMENT');
     const requiredAmount = findOneRes.body.requiredAmount as string;
 
@@ -285,6 +288,7 @@ describe('orders + checkout (e2e)', () => {
       .send({ status: 'IN_TRANSIT' })
       .expect(200);
     assertMatchesSchema(advanceRes.body, orderStatusSchema, openapi.components);
+    expect(advanceRes.body).not.toHaveProperty('buyerAccountId');
     expect(advanceRes.body.fulfillmentStatus).toBe('IN_TRANSIT');
   });
 
@@ -301,7 +305,7 @@ describe('orders + checkout (e2e)', () => {
       .post(`/stores/${storeId}/orders/${orderId}/payments`)
       .set('Cookie', sessionCookie)
       .field('amount', String(requiredAmount / 2))
-      .field('method', 'TRANSFER')
+      .field('method', 'CASH')
       .expect(201)
       .expect((res) => {
         if (res.body.paymentStatus !== 'PARTIALLY_PAID') {
@@ -645,7 +649,7 @@ describe('orders + checkout (e2e)', () => {
       .post(`/stores/${storeId}/orders/${orderId}/payments`)
       .set('Cookie', sessionCookie)
       .field('amount', '40.00')
-      .field('method', 'YAPE')
+      .field('method', 'CASH')
       .expect(201);
     expect(firstPaymentRes.body.paymentStatus).toBe('PARTIALLY_PAID');
     // The exact regression value: under the old Number-subtraction bug this
@@ -657,7 +661,7 @@ describe('orders + checkout (e2e)', () => {
       .post(`/stores/${storeId}/orders/${orderId}/payments`)
       .set('Cookie', sessionCookie)
       .field('amount', String(pendingAmount))
-      .field('method', 'TRANSFER')
+      .field('method', 'CASH')
       .expect(201);
 
     expect(secondPaymentRes.body.paymentStatus).toBe('VERIFIED');

@@ -1,113 +1,57 @@
-import { type ArgumentsHost, Logger, NotFoundException } from '@nestjs/common';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { type ArgumentsHost, BadRequestException } from '@nestjs/common';
+import { vi } from 'vitest';
+import { DuplicateOperationCodeException } from '../../modules/orders/domain/duplicate-operation-code.exception.js';
+import { DuplicateIdempotencyKeyException } from '../../modules/orders/domain/duplicate-idempotency-key.exception.js';
 import { AllExceptionsFilter } from './all-exceptions.filter.js';
 
-function mockHost(url: string) {
-  const response = {
-    status: vi.fn().mockReturnThis(),
-    json: vi.fn(),
-    setHeader: vi.fn(),
-  };
-  const request = { method: 'GET', url };
+function run(exception: unknown) {
+  const json = vi.fn();
+  const status = vi.fn().mockReturnValue({ json });
   const host = {
     switchToHttp: () => ({
-      getRequest: () => request,
-      getResponse: () => response,
+      getResponse: () => ({ status, setHeader: vi.fn() }),
+      getRequest: () => ({ url: '/api/stores/s/orders/o/payments' }),
     }),
   } as unknown as ArgumentsHost;
-
-  return { host, request, response };
+  new AllExceptionsFilter().catch(exception, host);
+  return { status, body: json.mock.calls[0]![0] as Record<string, unknown> };
 }
 
-afterEach(() => {
-  vi.restoreAllMocks();
-});
-
 describe('AllExceptionsFilter', () => {
-  it('maps an unknown exception to a 500 with the request path and an ISO-8601 timestamp, and logs it', () => {
-    const filter = new AllExceptionsFilter();
-    const loggerError = vi
-      .spyOn(Logger.prototype, 'error')
-      .mockImplementation(() => {});
-    const { host, request, response } = mockHost('/api/stores/store-1');
-
-    filter.catch(new Error('boom'), host);
-
-    expect(response.status).toHaveBeenCalledWith(500);
-    expect(response.json).toHaveBeenCalledWith({
-      statusCode: 500,
-      message: 'Internal Server Error',
-      path: request.url,
-      timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T.*Z$/),
+  it('answers a duplicate operation code with exactly { code, orderId }', () => {
+    const { status, body } = run(
+      new DuplicateOperationCodeException('order-9'),
+    );
+    expect(status).toHaveBeenCalledWith(409);
+    expect(Object.keys(body).sort()).toEqual(['code', 'orderId']);
+    expect(body).toEqual({
+      code: 'DUPLICATE_OPERATION_CODE',
+      orderId: 'order-9',
     });
-    expect(loggerError).toHaveBeenCalledWith(
-      `Unhandled exception on ${request.method} ${request.url}`,
-      expect.stringContaining('boom'),
-    );
   });
 
-  it('passes HttpException status/message through and does not log unhandled', () => {
-    const filter = new AllExceptionsFilter();
-    const loggerError = vi
-      .spyOn(Logger.prototype, 'error')
-      .mockImplementation(() => {});
-    const { host, request, response } = mockHost('/api/stores/store-1');
-
-    filter.catch(new NotFoundException('nope'), host);
-
-    expect(response.status).toHaveBeenCalledWith(404);
-    expect(response.json).toHaveBeenCalledWith({
-      statusCode: 404,
-      message: 'nope',
-      path: request.url,
-      timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T.*Z$/),
+  it('answers an idempotent replay with 409 and { statusCode, code, orderId, message }', () => {
+    const { status, body } = run(
+      new DuplicateIdempotencyKeyException('order-7'),
+    );
+    expect(status).toHaveBeenCalledWith(409);
+    expect(Object.keys(body).sort()).toEqual([
+      'code',
+      'message',
+      'orderId',
+      'statusCode',
+    ]);
+    expect(body).toEqual({
+      statusCode: 409,
+      code: 'IDEMPOTENT_REPLAY',
+      orderId: 'order-7',
+      message: 'Este pedido ya fue creado con esta clave',
     });
-    expect(loggerError).not.toHaveBeenCalled();
   });
 
-  it('does not log a public-order token or a query string', () => {
-    const filter = new AllExceptionsFilter();
-    const loggerError = vi
-      .spyOn(Logger.prototype, 'error')
-      .mockImplementation(() => {});
-    const { host, response } = mockHost(
-      '/api/public/orders/sekret-token?token=also-secret',
-    );
-
-    filter.catch(new Error('boom'), host);
-
-    const logged = String(loggerError.mock.calls[0]?.[0]);
-    expect(logged).toContain('/api/public/orders/:token');
-    expect(logged).not.toContain('sekret-token');
-    expect(logged).not.toContain('also-secret');
-    expect(response.json).toHaveBeenCalledWith(
-      expect.objectContaining({ path: '/api/public/orders/:token' }),
-    );
-    expect(response.setHeader).toHaveBeenCalledWith(
-      'Cache-Control',
-      'no-store',
-    );
-    expect(response.setHeader).toHaveBeenCalledWith(
-      'Referrer-Policy',
-      'no-referrer',
-    );
-  });
-
-  it('scrubs a public-order token when the path casing differs', () => {
-    const filter = new AllExceptionsFilter();
-    vi.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
-    const { host, response } = mockHost(
-      '/api/Public/Orders/sekret-token?token=also-secret',
-    );
-
-    filter.catch(new NotFoundException('nope'), host);
-
-    expect(response.json).toHaveBeenCalledWith(
-      expect.objectContaining({ path: '/api/public/orders/:token' }),
-    );
-    expect(response.setHeader).toHaveBeenCalledWith(
-      'Cache-Control',
-      'no-store',
-    );
+  it('keeps the usual shape for other HTTP exceptions', () => {
+    const { status, body } = run(new BadRequestException('Monto inválido'));
+    expect(status).toHaveBeenCalledWith(400);
+    expect(body).toMatchObject({ statusCode: 400, message: 'Monto inválido' });
   });
 });

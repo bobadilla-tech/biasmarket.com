@@ -7,6 +7,7 @@ import type { FulfillmentStatus, PaymentStatus, Prisma } from '@biasmarket/db';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { Order } from '../domain/order.entity.js';
 import { normalizePhone } from '@biasmarket/utils/phone-country';
+import { orderRef } from '@biasmarket/utils/order-ref';
 import { withPaymentSummary } from '../../../common/payment-summary.js';
 import type { RelatedOrdersResponseDto } from '../dto/related-orders-response.dto.js';
 
@@ -130,7 +131,9 @@ export class OrderRepository {
       }),
     ]);
     const legacyMatches = legacy.filter(
-      (row) => normalizePhone(row.customerPhone) === phone,
+      (row) =>
+        row.customerPhone.trim() !== '' &&
+        normalizePhone(row.customerPhone) === phone,
     );
 
     const items = [...indexed, ...legacyMatches]
@@ -138,7 +141,7 @@ export class OrderRepository {
       .slice(0, limit)
       .map((row) => ({
         id: row.id,
-        orderNumber: row.id.slice(-4).toUpperCase(),
+        orderNumber: orderRef(row.id),
         createdAt: row.createdAt.toISOString(),
         status: row.status,
         paymentStatus: row.paymentStatus,
@@ -256,6 +259,7 @@ export class OrderRepository {
     data: {
       paymentStatus?: PaymentStatus;
       fulfillmentStatus?: FulfillmentStatus;
+      closedAt?: Date;
     },
     tx: Prisma.TransactionClient | PrismaService = this.prisma,
   ) {

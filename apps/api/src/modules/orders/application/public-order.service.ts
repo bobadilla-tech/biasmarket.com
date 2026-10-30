@@ -6,12 +6,19 @@ import {
 } from '@nestjs/common';
 import type { Prisma } from '@biasmarket/db';
 import { maskPhone } from '@biasmarket/utils/phone-country';
+import { orderRef } from '@biasmarket/utils/order-ref';
 import { hashOrderAccessToken } from '@biasmarket/utils/assisted-order';
 import { isPaymentMethodConfigured } from '@biasmarket/utils/payment-methods';
 import { PrismaService } from '../../../prisma/prisma.service.js';
-import { computePaymentSummary } from '../../../common/payment-summary.js';
+import {
+  computePaymentSummary,
+  countsTowardPaid,
+} from '../../../common/payment-summary.js';
+import { sanitizeDisplayText } from '../../../common/text-sanitize.js';
+import { RESERVED_HOLD_STATUSES } from '../domain/hold-statuses.js';
 import { OrderEventsService } from './order-events.service.js';
 import { toPublicCustomerAlias } from './public-order-alias.js';
+import { isTimelineEvent, toPublicTimeline } from './public-order-timeline.js';
 import type {
   PublicOrderDeliveryDetailsResponseDto,
   PublicOrderResponseDto,
@@ -67,11 +74,16 @@ export class PublicOrderService {
         payments: {
           orderBy: { createdAt: 'desc' },
           select: {
+            id: true,
             amount: true,
             source: true,
+            method: true,
             reviewStatus: true,
             createdAt: true,
+            paidAt: true,
             voidedAt: true,
+            // Server side only: never leaves this method, `hasProof` does.
+            imageUrl: true,
           },
         },
       },
@@ -142,6 +154,16 @@ export class PublicOrderService {
         )
       : [];
     const summary = computePaymentSummary(order.requiredAmount, order.payments);
+    const buyerEvents = await this.events.listForBuyer(order.id);
+    const visibleEvents = buyerEvents.filter(isTimelineEvent);
+    const cancelled =
+      order.status === 'CANCELLED' || order.paymentStatus === 'CANCELLED';
+    // Cancel and expiry both end as CANCELLED; only the actor of the last
+    // cancellation event tells them apart (the sweep records SYSTEM).
+    const lastCancellation = buyerEvents
+      .filter((event) => event.type === 'ORDER_CANCELLED')
+      .at(-1);
+    const claimed = order.claimedAt !== null;
 
     return {
       store: {
@@ -152,9 +174,9 @@ export class PublicOrderService {
       },
       customerPhone: maskPhone(order.customerPhone),
       customerAlias: toPublicCustomerAlias(order.customerName),
-      // Same rule as web `getOrderNumber` (last 4 of the id, uppercase, no
-      // `#`); change both together (#339). A display ref, never a lookup key.
-      orderNumber: order.id.slice(-4).toUpperCase(),
+      // Display ref only (shared `orderRef`: last 6 of the id, uppercase, no
+      // `#`), never a lookup key.
+      orderNumber: orderRef(order.id),
       createdAt: order.createdAt.toISOString(),
       items: order.items.map((item) => ({
         name: item.product.name,
@@ -183,13 +205,42 @@ export class PublicOrderService {
       trackingNumber: order.trackingNumber,
       trackingUrl: order.trackingUrl,
       packedPhotoAvailable: Boolean(order.packedPhotoUrl),
+      receiptConfirmedAt: order.buyerConfirmedReceivedAt?.toISOString() ?? null,
+      claimed,
+      lastUpdateAt: (
+        visibleEvents.at(-1)?.createdAt ?? order.createdAt
+      ).toISOString(),
+      timeline: claimed ? toPublicTimeline(visibleEvents) : [],
+      hasValidatedPayment: order.payments.some(countsTowardPaid),
       courierModality: order.courierModality,
+      expiresAt:
+        order.status === 'ACTIVE' &&
+        (RESERVED_HOLD_STATUSES as readonly string[]).includes(
+          order.paymentStatus,
+        )
+          ? (order.expiresAt?.toISOString() ?? null)
+          : null,
+      paymentRejectionReason:
+        order.paymentStatus === 'REJECTED'
+          ? sanitizeDisplayText(order.paymentRejectionReason)
+          : null,
+      closure: cancelled
+        ? {
+            kind:
+              lastCancellation?.actor === 'SYSTEM' ? 'EXPIRED' : 'CANCELLED',
+            reason: sanitizeDisplayText(order.cancellationReason),
+          }
+        : null,
       payments: order.payments.map((payment) => ({
+        id: payment.id,
         source: payment.source,
+        method: payment.method,
         amount: payment.amount.toString(),
         createdAt: payment.createdAt.toISOString(),
+        paidAt: payment.paidAt?.toISOString() ?? null,
         reviewStatus: payment.reviewStatus,
         voidedAt: payment.voidedAt?.toISOString() ?? null,
+        hasProof: payment.source === 'BUYER_SUBMITTED' && !!payment.imageUrl,
       })),
     };
   }
@@ -200,5 +251,28 @@ export class PublicOrderService {
       throw new NotFoundException('Foto del paquete no encontrada');
     }
     return order.packedPhotoUrl;
+  }
+
+  // `orderId` comes from the resolved token, never from the request. The
+  // compound filter is the whole access check: it must not be split into an
+  // ownership lookup plus an id lookup.
+  async getBuyerProofImageUrl(
+    order: { id: string; storeId: string },
+    paymentId: string,
+  ): Promise<string> {
+    const payment = await this.prisma.orderPayment.findFirst({
+      where: {
+        id: paymentId,
+        orderId: order.id,
+        storeId: order.storeId,
+        source: 'BUYER_SUBMITTED',
+        imageUrl: { not: null },
+      },
+      select: { imageUrl: true },
+    });
+    if (!payment?.imageUrl) {
+      throw new NotFoundException('Comprobante no encontrado');
+    }
+    return payment.imageUrl;
   }
 }

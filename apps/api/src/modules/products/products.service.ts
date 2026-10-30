@@ -10,6 +10,7 @@ import type { UpdateProductDto } from './dto/update-product.dto.js';
 import type { CreateVariantDto } from './dto/create-variant.dto.js';
 import type { UpdateVariantDto } from './dto/update-variant.dto.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
+import { MAX_PRODUCT_IMAGES } from './product-images.constants.js';
 
 @Injectable()
 export class ProductsService {
@@ -332,8 +333,6 @@ export class ProductsService {
     return this.prisma.productVariant.delete({ where: { id: variantId } });
   }
 
-  private static readonly MAX_IMAGES = 6;
-
   async addImage(
     productId: string,
     storeId: string,
@@ -342,9 +341,9 @@ export class ProductsService {
     replace?: boolean,
   ) {
     const product = await this.findOwnedProduct(productId, storeId, userId);
-    if (!replace && product.images.length >= ProductsService.MAX_IMAGES) {
+    if (!replace && product.images.length >= MAX_PRODUCT_IMAGES) {
       throw new BadRequestException(
-        `Máximo ${ProductsService.MAX_IMAGES} imágenes por producto`,
+        `Máximo ${MAX_PRODUCT_IMAGES} imágenes por producto`,
       );
     }
     const images = replace

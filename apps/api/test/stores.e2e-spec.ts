@@ -195,7 +195,15 @@ describe('stores + my-stores (e2e)', () => {
     const productRes = await request(app.getHttpServer())
       .post(`/stores/${storeId}/products`)
       .set('Cookie', sessionCookie)
-      .send({ name: 'E2E Product', price: 25, currency: 'USD', stock: 10 })
+      .send({
+        name: 'E2E Product',
+        price: 25,
+        currency: 'USD',
+        stock: 10,
+        // Marketplace search skips imageless products (#356), and the isDemo
+        // test below expects this one to be listed.
+        images: ['https://cdn.biasmarket.com/e2e-store.jpg'],
+      })
       .expect(201);
     productId = productRes.body.id;
 

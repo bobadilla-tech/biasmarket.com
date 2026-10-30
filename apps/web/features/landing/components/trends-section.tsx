@@ -59,14 +59,16 @@ function TrendBand({
     sort === "bestseller" ? "/search?sort=bestseller" : "/search";
 
   return (
-    <section className={`${bandClassName} px-5 py-2.5`}>
+    <section
+      className={`landing-trend-band ${bandClassName} rounded-[24px] border border-white/80 px-4 py-4 shadow-[var(--shadow-pop)] sm:rounded-[30px] sm:px-6 sm:py-5`}
+    >
       <div className="flex items-center justify-between gap-4 py-1.5">
-        <h2 className="text-[21px] leading-[26px] font-bold text-black">
+        <h2 className="text-[21px] leading-[26px] font-bold text-landing-ink">
           {title}
         </h2>
         <Link
           href={viewMoreHref}
-          className="flex shrink-0 items-center gap-1.5 text-[13px] leading-4 font-medium text-[#b0006d]"
+          className="flex shrink-0 items-center gap-1.5 text-[13px] leading-4 font-medium text-landing-title transition-colors hover:text-landing-link"
         >
           {t("viewMore")}
           <CircleArrowRight className="size-4" strokeWidth={1.8} />
@@ -77,7 +79,7 @@ function TrendBand({
           {ROW_SKELETON_KEYS.map((key) => (
             <div
               key={key}
-              className="w-[150px] shrink-0 animate-pulse rounded-lg bg-white/70 p-[9.5px]"
+              className="fan-skeleton w-[150px] shrink-0 rounded-lg bg-white/70 p-[9.5px]"
             >
               <div className="aspect-square w-full rounded-lg bg-muted" />
               <div className="mt-2 h-3 w-4/5 rounded bg-muted" />
@@ -122,15 +124,17 @@ function TrendBandStripe({
     sort === "bestseller" ? "/search?sort=bestseller" : "/search";
 
   return (
-    <section className={`py-14 ${bg}`}>
-      <div className="mx-auto max-w-[1344px] px-10">
+    <section
+      className={`landing-trend-strip mx-auto w-full max-w-[1344px] rounded-[28px] border border-white/80 px-4 py-8 shadow-[var(--shadow-pop)] sm:px-8 sm:py-10 ${bg}`}
+    >
+      <div className="mx-auto max-w-[1240px] px-1 sm:px-3">
         <div className="flex items-center justify-between gap-8">
-          <h2 className="text-[32px] leading-[39px] font-bold text-black">
+          <h2 className="text-[32px] leading-[39px] font-bold text-landing-ink">
             {title}
           </h2>
           <Link
             href={viewMoreHref}
-            className="flex items-center gap-3 text-[20px] leading-6 font-medium text-[#b0006d] transition-colors hover:text-[#8f0059]"
+            className="flex items-center gap-3 text-[20px] leading-6 font-medium text-landing-title transition-colors hover:text-landing-link"
           >
             {t("viewMore")}
             <CircleArrowRight className="size-7" strokeWidth={1.6} />
@@ -142,7 +146,7 @@ function TrendBandStripe({
             {Array.from({ length: 6 }, (_, index) => (
               <div
                 key={`stripe-skeleton-${index}`}
-                className="animate-pulse rounded-lg bg-white/70 p-[11.6px]"
+                className="fan-skeleton rounded-lg bg-white/70 p-[11.6px]"
               >
                 <div className="aspect-square w-full rounded-[12.3px] bg-muted" />
                 <div className="mt-2 h-3 w-4/5 rounded bg-muted" />
@@ -182,32 +186,32 @@ export function TrendsSection({
 
   return (
     <>
-      <div className="flex flex-col gap-4 sm:hidden">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 sm:hidden">
         <TrendBand
           title={t("latestTitle")}
           sort="latest"
-          bandClassName="bg-[#FFEAF6]"
+          bandClassName="bg-landing-pink"
           initialData={latestInitialData}
         />
         <TrendBand
           title={t("bestSellersTitle")}
           sort="bestseller"
-          bandClassName="bg-[#F5EAFF]"
+          bandClassName="bg-landing-violet"
           initialData={bestSellersInitialData}
         />
       </div>
 
-      <div className="hidden flex-col gap-4 sm:flex">
+      <div className="hidden flex-col gap-5 px-4 sm:flex sm:px-8 lg:px-10">
         <TrendBandStripe
           title={t("latestTitle")}
           sort="latest"
-          bg="bg-[#FFEAF6]"
+          bg="bg-landing-pink"
           initialData={latestInitialData}
         />
         <TrendBandStripe
           title={t("bestSellersTitle")}
           sort="bestseller"
-          bg="bg-[#F5EAFF]"
+          bg="bg-landing-violet"
           initialData={bestSellersInitialData}
         />
       </div>

@@ -130,7 +130,7 @@ describe('stats (e2e)', () => {
       .post(`/stores/${storeId}/orders/${orderId}/payments`)
       .set('Cookie', sellerSessionCookie)
       .field('amount', '30')
-      .field('method', 'YAPE')
+      .field('method', 'CASH')
       .expect(201);
   });
 

@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Put, UseGuards } from '@nestjs/common';
 import { ApiOkResponse, ApiParam, getSchemaPath } from '@nestjs/swagger';
 import { AuthGuard, Session } from '@thallesp/nestjs-better-auth';
 import type { UserSession } from '@thallesp/nestjs-better-auth';
+import { WHATSAPP_BUYER_NOTICE_TYPES } from '@biasmarket/utils/whatsapp';
 import { WhatsappTemplatesService } from './whatsapp-templates.service.js';
 import { UpdateWhatsAppTemplateDto } from './dto/update-whatsapp-template.dto.js';
 import { WhatsAppTemplateResponseDto } from './dto/whatsapp-template-response.dto.js';
@@ -9,13 +10,18 @@ import { WhatsAppTemplateResponseDto } from './dto/whatsapp-template-response.dt
 const WHATSAPP_MESSAGE_TYPE_PARAM = {
   name: 'type',
   type: String,
-  enum: ['NEW_ORDER', 'PAYMENT_REMINDER', 'ASSISTED_ORDER_LINK'],
+  enum: [
+    'NEW_ORDER',
+    'PAYMENT_REMINDER',
+    'ASSISTED_ORDER_LINK',
+    ...WHATSAPP_BUYER_NOTICE_TYPES,
+  ],
 };
 
 interface WhatsAppTemplateRow {
   id: string;
   storeId: string;
-  type: 'NEW_ORDER' | 'PAYMENT_REMINDER' | 'ASSISTED_ORDER_LINK';
+  type: WhatsAppTemplateResponseDto['type'];
   template: string;
   updatedAt: Date;
 }

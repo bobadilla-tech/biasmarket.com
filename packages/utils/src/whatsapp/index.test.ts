@@ -1,15 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
-  WHATSAPP_MESSAGE_TOKENS,
-  WHATSAPP_REQUIRED_TOKENS,
-  type WhatsAppMessageType,
   buildWhatsAppAssistedOrderLinkMessage,
+  buildWhatsAppBuyerNoticeMessage,
   buildWhatsAppOrderMessage,
   buildWhatsAppPaymentReminderMessage,
   buildWhatsAppUrl,
   extractTokens,
   getMissingRequiredTokens,
   renderWhatsAppTemplate,
+  WHATSAPP_BUYER_NOTICE_TYPES,
+  WHATSAPP_MESSAGE_TOKENS,
+  WHATSAPP_REQUIRED_TOKENS,
+  type WhatsAppMessageType,
 } from "./index";
 
 describe("buildWhatsAppOrderMessage", () => {
@@ -381,6 +383,91 @@ describe("buildWhatsAppAssistedOrderLinkMessage", () => {
     const text = new URL(url).searchParams.get("text");
     expect(text).toBe(message);
     expect(url).not.toMatch(/text=.*[ &?#]/);
+  });
+});
+
+describe("buyer notices", () => {
+  const base = {
+    orderId: "cmabcdef",
+    storeName: "K-Store",
+    customerName: "Sofi",
+  };
+  const save = "guardar tu pedido con tu cuenta de Google";
+
+  it("builds one default message per notice type, without any link", () => {
+    for (const type of WHATSAPP_BUYER_NOTICE_TYPES) {
+      const message = buildWhatsAppBuyerNoticeMessage(type, base);
+      expect(message.startsWith("¡Hola Sofi! 💜\n")).toBe(true);
+      expect(message).toContain("#ABCDEF");
+      expect(message).toContain("K-Store");
+      expect(message).not.toMatch(/https?:\/\//);
+    }
+  });
+
+  it("gives a clean greeting without an alias (empty, blank or null)", () => {
+    for (const customerName of ["", "   ", null, undefined]) {
+      const message = buildWhatsAppBuyerNoticeMessage("ASSISTED_READY", {
+        ...base,
+        customerName,
+      });
+      expect(message.startsWith("¡Hola! 💜\n")).toBe(true);
+      expect(message).not.toContain("¡Hola !");
+    }
+  });
+
+  it("puts the tracking number only in the in-transit notice", () => {
+    const input = { ...base, trackingNumber: " OLV-123 " };
+    expect(
+      buildWhatsAppBuyerNoticeMessage("ASSISTED_IN_TRANSIT", input),
+    ).toContain("Código de seguimiento: OLV-123");
+    for (const type of WHATSAPP_BUYER_NOTICE_TYPES) {
+      if (type === "ASSISTED_IN_TRANSIT") continue;
+      expect(buildWhatsAppBuyerNoticeMessage(type, input)).not.toContain(
+        "OLV-123",
+      );
+    }
+    expect(
+      buildWhatsAppBuyerNoticeMessage("ASSISTED_IN_TRANSIT", base),
+    ).not.toContain("seguimiento");
+  });
+
+  it("invites to save the order only in validated and delivered, and only when unclaimed", () => {
+    for (const type of WHATSAPP_BUYER_NOTICE_TYPES) {
+      const unclaimed = buildWhatsAppBuyerNoticeMessage(type, base);
+      const claimed = buildWhatsAppBuyerNoticeMessage(type, {
+        ...base,
+        claimed: true,
+      });
+      const invites =
+        type === "ASSISTED_PAYMENT_VALIDATED" || type === "ASSISTED_DELIVERED";
+      expect(unclaimed.includes(save)).toBe(invites);
+      expect(claimed).not.toContain(save);
+    }
+  });
+
+  it("renders a custom template with the same tokenizer; saveInvite is empty when claimed", () => {
+    const template =
+      "Hola {{customerName}} {{orderRef}} {{trackingNumber}}|{{saveInvite}}";
+    expect(
+      buildWhatsAppBuyerNoticeMessage(
+        "ASSISTED_PAYMENT_VALIDATED",
+        { ...base, claimed: true, trackingNumber: "T1" },
+        template,
+      ),
+    ).toBe("Hola Sofi #ABCDEF T1|");
+    expect(
+      buildWhatsAppBuyerNoticeMessage(
+        "ASSISTED_PAYMENT_VALIDATED",
+        base,
+        template,
+      ),
+    ).toContain(save);
+  });
+
+  it("needs no token to save a template", () => {
+    for (const type of WHATSAPP_BUYER_NOTICE_TYPES) {
+      expect(getMissingRequiredTokens(type, "solo texto")).toEqual([]);
+    }
   });
 });
 

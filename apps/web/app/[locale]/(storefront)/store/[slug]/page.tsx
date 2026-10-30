@@ -168,9 +168,14 @@ export async function generateMetadata({
 
   const t = await getTranslations({ locale, namespace: "storefront" });
   const products = collectProducts(store);
+  const catalog = isStorefrontRedesignEnabled(slug)
+    ? await getCatalog(slug, {})
+    : null;
+  const productCount =
+    typeof catalog?.total === "number" ? catalog.total : products.length;
   const boilerplateDescription = t("shopProductsAvailable", {
     storeName: store.name,
-    count: products.length,
+    count: productCount,
   });
   // Seller-authored copy wins: short bio first, then a flattened lede from the
   // "about" markdown, then the generic boilerplate.
@@ -179,8 +184,12 @@ export async function generateMetadata({
     storeMarkdownToPlainText(store.aboutMarkdown, 155) ||
     boilerplateDescription;
 
+  const firstCatalogImage = catalog?.items?.find(
+    (product: any) => typeof product.images?.[0] === "string",
+  )?.images?.[0];
   const ogImage =
     firstStoreMarkdownImage(store.aboutMarkdown) ??
+    firstCatalogImage ??
     firstBannerImageUrl(store) ??
     store.logoUrl ??
     `${SITE_URL}/og-image.png`;

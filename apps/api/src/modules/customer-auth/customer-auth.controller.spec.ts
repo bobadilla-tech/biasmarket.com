@@ -243,7 +243,9 @@ describe('CustomerAuthController', () => {
     expect(result).toMatchObject({
       createdByName: null,
       linkFirstOpenedAt: null,
-      claimedAt: null,
+      // The buyer's own claim is real now; the other seller-side fields stay
+      // hidden.
+      claimedAt: '2026-01-01T00:00:00.000Z',
     });
   });
 

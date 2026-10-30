@@ -30,6 +30,7 @@ import type {
   CheckoutOrderResponseDto,
   CheckoutResultResponseDto,
 } from '../dto/checkout-response.dto.js';
+import { CHECKOUT_UPLOAD_LIMITS } from '../../../common/upload-limits.js';
 import {
   PROOF_UPLOAD_MIME_TYPES,
   UploadedFileValidationPipe,
@@ -192,7 +193,7 @@ export class CheckoutController {
   // marks non-primitive properties as application/json-encoded under
   // multipart/form-data, which matches that transport.
   @ApiBody({ type: CreateOrderDto })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', { limits: CHECKOUT_UPLOAD_LIMITS }))
   @Post()
   async create(
     @Param('slug') slug: string,

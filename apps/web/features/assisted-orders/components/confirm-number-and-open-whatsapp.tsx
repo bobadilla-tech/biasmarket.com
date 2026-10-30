@@ -27,6 +27,8 @@ export function ConfirmNumberAndOpenWhatsApp({
   onFixNumber,
   fixNumberDisabled = false,
   fixNumberDisabledReason,
+  hideFixNumber = false,
+  onOpened,
 }: {
   phone: string;
   message: string;
@@ -34,6 +36,11 @@ export function ConfirmNumberAndOpenWhatsApp({
   onFixNumber: () => void;
   fixNumberDisabled?: boolean;
   fixNumberDisabledReason?: string;
+  // The notice prompt has no number to correct (that lives in the order
+  // detail), so it hides the button.
+  hideFixNumber?: boolean;
+  // Called once WhatsApp was opened, e.g. to log that a notice was sent.
+  onOpened?: () => void;
 }) {
   const t = useTranslations("dashboard.assistedOrder.created");
   const [open, setOpen] = useState(false);
@@ -45,6 +52,7 @@ export function ConfirmNumberAndOpenWhatsApp({
       "noopener,noreferrer",
     );
     setOpen(false);
+    onOpened?.();
   };
 
   return (
@@ -67,21 +75,23 @@ export function ConfirmNumberAndOpenWhatsApp({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setOpen(false);
-                onFixNumber();
-              }}
-              disabled={fixNumberDisabled}
-              aria-describedby={
-                fixNumberDisabled ? "assisted-confirm-fix-reason" : undefined
-              }
-              className="min-h-11 rounded-xl"
-            >
-              {t("fixNumber")}
-            </Button>
+            {hideFixNumber ? null : (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setOpen(false);
+                  onFixNumber();
+                }}
+                disabled={fixNumberDisabled}
+                aria-describedby={
+                  fixNumberDisabled ? "assisted-confirm-fix-reason" : undefined
+                }
+                className="min-h-11 rounded-xl"
+              >
+                {t("fixNumber")}
+              </Button>
+            )}
             <AlertDialogClose
               render={
                 <Button

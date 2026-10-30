@@ -2,9 +2,11 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Prisma } from '@biasmarket/db';
 import { hashPassword, verifyPassword } from 'better-auth/crypto';
 import {
   createCustomerSessionToken,
@@ -14,16 +16,35 @@ import { normalizePhone } from '@biasmarket/utils/phone-country';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { CustomerAccountService } from '../orders/application/customer-account.service.js';
 import { OrderRepository } from '../orders/infrastructure/order.repository.js';
+import { OrderEventsService } from '../orders/application/order-events.service.js';
+import { toPublicTimeline } from '../orders/application/public-order-timeline.js';
+import { countsTowardPaid } from '../../common/payment-summary.js';
+import { type ClaimTicket, linkFingerprint } from './claim-ticket.js';
 import { requiredEnv } from '../../config/env.validation.js';
 import { withPaymentSummary } from '../../common/payment-summary.js';
 import { toAccountOrderDto } from './dto/account-order-response.dto.js';
+import type { GlobalAccountOrderDetailResponseDto } from './dto/global-account-response.dto.js';
+
+export type ClaimFailureCode = 'already_claimed' | 'not_claimable' | 'invalid';
+
+// Why a claim was refused. The callback maps the code to a redirect; nothing
+// here carries the order token, email or ticket.
+export class ClaimOrderError extends Error {
+  constructor(readonly code: ClaimFailureCode) {
+    super(`claim refused: ${code}`);
+    this.name = 'ClaimOrderError';
+  }
+}
 
 @Injectable()
 export class CustomerAuthService {
+  private readonly logger = new Logger(CustomerAuthService.name);
+
   constructor(
     private prisma: PrismaService,
     private customerAccount: CustomerAccountService,
     private orderRepository: OrderRepository,
+    private events: OrderEventsService,
   ) {}
 
   private async findStoreBySlug(slug: string) {
@@ -192,40 +213,23 @@ export class CustomerAuthService {
     return buyerAccount;
   }
 
-  // Google proves ownership of an email, not a phone number. A buyer whose
-  // BuyerAccount already carries that email is signed in; otherwise a new
-  // account is created with the verified email and no phone (buyers add one
-  // from their profile or at checkout). A Google-verified match also counts
-  // as email verification, and the buyer can sign in without ever having set
-  // a password. `slug` is null for the global (no-store) entry point.
+  // Google proves ownership of an email, not a phone number, and an email
+  // alone is not a safe key to merge accounts on: a checkout can create a
+  // phone account carrying someone else's email, and a victim who then
+  // confirms that email would hand their Google login to an account the
+  // attacker shaped. So Google never links by email. Resolution: (1) the
+  // account already bound to this Google `sub`; (2) otherwise a new phone-less,
+  // Google-verified account. A buyer who bought with their phone signs in with
+  // their phone to see those orders (the web shows a hint).
+  // Runs on its own statements (no surrounding transaction) because a P2002
+  // aborts a Postgres transaction and could not be recovered from.
+  // `slug` is null for the global (no-store) entry point.
   async loginWithGoogle(
     slug: string | null,
-    identity: { email: string; name: string | null },
+    identity: { sub: string; email: string; name: string | null },
   ): Promise<string> {
     const store = slug ? await this.findStoreBySlug(slug) : null;
-    const matches = await this.prisma.buyerAccount.findMany({
-      where: { email: { equals: identity.email, mode: 'insensitive' } },
-    });
-    if (matches.length > 1) {
-      throw new ConflictException('Hay más de una cuenta con este correo');
-    }
-
-    const existing = matches[0];
-    const buyerAccount = existing
-      ? await this.prisma.buyerAccount.update({
-          where: { id: existing.id },
-          data: {
-            emailVerified: true,
-            ...(existing.name ? {} : { name: identity.name }),
-          },
-        })
-      : await this.prisma.buyerAccount.create({
-          data: {
-            email: identity.email,
-            emailVerified: true,
-            name: identity.name,
-          },
-        });
+    const buyerAccount = await this.resolveGoogleAccount(identity);
 
     if (store) await this.ensureStoreLink(buyerAccount.id, store.id);
 
@@ -233,6 +237,190 @@ export class CustomerAuthService {
       buyerAccount.id,
       buyerAccount.passwordVersion,
     );
+  }
+
+  // Saves a vendor-assisted order to the Google account behind `identity`.
+  // The account is resolved first and OUTSIDE the transaction (a P2002 would
+  // abort it); only the order claim is transactional. The order row is locked
+  // so a concurrent void or a second claim serializes against this one, and
+  // the conditional `updateMany` is the real guard: exactly one claimer wins.
+  // A repeat claim by the same account succeeds without a second event.
+  // Never touches `BuyerAccount.phone` or `Order.phoneVerified`.
+  async claimWithGoogle(
+    identity: { sub: string; email: string; name: string | null },
+    ticket: Pick<ClaimTicket, 'orderId' | 'linkFp' | 'moment'>,
+  ): Promise<{ token: string; orderId: string }> {
+    const account = await this.resolveGoogleAccount(identity);
+
+    await this.prisma.$transaction(async (tx) => {
+      const locked = await tx.$queryRaw<{ id: string }[]>`
+        SELECT id FROM "Order" WHERE id = ${ticket.orderId} FOR UPDATE
+      `;
+      if (!locked.length) throw new ClaimOrderError('invalid');
+
+      const select = {
+        id: true,
+        storeId: true,
+        source: true,
+        status: true,
+        paymentStatus: true,
+        claimedAt: true,
+        buyerAccountId: true,
+        accessTokenHash: true,
+        accessTokenRevokedAt: true,
+        payments: {
+          select: {
+            amount: true,
+            source: true,
+            reviewStatus: true,
+            voidedAt: true,
+          },
+        },
+      } as const;
+      const order = await tx.order.findFirst({
+        where: { id: ticket.orderId },
+        select,
+      });
+      if (!order) throw new ClaimOrderError('invalid');
+
+      if (order.claimedAt || order.buyerAccountId) {
+        // Same account re-claiming is a success; anyone else is too late.
+        if (order.buyerAccountId === account.id) {
+          await this.upsertStoreLink(tx, account.id, order.storeId);
+          return;
+        }
+        throw new ClaimOrderError('already_claimed');
+      }
+      if (
+        order.accessTokenRevokedAt ||
+        !order.accessTokenHash ||
+        linkFingerprint(order.accessTokenHash) !== ticket.linkFp
+      ) {
+        throw new ClaimOrderError('invalid');
+      }
+      if (
+        order.source !== 'VENDOR_ASSISTED' ||
+        order.status === 'CANCELLED' ||
+        order.paymentStatus === 'CANCELLED' ||
+        !order.payments.some(countsTowardPaid)
+      ) {
+        throw new ClaimOrderError('not_claimable');
+      }
+
+      const { count } = await tx.order.updateMany({
+        where: {
+          id: order.id,
+          source: 'VENDOR_ASSISTED',
+          status: { not: 'CANCELLED' },
+          paymentStatus: { not: 'CANCELLED' },
+          claimedAt: null,
+          buyerAccountId: null,
+          accessTokenRevokedAt: null,
+          accessTokenHash: { startsWith: ticket.linkFp },
+        },
+        data: { buyerAccountId: account.id, claimedAt: new Date() },
+      });
+      if (count !== 1) throw new ClaimOrderError('already_claimed');
+
+      await this.upsertStoreLink(tx, account.id, order.storeId);
+      await this.events.record(tx, {
+        orderId: order.id,
+        storeId: order.storeId,
+        type: 'CLAIMED',
+        actor: 'BUYER',
+        payload: ticket.moment ? { moment: ticket.moment } : {},
+      });
+      await tx.auditLog.create({
+        data: {
+          actorId: account.id,
+          storeId: order.storeId,
+          action: 'order.claimed',
+          entityType: 'Order',
+          entityId: order.id,
+          metadata: { actorType: 'BUYER' },
+        },
+      });
+    });
+
+    return {
+      token: this.issueSessionToken(account.id, account.passwordVersion),
+      orderId: ticket.orderId,
+    };
+  }
+
+  private upsertStoreLink(
+    client: Prisma.TransactionClient,
+    buyerAccountId: string,
+    storeId: string,
+  ) {
+    return client.customerStoreLink.upsert({
+      where: { buyerAccountId_storeId: { buyerAccountId, storeId } },
+      create: { buyerAccountId, storeId },
+      update: {},
+    });
+  }
+
+  private async resolveGoogleAccount(identity: {
+    sub: string;
+    email: string;
+    name: string | null;
+  }): Promise<{ id: string; passwordVersion: number }> {
+    const bySub = await this.prisma.buyerAccount.findUnique({
+      where: { googleSub: identity.sub },
+    });
+    if (bySub) return bySub;
+
+    let created: { id: string; passwordVersion: number };
+    try {
+      created = await this.prisma.buyerAccount.create({
+        data: {
+          email: identity.email,
+          emailVerified: true,
+          name: identity.name,
+          googleSub: identity.sub,
+        },
+      });
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
+        // A concurrent first login with this `sub` won the race: sign in.
+        const winner = await this.prisma.buyerAccount.findUnique({
+          where: { googleSub: identity.sub },
+        });
+        if (winner) return winner;
+      }
+      throw err;
+    }
+
+    await this.logSkippedEmailLink(created.id, identity.email);
+    return created;
+  }
+
+  // Support breadcrumb for "I signed in with Google and my orders are gone":
+  // another account already uses this email and was deliberately not linked.
+  // Ids only, never the email or a phone. Best effort: the account exists
+  // already, so a failure here must not fail the login.
+  private async logSkippedEmailLink(buyerAccountId: string, email: string) {
+    try {
+      const existing = await this.prisma.buyerAccount.findFirst({
+        where: {
+          email: { equals: email, mode: 'insensitive' },
+          id: { not: buyerAccountId },
+        },
+        select: { id: true },
+      });
+      if (existing) {
+        this.logger.log({
+          event: 'google-link-skipped',
+          buyerAccountId,
+          existingBuyerAccountId: existing.id,
+        });
+      }
+    } catch {
+      // Intentionally ignored: logging only.
+    }
   }
 
   async changePassword(
@@ -279,6 +467,8 @@ export class CustomerAuthService {
         requiredAmount: true,
         currency: true,
         createdAt: true,
+        source: true,
+        claimedAt: true,
         payments: {
           select: {
             amount: true,
@@ -437,6 +627,8 @@ export class CustomerAuthService {
         requiredAmount: true,
         currency: true,
         createdAt: true,
+        source: true,
+        claimedAt: true,
         store: { select: { slug: true, name: true } },
         payments: {
           select: {
@@ -463,7 +655,94 @@ export class CustomerAuthService {
         paidPercentage: summary.paidPercentage,
         storeSlug: order.store.slug,
         storeName: order.store.name,
+        source: order.source,
+        claimedAt: order.claimedAt?.toISOString() ?? null,
       };
     });
+  }
+
+  // One order of this buyer account. The ownership filter is in the query
+  // itself, so a foreign or missing id gives the same 404 and nothing about
+  // its existence. Explicit selects: no proof image URLs, rejection notes,
+  // reviewer ids or void reasons ever reach the buyer.
+  async getGlobalOrderDetail(
+    buyerAccountId: string,
+    orderId: string,
+  ): Promise<GlobalAccountOrderDetailResponseDto> {
+    const order = await this.prisma.order.findFirst({
+      where: { id: orderId, buyerAccountId },
+      select: {
+        id: true,
+        status: true,
+        paymentStatus: true,
+        fulfillmentStatus: true,
+        totalAmount: true,
+        requiredAmount: true,
+        currency: true,
+        createdAt: true,
+        source: true,
+        claimedAt: true,
+        trackingNumber: true,
+        trackingUrl: true,
+        buyerConfirmedReceivedAt: true,
+        store: { select: { slug: true, name: true } },
+        items: {
+          select: {
+            quantity: true,
+            unitPriceAtPurchase: true,
+            currency: true,
+            product: { select: { name: true } },
+          },
+        },
+        payments: {
+          orderBy: { createdAt: 'asc' },
+          select: {
+            amount: true,
+            source: true,
+            reviewStatus: true,
+            createdAt: true,
+            voidedAt: true,
+          },
+        },
+      },
+    });
+    if (!order) throw new NotFoundException('Pedido no encontrado');
+
+    const summary = withPaymentSummary(order);
+    const events = await this.events.listForBuyer(order.id);
+    return {
+      id: order.id,
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+      fulfillmentStatus: order.fulfillmentStatus,
+      totalAmount: order.totalAmount.toString(),
+      requiredAmount: order.requiredAmount.toString(),
+      currency: order.currency,
+      createdAt: order.createdAt.toISOString(),
+      paidAmount: summary.paidAmount,
+      pendingAmount: summary.pendingAmount,
+      paidPercentage: summary.paidPercentage,
+      storeSlug: order.store.slug,
+      storeName: order.store.name,
+      source: order.source,
+      claimedAt: order.claimedAt?.toISOString() ?? null,
+      trackingNumber: order.trackingNumber,
+      trackingUrl: order.trackingUrl,
+      receiptConfirmedAt: order.buyerConfirmedReceivedAt?.toISOString() ?? null,
+      items: order.items.map((item) => ({
+        name: item.product.name,
+        quantity: item.quantity,
+        unitPrice: item.unitPriceAtPurchase.toString(),
+        currency: item.currency,
+      })),
+      payments: order.payments.map((payment) => ({
+        source: payment.source,
+        amount: payment.amount.toString(),
+        createdAt: payment.createdAt.toISOString(),
+        voidedAt: payment.voidedAt?.toISOString() ?? null,
+        reviewStatus: payment.reviewStatus,
+      })),
+      timeline: toPublicTimeline(events),
+    };
   }
 }

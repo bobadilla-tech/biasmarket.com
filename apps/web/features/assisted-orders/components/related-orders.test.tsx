@@ -14,7 +14,7 @@ const { RelatedOrders } = await import("./related-orders");
 
 const item = (overrides: Record<string, unknown> = {}) => ({
   id: "order-aaaa1234",
-  orderNumber: "1234",
+  orderNumber: "AA1234",
   createdAt: "2026-09-01T12:00:00.000Z",
   status: "ACTIVE",
   paymentStatus: "VERIFIED",
@@ -42,7 +42,7 @@ test("lists the other orders with a link that opens each one", async () => {
   });
   renderWithProviders(<RelatedOrders storeId="store-1" orderId="order-cur" />);
 
-  expect(await screen.findByText("#1234")).toBeTruthy();
+  expect(await screen.findByText("#AA1234")).toBeTruthy();
   expect(findRelated).toHaveBeenCalledWith("store-1", "order-cur");
   expect(screen.getByText("Pagado")).toBeTruthy();
   expect(screen.getByText("Cancelado")).toBeTruthy();

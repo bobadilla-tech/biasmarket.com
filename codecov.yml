@@ -4,11 +4,18 @@ coverage:
       default:
         target: auto
         threshold: 1%
-    patch: off
+    # Informational only: the floors in each vitest config are the gate.
+    patch:
+      default:
+        informational: true
 
 flag_management:
   default_rules:
     carryforward: true
+    statuses:
+      - type: project
+        target: auto
+        threshold: 1%
   individual_flags:
     - name: api
       paths:
@@ -18,9 +25,29 @@ flag_management:
       paths:
         - apps/web
       carryforward: true
+    - name: workers
+      paths:
+        - apps/workers
+      carryforward: true
+    - name: mobile
+      paths:
+        - apps/mobile
+      carryforward: true
     - name: utils
       paths:
         - packages/utils
+      carryforward: true
+    - name: validation
+      paths:
+        - packages/validation
+      carryforward: true
+    - name: types
+      paths:
+        - packages/types
+      carryforward: true
+    - name: design-tokens
+      paths:
+        - packages/design-tokens
       carryforward: true
 
 comment:

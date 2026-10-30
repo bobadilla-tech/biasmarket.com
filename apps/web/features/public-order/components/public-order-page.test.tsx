@@ -6,6 +6,7 @@ import { focusManager } from "@tanstack/react-query";
 import { ApiError } from "@biasmarket/types";
 import type { PublicOrderResponseDto } from "@biasmarket/types";
 import { renderWithProviders } from "../../../test-utils/render-with-providers";
+import { installLocalStorage } from "../../../test-utils/local-storage";
 
 const { getByToken, findPublic, storeLogo } = vi.hoisted(() => ({
   getByToken: vi.fn(),
@@ -20,7 +21,7 @@ vi.mock("@/components/store-logo", () => ({
 }));
 vi.mock("@/lib/api-client", () => ({
   apiClient: {
-    publicOrders: { getByToken },
+    publicOrders: { getByToken, claimTicket: vi.fn(), recordInvite: vi.fn() },
     stores: { findPublic },
   },
 }));
@@ -48,7 +49,7 @@ function makeOrder(
     },
     customerPhone: "+51 9** *** 321",
     customerAlias: "Sofi",
-    orderNumber: "AB12",
+    orderNumber: "ABCD12",
     createdAt: "2026-09-01T12:00:00.000Z",
     items: [
       { name: "Lightstick", quantity: 2, unitPrice: "50", currency: "PEN" },
@@ -82,13 +83,22 @@ function makeOrder(
     trackingNumber: "OLV1",
     trackingUrl: "https://tracking.example/OLV1",
     packedPhotoAvailable: true,
+    receiptConfirmedAt: null,
+    claimed: false,
+    lastUpdateAt: "2026-09-02T15:30:00.000Z",
+    timeline: [],
+    hasValidatedPayment: false,
     courierModality: "HOME",
     payments: [],
+    expiresAt: null,
+    paymentRejectionReason: null,
+    closure: null,
     ...overrides,
   } as PublicOrderResponseDto;
 }
 
 beforeEach(() => {
+  installLocalStorage();
   findPublic.mockResolvedValue({
     name: "K-Store",
     whatsappNumber: "+51911111111",
@@ -98,8 +108,11 @@ afterEach(() => {
   vi.resetAllMocks();
 });
 
-function renderPage(slug = "k-store") {
-  return renderWithProviders(<PublicOrderPage slug={slug} token={TOKEN} />);
+function renderPage(slug = "k-store", locale: "es" | "en" = "es") {
+  return renderWithProviders(
+    <PublicOrderPage slug={slug} token={TOKEN} />,
+    locale,
+  );
 }
 
 test("passes the token to the API and renders greeting, number and amounts", async () => {
@@ -107,11 +120,32 @@ test("passes the token to the API and renders greeting, number and amounts", asy
   renderPage();
   expect(await screen.findByText("Hola, Sofi")).toBeTruthy();
   expect(getByToken).toHaveBeenCalledWith(TOKEN);
-  expect(screen.getByText(/Pedido #AB12/)).toBeTruthy();
+  expect(screen.getByText(/Pedido #ABCD12/)).toBeTruthy();
   expect(screen.getByText("Pedido para +51 9** *** 321")).toBeTruthy();
   expect(screen.getByText("PEN 100")).toBeTruthy(); // total
   expect(screen.getAllByText("PEN 30").length).toBeGreaterThan(0); // deposit / pending
 });
+
+test.each([
+  [
+    "es",
+    "La tienda usará tu número de teléfono para enviarte actualizaciones sobre este pedido.",
+  ],
+  [
+    "en",
+    "The store will use your phone number to send you updates about this order.",
+  ],
+])(
+  "shows the phone privacy notice in %s without revealing the stored number",
+  async (locale, notice) => {
+    getByToken.mockResolvedValue(makeOrder());
+    renderPage("k-store", locale as "es" | "en");
+
+    const privacyNotice = await screen.findByRole("note");
+    expect(privacyNotice.textContent).toBe(notice);
+    expect(privacyNotice.textContent).not.toContain("+51911111111");
+  },
+);
 
 test("greets generically without an alias and hides number/date the API omits", async () => {
   getByToken.mockResolvedValue(
@@ -136,7 +170,7 @@ test("pending payment shows how to pay with the method details and a paid button
   ).toBeTruthy();
   const paid = await screen.findByRole("link", { name: /Ya pagué/ });
   const href = paid.getAttribute("href")!;
-  expect(decodeURIComponent(href)).toContain("ya pagué el pedido #AB12");
+  expect(decodeURIComponent(href)).toContain("ya pagué el pedido #ABCD12");
   expect(href).not.toContain(TOKEN);
 });
 
@@ -148,6 +182,10 @@ test("partial payment shows the pending amount as due, paid and voided rows", as
       pendingAmount: 20,
       payments: [
         {
+          id: "payment-1",
+          method: "YAPE",
+          paidAt: null,
+          hasProof: false,
           source: "SELLER_RECORDED",
           amount: "10",
           createdAt: "2026-09-01T12:00:00.000Z",
@@ -155,6 +193,10 @@ test("partial payment shows the pending amount as due, paid and voided rows", as
           voidedAt: null,
         },
         {
+          id: "payment-2",
+          method: "YAPE",
+          paidAt: null,
+          hasProof: false,
           source: "SELLER_RECORDED",
           amount: "99",
           createdAt: "2026-09-01T12:00:00.000Z",
@@ -162,6 +204,10 @@ test("partial payment shows the pending amount as due, paid and voided rows", as
           voidedAt: "2026-09-02T12:00:00.000Z",
         },
         {
+          id: "payment-3",
+          method: "YAPE",
+          paidAt: null,
+          hasProof: true,
           source: "BUYER_SUBMITTED",
           amount: "5",
           createdAt: "2026-09-01T12:00:00.000Z",
@@ -197,6 +243,59 @@ test("rejected shows its banner and the how-to-pay block", async () => {
   renderPage();
   expect(await screen.findByText(/No pudimos confirmar tu pago/)).toBeTruthy();
   expect(screen.getByText("Cómo pagar")).toBeTruthy();
+});
+
+test("asks only for what is still due when a payment was already recorded", async () => {
+  // REJECTED is reachable from PARTIALLY_PAID, so the order can owe less than
+  // `requiredAmount` without ever being in the PARTIALLY_PAID status.
+  getByToken.mockResolvedValue(
+    makeOrder({
+      paymentStatus: "REJECTED",
+      paidAmount: 10,
+      pendingAmount: 20,
+      payments: [
+        {
+          id: "payment-4",
+          method: "YAPE",
+          paidAt: null,
+          hasProof: false,
+          source: "SELLER_RECORDED",
+          amount: "10",
+          createdAt: "2026-09-01T12:00:00.000Z",
+          reviewStatus: "N_A",
+          voidedAt: null,
+        },
+      ],
+    }),
+  );
+  renderPage();
+  expect(
+    await screen.findByText("Adelanto: PEN 20 (o el total: PEN 90)"),
+  ).toBeTruthy();
+  expect(
+    screen.queryByText("Adelanto: PEN 30 (o el total: PEN 100)"),
+  ).toBeNull();
+  expect(
+    screen.queryByText("Adelanto: PEN 20 (o el total: PEN 100)"),
+  ).toBeNull();
+});
+
+test("computes the remaining total in cents so no float artifact is shown", async () => {
+  // 149.90 - 60.1 is 89.80000000000001 in plain float arithmetic. REJECTED
+  // (reachable from PARTIALLY_PAID) is what takes the deposit-plan branch.
+  getByToken.mockResolvedValue(
+    makeOrder({
+      paymentStatus: "REJECTED",
+      totalAmount: "149.90",
+      requiredAmount: "80",
+      paidAmount: 60.1,
+      pendingAmount: 19.9,
+    }),
+  );
+  renderPage();
+  expect(
+    await screen.findByText("Adelanto: PEN 19.9 (o el total: PEN 89.8)"),
+  ).toBeTruthy();
 });
 
 test("cancelled shows the banner, no timeline and no how-to-pay", async () => {
@@ -245,7 +344,7 @@ test("the not-your-number disclosure links to WhatsApp with the order ref only",
   const href = button.getAttribute("href")!;
   expect(href.startsWith("https://wa.me/")).toBe(true);
   expect(decodeURIComponent(href)).toContain(
-    "el pedido #AB12 no es para mi número",
+    "el pedido #ABCD12 no es para mi número",
   );
   expect(href).not.toContain(TOKEN);
   expect(button.getAttribute("rel")).toBe("noopener noreferrer");
@@ -350,7 +449,7 @@ test("the error state retries", async () => {
   expect(await screen.findByText("Hola, Sofi")).toBeTruthy();
 });
 
-test("the logo goes through StoreLogo and the view has no packed photo or raw img", async () => {
+test("the logo goes through StoreLogo, and the only img is the token photo stream", async () => {
   getByToken.mockResolvedValue(
     makeOrder({
       store: {
@@ -366,19 +465,131 @@ test("the logo goes through StoreLogo and the view has no packed photo or raw im
   expect(storeLogo).toHaveBeenCalledWith(
     expect.objectContaining({ logoUrl: "https://cdn.biasmarket.com/l.png" }),
   );
-  expect(container.querySelector("img")).toBeNull();
-  expect(container.innerHTML).not.toContain("packed");
+  const images = [...container.querySelectorAll("img")];
+  expect(images).toHaveLength(1);
+  expect(images[0]!.getAttribute("src")).toMatch(
+    new RegExp(`/api/public/orders/${TOKEN}/packed-photo$`),
+  );
+  expect(images[0]!.getAttribute("referrerpolicy")).toBe("no-referrer");
+  expect(container.innerHTML).not.toContain("private.example");
+});
 
-  const dir = path.join(__dirname, "..");
-  const files = [
-    ...fs.readdirSync(path.join(dir, "components")),
-    ...fs.readdirSync(path.join(dir, "queries")).map((f) => `../queries/${f}`),
-  ].filter((f) => /\.tsx?$/.test(f) && !f.includes(".test."));
-  for (const f of files) {
-    const src = fs.readFileSync(path.join(dir, "components", f), "utf8");
-    expect(src, f).not.toMatch(/<img[\s>]/);
-    expect(src, f).not.toMatch(/trackingUrl|packedPhoto/);
-  }
+test("shows tracking as text plus a safe link, and no photo when none exists", async () => {
+  getByToken.mockResolvedValue(makeOrder({ packedPhotoAvailable: false }));
+  const { container } = renderPage();
+  expect(await screen.findByText("Código de seguimiento: OLV1")).toBeTruthy();
+  const link = screen.getByRole("link", { name: "Seguir mi envío" });
+  expect(link.getAttribute("href")).toBe("https://tracking.example/OLV1");
+  expect(link.getAttribute("rel")).toContain("noopener");
+  expect(link.getAttribute("rel")).toContain("noreferrer");
+  expect(container.querySelector("img")).toBeNull();
+});
+
+test("never turns a non-http tracking URL into a link", async () => {
+  getByToken.mockResolvedValue(
+    makeOrder({
+      trackingUrl: "javascript:alert(1)",
+      packedPhotoAvailable: false,
+    }),
+  );
+  renderPage();
+  await screen.findByText("Código de seguimiento: OLV1");
+  expect(screen.queryByRole("link", { name: "Seguir mi envío" })).toBeNull();
+});
+
+test("an unclaimed order shows the last update in Lima time and no dated steps", async () => {
+  getByToken.mockResolvedValue(makeOrder());
+  renderPage();
+  // 15:30Z is 10:30 in America/Lima (UTC-5, no DST).
+  expect(await screen.findByText(/Última actualización: .*10:30/)).toBeTruthy();
+  expect(screen.queryByText("Pedido creado")).toBeNull();
+  expect(screen.queryByText(/Guarda tu pedido/)).toBeNull();
+});
+
+test("a validated first visit shows the first-validation invite with the claim button", async () => {
+  getByToken.mockResolvedValue(makeOrder({ hasValidatedPayment: true }));
+  renderPage();
+  expect(await screen.findByText("Tu pago está validado")).toBeTruthy();
+  expect(
+    screen.getByRole("button", { name: "Guardar con Google" }),
+  ).toBeTruthy();
+});
+
+test("no claim button without a validated payment", async () => {
+  getByToken.mockResolvedValue(makeOrder({ hasValidatedPayment: false }));
+  renderPage();
+  await screen.findByText(/Última actualización/);
+  expect(
+    screen.queryByRole("button", { name: "Guardar con Google" }),
+  ).toBeNull();
+});
+
+test("a claimed order shows 'Pedido guardado' and no claim button", async () => {
+  getByToken.mockResolvedValue(
+    makeOrder({ claimed: true, hasValidatedPayment: true }),
+  );
+  renderPage();
+  expect(await screen.findByText("Pedido guardado en tu cuenta")).toBeTruthy();
+  expect(
+    screen.queryByRole("button", { name: "Guardar con Google" }),
+  ).toBeNull();
+});
+
+test("no invitation when cancelled even with a validated payment", async () => {
+  getByToken.mockResolvedValue(
+    makeOrder({ hasValidatedPayment: true, status: "CANCELLED" }),
+  );
+  renderPage();
+  await screen.findByText(/Última actualización/);
+  expect(screen.queryByText("Tu pago está validado")).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: "Guardar con Google" }),
+  ).toBeNull();
+});
+
+test("a claimed order shows the dated steps in order, with Lima times", async () => {
+  getByToken.mockResolvedValue(
+    makeOrder({
+      claimed: true,
+      hasValidatedPayment: true,
+      timeline: [
+        {
+          type: "CREATED",
+          at: "2026-09-01T12:00:00.000Z",
+          toStatus: null,
+          amount: null,
+          resolution: null,
+        },
+        {
+          type: "PAYMENT_VOIDED",
+          at: "2026-09-01T20:00:00.000Z",
+          toStatus: null,
+          amount: "20",
+          resolution: null,
+        },
+        {
+          type: "FULFILLMENT_ADVANCED",
+          at: "2026-09-03T04:00:00.000Z",
+          toStatus: "IN_TRANSIT",
+          amount: null,
+          resolution: null,
+        },
+      ],
+    }),
+  );
+  renderPage();
+  await screen.findByText("Pedido creado");
+  const steps = screen.getAllByRole("listitem").map((li) => li.textContent);
+  const history = steps.filter((text) =>
+    /Pedido creado|Pago anulado|va en camino/.test(text ?? ""),
+  );
+  expect(history).toHaveLength(3);
+  expect(history[0]).toContain("Pedido creado");
+  expect(history[1]).toContain("Pago anulado · PEN 20");
+  expect(history[2]).toContain("Tu pedido va en camino");
+  // 2026-09-03T04:00Z is still Sep 2, 23:00 in Lima.
+  expect(history[2]).toMatch(/2 sept\.? 2026/);
+  expect(screen.queryByText(/Guarda tu pedido/)).toBeNull();
 });
 
 test("the pickup date renders in UTC whatever the browser time zone", async () => {

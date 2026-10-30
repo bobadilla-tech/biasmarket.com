@@ -597,7 +597,11 @@ describe('CustomersService', () => {
       });
       expect(prisma.order.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { storeId, customerId: null },
+          where: {
+            storeId,
+            customerId: null,
+            buyerIdentityErasedAt: null,
+          },
         }),
       );
       expect(result.customer).toEqual({
@@ -668,7 +672,7 @@ describe('CustomersService', () => {
       );
 
       expect(prisma.customer.findUnique).toHaveBeenLastCalledWith({
-        where: { id: 'customer-1' },
+        where: { id: 'customer-1', identityErasedAt: null },
       });
       expect(result.customer.id).toBe('customer-1');
       expect(result.orders).toEqual([
@@ -858,7 +862,11 @@ describe('CustomersService', () => {
         '  Ana  ',
       );
 
-      const [strings, ...values] = prisma.$executeRaw.mock.calls[0];
+      const [lockStrings, ...lockValues] = prisma.$executeRaw.mock.calls[0];
+      expect(lockStrings.join('?')).toContain('pg_advisory_xact_lock');
+      expect(lockValues).toContain('assisted-customer:store-1:+51987654321');
+
+      const [strings, ...values] = prisma.$executeRaw.mock.calls[1];
       expect(strings.join('?')).toContain('INSERT INTO "Customer"');
       expect(strings.join('?')).toContain('ON CONFLICT ("storeId", "phone")');
       expect(values).toContain(storeId);

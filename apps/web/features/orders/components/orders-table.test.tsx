@@ -13,7 +13,6 @@ const baseOrder: OrderResponseDto = {
   id: "order-1",
   storeId: "store-1",
   customerId: null,
-  buyerAccountId: null,
   customerEmail: null,
   customerName: "Jane",
   customerPhone: "+51987654321",
@@ -25,6 +24,7 @@ const baseOrder: OrderResponseDto = {
   paidPercentage: 0,
   linkFirstOpenedAt: null,
   claimedAt: null,
+  buyerConfirmedReceivedAt: null,
   createdByName: null,
   currency: "PEN",
   status: "ACTIVE",
@@ -105,7 +105,7 @@ test("reveals all order details from a keyboard-accessible mobile disclosure", (
     />,
   );
 
-  const disclosure = screen.getByRole("button", { name: "Pedido #ER-1" });
+  const disclosure = screen.getByRole("button", { name: "Pedido #RDER-1" });
   expect(disclosure.getAttribute("aria-expanded")).toBe("false");
 
   fireEvent.click(disclosure);

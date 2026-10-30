@@ -54,7 +54,7 @@ function MobileAbout({
   items: AboutItem[];
 }) {
   return (
-    <div className="flex flex-col bg-[#FFEAF6] p-[25px] sm:hidden">
+    <div className="flex flex-col bg-landing-rose p-[25px] sm:hidden">
       <div className="flex w-full items-start justify-between gap-5">
         <div className="min-w-0">
           <h2 className="text-[21px] leading-[25px] font-bold text-black">
@@ -65,7 +65,7 @@ function MobileAbout({
                   className="bg-clip-text text-transparent"
                   style={{
                     backgroundImage:
-                      "linear-gradient(90deg, #FC17A0 0%, var(--brand-violet) 100%)",
+                      "linear-gradient(90deg, var(--brand-pink) 0%, var(--brand-violet) 100%)",
                   }}
                 >
                   BIASMARKET
@@ -94,19 +94,19 @@ function MobileAbout({
         {items.map((item, index) => (
           <div
             key={item.title}
-            className="flex flex-col items-start gap-1 rounded-[20px] bg-white px-5 py-2.5"
+            className="landing-about-card flex flex-col items-start gap-2 rounded-[20px] bg-white px-5 py-3"
           >
             <Image
               src={ILLUSTRATIONS[index]?.src ?? ILLUSTRATIONS[0].src}
               alt=""
               width={ILLUSTRATIONS[index]?.width ?? 48}
               height={ILLUSTRATIONS[index]?.height ?? 48}
-              className="h-[47px] w-auto object-contain"
+              className="h-[56px] w-auto object-contain"
             />
-            <h3 className="text-[12.3px] leading-[15px] font-semibold text-black">
+            <h3 className="text-sm leading-5 font-semibold text-black">
               {item.title}
             </h3>
-            <p className="text-justify text-[8.6px] leading-2.5 font-light text-black">
+            <p className="text-left text-xs leading-[1.55] font-normal text-black/75">
               {item.body}
             </p>
           </div>
@@ -123,7 +123,7 @@ function MobileAbout({
         <p className="mt-1 text-center text-2xs text-black">{helpTitle}</p>
         <Link
           href="/contact"
-          className="flex min-h-[31px] h-auto min-w-[131px] max-w-full items-center justify-center rounded-[5px] bg-cta-strong px-3 py-2 text-center text-[9.8px] leading-3 font-medium text-white transition-colors hover:bg-cta-active focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cta-strong active:bg-cta-active"
+          className="flex min-h-11 h-auto min-w-[160px] max-w-full items-center justify-center rounded-full bg-cta-strong px-5 py-3 text-center text-sm font-semibold text-white shadow-[var(--shadow-soft)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-cta-active hover:shadow-[var(--shadow-raised)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cta-strong active:bg-cta-active"
         >
           {helpCta}
         </Link>
@@ -146,7 +146,7 @@ export function AboutSection() {
         items={items}
       />
 
-      <section className="hidden w-full bg-[#FFEAF6] sm:block">
+      <section className="hidden w-full bg-landing-rose sm:block">
         <div className="mx-auto max-w-[1344px] px-10 pt-[51px] pb-8">
           <div className="flex items-center">
             <div className="min-w-0 flex-1 pl-4 text-left">
@@ -186,7 +186,7 @@ export function AboutSection() {
               {items.map((item, index) => (
                 <div
                   key={item.title}
-                  className="relative flex flex-col items-center rounded-[40.8px] bg-white px-10 py-6 text-center"
+                  className="landing-about-card relative flex flex-col items-center rounded-[32px] border border-white/80 bg-card px-10 py-6 text-center shadow-[var(--shadow-soft)] transition-all duration-300"
                 >
                   <Image
                     src={ILLUSTRATIONS[index]?.src ?? ILLUSTRATIONS[0].src}
