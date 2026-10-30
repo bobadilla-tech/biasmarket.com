@@ -1625,5 +1625,7 @@
 }
 
 .login-nav-link {
-  @apply rounded-sm transition-colors hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500;
+  @apply rounded-sm transition-colors hover:text-violet-700
+    focus-visible:outline-none focus-visible:ring-2
+    focus-visible:ring-violet-500;
 }

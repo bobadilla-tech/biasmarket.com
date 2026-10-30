@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  WHATSAPP_MESSAGE_TOKENS,
-  WHATSAPP_REQUIRED_TOKENS,
-  type WhatsAppMessageType,
   buildWhatsAppAssistedOrderLinkMessage,
   buildWhatsAppBuyerNoticeMessage,
   buildWhatsAppOrderMessage,
@@ -12,6 +9,9 @@ import {
   getMissingRequiredTokens,
   renderWhatsAppTemplate,
   WHATSAPP_BUYER_NOTICE_TYPES,
+  WHATSAPP_MESSAGE_TOKENS,
+  WHATSAPP_REQUIRED_TOKENS,
+  type WhatsAppMessageType,
 } from "./index";
 
 describe("buildWhatsAppOrderMessage", () => {

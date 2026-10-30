@@ -7,8 +7,8 @@ import {
 import type { WhatsAppMessageType } from '@biasmarket/db';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import {
-  WHATSAPP_BUYER_NOTICE_TYPES,
   getMissingRequiredTokens,
+  WHATSAPP_BUYER_NOTICE_TYPES,
 } from '@biasmarket/utils/whatsapp';
 import type { UpdateWhatsAppTemplateDto } from './dto/update-whatsapp-template.dto.js';
 

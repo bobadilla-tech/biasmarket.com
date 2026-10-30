@@ -367,7 +367,7 @@ ESLint + vitest-axe + scoped-Playwright harness with the missing jsdom stubs.
 - **Fix:** Shared `SkipLink` (plain `<a href="#main-content">`, sr-only +
   `focus:not-sr-only`, a client leaf — must **not** add `"use client"` to the
   root layout). Add `id="main-content"
-  tabIndex={-1}` to the **existing**
+tabIndex={-1}` to the **existing**
   mains: pass through to `SidebarInset` in `admin/layout.tsx`, set on
   `StoreThemeFrame`'s `<main>`. Add a **new** real `<main>` only to `/account`
   and the storefront checkout/cart/account page bodies. Create
@@ -475,10 +475,10 @@ ESLint + vitest-axe + scoped-Playwright harness with the missing jsdom stubs.
 
 - **Component:** `features/products/components/product-tile.tsx:78`.
   `<Card role="button"
-  tabIndex={0} onClick onKeyDown>` **contains**
+tabIndex={0} onClick onKeyDown>` **contains**
   `<Button>` Publish/Edit/Delete (`:100`–`133`). `onKeyDown` handles `" "`
   **without `preventDefault()`** → page scrolls on Space. (No `"use
-  client"` —
+client"` —
   works transitively.)
 - **WCAG:** 4.1.2 (`nested-interactive`), 2.1.1.
 - **Automated:** Yes.
@@ -542,7 +542,7 @@ ESLint + vitest-axe + scoped-Playwright harness with the missing jsdom stubs.
   when back in stock" flow, not a purchase blocker)_
 - **Component:** `features/restock/components/restock-interest-dialog.tsx:70` —
   `<div role="dialog"
-  aria-modal="true">` (`inset-0`, not `100vh`), `<div>`
+aria-modal="true">` (`inset-0`, not `100vh`), `<div>`
   backdrop `onClick`, `<h3>` (`:107`) not referenced by `aria-labelledby`,
   `if (!open) return null`. No trap / Escape / restore / initial focus / scroll
   lock. Success branch (`:89`) swaps the body, unmounts the focused submit
@@ -650,7 +650,7 @@ ESLint + vitest-axe + scoped-Playwright harness with the missing jsdom stubs.
 - **M6 — Storefront floating header obscures content / small targets.**
   `features/storefront/components/storefront-header.tsx:53`
   `fixed top-4 right-4 … max-w-[calc(100vw-2rem)]
-  flex-wrap`. For a store with
+flex-wrap`. For a store with
   3–4 social links the cluster (~324px) exceeds `max-w` (~288px at a 320px
   viewport) and **wraps to 2 rows** (up to ~360px viewport); two rows ≈ 96px vs
   the product page's `pt-20` (80px) → the wrapped header **overlaps the "← back"
@@ -1002,7 +1002,7 @@ shippable and testable. No cosmetic refactors — every item traces to a finding
     (CLAUDE.md is stale); buyer proof lives on `OrderPayment` —
     `source PaymentSource` (`SELLER_RECORDED | BUYER_SUBMITTED`),
     `reviewStatus
-    PaymentReviewStatus`
+PaymentReviewStatus`
     (`N_A | PENDING_REVIEW | APPROVED | REJECTED`), `imageUrl String?`
     (`packages/db/prisma/schema.prisma:350,369,374`). `ensureOrderPayment`
     (`apps/api/scripts/seed/helpers.ts:481`) already exists and already takes
@@ -1052,7 +1052,7 @@ shippable and testable. No cosmetic refactors — every item traces to a finding
 - **Scope:**
   - `components/ui/field.tsx` + `label.tsx` over `@base-ui/react/field` (RHF
     glue: `Field.Root
-    invalid={!!errors.x}`,
+invalid={!!errors.x}`,
     `Field.Control render={<input {...register("x")} />}`. **`Field.Error` MUST
     get `match={!!errors.x}`** — without an explicit `match` it renders off Base
     UI's own form context, not RHF's, and is inert. Leave Base UI
@@ -1113,7 +1113,7 @@ shippable and testable. No cosmetic refactors — every item traces to a finding
 - **Scope:** `SkipLink` (plain `<a>`, sr-only + `focus:not-sr-only`) in the root
   layout. Add `id="main-content" tabIndex={-1}` to the **existing** mains —
   `<SidebarInset id="main-content"
-  tabIndex={-1}>` directly in
+tabIndex={-1}>` directly in
   `admin/layout.tsx` (it already spreads `{...props}` onto its `<main>` — **no
   `app-sidebar.tsx` edit**), and set the same on `StoreThemeFrame`'s `<main>`.
   Add a **new** real `<main>` only to `account-page-client.tsx` and the

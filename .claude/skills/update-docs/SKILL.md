@@ -50,7 +50,7 @@ Pick one from the request, defaulting to a full sweep:
 - **area**: one app/package/topic (for example `orders`, `deploy`, `i18n`).
 - **diff**: docs affected by a PR, branch, or range
   (`git diff main...HEAD
-  --stat`, then map changed paths to docs via section
+--stat`, then map changed paths to docs via section
   2's code map).
 
 State the scope and the commit being audited (`git rev-parse --short HEAD`) at

@@ -20,7 +20,9 @@ export async function submitProof(
   if (values.file) body.append("file", values.file);
 
   const res = await fetch(
-    `${publicApiBase()}/api/public/orders/${encodeURIComponent(token)}/payments`,
+    `${publicApiBase()}/api/public/orders/${encodeURIComponent(
+      token,
+    )}/payments`,
     { method: "POST", credentials: "omit", body },
   );
   const data = await res.json().catch(() => null);

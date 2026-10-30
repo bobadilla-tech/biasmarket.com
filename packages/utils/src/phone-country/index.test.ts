@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  formatPhone,
   DEFAULT_PHONE_COUNTRY,
+  formatPhone,
   maskPhone,
   normalizePhone,
   parsePhoneValue,

@@ -198,7 +198,9 @@ export function ProductCard({
         <button
           type="button"
           onClick={handleAddToCart}
-          className={`store-theme-primary-button mt-2 min-h-11 w-full rounded-xl px-3 py-1.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${added ? "fan-added" : ""}`}
+          className={`store-theme-primary-button mt-2 min-h-11 w-full rounded-xl px-3 py-1.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+            added ? "fan-added" : ""
+          }`}
         >
           <span className="inline-flex items-center justify-center gap-2">
             {added ? (

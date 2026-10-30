@@ -154,7 +154,9 @@ export function ProductDetailView({
           <button
             type="button"
             onClick={handleAddToCart}
-            className={`store-theme-primary-button mt-5 flex min-h-12 w-full max-w-xs items-center justify-center gap-2 rounded-full px-6 py-2.5 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2 sm:w-auto ${added ? "fan-added" : ""}`}
+            className={`store-theme-primary-button mt-5 flex min-h-12 w-full max-w-xs items-center justify-center gap-2 rounded-full px-6 py-2.5 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2 sm:w-auto ${
+              added ? "fan-added" : ""
+            }`}
           >
             {added && (
               <Sparkles

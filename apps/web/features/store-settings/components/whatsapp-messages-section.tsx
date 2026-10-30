@@ -10,10 +10,10 @@ import {
   buildWhatsAppPaymentReminderMessage,
   getMissingRequiredTokens,
   WHATSAPP_MESSAGE_TOKENS,
-  type WhatsAppMessageType,
   type WhatsAppAssistedOrderLinkInput,
   type WhatsAppBuyerNoticeInput,
   type WhatsAppBuyerNoticeType,
+  type WhatsAppMessageType,
   type WhatsAppOrderInput,
   type WhatsAppPaymentReminderInput,
 } from "@biasmarket/utils/whatsapp";

@@ -103,7 +103,9 @@ export class BuyerGoogleController {
     orderId: string,
   ): void {
     res.redirect(
-      `${webUrl()}/${locale}/my-purchases/orders/${encodeURIComponent(orderId)}?claimed=1`,
+      `${webUrl()}/${locale}/my-purchases/orders/${encodeURIComponent(
+        orderId,
+      )}?claimed=1`,
     );
   }
 
