@@ -82,6 +82,49 @@ test("scrubs the token from every field the SDK can fill, keeping surrounding te
   expect(out).toContain("Failed to fetch /es/store/k/pedido/:token, retry?");
 });
 
+test("preserves diagnostic text after assisted-order path tokens", () => {
+  const event = {
+    exception: {
+      values: [
+        {
+          value: `Error at /store/k/pedido/${TOKEN} while parsing: unexpected #1 in body`,
+        },
+        {
+          value: `GET /pedido/${TOKEN} failed (status=500) retry?yes`,
+        },
+        {
+          value: `message: see /pedido/${TOKEN}, then /pedido/${TOKEN}/pago`,
+        },
+      ],
+    },
+  };
+
+  const scrubbed = scrubSentryEvent(event);
+
+  expect(scrubbed.exception.values.map(({ value }) => value)).toEqual([
+    "Error at /store/k/pedido/:token while parsing: unexpected #1 in body",
+    "GET /pedido/:token failed (status=500) retry?yes",
+    "message: see /pedido/:token, then /pedido/:token/pago",
+  ]);
+  expect(JSON.stringify(scrubbed)).not.toContain(TOKEN);
+});
+
+test("truncates over-depth event data instead of preserving an unsanitized value", () => {
+  const deep: Record<string, unknown> = {};
+  let current = deep;
+  for (let i = 0; i < 12; i += 1) {
+    const child: Record<string, unknown> = {};
+    current.n = child;
+    current = child;
+  }
+  current.token = TOKEN;
+
+  const scrubbed = scrubSentryEvent({ extra: { deep } });
+
+  expect(JSON.stringify(scrubbed)).not.toContain(TOKEN);
+  expect(JSON.stringify(scrubbed)).toContain("[Truncated]");
+});
+
 test("scrubTokenText replaces only the token segment", () => {
   expect(scrubTokenText(`see /pedido/${TOKEN}/x and more`)).toBe(
     "see /pedido/:token/x and more",

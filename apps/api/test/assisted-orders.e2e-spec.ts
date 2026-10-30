@@ -4,6 +4,7 @@ import request from 'supertest';
 import { createHash, randomInt, randomUUID } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { PrismaService } from '../src/prisma/prisma.service.js';
+import { AssistedOrderIdentityRetentionUseCase } from '../src/modules/orders/application/assisted-order-identity-retention.usecase.js';
 import { AppModule } from './../src/app.module.js';
 import {
   deleteOrders,
@@ -454,16 +455,29 @@ describe('assisted orders (e2e)', () => {
     });
 
     it('does not deadlock against a concurrent checkout for the same phone and product', async () => {
+      // Give this distinct-phone batch its own quota so its result cannot
+      // depend on recipient creation from earlier tests in this describe.
+      const raceCookie = await signUp('lock-race');
+      const raceSlug = `assisted-lock-race-${runId}`;
+      const raceStore = await seedStore(raceCookie, raceSlug);
+      extraStoreIds.push(raceStore.storeId);
+
       const checkout = (phone: string) =>
         request(app.getHttpServer())
-          .post(`/stores/${storeSlug}/checkout`)
+          .post(`/stores/${raceSlug}/checkout`)
           .set('X-Forwarded-For', nextIp())
           .field('deliveryMethodType', 'PICKUP')
           .field('customerPhone', phone)
           .field('customerEmail', `race-${ipCounter}-${runId}@example.com`)
           .field(
             'items',
-            JSON.stringify([{ productId, variantId, quantity: 1 }]),
+            JSON.stringify([
+              {
+                productId: raceStore.productId,
+                variantId: raceStore.variantId,
+                quantity: 1,
+              },
+            ]),
           );
 
       for (let i = 0; i < 5; i++) {
@@ -472,14 +486,24 @@ describe('assisted orders (e2e)', () => {
         // race (P2002 when two requests create the same new phone), so the
         // contact exists up front. A null name makes the assisted flow update
         // the row too, which is the Customer-then-stock ordering under test.
-        await prisma.customer.create({ data: { storeId, phone } });
+        await prisma.customer.create({
+          data: { storeId: raceStore.storeId, phone },
+        });
         const [assisted, checkoutRes] = await Promise.all([
           post(
             body({
               customerPhone: phone,
               customerName: 'Race',
-              items: [{ productId, variantId, quantity: 1 }],
+              items: [
+                {
+                  productId: raceStore.productId,
+                  variantId: raceStore.variantId,
+                  quantity: 1,
+                },
+              ],
             }),
+            raceCookie,
+            raceStore.storeId,
           ),
           checkout(phone),
         ]);
@@ -487,6 +511,145 @@ describe('assisted orders (e2e)', () => {
         expect(checkoutRes.status).toBe(201);
       }
     });
+  });
+
+  describe('distinct recipient limit', () => {
+    let limitCookie: string;
+    let limitStoreId: string;
+    let limitProductId: string;
+    let limitVariantId: string;
+    let parallelCookie: string;
+    let parallelStoreId: string;
+    let parallelProductId: string;
+    let parallelVariantId: string;
+
+    beforeAll(async () => {
+      limitCookie = await signUp('recipient-limit');
+      ({
+        storeId: limitStoreId,
+        productId: limitProductId,
+        variantId: limitVariantId,
+      } = await seedStore(limitCookie, `assisted-limit-${runId}`));
+      extraStoreIds.push(limitStoreId);
+
+      parallelCookie = await signUp('recipient-parallel');
+      ({
+        storeId: parallelStoreId,
+        productId: parallelProductId,
+        variantId: parallelVariantId,
+      } = await seedStore(parallelCookie, `assisted-parallel-${runId}`));
+      extraStoreIds.push(parallelStoreId);
+    });
+
+    const freshPhone = () => `+519${String(randomInt(1e8)).padStart(8, '0')}`;
+    const counts = async (targetStoreId: string) => ({
+      orders: await prisma.order.count({
+        where: { storeId: targetStoreId, source: 'VENDOR_ASSISTED' },
+      }),
+      customers: await prisma.customer.count({
+        where: { storeId: targetStoreId },
+      }),
+      events: await prisma.orderEvent.count({
+        where: { order: { is: { storeId: targetStoreId } } },
+      }),
+      audits: await prisma.auditLog.count({
+        where: { storeId: targetStoreId, action: 'order.assisted_created' },
+      }),
+    });
+
+    it('rejects a sixth distinct recipient without side effects and allows a repeat', async () => {
+      const phones = Array.from({ length: 5 }, freshPhone);
+      for (const customerPhone of phones) {
+        await post(
+          body({
+            customerPhone,
+            items: [
+              {
+                productId: limitProductId,
+                variantId: limitVariantId,
+                quantity: 1,
+              },
+            ],
+          }),
+          limitCookie,
+          limitStoreId,
+        ).expect(201);
+      }
+
+      const beforeRejected = await counts(limitStoreId);
+      const reservedBeforeRejected = (await variantRow(limitVariantId))
+        .reserved;
+      await post(
+        body({
+          customerPhone: freshPhone(),
+          items: [
+            {
+              productId: limitProductId,
+              variantId: limitVariantId,
+              quantity: 1,
+            },
+          ],
+        }),
+        limitCookie,
+        limitStoreId,
+      ).expect(429);
+      expect(await counts(limitStoreId)).toEqual(beforeRejected);
+      expect((await variantRow(limitVariantId)).reserved).toBe(
+        reservedBeforeRejected,
+      );
+
+      await post(
+        body({
+          customerPhone: phones[0],
+          items: [
+            {
+              productId: limitProductId,
+              variantId: limitVariantId,
+              quantity: 1,
+            },
+          ],
+        }),
+        limitCookie,
+        limitStoreId,
+      ).expect(201);
+      expect(await counts(limitStoreId)).toEqual({
+        orders: beforeRejected.orders + 1,
+        customers: beforeRejected.customers,
+        events: beforeRejected.events + 1,
+        audits: beforeRejected.audits + 1,
+      });
+    }, 60_000);
+
+    it('admits at most five of eight parallel distinct recipients', async () => {
+      const results = await Promise.all(
+        Array.from({ length: 8 }, () =>
+          post(
+            body({
+              customerPhone: freshPhone(),
+              items: [
+                {
+                  productId: parallelProductId,
+                  variantId: parallelVariantId,
+                  quantity: 1,
+                },
+              ],
+            }),
+            parallelCookie,
+            parallelStoreId,
+          ),
+        ),
+      );
+
+      expect(results.filter((result) => result.status === 201)).toHaveLength(5);
+      expect(results.filter((result) => result.status === 429)).toHaveLength(3);
+      expect(await counts(parallelStoreId)).toEqual({
+        orders: 5,
+        customers: 5,
+        events: 5,
+        audits: 5,
+      });
+      expect((await variantRow(parallelVariantId)).reserved).toBe(5);
+    }, 60_000);
   });
 
   // The seller routes allow 20 requests/min per user (4xx included), so this
@@ -560,6 +723,128 @@ describe('assisted orders (e2e)', () => {
           where: { orderId: noticeOrderId, type: 'BUYER_NOTIFIED' },
         }),
       ).toBe(1);
+    });
+  });
+
+  describe('identity retention', () => {
+    beforeAll(async () => {
+      sellerCookie = await signUp('retention');
+      const store = await seedStore(
+        sellerCookie,
+        `assisted-retention-${runId}`,
+      );
+      storeId = store.storeId;
+      productId = store.productId;
+      variantId = store.variantId;
+      extraStoreIds.push(storeId);
+    });
+
+    it('keeps a shared Customer while another assisted order is active, then erases it after closure', async () => {
+      const sharedPhone = `+519${String(randomInt(1e8)).padStart(8, '0')}`;
+      const first = await post(body({ customerPhone: sharedPhone })).expect(
+        201,
+      );
+      const second = await post(body({ customerPhone: sharedPhone })).expect(
+        201,
+      );
+      const firstRow = await prisma.order.findUniqueOrThrow({
+        where: { id: first.body.order.id },
+      });
+      const secondRow = await prisma.order.findUniqueOrThrow({
+        where: { id: second.body.order.id },
+      });
+      const customerId = firstRow.customerId!;
+      expect(secondRow.customerId).toBe(customerId);
+
+      await prisma.order.update({
+        where: { id: first.body.order.id },
+        data: { status: 'CANCELLED', closedAt: new Date() },
+      });
+
+      const retention = app.get(AssistedOrderIdentityRetentionUseCase);
+      const firstPass = await retention.eraseOnBuyerRequest(
+        storeId,
+        sharedPhone,
+        'support-operator-1',
+        'PRIV-460',
+      );
+      expect(firstPass).toEqual({ anonymized: 1, deferred: 1 });
+
+      const customerAfterFirstPass = await prisma.customer.findUniqueOrThrow({
+        where: { id: customerId },
+      });
+      expect(customerAfterFirstPass.phone).toBe(sharedPhone);
+      expect(customerAfterFirstPass.identityErasedAt).toBeNull();
+
+      await prisma.order.update({
+        where: { id: second.body.order.id },
+        data: { status: 'CANCELLED', closedAt: new Date() },
+      });
+      const secondPass = await retention.eraseOnBuyerRequest(
+        storeId,
+        sharedPhone,
+        'support-operator-1',
+        'PRIV-460',
+      );
+      expect(secondPass).toEqual({ anonymized: 1, deferred: 0 });
+
+      const erasedCustomer = await prisma.customer.findUniqueOrThrow({
+        where: { id: customerId },
+      });
+      expect(erasedCustomer.phone).toBe(`erased:${customerId}`);
+      expect(erasedCustomer.identityErasedAt).toBeInstanceOf(Date);
+      const audit = await prisma.auditLog.findFirstOrThrow({
+        where: {
+          entityId: second.body.order.id,
+          action: 'order.assisted_identity_erased',
+        },
+      });
+      expect(audit.actorId).toBe('support-operator-1');
+      expect(audit.metadata).toMatchObject({
+        cause: 'BUYER_REQUEST',
+        requestReference: 'PRIV-460',
+      });
+    });
+    it('keeps a Customer used by an unlinked active order during the retention sweep', async () => {
+      const sharedPhone = `+519${String(randomInt(1e8)).padStart(8, '0')}`;
+      const first = await post(body({ customerPhone: sharedPhone })).expect(
+        201,
+      );
+      const second = await post(body({ customerPhone: sharedPhone })).expect(
+        201,
+      );
+      const firstRow = await prisma.order.findUniqueOrThrow({
+        where: { id: first.body.order.id },
+      });
+      const secondRow = await prisma.order.findUniqueOrThrow({
+        where: { id: second.body.order.id },
+      });
+      const customerId = firstRow.customerId!;
+      expect(secondRow.customerId).toBe(customerId);
+
+      const now = new Date();
+      const closedAt = new Date(now.getTime() - 91 * 24 * 60 * 60 * 1000);
+      await prisma.order.update({
+        where: { id: first.body.order.id },
+        data: { status: 'CANCELLED', closedAt },
+      });
+      await prisma.order.update({
+        where: { id: second.body.order.id },
+        data: { customerId: null },
+      });
+
+      const retention = app.get(AssistedOrderIdentityRetentionUseCase);
+      await retention.eraseExpiredUnclaimedIdentities(now);
+
+      const customer = await prisma.customer.findUniqueOrThrow({
+        where: { id: customerId },
+      });
+      expect(customer.phone).toBe(sharedPhone);
+      expect(customer.identityErasedAt).toBeNull();
+      const unlinked = await prisma.order.findUniqueOrThrow({
+        where: { id: second.body.order.id },
+      });
+      expect(unlinked.buyerIdentityErasedAt).toBeNull();
     });
   });
 });

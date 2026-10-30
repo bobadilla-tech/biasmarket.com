@@ -39,8 +39,9 @@ export function scrubTokenText(value: string): string {
 // Any other field the SDK fills (request headers such as Referer, exception
 // values, span data, contexts, extra) goes through the same replacement.
 function scrubDeep(value: Json, depth = 0, seen = new WeakSet<object>()): Json {
+  if (depth > 10) return "[Truncated]";
   if (typeof value === "string") return scrubTokenText(value);
-  if (value === null || typeof value !== "object" || depth > 10) return value;
+  if (value === null || typeof value !== "object") return value;
   if (seen.has(value)) return value;
   seen.add(value);
   if (Array.isArray(value)) {

@@ -851,9 +851,17 @@ describe('OrderController.getPaymentImage', () => {
 describe('OrderController.shipping', () => {
   let controller: OrderController;
   let orders: { assertOwnership: Mock; findRowByIdForStore: Mock };
-  let storage: { uploadPaymentImage: Mock; getPaymentImageStream: Mock };
+  let storage: {
+    uploadPaymentImage: Mock;
+    getPaymentImageStream: Mock;
+    deleteImage: Mock;
+  };
   let events: { record: Mock };
-  let tx: { order: { findFirst: Mock; updateMany: Mock } };
+  let tx: {
+    $queryRaw: Mock;
+    order: { findFirst: Mock; updateMany: Mock };
+    auditLog: { create: Mock };
+  };
   let prisma: { $transaction: Mock };
 
   const storeId = 'store-1';
@@ -906,10 +914,16 @@ describe('OrderController.shipping', () => {
 
   beforeEach(async () => {
     tx = {
+      $queryRaw: vi.fn().mockResolvedValue([{ id: orderId }]),
       order: {
-        findFirst: vi.fn().mockResolvedValue({ trackingNumber: null }),
+        findFirst: vi.fn().mockResolvedValue({
+          trackingNumber: null,
+          trackingUrl: null,
+          source: 'MARKETPLACE',
+        }),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
+      auditLog: { create: vi.fn() },
     };
     prisma = {
       $transaction: vi.fn((cb: (transaction: unknown) => unknown) => cb(tx)),
@@ -921,6 +935,7 @@ describe('OrderController.shipping', () => {
     storage = {
       uploadPaymentImage: vi.fn().mockResolvedValue('private/packed/photo.jpg'),
       getPaymentImageStream: vi.fn(),
+      deleteImage: vi.fn().mockResolvedValue(undefined),
     };
     events = { record: vi.fn() };
 
@@ -957,6 +972,7 @@ describe('OrderController.shipping', () => {
     ).rejects.toThrow('not owner');
 
     expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(tx.auditLog.create).not.toHaveBeenCalled();
   });
 
   it('stores tracking details and records TRACKING_ADDED only when a number is added', async () => {
@@ -966,9 +982,13 @@ describe('OrderController.shipping', () => {
     } as any);
 
     expect(orders.assertOwnership).toHaveBeenCalledWith(storeId, userId);
+    expect(tx.$queryRaw).toHaveBeenCalledTimes(1);
+    expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      tx.order.findFirst.mock.invocationCallOrder[0]!,
+    );
     expect(tx.order.findFirst).toHaveBeenCalledWith({
       where: { id: orderId, storeId },
-      select: { trackingNumber: true },
+      select: { trackingNumber: true, trackingUrl: true, source: true },
     });
     expect(tx.order.updateMany).toHaveBeenCalledWith({
       where: { id: orderId, storeId },
@@ -984,6 +1004,92 @@ describe('OrderController.shipping', () => {
       actor: 'SELLER',
     });
     expect(result).not.toHaveProperty('packedPhotoUrl');
+    expect(tx.auditLog.create).not.toHaveBeenCalled();
+  });
+
+  it('audits assisted tracking changes with the seller actor and no tracking data', async () => {
+    tx.order.findFirst.mockResolvedValueOnce({
+      trackingNumber: null,
+      trackingUrl: null,
+      source: 'VENDOR_ASSISTED',
+    });
+
+    await controller.updateShipping(storeId, orderId, session, {
+      trackingNumber: 'TRK-SECRET-1',
+      trackingUrl: 'https://track.example/TRK-SECRET-1',
+    } as any);
+
+    expect(tx.auditLog.create).toHaveBeenCalledWith({
+      data: {
+        actorId: userId,
+        storeId,
+        action: 'order.tracking_updated',
+        entityType: 'Order',
+        entityId: orderId,
+        metadata: {},
+      },
+    });
+    expect(JSON.stringify(tx.auditLog.create.mock.calls)).not.toContain(
+      'TRK-SECRET-1',
+    );
+    expect(JSON.stringify(tx.auditLog.create.mock.calls)).not.toContain(
+      'track.example',
+    );
+  });
+
+  it.each([
+    [
+      'clearing the tracking number',
+      { trackingNumber: 'TRK-OLD', trackingUrl: 'https://old.example/x' },
+      { trackingNumber: null },
+    ],
+    [
+      'changing only the tracking URL',
+      { trackingNumber: 'TRK-OLD', trackingUrl: 'https://old.example/x' },
+      { trackingUrl: 'https://new.example/private' },
+    ],
+  ])(
+    'audits assisted tracking details when %s',
+    async (_label, before, dto) => {
+      tx.order.findFirst.mockResolvedValueOnce({
+        ...before,
+        source: 'VENDOR_ASSISTED',
+      });
+
+      await controller.updateShipping(storeId, orderId, session, dto as any);
+
+      expect(events.record).not.toHaveBeenCalled();
+      expect(tx.auditLog.create).toHaveBeenCalledWith({
+        data: {
+          actorId: userId,
+          storeId,
+          action: 'order.tracking_updated',
+          entityType: 'Order',
+          entityId: orderId,
+          metadata: {},
+        },
+      });
+      expect(JSON.stringify(tx.auditLog.create.mock.calls)).not.toMatch(
+        /TRK-OLD|old\.example|new\.example|private/,
+      );
+    },
+  );
+
+  it('does not audit an unchanged assisted tracking value', async () => {
+    tx.order.findFirst.mockResolvedValueOnce({
+      trackingNumber: 'TRK-1',
+      trackingUrl: 'https://track.example/TRK-1',
+      source: 'VENDOR_ASSISTED',
+    });
+
+    await controller.updateShipping(storeId, orderId, session, {
+      trackingNumber: 'TRK-1',
+      trackingUrl: 'https://track.example/TRK-1',
+    } as any);
+
+    expect(tx.order.updateMany).not.toHaveBeenCalled();
+    expect(events.record).not.toHaveBeenCalled();
+    expect(tx.auditLog.create).not.toHaveBeenCalled();
   });
 
   it('requires ownership before package-photo storage and records PACKED_PHOTO_ADDED', async () => {
@@ -995,6 +1101,7 @@ describe('OrderController.shipping', () => {
       } as any),
     ).rejects.toThrow('not owner');
     expect(storage.uploadPaymentImage).not.toHaveBeenCalled();
+    expect(tx.auditLog.create).not.toHaveBeenCalled();
 
     orders.assertOwnership.mockResolvedValueOnce(undefined);
     const result = await controller.uploadPackedPhoto(
@@ -1015,6 +1122,51 @@ describe('OrderController.shipping', () => {
       actor: 'SELLER',
     });
     expect(result).not.toHaveProperty('packedPhotoUrl');
+    expect(tx.auditLog.create).not.toHaveBeenCalled();
+  });
+
+  it('audits assisted package photos without persisting the photo URL or contents', async () => {
+    tx.order.findFirst.mockResolvedValueOnce({ source: 'VENDOR_ASSISTED' });
+
+    await controller.uploadPackedPhoto(storeId, orderId, session, {
+      buffer: Buffer.from('private-photo-contents'),
+      detectedMimeType: 'image/jpeg',
+    } as any);
+
+    expect(tx.auditLog.create).toHaveBeenCalledWith({
+      data: {
+        actorId: userId,
+        storeId,
+        action: 'order.packed_photo_added',
+        entityType: 'Order',
+        entityId: orderId,
+        metadata: {},
+      },
+    });
+    expect(JSON.stringify(tx.auditLog.create.mock.calls)).not.toContain(
+      'private/packed/photo.jpg',
+    );
+    expect(JSON.stringify(tx.auditLog.create.mock.calls)).not.toContain(
+      'private-photo-contents',
+    );
+  });
+
+  it('deletes an uploaded photo if the order transaction fails and preserves the transaction error', async () => {
+    tx.order.updateMany.mockResolvedValueOnce({ count: 0 });
+    storage.deleteImage.mockRejectedValueOnce(new Error('storage offline'));
+
+    await expect(
+      controller.uploadPackedPhoto(storeId, orderId, session, {
+        buffer: Buffer.from('photo'),
+        detectedMimeType: 'image/jpeg',
+      } as any),
+    ).rejects.toMatchObject({ message: 'Orden no encontrada' });
+
+    expect(storage.deleteImage).toHaveBeenCalledWith(
+      'private/packed/photo.jpg',
+    );
+    expect(events.record).not.toHaveBeenCalled();
+    expect(tx.auditLog.create).not.toHaveBeenCalled();
   });
 });
 

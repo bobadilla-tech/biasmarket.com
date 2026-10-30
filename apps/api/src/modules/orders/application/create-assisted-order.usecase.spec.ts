@@ -4,6 +4,7 @@ import { hashOrderAccessToken } from '@biasmarket/utils/assisted-order';
 import { CreateAssistedOrderUseCase } from './create-assisted-order.usecase.js';
 import type { CreateAssistedOrderDto } from '../dto/create-assisted-order.dto.js';
 import { DuplicateIdempotencyKeyException } from '../domain/duplicate-idempotency-key.exception.js';
+import { upsertAssistedCustomer } from './assisted-customer.js';
 
 vi.mock('./order-creation.core.js', () => ({
   validateDeliveryPreTx: vi.fn().mockResolvedValue({}),
@@ -30,7 +31,11 @@ function setup(finalAmount: { lte: (n: number) => boolean }) {
     finalAmount,
   } as never);
   const tx = {
-    order: { create: vi.fn().mockResolvedValue({ id: 'o1' }) },
+    order: {
+      create: vi.fn().mockResolvedValue({ id: 'o1' }),
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+    $executeRaw: vi.fn().mockResolvedValue(1),
     auditLog: { create: vi.fn() },
   };
   const prisma = {
@@ -115,6 +120,129 @@ describe('CreateAssistedOrderUseCase', () => {
     expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 
+  describe('distinct-recipient abuse limit', () => {
+    const fiveRecipients = [
+      '+51911111111',
+      '+51922222222',
+      '+51933333333',
+      '+51944444444',
+      '+51955555555',
+    ].map((customerPhoneNormalized) => ({ customerPhoneNormalized }));
+
+    it('rejects a sixth distinct recipient before any order side effects', async () => {
+      const { useCase, tx, events } = setup({ lte: () => false });
+      tx.order.findMany.mockResolvedValue(fiveRecipients);
+      vi.mocked(core.reserveItems).mockClear();
+      vi.mocked(upsertAssistedCustomer).mockClear();
+
+      await expect(
+        useCase.execute(store, 'seller1', dto),
+      ).rejects.toMatchObject({ status: 429 });
+
+      expect(tx.order.findMany).toHaveBeenCalledWith({
+        where: {
+          source: 'VENDOR_ASSISTED',
+          storeId: 'store1',
+          createdByUserId: 'seller1',
+          createdAt: { gte: expect.any(Date) },
+          customerPhoneNormalized: { not: null },
+        },
+        select: { customerPhoneNormalized: true },
+        distinct: ['customerPhoneNormalized'],
+      });
+      expect(tx.order.create).not.toHaveBeenCalled();
+      expect(tx.auditLog.create).not.toHaveBeenCalled();
+      expect(events.record).not.toHaveBeenCalled();
+      expect(core.reserveItems).not.toHaveBeenCalled();
+      expect(upsertAssistedCustomer).not.toHaveBeenCalled();
+    });
+
+    it('allows another order for a recipient already seen in the window', async () => {
+      const { useCase, tx } = setup({ lte: () => false });
+      tx.order.findMany.mockResolvedValue(fiveRecipients);
+
+      await expect(
+        useCase.execute(store, 'seller1', {
+          ...dto,
+          customerPhone: '911 111 111',
+        }),
+      ).resolves.toMatchObject({ order: { id: 'o1' } });
+      expect(tx.order.create).toHaveBeenCalledTimes(1);
+    });
+
+    it('uses a rolling ten-minute cutoff and scopes the count to the seller', async () => {
+      const now = new Date('2026-10-29T12:00:00.000Z');
+      vi.useFakeTimers();
+      vi.setSystemTime(now);
+      try {
+        const { useCase, tx } = setup({ lte: () => false });
+        await useCase.execute(store, 'seller2', dto);
+
+        expect(tx.order.findMany).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: expect.objectContaining({
+              createdByUserId: 'seller2',
+              storeId: 'store1',
+              createdAt: { gte: new Date(now.getTime() - 10 * 60_000) },
+            }),
+          }),
+        );
+        expect(tx.$executeRaw).toHaveBeenCalledTimes(1);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('admits a new recipient after the ten-minute window expires', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-10-29T12:00:00.000Z'));
+      try {
+        const { useCase, tx } = setup({ lte: () => false });
+        const createdAt = new Date(Date.now());
+        const rows = fiveRecipients.map((recipient) => ({
+          ...recipient,
+          createdAt,
+        }));
+        tx.order.findMany.mockImplementation(async (args) =>
+          rows
+            .filter((row) => row.createdAt >= args.where.createdAt.gte)
+            .map(({ customerPhoneNormalized }) => ({
+              customerPhoneNormalized,
+            })),
+        );
+
+        // Before the window expires the database returns five recent
+        // recipients. After expiry, none of those rows satisfy the cutoff.
+        tx.order.findMany.mockResolvedValueOnce(fiveRecipients);
+        await expect(
+          useCase.execute(store, 'seller1', dto),
+        ).rejects.toMatchObject({ status: 429 });
+
+        vi.advanceTimersByTime(10 * 60_000 + 1);
+        await expect(
+          useCase.execute(store, 'seller1', dto),
+        ).resolves.toMatchObject({ order: { id: 'o1' } });
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('does not apply one seller’s recipient count to another seller', async () => {
+      const { useCase, tx } = setup({ lte: () => false });
+      tx.order.findMany.mockImplementation(async (args) =>
+        args.where.createdByUserId === 'seller1' ? fiveRecipients : [],
+      );
+
+      await expect(
+        useCase.execute(store, 'seller1', dto),
+      ).rejects.toMatchObject({ status: 429 });
+      await expect(
+        useCase.execute(store, 'seller2', dto),
+      ).resolves.toMatchObject({ order: { id: 'o1' } });
+      expect(tx.order.create).toHaveBeenCalledTimes(1);
+    });
+  });
+
   // The `@biasmarket/db` alias is a fake in unit specs, so these cover the
   // branches only. The real unique index and the concurrent race are covered
   // by test/assisted-order-idempotency.e2e-spec.ts against a real database.
@@ -151,7 +279,7 @@ describe('CreateAssistedOrderUseCase', () => {
     });
 
     it('answers a replay before any stock, delivery or transaction work', async () => {
-      const { useCase, prisma } = setup({ lte: () => false });
+      const { useCase, prisma, tx } = setup({ lte: () => false });
       prisma.order.findFirst.mockResolvedValue({ id: 'order-first' });
       vi.mocked(core.reserveItems).mockClear();
       vi.mocked(core.validateDeliveryPreTx).mockClear();
@@ -165,6 +293,7 @@ describe('CreateAssistedOrderUseCase', () => {
         'order-first',
       );
       expect(prisma.$transaction).not.toHaveBeenCalled();
+      expect(tx.order.findMany).not.toHaveBeenCalled();
       expect(core.reserveItems).not.toHaveBeenCalled();
       expect(core.validateDeliveryPreTx).not.toHaveBeenCalled();
     });

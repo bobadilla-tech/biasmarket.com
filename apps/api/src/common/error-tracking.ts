@@ -4,10 +4,55 @@ import type { Event } from '@sentry/node';
 import { scrubRequestUrl } from './scrub-request-url.js';
 
 const PUBLIC_ORDER_PATH = /\/public\/orders\//i;
+const ASSISTED_ORDER_PATH = /\/pedido\//i;
+
+function scrubTrackedUrl(value: string): string {
+  let scrubbed = value;
+  if (PUBLIC_ORDER_PATH.test(scrubbed)) {
+    scrubbed = scrubRequestUrl(scrubbed);
+  }
+  if (ASSISTED_ORDER_PATH.test(scrubbed)) {
+    scrubbed = scrubbed
+      .split(/[?#]/)[0]!
+      .replace(/(\/pedido\/)[^/]+/gi, '$1:token');
+  }
+  return scrubbed;
+}
 
 function scrubTrackedText(value: string): string {
-  if (!PUBLIC_ORDER_PATH.test(value)) return value;
-  return scrubRequestUrl(value);
+  return value
+    .replace(/(\/public\/orders\/)[^/\s?#"'<>),;]+/gi, '$1:token')
+    .replace(/(\/pedido\/)[^/\s?#"'<>),;]+/gi, '$1:token');
+}
+
+function scrubDeep(
+  value: unknown,
+  depth = 0,
+  seen = new WeakSet<object>(),
+  key?: string,
+): unknown {
+  if (depth > 10) return '[Truncated]';
+  if (typeof value === 'string') {
+    return key && /(?:url|uri|target|path|referer)/i.test(key)
+      ? scrubTrackedUrl(value)
+      : scrubTrackedText(value);
+  }
+  if (value === null || typeof value !== 'object') return value;
+  if (seen.has(value)) return value;
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => {
+      value[index] = scrubDeep(item, depth + 1, seen);
+    });
+    return value;
+  }
+
+  const record = value as Record<string, unknown>;
+  for (const key of Object.keys(record)) {
+    record[key] = scrubDeep(record[key], depth + 1, seen, key);
+  }
+  return value;
 }
 
 // The exception filter scrubs stdout and the JSON `path`. Sentry/GlitchTip
@@ -17,18 +62,20 @@ function scrubTrackedText(value: string): string {
 export function scrubSentryEvent<T extends Event>(event: T): T {
   if (event.request?.url) {
     const rawUrl = event.request.url;
-    event.request.url = scrubTrackedText(rawUrl);
+    event.request.url = scrubTrackedUrl(rawUrl);
     if (PUBLIC_ORDER_PATH.test(rawUrl)) {
       delete event.request.query_string;
     }
   }
   if (typeof event.transaction === 'string') {
-    event.transaction = scrubTrackedText(event.transaction);
+    event.transaction = scrubTrackedUrl(event.transaction);
   }
   if (event.tags) {
     for (const [key, value] of Object.entries(event.tags)) {
       if (typeof value === 'string') {
-        event.tags[key] = scrubTrackedText(value);
+        event.tags[key] = /(?:url|uri|target|path)/i.test(key)
+          ? scrubTrackedUrl(value)
+          : scrubTrackedText(value);
       }
     }
   }
@@ -44,20 +91,25 @@ export function scrubSentryEvent<T extends Event>(event: T): T {
     }
     for (const [key, value] of Object.entries(traceData)) {
       if (typeof value === 'string') {
-        traceData[key] = scrubTrackedText(value);
+        traceData[key] = /(?:url|uri|target|path)/i.test(key)
+          ? scrubTrackedUrl(value)
+          : scrubTrackedText(value);
       }
     }
   }
   for (const span of event.spans ?? []) {
     if (typeof span.description === 'string') {
-      span.description = scrubTrackedText(span.description);
+      span.description = scrubTrackedUrl(span.description);
     }
     for (const [key, value] of Object.entries(span.data)) {
       if (typeof value === 'string') {
-        span.data[key] = scrubTrackedText(value);
+        span.data[key] = /(?:url|uri|target|path)/i.test(key)
+          ? scrubTrackedUrl(value)
+          : scrubTrackedText(value);
       }
     }
   }
+  scrubDeep(event);
   return event;
 }
 

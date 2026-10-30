@@ -490,6 +490,7 @@
     },
     "greeting": "Hola, {name}",
     "greetingGeneric": "Hola",
+    "phonePrivacyNotice": "La tienda usará tu número de teléfono para enviarte actualizaciones sobre este pedido.",
     "orderNumber": "Pedido #{number}",
     "banner": {
       "pendingPayment": "Tu pedido está esperando el pago. Abajo te mostramos cómo pagar.",

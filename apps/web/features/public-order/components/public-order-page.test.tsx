@@ -108,8 +108,11 @@ afterEach(() => {
   vi.resetAllMocks();
 });
 
-function renderPage(slug = "k-store") {
-  return renderWithProviders(<PublicOrderPage slug={slug} token={TOKEN} />);
+function renderPage(slug = "k-store", locale: "es" | "en" = "es") {
+  return renderWithProviders(
+    <PublicOrderPage slug={slug} token={TOKEN} />,
+    locale,
+  );
 }
 
 test("passes the token to the API and renders greeting, number and amounts", async () => {
@@ -122,6 +125,27 @@ test("passes the token to the API and renders greeting, number and amounts", asy
   expect(screen.getByText("PEN 100")).toBeTruthy(); // total
   expect(screen.getAllByText("PEN 30").length).toBeGreaterThan(0); // deposit / pending
 });
+
+test.each([
+  [
+    "es",
+    "La tienda usará tu número de teléfono para enviarte actualizaciones sobre este pedido.",
+  ],
+  [
+    "en",
+    "The store will use your phone number to send you updates about this order.",
+  ],
+])(
+  "shows the phone privacy notice in %s without revealing the stored number",
+  async (locale, notice) => {
+    getByToken.mockResolvedValue(makeOrder());
+    renderPage("k-store", locale as "es" | "en");
+
+    const privacyNotice = await screen.findByRole("note");
+    expect(privacyNotice.textContent).toBe(notice);
+    expect(privacyNotice.textContent).not.toContain("+51911111111");
+  },
+);
 
 test("greets generically without an alias and hides number/date the API omits", async () => {
   getByToken.mockResolvedValue(
