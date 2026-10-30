@@ -62,14 +62,14 @@ export class StorageService {
     buffer: Buffer,
     mimeType: string,
   ): Promise<string> {
-    return this.upload(this.bucket, 'store-categories', buffer, mimeType);
+    return this.upload(this.bucket, "store-categories", buffer, mimeType);
   }
 
   async uploadStoreReferenceImage(
     buffer: Buffer,
     mimeType: string,
   ): Promise<string> {
-    return this.upload(this.bucket, 'store-references', buffer, mimeType);
+    return this.upload(this.bucket, "store-references", buffer, mimeType);
   }
 
   async uploadPaymentImage(buffer: Buffer, mimeType: string): Promise<string> {

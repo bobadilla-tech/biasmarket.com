@@ -11,37 +11,37 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
-} from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+} from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
 import {
   ApiBody,
   ApiConsumes,
   ApiOkResponse,
   ApiQuery,
   ApiTags,
-} from '@nestjs/swagger';
+} from "@nestjs/swagger";
 import {
   AuthGuard,
   Public,
   Roles,
   Session,
-} from '@thallesp/nestjs-better-auth';
-import type { UserSession } from '@thallesp/nestjs-better-auth';
-import { StorageService } from '../../storage/storage.service.js';
+} from "@thallesp/nestjs-better-auth";
+import type { UserSession } from "@thallesp/nestjs-better-auth";
+import { StorageService } from "../../storage/storage.service.js";
 import {
   IMAGE_UPLOAD_MIME_TYPES,
   MAX_UPLOAD_SIZE_BYTES,
   UploadedFileValidationPipe,
   type ValidatedUploadedFile,
-} from '../../common/uploaded-file-validation.pipe.js';
-import { CreateStoreReferenceDto } from './dto/create-store-reference.dto.js';
-import { UpdateStoreReferenceDto } from './dto/update-store-reference.dto.js';
+} from "../../common/uploaded-file-validation.pipe.js";
+import { CreateStoreReferenceDto } from "./dto/create-store-reference.dto.js";
+import { UpdateStoreReferenceDto } from "./dto/update-store-reference.dto.js";
 import {
   PublicStoreReferencesResponseDto,
   StoreReferenceResponseDto,
-} from './dto/store-reference-response.dto.js';
-import { StoreReferencesService } from './store-references.service.js';
-import { readImageDimensions } from './image-dimensions.js';
+} from "./dto/store-reference-response.dto.js";
+import { StoreReferencesService } from "./store-references.service.js";
+import { readImageDimensions } from "./image-dimensions.js";
 
 const REFERENCE_IMAGE_PIPE = new UploadedFileValidationPipe({
   allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
@@ -56,7 +56,7 @@ function serializeReference(reference: any): StoreReferenceResponseDto {
 }
 
 @Controller()
-@ApiTags('StoreReferences')
+@ApiTags("StoreReferences")
 export class StoreReferencesController {
   constructor(
     private readonly references: StoreReferencesService,
@@ -64,10 +64,10 @@ export class StoreReferencesController {
   ) {}
 
   @UseGuards(AuthGuard)
-  @Get('stores/:storeId/references')
+  @Get("stores/:storeId/references")
   @ApiOkResponse({ type: [StoreReferenceResponseDto] })
   async findAll(
-    @Param('storeId') storeId: string,
+    @Param("storeId") storeId: string,
     @Session() session: UserSession,
   ): Promise<StoreReferenceResponseDto[]> {
     return (await this.references.findAll(storeId, session.user.id)).map(
@@ -76,28 +76,28 @@ export class StoreReferencesController {
   }
 
   @UseGuards(AuthGuard)
-  @Post('stores/:storeId/references')
-  @ApiConsumes('multipart/form-data')
+  @Post("stores/:storeId/references")
+  @ApiConsumes("multipart/form-data")
   @ApiBody({
     schema: {
-      type: 'object',
-      required: ['file', 'takenAt', 'width', 'height'],
+      type: "object",
+      required: ["file", "takenAt", "width", "height"],
       properties: {
-        file: { type: 'string', format: 'binary' },
-        takenAt: { type: 'string', format: 'date-time' },
-        caption: { type: 'string', maxLength: 240 },
-        width: { type: 'integer', minimum: 1, maximum: 12000 },
-        height: { type: 'integer', minimum: 1, maximum: 12000 },
+        file: { type: "string", format: "binary" },
+        takenAt: { type: "string", format: "date-time" },
+        caption: { type: "string", maxLength: 240 },
+        width: { type: "integer", minimum: 1, maximum: 12000 },
+        height: { type: "integer", minimum: 1, maximum: 12000 },
       },
     },
   })
   @UseInterceptors(
-    FileInterceptor('file', {
+    FileInterceptor("file", {
       limits: { fileSize: MAX_UPLOAD_SIZE_BYTES + 1 },
     }),
   )
   async create(
-    @Param('storeId') storeId: string,
+    @Param("storeId") storeId: string,
     @Session() session: UserSession,
     @UploadedFile(REFERENCE_IMAGE_PIPE) file: ValidatedUploadedFile,
     @Body() dto: CreateStoreReferenceDto,
@@ -106,7 +106,7 @@ export class StoreReferencesController {
     const dimensions = readImageDimensions(file.buffer, file.detectedMimeType);
     if (dimensions.width !== dto.width || dimensions.height !== dto.height) {
       throw new BadRequestException(
-        'Las dimensiones no coinciden con la imagen enviada',
+        "Las dimensiones no coinciden con la imagen enviada",
       );
     }
     const imageUrl = await this.storage.uploadStoreReferenceImage(
@@ -129,10 +129,10 @@ export class StoreReferencesController {
   }
 
   @UseGuards(AuthGuard)
-  @Patch('stores/:storeId/references/:referenceId')
+  @Patch("stores/:storeId/references/:referenceId")
   async update(
-    @Param('storeId') storeId: string,
-    @Param('referenceId') referenceId: string,
+    @Param("storeId") storeId: string,
+    @Param("referenceId") referenceId: string,
     @Session() session: UserSession,
     @Body() dto: UpdateStoreReferenceDto,
   ): Promise<StoreReferenceResponseDto> {
@@ -142,10 +142,10 @@ export class StoreReferencesController {
   }
 
   @UseGuards(AuthGuard)
-  @Delete('stores/:storeId/references/:referenceId')
+  @Delete("stores/:storeId/references/:referenceId")
   async delete(
-    @Param('storeId') storeId: string,
-    @Param('referenceId') referenceId: string,
+    @Param("storeId") storeId: string,
+    @Param("referenceId") referenceId: string,
     @Session() session: UserSession,
   ): Promise<StoreReferenceResponseDto> {
     const deleted = await this.references.delete(
@@ -158,10 +158,10 @@ export class StoreReferencesController {
   }
 
   @UseGuards(AuthGuard)
-  @Roles(['admin'])
-  @Patch('admin/store-references/:referenceId/hide')
+  @Roles(["admin"])
+  @Patch("admin/store-references/:referenceId/hide")
   async hide(
-    @Param('referenceId') referenceId: string,
+    @Param("referenceId") referenceId: string,
     @Session() session: UserSession,
   ): Promise<StoreReferenceResponseDto> {
     return serializeReference(
@@ -170,10 +170,10 @@ export class StoreReferencesController {
   }
 
   @UseGuards(AuthGuard)
-  @Roles(['admin'])
-  @Patch('admin/store-references/:referenceId/unhide')
+  @Roles(["admin"])
+  @Patch("admin/store-references/:referenceId/unhide")
   async unhide(
-    @Param('referenceId') referenceId: string,
+    @Param("referenceId") referenceId: string,
     @Session() session: UserSession,
   ): Promise<StoreReferenceResponseDto> {
     return serializeReference(
@@ -182,25 +182,25 @@ export class StoreReferencesController {
   }
 
   @Public()
-  @Get('stores/:slug/references/public')
-  @ApiQuery({ name: 'orden', required: false, enum: ['recientes', 'antiguas'] })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @Get("stores/:slug/references/public")
+  @ApiQuery({ name: "orden", required: false, enum: ["recientes", "antiguas"] })
+  @ApiQuery({ name: "page", required: false, type: Number })
+  @ApiQuery({ name: "limit", required: false, type: Number })
   @ApiOkResponse({ type: PublicStoreReferencesResponseDto })
   async findPublic(
-    @Param('slug') slug: string,
-    @Query('orden') rawOrder = 'recientes',
-    @Query('page') rawPage = '1',
-    @Query('limit') rawLimit = '24',
+    @Param("slug") slug: string,
+    @Query("orden") rawOrder = "recientes",
+    @Query("page") rawPage = "1",
+    @Query("limit") rawLimit = "24",
   ): Promise<PublicStoreReferencesResponseDto> {
-    if (rawOrder !== 'recientes' && rawOrder !== 'antiguas')
-      throw new BadRequestException('orden inválido');
+    if (rawOrder !== "recientes" && rawOrder !== "antiguas")
+      throw new BadRequestException("orden inválido");
     const page = Number(rawPage);
     const limit = Number(rawLimit);
     if (!Number.isInteger(page) || page < 1)
-      throw new BadRequestException('page inválido');
+      throw new BadRequestException("page inválido");
     if (!Number.isInteger(limit) || limit < 1 || limit > 50)
-      throw new BadRequestException('limit inválido');
+      throw new BadRequestException("limit inválido");
     const result = await this.references.findPublic(
       slug,
       rawOrder,

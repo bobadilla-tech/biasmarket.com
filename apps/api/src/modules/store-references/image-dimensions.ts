@@ -1,5 +1,5 @@
-import { BadRequestException } from '@nestjs/common';
-import type { SupportedUploadMimeType } from '../../common/uploaded-file-validation.pipe.js';
+import { BadRequestException } from "@nestjs/common";
+import type { SupportedUploadMimeType } from "../../common/uploaded-file-validation.pipe.js";
 
 export interface ImageDimensions {
   width: number;
@@ -14,7 +14,7 @@ export function readImageDimensions(
   buffer: Buffer,
   mimeType: SupportedUploadMimeType,
 ): ImageDimensions {
-  if (mimeType === 'image/png' && buffer.length >= 24) {
+  if (mimeType === "image/png" && buffer.length >= 24) {
     return {
       width: buffer.readUInt32BE(16),
       height: buffer.readUInt32BE(20),
@@ -22,7 +22,7 @@ export function readImageDimensions(
   }
 
   if (
-    mimeType === 'image/jpeg' &&
+    mimeType === "image/jpeg" &&
     buffer.length >= 4 &&
     buffer[0] === 0xff &&
     buffer[1] === 0xd8
@@ -49,6 +49,6 @@ export function readImageDimensions(
   }
 
   throw new BadRequestException(
-    'No se pudieron leer las dimensiones de la imagen',
+    "No se pudieron leer las dimensiones de la imagen",
   );
 }

@@ -78,7 +78,7 @@ export class CategoriesService {
     return this.prisma.category.findMany({
       where: { storeId },
       include: { _count: { select: { products: true } } },
-      orderBy: { name: 'asc' },
+      orderBy: { name: "asc" },
     });
   }
 
@@ -102,7 +102,7 @@ export class CategoriesService {
         where: { storeId, slug: dto.slug, NOT: { id: categoryId } },
         select: { id: true },
       });
-      if (existing) throw new ConflictException('El slug ya está en uso');
+      if (existing) throw new ConflictException("El slug ya está en uso");
     }
     try {
       return await this.prisma.category.update({
@@ -113,11 +113,11 @@ export class CategoriesService {
     } catch (error) {
       if (
         error !== null &&
-        typeof error === 'object' &&
-        'code' in error &&
-        error.code === 'P2002'
+        typeof error === "object" &&
+        "code" in error &&
+        error.code === "P2002"
       ) {
-        throw new ConflictException('El slug ya está en uso');
+        throw new ConflictException("El slug ya está en uso");
       }
       throw error;
     }

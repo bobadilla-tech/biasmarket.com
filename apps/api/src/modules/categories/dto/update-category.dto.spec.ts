@@ -1,8 +1,8 @@
-import { validate } from 'class-validator';
-import { afterEach, describe, expect, it } from 'vitest';
-import { UpdateCategoryDto } from './update-category.dto.js';
+import { validate } from "class-validator";
+import { afterEach, describe, expect, it } from "vitest";
+import { UpdateCategoryDto } from "./update-category.dto.js";
 
-describe('UpdateCategoryDto imageUrl', () => {
+describe("UpdateCategoryDto imageUrl", () => {
   const initialPublicUrl = process.env.S3_PUBLIC_URL;
   const initialBucket = process.env.S3_BUCKET;
 
@@ -13,12 +13,12 @@ describe('UpdateCategoryDto imageUrl', () => {
     else process.env.S3_BUCKET = initialBucket;
   });
 
-  it('accepts category images from the configured storage host and null', async () => {
-    process.env.S3_PUBLIC_URL = 'https://cdn.biasmarket.com';
-    process.env.S3_BUCKET = 'products';
+  it("accepts category images from the configured storage host and null", async () => {
+    process.env.S3_PUBLIC_URL = "https://cdn.biasmarket.com";
+    process.env.S3_BUCKET = "products";
 
     for (const imageUrl of [
-      'https://cdn.biasmarket.com/products/store-categories/category.png',
+      "https://cdn.biasmarket.com/products/store-categories/category.png",
       null,
     ]) {
       const dto = Object.assign(new UpdateCategoryDto(), { imageUrl });
@@ -26,11 +26,11 @@ describe('UpdateCategoryDto imageUrl', () => {
     }
   });
 
-  it('rejects URLs outside the configured category image storage path', async () => {
-    process.env.S3_PUBLIC_URL = 'https://cdn.biasmarket.com';
-    process.env.S3_BUCKET = 'products';
+  it("rejects URLs outside the configured category image storage path", async () => {
+    process.env.S3_PUBLIC_URL = "https://cdn.biasmarket.com";
+    process.env.S3_BUCKET = "products";
     const dto = Object.assign(new UpdateCategoryDto(), {
-      imageUrl: 'https://attacker.example/image.png',
+      imageUrl: "https://attacker.example/image.png",
     });
 
     expect(await validate(dto)).not.toEqual([]);

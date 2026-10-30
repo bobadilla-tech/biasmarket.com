@@ -171,25 +171,25 @@ describe("CategoriesService", () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('returns the product count and maps slug uniqueness races to conflict', async () => {
+    it("returns the product count and maps slug uniqueness races to conflict", async () => {
       prisma.category.update.mockResolvedValue({
         id: categoryId,
         _count: { products: 4 },
       });
-      await service.update(categoryId, storeId, ownerId, { name: 'Updated' });
+      await service.update(categoryId, storeId, ownerId, { name: "Updated" });
       expect(prisma.category.update).toHaveBeenCalledWith(
         expect.objectContaining({
           include: { _count: { select: { products: true } } },
         }),
       );
 
-      prisma.category.update.mockRejectedValue({ code: 'P2002' });
+      prisma.category.update.mockRejectedValue({ code: "P2002" });
       await expect(
-        service.update(categoryId, storeId, ownerId, { slug: 'taken' }),
+        service.update(categoryId, storeId, ownerId, { slug: "taken" }),
       ).rejects.toThrow(ConflictException);
     });
 
-    it('updates the image, product count, and sitemap freshness atomically', async () => {
+    it("updates the image, product count, and sitemap freshness atomically", async () => {
       prisma.category.update.mockResolvedValue({
         id: categoryId,
         _count: { products: 2 },

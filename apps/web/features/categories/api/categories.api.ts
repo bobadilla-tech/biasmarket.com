@@ -11,15 +11,11 @@ export const categoriesApi = {
   ) {
     const formData = new FormData();
     formData.append("file", file);
-    const data = await apiClient.categories.uploadImage(
-      storeId,
-      categoryId,
-      {
-        credentials: "include",
-        body: formData,
-        fallbackErrorMessage,
-      },
-    );
+    const data = await apiClient.categories.uploadImage(storeId, categoryId, {
+      credentials: "include",
+      body: formData,
+      fallbackErrorMessage,
+    });
     return data;
   },
 };

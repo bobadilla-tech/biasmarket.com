@@ -3,9 +3,9 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service.js';
-import type { UpdateStoreReferenceDto } from './dto/update-store-reference.dto.js';
+} from "@nestjs/common";
+import { PrismaService } from "../../prisma/prisma.service.js";
+import type { UpdateStoreReferenceDto } from "./dto/update-store-reference.dto.js";
 
 const MAX_REFERENCES_PER_STORE = 200;
 
@@ -17,16 +17,16 @@ export class StoreReferencesService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException('Tienda no encontrada');
+    if (!store) throw new NotFoundException("Tienda no encontrada");
     if (store.ownerId !== userId)
-      throw new ForbiddenException('No sos dueño de esta tienda');
+      throw new ForbiddenException("No sos dueño de esta tienda");
   }
 
   async findAll(storeId: string, userId: string) {
     await this.assertOwnership(storeId, userId);
     return this.prisma.storeReference.findMany({
       where: { storeId },
-      orderBy: [{ takenAt: 'desc' }, { createdAt: 'desc' }],
+      orderBy: [{ takenAt: "desc" }, { createdAt: "desc" }],
     });
   }
 
@@ -57,8 +57,8 @@ export class StoreReferencesService {
         data: {
           actorId: userId,
           storeId,
-          action: 'store_reference.created',
-          entityType: 'StoreReference',
+          action: "store_reference.created",
+          entityType: "StoreReference",
           entityId: reference.id,
           metadata: {},
         },
@@ -77,7 +77,7 @@ export class StoreReferencesService {
     const existing = await this.prisma.storeReference.findFirst({
       where: { id: referenceId, storeId },
     });
-    if (!existing) throw new NotFoundException('Referencia no encontrada');
+    if (!existing) throw new NotFoundException("Referencia no encontrada");
     return this.prisma.storeReference.update({
       where: { id: referenceId },
       data: {
@@ -92,7 +92,7 @@ export class StoreReferencesService {
     const existing = await this.prisma.storeReference.findFirst({
       where: { id: referenceId, storeId },
     });
-    if (!existing) throw new NotFoundException('Referencia no encontrada');
+    if (!existing) throw new NotFoundException("Referencia no encontrada");
     return this.prisma.$transaction(async (tx) => {
       const deleted = await tx.storeReference.delete({
         where: { id: referenceId },
@@ -101,8 +101,8 @@ export class StoreReferencesService {
         data: {
           actorId: userId,
           storeId,
-          action: 'store_reference.deleted',
-          entityType: 'StoreReference',
+          action: "store_reference.deleted",
+          entityType: "StoreReference",
           entityId: referenceId,
           metadata: {},
         },
@@ -115,7 +115,7 @@ export class StoreReferencesService {
     const existing = await this.prisma.storeReference.findUnique({
       where: { id: referenceId },
     });
-    if (!existing) throw new NotFoundException('Referencia no encontrada');
+    if (!existing) throw new NotFoundException("Referencia no encontrada");
     return this.prisma.$transaction(async (tx) => {
       const updated = await tx.storeReference.update({
         where: { id: referenceId },
@@ -125,8 +125,8 @@ export class StoreReferencesService {
         data: {
           actorId: userId,
           storeId: existing.storeId,
-          action: 'store_reference.hidden',
-          entityType: 'StoreReference',
+          action: "store_reference.hidden",
+          entityType: "StoreReference",
           entityId: referenceId,
           metadata: { hidden },
         },
@@ -137,7 +137,7 @@ export class StoreReferencesService {
 
   async findPublic(
     slug: string,
-    order: 'recientes' | 'antiguas',
+    order: "recientes" | "antiguas",
     page: number,
     limit: number,
   ) {
@@ -145,14 +145,14 @@ export class StoreReferencesService {
       where: { slug },
       select: { id: true },
     });
-    if (!store) throw new NotFoundException('Tienda no encontrada');
+    if (!store) throw new NotFoundException("Tienda no encontrada");
     const where = { storeId: store.id, hidden: false };
     const [items, total] = await Promise.all([
       this.prisma.storeReference.findMany({
         where,
         orderBy: [
-          { takenAt: order === 'antiguas' ? 'asc' : 'desc' },
-          { createdAt: 'desc' },
+          { takenAt: order === "antiguas" ? "asc" : "desc" },
+          { createdAt: "desc" },
         ],
         skip: (page - 1) * limit,
         take: limit,
