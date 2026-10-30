@@ -11,17 +11,6 @@ import { scrubRequestUrl } from "../scrub-request-url.js";
 // it touched. Nest's own `Logger` calls (about a third of the API's modules)
 // go through the same pipeline, see `app.useLogger` in main.ts.
 
-// Nest's own boot chatter (one line per module, route and mapping, 100+ per
-// container start). Useful on a local console, noise in the searchable store,
-// so it is not forwarded to GlitchTip (see error-tracking.ts).
-export const FRAMEWORK_LOG_CONTEXTS = new Set([
-  "InstanceLoader",
-  "RoutesResolver",
-  "RouterExplorer",
-  "NestFactory",
-  "NestApplication",
-]);
-
 const REQUEST_ID = /^[\w.-]{8,64}$/;
 const HEALTH_PATH = /\/health\/?$/i;
 

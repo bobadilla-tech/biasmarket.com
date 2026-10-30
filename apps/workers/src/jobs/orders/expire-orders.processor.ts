@@ -1,4 +1,4 @@
-import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { Processor } from "@nestjs/bullmq";
 import { Logger } from "@nestjs/common";
 import type { Job } from "bullmq";
 import {
@@ -8,6 +8,7 @@ import {
   QUEUE_NAMES,
 } from "@biasmarket/queue";
 import { requiredEnv } from "../../config/env.validation.js";
+import { ObservedProcessor } from "../../common/observed-processor.js";
 
 // apps/workers owns *scheduling* only — this processor does nothing more
 // than call apps/api's internal endpoint, which still runs
@@ -16,7 +17,7 @@ import { requiredEnv } from "../../config/env.validation.js";
 // is the internal Docker network hostname (same convention apps/web already
 // uses for its own SSR fetches).
 @Processor(QUEUE_NAMES.ORDERS)
-export class ExpireOrdersProcessor extends WorkerHost {
+export class ExpireOrdersProcessor extends ObservedProcessor {
   private readonly logger = new Logger(ExpireOrdersProcessor.name);
 
   async process(

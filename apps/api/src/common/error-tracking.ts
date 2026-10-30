@@ -2,8 +2,8 @@ import { Logger } from "@nestjs/common";
 import * as Sentry from "@sentry/node";
 import type { Event } from "@sentry/node";
 import { scrubOrDrop } from "@biasmarket/utils/sentry-scrub";
+import { isFrameworkLog } from "@biasmarket/utils/log-forwarding";
 import { tracesSampler } from "@biasmarket/utils/traces-sampler";
-import { FRAMEWORK_LOG_CONTEXTS } from "./logging/logger.config.js";
 
 // The exception filter scrubs stdout and the JSON `path`. Sentry/GlitchTip
 // still copy the raw URL into request.url, the transaction name, url tags,
@@ -17,15 +17,7 @@ function scrubEvent<T extends Event>(event: T): T | null {
 // must not warn through the logger: that warning would itself be forwarded and
 // fail again, in a loop. Dropping the line silently is the safe default.
 function scrubLog<T extends object>(log: T): T | null {
-  // `attributes.context` is a plain value or a `{ value, type }` wrapper
-  // depending on where in the SDK the log is seen.
-  const context = (log as { attributes?: Record<string, unknown> }).attributes
-    ?.context;
-  const name =
-    typeof context === "object" && context !== null
-      ? (context as { value?: unknown }).value
-      : context;
-  if (typeof name === "string" && FRAMEWORK_LOG_CONTEXTS.has(name)) return null;
+  if (isFrameworkLog(log)) return null;
   return scrubOrDrop(log, () => undefined);
 }
 

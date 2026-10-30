@@ -157,7 +157,10 @@ to be recreated in the UI. What fires when a monitor misses is in
 
 The `api` writes one structured JSON line per request (pino, via `nestjs-pino`),
 and Nest's own `Logger` calls come out in the same format. Config:
-`apps/api/src/common/logging/logger.config.ts`.
+`apps/api/src/common/logging/logger.config.ts`. The `workers` process uses the
+same pipeline without request logging (`apps/workers/src/common/logging`): its
+lines carry `service: "workers"`, and it reports to the same GlitchTip project
+as the api (it reads the same `SENTRY_DSN`).
 
 ```json
 {
@@ -188,6 +191,13 @@ and Nest's own `Logger` calls come out in the same format. Config:
 - **Level:** `LOG_LEVEL` (default `info`) sets what the process emits to
   stdout. Only `info` and above are forwarded to GlitchTip, and Nest's boot
   chatter (`InstanceLoader`, `RoutesResolver`, ...) stays local.
+- **Failed jobs (workers):** every processor extends `ObservedProcessor`
+  (`apps/workers/src/common/observed-processor.ts`). A failed attempt that will
+  be retried is logged at `warn`; the final failure is logged at `error` (with
+  `queue`, `job`, `jobId`, `attemptsMade`) and reported to GlitchTip as one
+  issue tagged with the queue and job. Before this, a job that threw was only
+  recorded in Redis. A new processor must extend `ObservedProcessor` instead of
+  `WorkerHost`.
 - **Adding a log line:** use Nest's `Logger` as usual. Never put a token, a
   password or a query string in the message; the scrubbers only know the paths
   listed in [incident-response.md](incident-response.md#error-tracking-and-redaction).

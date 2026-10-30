@@ -56,7 +56,8 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm-store \
     pnpm install --frozen-lockfile --store-dir=/pnpm-store
 
 # ---------------------------------------------------------------------------
-# build: compile workers (and its one workspace dependency, packages/queue),
+# build: compile workers (and its workspace dependencies, packages/queue and
+# packages/utils),
 # then prune node_modules down to workers' prod deps only. No Postgres/Prisma
 # step here — apps/workers never depends on @biasmarket/db, see the plan.
 # ---------------------------------------------------------------------------
