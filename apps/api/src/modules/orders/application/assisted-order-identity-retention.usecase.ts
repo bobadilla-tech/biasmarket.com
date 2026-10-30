@@ -291,10 +291,7 @@ export class AssistedOrderIdentityRetentionUseCase {
           claimedAt: order.claimedAt,
           status: order.status as 'ACTIVE' | 'CANCELLED',
           fulfillmentStatus: order.fulfillmentStatus as
-            | 'ORDERING'
-            | 'IN_TRANSIT'
-            | 'READY'
-            | 'COMPLETED',
+            'ORDERING' | 'IN_TRANSIT' | 'READY' | 'COMPLETED',
           ...(cause === 'RETENTION'
             ? {
                 claimedAt: null,
