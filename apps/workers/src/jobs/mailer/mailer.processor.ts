@@ -1,4 +1,4 @@
-import { OnWorkerEvent, Processor, WorkerHost } from "@nestjs/bullmq";
+import { OnWorkerEvent, Processor } from "@nestjs/bullmq";
 import { Logger } from "@nestjs/common";
 import type { Job } from "bullmq";
 import {
@@ -7,13 +7,14 @@ import {
   sendEmailParamsSchema,
 } from "@biasmarket/queue";
 import { MailerCore } from "./mailer.core.js";
+import { ObservedProcessor } from "../../common/observed-processor.js";
 
 // Concurrency start conservative — Resend has its own rate limits, and
 // unlike the old inline sends there's now real backpressure (BullMQ)
 // instead of an unbounded flood if a bulk operation ever enqueues many
 // emails at once.
 @Processor(QUEUE_NAMES.MAILER, { concurrency: 5 })
-export class MailerProcessor extends WorkerHost {
+export class MailerProcessor extends ObservedProcessor {
   private readonly logger = new Logger(MailerProcessor.name);
   private readonly core = new MailerCore();
 
