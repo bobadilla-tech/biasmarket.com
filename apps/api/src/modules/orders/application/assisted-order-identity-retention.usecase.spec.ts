@@ -11,6 +11,7 @@ describe('AssistedOrderIdentityRetentionUseCase', () => {
     customer: { findUnique: Mock; updateMany: Mock };
     auditLog: { create: Mock };
     $transaction: Mock;
+    $executeRaw: Mock;
   };
 
   beforeEach(() => {
@@ -25,6 +26,7 @@ describe('AssistedOrderIdentityRetentionUseCase', () => {
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       auditLog: { create: vi.fn() },
+      $executeRaw: vi.fn().mockResolvedValue(1),
       $transaction: vi.fn((callback: (tx: unknown) => unknown) =>
         callback(prisma),
       ),
@@ -37,7 +39,20 @@ describe('AssistedOrderIdentityRetentionUseCase', () => {
   it(
     'erases closed claimed assisted orders on request and defers active orders',
     async () => {
-      prisma.order.findMany.mockResolvedValue([
+      prisma.customer.findUnique
+        .mockResolvedValueOnce({
+          id: 'customer-1',
+          storeId: 'store-1',
+          phone: '+51987654321',
+          identityErasedAt: null,
+        })
+        .mockResolvedValueOnce({
+          id: 'customer-1',
+          storeId: 'store-1',
+          phone: '+51987654321',
+          identityErasedAt: null,
+        });
+      prisma.order.findMany.mockResolvedValueOnce([
         {
           id: 'claimed-order',
           storeId: 'store-1',
@@ -176,6 +191,45 @@ describe('AssistedOrderIdentityRetentionUseCase', () => {
     },
   );
 
+
+  it('continues the retention sweep after an order transaction fails', async () => {
+    prisma.order.findMany.mockResolvedValue([
+      {
+        id: 'failed-order',
+        storeId: 'store-1',
+        customerId: null,
+        customerPhone: '+51987654321',
+        customerPhoneNormalized: '+51987654321',
+        buyerAccountId: null,
+        claimedAt: null,
+        status: 'CANCELLED',
+        fulfillmentStatus: 'ORDERING',
+        accessTokenRevokedAt: null,
+      },
+      {
+        id: 'next-order',
+        storeId: 'store-1',
+        customerId: null,
+        customerPhone: '+51987654322',
+        customerPhoneNormalized: '+51987654322',
+        buyerAccountId: null,
+        claimedAt: null,
+        status: 'CANCELLED',
+        fulfillmentStatus: 'ORDERING',
+        accessTokenRevokedAt: null,
+      },
+    ]);
+    prisma.order.updateMany
+      .mockRejectedValueOnce(new Error('temporary database failure'))
+      .mockResolvedValueOnce({ count: 1 });
+
+    const result = await useCase.eraseExpiredUnclaimedIdentities(
+      new Date('2026-10-29T12:00:00.000Z'),
+    );
+
+    expect(result).toEqual({ anonymized: 1 });
+    expect(prisma.order.updateMany).toHaveBeenCalledTimes(2);
+  });
   it(
     'does not count an order twice when a concurrent erasure already won',
     async () => {
@@ -243,6 +297,14 @@ describe('AssistedOrderIdentityRetentionUseCase', () => {
       expect(first).toEqual({ anonymized: 1, deferred: 0 });
       expect(repeated).toEqual({ anonymized: 0, deferred: 0 });
       expect(prisma.auditLog.create).toHaveBeenCalledTimes(1);
+      expect(prisma.auditLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            actorId: 'operator-1',
+            metadata: expect.objectContaining({ requestReference: 'PRIV-460' }),
+          }),
+        }),
+      );
     },
   );
 
@@ -276,4 +338,44 @@ describe('AssistedOrderIdentityRetentionUseCase', () => {
       expect(prisma.customer.updateMany).not.toHaveBeenCalled();
     },
   );
+  it('keeps the Customer when an unlinked normalized order still uses the phone', async () => {
+    prisma.order.findMany.mockResolvedValueOnce([
+      {
+        id: 'closed-assisted-order',
+        storeId: 'store-1',
+        customerId: 'customer-1',
+        customerPhone: '+51987654321',
+        customerPhoneNormalized: '+51987654321',
+        buyerAccountId: null,
+        claimedAt: null,
+        status: 'CANCELLED',
+        fulfillmentStatus: 'ORDERING',
+        accessTokenRevokedAt: null,
+      },
+    ]);
+    prisma.customer.findUnique
+      .mockResolvedValueOnce({
+        id: 'customer-1',
+        storeId: 'store-1',
+        phone: '+51987654321',
+        identityErasedAt: null,
+      })
+      .mockResolvedValueOnce({
+        id: 'customer-1',
+        storeId: 'store-1',
+        phone: '+51987654321',
+        identityErasedAt: null,
+      });
+    prisma.order.count.mockResolvedValueOnce(0).mockResolvedValueOnce(1);
+
+    await useCase.eraseOnBuyerRequest(
+      'store-1',
+      '+51987654321',
+      'operator-1',
+      'PRIV-460',
+    );
+
+    expect(prisma.customer.updateMany).not.toHaveBeenCalled();
+  });
+
 });
