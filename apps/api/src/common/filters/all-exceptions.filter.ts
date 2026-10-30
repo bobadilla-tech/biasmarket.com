@@ -13,6 +13,14 @@ import { extractMessage, stringifyError } from '@biasmarket/utils/errors';
 import { captureException } from '../error-tracking.js';
 import { scrubRequestUrl } from '../scrub-request-url.js';
 import { InvalidOrderTransitionError } from '../../modules/orders/domain/order-status.vo.js';
+import {
+  DUPLICATE_OPERATION_CODE,
+  DuplicateOperationCodeException,
+} from '../../modules/orders/domain/duplicate-operation-code.exception.js';
+import {
+  DuplicateIdempotencyKeyException,
+  IDEMPOTENT_REPLAY,
+} from '../../modules/orders/domain/duplicate-idempotency-key.exception.js';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -36,6 +44,27 @@ export class AllExceptionsFilter implements ExceptionFilter {
       const httpException = new BadRequestException(exception.message);
 
       return this.handleHttpExpression(httpException, response, request);
+    }
+
+    // The web client reads this body to open its duplicate dialog, so it must
+    // stay exactly `{ code, orderId }`.
+    if (exception instanceof DuplicateOperationCodeException) {
+      return response.status(409).json({
+        code: DUPLICATE_OPERATION_CODE,
+        orderId: exception.orderId,
+      });
+    }
+
+    // The web reads `code` and `orderId` to offer a link to the order the
+    // retried request had already created. The plain HttpException branch
+    // would drop `orderId`.
+    if (exception instanceof DuplicateIdempotencyKeyException) {
+      return response.status(409).json({
+        statusCode: 409,
+        code: IDEMPOTENT_REPLAY,
+        orderId: exception.orderId,
+        message: extractMessage(exception.getResponse()),
+      });
     }
 
     if (exception instanceof HttpException) {

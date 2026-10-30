@@ -125,6 +125,13 @@ services:
     # No depends_on: ACME/TLS issuance is independent of backend
     # reachability, a 502 while a backend is unready is correct behavior,
     # not a startup-ordering bug (confirmed against Caddy 2 semantics).
+    # The Caddyfile now writes an access log (tokens redacted, see docs/core/caddy.md),
+    # so cap what Docker keeps on disk: 5 files of 10 MB.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     ports:
       - "80:80"
       - "443:443"

@@ -66,7 +66,7 @@ describe('OrderRepository.findRelatedForStore', () => {
 
   it('returns only allow-listed fields', async () => {
     prisma.order.findMany.mockResolvedValueOnce([
-      row('other-order-AB12', '2026-09-01T00:00:00.000Z', {
+      row('other-order-AB1234', '2026-09-01T00:00:00.000Z', {
         customerPhone: '+51987654321',
         customerName: 'Secret',
         accessTokenHash: 'hash',
@@ -79,8 +79,8 @@ describe('OrderRepository.findRelatedForStore', () => {
     expect(result).toEqual({
       items: [
         {
-          id: 'other-order-AB12',
-          orderNumber: 'AB12',
+          id: 'other-order-AB1234',
+          orderNumber: 'AB1234',
           createdAt: '2026-09-01T00:00:00.000Z',
           status: 'ACTIVE',
           paymentStatus: 'PENDING_PAYMENT',
@@ -142,5 +142,21 @@ describe('OrderRepository.findRelatedForStore', () => {
     expect(result.items).toHaveLength(10);
     expect(result.items[0]!.id).toBe('legacy-new');
     expect(result.total).toBe(11);
+  });
+  it('does not match blank erased phone values to a legacy current order', async () => {
+    prisma.order.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        row('erased-order', '2026-09-02T00:00:00.000Z', { customerPhone: '' }),
+      ]);
+    prisma.order.count.mockResolvedValue(0);
+
+    const result = await repo.findRelatedForStore('store-1', {
+      id: 'current-erased-order',
+      customerPhone: '',
+      customerPhoneNormalized: null,
+    });
+
+    expect(result).toEqual({ items: [], total: 0 });
   });
 });

@@ -6,7 +6,7 @@ import {
 // The default (or the seller's saved ASSISTED_ORDER_LINK template) rendered
 // with the order that was just created. `customerName` is "" when the seller
 // gave no alias, so the greeting stays clean. The order ref in the message is
-// the utils `shortOrderRef`, built inside the message builder.
+// the shared `orderRef`, built inside the message builder.
 export function buildAssistedLinkMessage(input: {
   order: {
     id: string;

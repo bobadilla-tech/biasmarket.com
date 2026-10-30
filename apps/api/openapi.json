@@ -2028,52 +2028,6 @@
         "tags": ["Order"]
       }
     },
-    "/stores/{storeId}/orders/{orderId}/payments/{paymentId}/void": {
-      "patch": {
-        "operationId": "OrderController_voidPayment",
-        "parameters": [
-          {
-            "name": "storeId",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "orderId",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "paymentId",
-            "required": true,
-            "in": "path",
-            "schema": { "type": "string" }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/VoidOrderPaymentDto" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrderDetailResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": ["Order"]
-      }
-    },
     "/stores/{storeId}/orders/{orderId}/payments/{paymentId}/review": {
       "patch": {
         "operationId": "OrderController_reviewPaymentProof",
@@ -2109,6 +2063,60 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ReviewPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDetailResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Order"]
+      }
+    },
+    "/stores/{storeId}/orders/{orderId}/payments/{paymentId}/void": {
+      "patch": {
+        "operationId": "OrderController_voidPayment",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "paymentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoidOrderPaymentDto"
               }
             }
           }
@@ -2381,6 +2389,45 @@
                 }
               }
             }
+          }
+        },
+        "tags": ["Order"]
+      }
+    },
+    "/stores/{storeId}/orders/{orderId}/buyer-notices": {
+      "post": {
+        "operationId": "AssistedOrdersController_recordBuyerNotice",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BuyerNoticeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
           }
         },
         "tags": ["Order"]
@@ -2723,6 +2770,87 @@
         "tags": ["PublicOrderEvents"]
       }
     },
+    "/public/orders/{token}/payments": {
+      "post": {
+        "operationId": "PublicOrderEventsController_submitPayment",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitPublicPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitPublicPaymentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["PublicOrderEvents"]
+      }
+    },
+    "/public/orders/{token}/payments/{paymentId}/image": {
+      "get": {
+        "operationId": "PublicOrderEventsController_getPaymentProofImage",
+        "parameters": [
+          {
+            "name": "paymentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["PublicOrderEvents"]
+      }
+    },
     "/public/orders/{token}/events": {
       "post": {
         "operationId": "PublicOrderEventsController_recordInvite",
@@ -2742,6 +2870,65 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/RecordInviteEventDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": ["PublicOrderEvents"]
+      }
+    },
+    "/public/orders/{token}/receipt": {
+      "post": {
+        "operationId": "PublicOrderEventsController_confirmReceipt",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptConfirmedResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["PublicOrderEvents"]
+      }
+    },
+    "/public/orders/{token}/claim-ticket": {
+      "post": {
+        "operationId": "PublicOrderEventsController_claimTicket",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimTicketDto"
               }
             }
           }
@@ -4410,6 +4597,39 @@
         "tags": ["GlobalAccount"]
       }
     },
+    "/account/orders/{orderId}": {
+      "get": {
+        "operationId": "GlobalAccountController_orderDetail",
+        "parameters": [
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GlobalAccountOrderDetailResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["GlobalAccount"]
+      }
+    },
     "/account/login": {
       "post": {
         "operationId": "GlobalAccountController_login",
@@ -4630,7 +4850,15 @@
             "required": true,
             "in": "path",
             "schema": {
-              "enum": ["NEW_ORDER", "PAYMENT_REMINDER", "ASSISTED_ORDER_LINK"],
+              "enum": [
+                "NEW_ORDER",
+                "PAYMENT_REMINDER",
+                "ASSISTED_ORDER_LINK",
+                "ASSISTED_PAYMENT_VALIDATED",
+                "ASSISTED_IN_TRANSIT",
+                "ASSISTED_READY",
+                "ASSISTED_DELIVERED"
+              ],
               "type": "string"
             }
           }
@@ -4670,7 +4898,15 @@
             "required": true,
             "in": "path",
             "schema": {
-              "enum": ["NEW_ORDER", "PAYMENT_REMINDER", "ASSISTED_ORDER_LINK"],
+              "enum": [
+                "NEW_ORDER",
+                "PAYMENT_REMINDER",
+                "ASSISTED_ORDER_LINK",
+                "ASSISTED_PAYMENT_VALIDATED",
+                "ASSISTED_IN_TRANSIT",
+                "ASSISTED_READY",
+                "ASSISTED_DELIVERED"
+              ],
               "type": "string"
             }
           }
@@ -6404,6 +6640,13 @@
       "CreateProductDto": {
         "type": "object",
         "properties": {
+          "images": {
+            "maxItems": 6,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "name": {
             "type": "string",
             "minLength": 2
@@ -6425,12 +6668,6 @@
           },
           "discontinued": {
             "type": "boolean"
-          },
-          "images": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
           },
           "availableUntil": {
             "type": "string"
@@ -6696,6 +6933,13 @@
       "UpdateProductDto": {
         "type": "object",
         "properties": {
+          "images": {
+            "maxItems": 6,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "name": {
             "type": "string",
             "minLength": 2
@@ -6717,12 +6961,6 @@
           },
           "discontinued": {
             "type": "boolean"
-          },
-          "images": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
           },
           "availableUntil": {
             "type": "string"
@@ -6832,8 +7070,8 @@
         "properties": {
           "images": {
             "minItems": 1,
-            "maxItems": 6,
             "description": "Exact image URLs in the desired order",
+            "maxItems": 6,
             "type": "array",
             "items": {
               "type": "string"
@@ -6912,7 +7150,12 @@
             "type": "string"
           },
           "type": {
-            "enum": ["LOW_STOCK", "OUT_OF_STOCK", "PAYMENT_PROOF_SUBMITTED"],
+            "enum": [
+              "LOW_STOCK",
+              "OUT_OF_STOCK",
+              "PAYMENT_PROOF_SUBMITTED",
+              "RECEIPT_CONFIRMED"
+            ],
             "type": "string"
           },
           "entityType": {
@@ -7267,10 +7510,6 @@
             "type": "string",
             "nullable": true
           },
-          "buyerAccountId": {
-            "type": "string",
-            "nullable": true
-          },
           "customerEmail": {
             "type": "string",
             "nullable": true
@@ -7412,6 +7651,11 @@
             "format": "date-time",
             "description": "When the buyer claimed the order into an account."
           },
+          "buyerConfirmedReceivedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "When the buyer confirmed receiving the order."
+          },
           "createdByName": {
             "type": "string",
             "nullable": true,
@@ -7434,7 +7678,6 @@
           "id",
           "storeId",
           "customerId",
-          "buyerAccountId",
           "customerEmail",
           "customerPhone",
           "customerName",
@@ -7468,6 +7711,7 @@
           "paidPercentage",
           "linkFirstOpenedAt",
           "claimedAt",
+          "buyerConfirmedReceivedAt",
           "createdByName",
           "items",
           "payments"
@@ -7486,10 +7730,6 @@
             "type": "string",
             "nullable": true
           },
-          "buyerAccountId": {
-            "type": "string",
-            "nullable": true
-          },
           "customerEmail": {
             "type": "string",
             "nullable": true
@@ -7631,6 +7871,11 @@
             "format": "date-time",
             "description": "When the buyer claimed the order into an account."
           },
+          "buyerConfirmedReceivedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "When the buyer confirmed receiving the order."
+          },
           "createdByName": {
             "type": "string",
             "nullable": true,
@@ -7653,7 +7898,6 @@
           "id",
           "storeId",
           "customerId",
-          "buyerAccountId",
           "customerEmail",
           "customerPhone",
           "customerName",
@@ -7687,6 +7931,7 @@
           "paidPercentage",
           "linkFirstOpenedAt",
           "claimedAt",
+          "buyerConfirmedReceivedAt",
           "createdByName",
           "items",
           "payments"
@@ -7792,6 +8037,17 @@
         },
         "required": ["decision"]
       },
+      "VoidOrderPaymentDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": ["reason"]
+      },
       "OrderStatusResponseDto": {
         "type": "object",
         "properties": {
@@ -7802,10 +8058,6 @@
             "type": "string"
           },
           "customerId": {
-            "type": "string",
-            "nullable": true
-          },
-          "buyerAccountId": {
             "type": "string",
             "nullable": true
           },
@@ -7934,7 +8186,6 @@
           "id",
           "storeId",
           "customerId",
-          "buyerAccountId",
           "customerEmail",
           "customerPhone",
           "customerName",
@@ -8000,13 +8251,6 @@
           }
         },
         "required": ["resolution"]
-      },
-      "VoidOrderPaymentDto": {
-        "type": "object",
-        "properties": {
-          "reason": { "type": "string", "minLength": 1, "maxLength": 500 }
-        },
-        "required": ["reason"]
       },
       "ShippingAddressDto": {
         "type": "object",
@@ -8183,10 +8427,6 @@
             "type": "string",
             "nullable": true
           },
-          "buyerAccountId": {
-            "type": "string",
-            "nullable": true
-          },
           "customerEmail": {
             "type": "string",
             "nullable": true
@@ -8307,7 +8547,6 @@
           "id",
           "storeId",
           "customerId",
-          "buyerAccountId",
           "customerEmail",
           "customerPhone",
           "customerName",
@@ -8374,6 +8613,21 @@
           }
         },
         "required": ["customerPhone"]
+      },
+      "BuyerNoticeDto": {
+        "type": "object",
+        "properties": {
+          "notice": {
+            "enum": [
+              "ASSISTED_PAYMENT_VALIDATED",
+              "ASSISTED_IN_TRANSIT",
+              "ASSISTED_READY",
+              "ASSISTED_DELIVERED"
+            ],
+            "type": "string"
+          }
+        },
+        "required": ["notice"]
       },
       "CreateOrderDto": {
         "type": "object",
@@ -8501,6 +8755,16 @@
           },
           "paidPercentage": {
             "type": "number"
+          },
+          "source": {
+            "enum": ["MARKETPLACE", "VENDOR_ASSISTED"],
+            "type": "string",
+            "description": "VENDOR_ASSISTED = created by the store for the buyer."
+          },
+          "claimedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
           }
         },
         "required": [
@@ -8512,7 +8776,9 @@
           "createdAt",
           "paidAmount",
           "pendingAmount",
-          "paidPercentage"
+          "paidPercentage",
+          "source",
+          "claimedAt"
         ]
       },
       "ConfirmAccountResponseDto": {
@@ -8734,9 +9000,70 @@
           "pickupPointLabel"
         ]
       },
+      "PublicOrderTimelineItemDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "CREATED",
+              "PAYMENT_SUBMITTED",
+              "PAYMENT_VALIDATED",
+              "PAYMENT_REJECTED",
+              "PAYMENT_VOIDED",
+              "FULFILLMENT_ADVANCED",
+              "PACKED_PHOTO_ADDED",
+              "TRACKING_ADDED",
+              "RECEIPT_CONFIRMED",
+              "CLAIMED",
+              "ORDER_CANCELLED"
+            ],
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "toStatus": {
+            "nullable": true,
+            "enum": ["ORDERING", "IN_TRANSIT", "READY", "COMPLETED"],
+            "type": "string",
+            "description": "New fulfillment step, for FULFILLMENT_ADVANCED only."
+          },
+          "amount": {
+            "type": "string",
+            "nullable": true,
+            "description": "Payment amount, for PAYMENT_SUBMITTED / PAYMENT_VOIDED."
+          },
+          "resolution": {
+            "nullable": true,
+            "enum": ["REFUNDED", "RETAINED", "STORE_CREDIT"],
+            "type": "string",
+            "description": "Outcome of a cancellation, for ORDER_CANCELLED only."
+          }
+        },
+        "required": ["type", "at", "toStatus", "amount", "resolution"]
+      },
       "PublicOrderPaymentResponseDto": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "string"
+          },
+          "method": {
+            "nullable": true,
+            "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"],
+            "type": "string"
+          },
+          "paidAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "When the money was paid, if the store recorded it."
+          },
+          "hasProof": {
+            "type": "boolean",
+            "description": "True only for a buyer-submitted payment with an uploaded proof; the image is served by the token image route."
+          },
           "source": {
             "enum": ["SELLER_RECORDED", "BUYER_SUBMITTED"],
             "type": "string"
@@ -8759,12 +9086,31 @@
           }
         },
         "required": [
+          "id",
+          "method",
+          "paidAt",
+          "hasProof",
           "source",
           "amount",
           "createdAt",
           "voidedAt",
           "reviewStatus"
         ]
+      },
+      "PublicOrderClosureResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": ["CANCELLED", "EXPIRED"],
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Sanitized reason written by the store, if any."
+          }
+        },
+        "required": ["kind", "reason"]
       },
       "PublicOrderResponseDto": {
         "type": "object",
@@ -8864,6 +9210,31 @@
             "type": "boolean",
             "description": "Whether a private packed-package photo is available."
           },
+          "receiptConfirmedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "When the buyer confirmed receiving the order."
+          },
+          "claimed": {
+            "type": "boolean",
+            "description": "Whether the order was saved to a buyer account."
+          },
+          "lastUpdateAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Time of the latest buyer-visible step (creation if none)."
+          },
+          "timeline": {
+            "description": "Dated steps, oldest first. Empty unless the order was claimed: it is an incentive to save the order, not an access control.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicOrderTimelineItemDto"
+            }
+          },
+          "hasValidatedPayment": {
+            "type": "boolean",
+            "description": "Whether a payment counts toward the paid amount (recorded, or an approved proof, and not voided)."
+          },
           "courierModality": {
             "nullable": true,
             "enum": ["AGENCY", "HOME"],
@@ -8874,6 +9245,27 @@
             "items": {
               "$ref": "#/components/schemas/PublicOrderPaymentResponseDto"
             }
+          },
+          "expiresAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "Payment deadline. Only while the order is active and still awaiting payment."
+          },
+          "paymentRejectionReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Sanitized order-level reason, only when the payment was rejected."
+          },
+          "closure": {
+            "nullable": true,
+            "description": "Set when the order is cancelled, or expired unpaid.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PublicOrderClosureResponseDto"
+              }
+            ]
           }
         },
         "required": [
@@ -8900,19 +9292,109 @@
           "trackingNumber",
           "trackingUrl",
           "packedPhotoAvailable",
+          "receiptConfirmedAt",
+          "claimed",
+          "lastUpdateAt",
+          "timeline",
+          "hasValidatedPayment",
           "courierModality",
-          "payments"
+          "payments",
+          "expiresAt",
+          "paymentRejectionReason",
+          "closure"
         ]
+      },
+      "SubmitPublicPaymentDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "string",
+            "description": "Amount paid, digits with at most two decimals (\"40.50\").",
+            "example": "40.50"
+          },
+          "method": {
+            "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"],
+            "type": "string"
+          },
+          "operationCode": {
+            "type": "string",
+            "description": "Bank or wallet operation number (max 64 characters)."
+          },
+          "note": {
+            "type": "string",
+            "description": "Free text, max 500 chars."
+          },
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "description": "JPEG or PNG proof of payment, up to 5 MB."
+          }
+        },
+        "required": ["amount", "method", "file"]
+      },
+      "SubmitPublicPaymentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "reviewStatus": {
+            "type": "string",
+            "enum": ["PENDING_REVIEW"]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["id", "amount", "reviewStatus", "createdAt"]
       },
       "RecordInviteEventDto": {
         "type": "object",
         "properties": {
+          "moment": {
+            "enum": [
+              "entrega",
+              "pago_validado",
+              "banner",
+              "adelanto_linea_de_tiempo"
+            ],
+            "type": "string"
+          },
           "type": {
             "type": "string",
             "enum": ["INVITE_SHOWN", "INVITE_CLICKED", "INVITE_DISMISSED"]
           }
         },
         "required": ["type"]
+      },
+      "ReceiptConfirmedResponseDto": {
+        "type": "object",
+        "properties": {
+          "receiptConfirmedAt": {
+            "type": "string",
+            "description": "When the buyer confirmed receiving the order."
+          }
+        },
+        "required": ["receiptConfirmedAt"]
+      },
+      "ClaimTicketDto": {
+        "type": "object",
+        "properties": {
+          "moment": {
+            "enum": [
+              "entrega",
+              "pago_validado",
+              "banner",
+              "adelanto_linea_de_tiempo"
+            ],
+            "type": "string",
+            "description": "Where on the order page the buyer chose to save the order."
+          }
+        }
       },
       "PaymentMethodConfigResponseDto": {
         "type": "object",
@@ -10158,6 +10640,16 @@
           "paidPercentage": {
             "type": "number"
           },
+          "source": {
+            "enum": ["MARKETPLACE", "VENDOR_ASSISTED"],
+            "type": "string",
+            "description": "VENDOR_ASSISTED = created by the store for the buyer."
+          },
+          "claimedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
           "storeSlug": {
             "type": "string"
           },
@@ -10175,8 +10667,180 @@
           "paidAmount",
           "pendingAmount",
           "paidPercentage",
+          "source",
+          "claimedAt",
           "storeSlug",
           "storeName"
+        ]
+      },
+      "GlobalAccountOrderItemResponseDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unitPrice": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          }
+        },
+        "required": ["name", "quantity", "unitPrice", "currency"]
+      },
+      "GlobalAccountOrderPaymentResponseDto": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "enum": ["SELLER_RECORDED", "BUYER_SUBMITTED"],
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "voidedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "reviewStatus": {
+            "enum": ["N_A", "PENDING_REVIEW", "APPROVED", "REJECTED"],
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "amount",
+          "createdAt",
+          "voidedAt",
+          "reviewStatus"
+        ]
+      },
+      "GlobalAccountOrderDetailResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "paymentStatus": {
+            "enum": [
+              "PENDING_PAYMENT",
+              "PARTIALLY_PAID",
+              "PAYMENT_SUBMITTED",
+              "VERIFIED",
+              "REJECTED",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "fulfillmentStatus": {
+            "enum": ["ORDERING", "IN_TRANSIT", "READY", "COMPLETED"],
+            "type": "string"
+          },
+          "totalAmount": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paidAmount": {
+            "type": "number"
+          },
+          "pendingAmount": {
+            "type": "number"
+          },
+          "paidPercentage": {
+            "type": "number"
+          },
+          "source": {
+            "enum": ["MARKETPLACE", "VENDOR_ASSISTED"],
+            "type": "string",
+            "description": "VENDOR_ASSISTED = created by the store for the buyer."
+          },
+          "claimedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "storeSlug": {
+            "type": "string"
+          },
+          "storeName": {
+            "type": "string"
+          },
+          "status": {
+            "enum": ["ACTIVE", "CANCELLED"],
+            "type": "string"
+          },
+          "requiredAmount": {
+            "type": "string"
+          },
+          "trackingNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "trackingUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "receiptConfirmedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GlobalAccountOrderItemResponseDto"
+            }
+          },
+          "payments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GlobalAccountOrderPaymentResponseDto"
+            }
+          },
+          "timeline": {
+            "description": "Dated buyer-visible steps, oldest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicOrderTimelineItemDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "paymentStatus",
+          "fulfillmentStatus",
+          "totalAmount",
+          "currency",
+          "createdAt",
+          "paidAmount",
+          "pendingAmount",
+          "paidPercentage",
+          "source",
+          "claimedAt",
+          "storeSlug",
+          "storeName",
+          "status",
+          "requiredAmount",
+          "trackingNumber",
+          "trackingUrl",
+          "receiptConfirmedAt",
+          "items",
+          "payments",
+          "timeline"
         ]
       },
       "CreateRestockRequestDto": {
@@ -10303,7 +10967,15 @@
             "type": "string"
           },
           "type": {
-            "enum": ["NEW_ORDER", "PAYMENT_REMINDER", "ASSISTED_ORDER_LINK"],
+            "enum": [
+              "NEW_ORDER",
+              "PAYMENT_REMINDER",
+              "ASSISTED_ORDER_LINK",
+              "ASSISTED_PAYMENT_VALIDATED",
+              "ASSISTED_IN_TRANSIT",
+              "ASSISTED_READY",
+              "ASSISTED_DELIVERED"
+            ],
             "type": "string"
           },
           "template": {

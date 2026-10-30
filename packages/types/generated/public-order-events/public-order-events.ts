@@ -6,8 +6,12 @@
  * OpenAPI spec version: 1.0
  */
 import type {
+  ClaimTicketDto,
   PublicOrderResponseDto,
+  ReceiptConfirmedResponseDto,
   RecordInviteEventDto,
+  SubmitPublicPaymentDto,
+  SubmitPublicPaymentResponseDto,
 } from "../api.schemas.js";
 
 import { customFetch } from "../../http.js";
@@ -21,6 +25,68 @@ export const getByToken = async (
   options?: Parameters<typeof customFetch>[1],
 ): Promise<PublicOrderResponseDto> => {
   return customFetch<PublicOrderResponseDto>(getGetByTokenUrl(token), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPackedPhotoUrl = (token: string) => {
+  return `/public/orders/${token}/packed-photo`;
+};
+
+export const getPackedPhoto = async (
+  token: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<Blob> => {
+  return customFetch<Blob>(getGetPackedPhotoUrl(token), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getSubmitPaymentUrl = (token: string) => {
+  return `/public/orders/${token}/payments`;
+};
+
+export const submitPayment = async (
+  token: string,
+  submitPublicPaymentDto: SubmitPublicPaymentDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<SubmitPublicPaymentResponseDto> => {
+  const formData = new FormData();
+  formData.append(`amount`, submitPublicPaymentDto.amount);
+  formData.append(`method`, submitPublicPaymentDto.method);
+  if (submitPublicPaymentDto.operationCode !== undefined) {
+    formData.append(`operationCode`, submitPublicPaymentDto.operationCode);
+  }
+  if (submitPublicPaymentDto.note !== undefined) {
+    formData.append(`note`, submitPublicPaymentDto.note);
+  }
+  formData.append(`file`, submitPublicPaymentDto.file);
+
+  return customFetch<SubmitPublicPaymentResponseDto>(
+    getSubmitPaymentUrl(token),
+    {
+      ...options,
+      method: "POST",
+      body: formData,
+    },
+  );
+};
+
+export const getGetPaymentProofImageUrl = (
+  token: string,
+  paymentId: string,
+) => {
+  return `/public/orders/${token}/payments/${paymentId}/image`;
+};
+
+export const getPaymentProofImage = async (
+  token: string,
+  paymentId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<Blob> => {
+  return customFetch<Blob>(getGetPaymentProofImageUrl(token, paymentId), {
     ...options,
     method: "GET",
   });
@@ -40,5 +106,36 @@ export const recordInvite = async (
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(recordInviteEventDto),
+  });
+};
+
+export const getConfirmReceiptUrl = (token: string) => {
+  return `/public/orders/${token}/receipt`;
+};
+
+export const confirmReceipt = async (
+  token: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<ReceiptConfirmedResponseDto> => {
+  return customFetch<ReceiptConfirmedResponseDto>(getConfirmReceiptUrl(token), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getClaimTicketUrl = (token: string) => {
+  return `/public/orders/${token}/claim-ticket`;
+};
+
+export const claimTicket = async (
+  token: string,
+  claimTicketDto: ClaimTicketDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<void> => {
+  return customFetch<void>(getClaimTicketUrl(token), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(claimTicketDto),
   });
 };

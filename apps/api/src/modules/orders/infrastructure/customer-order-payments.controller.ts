@@ -14,6 +14,11 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  isNoteTooLong,
+  NOTE_TOO_LONG_MESSAGE,
+} from '../../../common/text-sanitize.js';
+import { PAYMENT_PROOF_UPLOAD_LIMITS } from '../../../common/upload-limits.js';
+import {
   ApiBearerAuth,
   ApiConsumes,
   ApiOkResponse,
@@ -28,8 +33,7 @@ import { CustomerSession } from '../../customer-auth/customer-session.decorator.
 import { OrderRepository } from './order.repository.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { StorageService } from '../../../storage/storage.service.js';
-import { NotificationsService } from '../../notifications/notifications.service.js';
-import { OrderEventsService } from '../application/order-events.service.js';
+import { BuyerPaymentProofService } from '../application/buyer-payment-proof.service.js';
 import { toOrderPaymentDto } from './order.controller.js';
 import { countsTowardPaid } from '../../../common/payment-summary.js';
 import type { OrderPaymentResponseDto } from '../dto/order-response.dto.js';
@@ -43,13 +47,6 @@ const CUSTOMER_PROOF_PIPE = new UploadedFileValidationPipe({
   allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
   messages: { missingFile: 'Adjunta un comprobante de pago' },
 });
-
-const PAYMENT_METHODS: PaymentMethodType[] = [
-  'YAPE',
-  'PLIN',
-  'TRANSFER',
-  'CASH',
-];
 
 // Buyer-initiated counterpart to `OrderController.addPayment` — see
 // .artifacts/2026/08/20260808--buyer-proof-of-payment-upload/plan.md. Route stays
@@ -65,8 +62,7 @@ export class CustomerOrderPaymentsController {
     private orders: OrderRepository,
     private prisma: PrismaService,
     private storage: StorageService,
-    private notifications: NotificationsService,
-    private events: OrderEventsService,
+    private proofs: BuyerPaymentProofService,
   ) {}
 
   private async findStoreBySlug(slug: string) {
@@ -81,7 +77,9 @@ export class CustomerOrderPaymentsController {
   @Public()
   @UseGuards(CustomerSessionGuard, ThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 20 } })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: PAYMENT_PROOF_UPLOAD_LIMITS }),
+  )
   @Post()
   async submit(
     @Param('slug') slug: string,
@@ -92,6 +90,9 @@ export class CustomerOrderPaymentsController {
     @Body('note') note: string | undefined,
     @UploadedFile(CUSTOMER_PROOF_PIPE) file: ValidatedUploadedFile,
   ): Promise<OrderPaymentResponseDto> {
+    if (isNoteTooLong(note)) {
+      throw new BadRequestException(NOTE_TOO_LONG_MESSAGE);
+    }
     const store = await this.findStoreBySlug(slug);
     const order = await this.orders.findOrderForBuyer(
       orderId,
@@ -99,145 +100,22 @@ export class CustomerOrderPaymentsController {
       session.buyerAccountId,
     );
 
-    if (order.paymentStatus === 'CANCELLED') {
-      throw new BadRequestException(
-        'No se pueden enviar comprobantes en una orden cancelada',
-      );
-    }
-    if (order.paymentStatus === 'REJECTED') {
-      throw new BadRequestException(
-        'No se pueden enviar comprobantes en una orden rechazada',
-      );
-    }
-    // Only a VERIFIED order with its balance settled is closed to new proofs —
-    // a VERIFIED order with a residual balance (approved on a deposit, or a
-    // legacy pre-guard approval) still owes money and must accept the rest.
-    // Mirrors `OrderController.addPayment` and the frontend `paymentsLocked`.
-    if (
-      order.paymentStatus === 'VERIFIED' &&
-      Number(order.pendingAmount) <= 0
-    ) {
-      throw new BadRequestException('La orden ya está pagada');
-    }
-    if (
-      order.fulfillmentStatus === 'IN_TRANSIT' ||
-      order.fulfillmentStatus === 'READY' ||
-      order.fulfillmentStatus === 'COMPLETED'
-    ) {
-      throw new BadRequestException(
-        'No se pueden enviar comprobantes en una orden enviada',
-      );
-    }
-
-    const numericAmount = Number(amount);
-    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
-      throw new BadRequestException('Monto inválido');
-    }
-    const toCents = (n: number) => Math.round(n * 100);
-    // Enforce the remaining balance against BOTH already-credited amounts
-    // (pendingAmount) and already-submitted PENDING_REVIEW proofs (the
-    // "reserve"). A pending proof doesn't count toward paidAmount yet, so
-    // ignoring it lets a duplicate full-balance submission waste an image
-    // upload before the in-transaction re-check rejects it. The transaction
-    // below is the authoritative, atomic guard; this pre-check just rejects
-    // the obvious sequential case early.
-    const reservedCents = (order.payments ?? [])
-      .filter((p) => p.reviewStatus === 'PENDING_REVIEW')
-      .reduce((sum, p) => sum + toCents(Number(p.amount)), 0);
-    if (toCents(numericAmount) > toCents(order.pendingAmount) - reservedCents) {
-      throw new BadRequestException('El monto excede el saldo pendiente');
-    }
-    if (!method || !PAYMENT_METHODS.includes(method as PaymentMethodType)) {
-      throw new BadRequestException('Selecciona un método de pago');
-    }
-    const imageUrl = await this.storage.uploadPaymentImage(
-      file.buffer,
-      file.detectedMimeType,
-    );
-
-    const payment = await this.prisma.$transaction(async (tx) => {
-      // Row-lock the order so two concurrent submissions serialize instead of
-      // both passing the re-check below on the same pre-commit snapshot.
-      // Without the lock, both transactions' `findMany` can run before either
-      // commits (READ COMMITTED doesn't see uncommitted rows), each computes
-      // the full balance as available, and both insert — over-submitting the
-      // order. The second transaction blocks here until the first commits,
-      // then its re-read sees the first's committed PENDING_REVIEW row and
-      // the reserve is respected. Same pattern as create-order.usecase.ts's
-      // stock-hold lock.
-      const [locked] = await tx.$queryRaw<
-        Array<{ id: string }>
-      >`SELECT id FROM "Order" WHERE id = ${orderId} FOR UPDATE`;
-      if (!locked) {
-        throw new NotFoundException('Orden no encontrada');
-      }
-
-      // Re-check the balance inside the transaction. Under the lock this read
-      // is guaranteed to see any earlier submission's committed PENDING_REVIEW
-      // row, so the available balance (credited + reserved) is authoritative.
-      const payments = await tx.orderPayment.findMany({
-        where: { orderId },
-        select: {
-          amount: true,
-          source: true,
-          reviewStatus: true,
-          voidedAt: true,
-        },
-      });
-      const creditedCents = payments
-        .filter(countsTowardPaid)
-        .reduce((sum, p) => sum + toCents(Number(p.amount)), 0);
-      const reservedCents = payments
-        .filter(
-          (p) => p.voidedAt == null && p.reviewStatus === 'PENDING_REVIEW',
-        )
-        .reduce((sum, p) => sum + toCents(Number(p.amount)), 0);
-      const availableCents =
-        toCents(Number(order.requiredAmount)) - creditedCents - reservedCents;
-      if (toCents(numericAmount) > availableCents) {
-        throw new BadRequestException('El monto excede el saldo pendiente');
-      }
-
-      const created = await tx.orderPayment.create({
-        data: {
-          orderId,
-          storeId: store.id,
-          amount: numericAmount,
-          currency: order.currency,
-          method: method as PaymentMethodType,
-          note,
-          imageUrl,
-          source: 'BUYER_SUBMITTED',
-          reviewStatus: 'PENDING_REVIEW',
-        },
-      });
-      await this.events.record(tx, {
-        orderId,
+    const payment = await this.proofs.submit({
+      order: {
+        id: orderId,
         storeId: store.id,
-        type: 'PAYMENT_SUBMITTED',
-        actor: 'BUYER',
-        payload: {
-          paymentId: created.id,
-          amount: numericAmount,
-          method,
-        },
-      });
-      // Dedups against an already-open notification for this order (see
-      // NotificationsService.createIfNotOpen) — a buyer re-submitting a
-      // second proof before the seller reviews the first one doesn't spam a
-      // second notification, same semantics stock alerts already rely on.
-      await this.notifications.createIfNotOpen(
-        {
-          storeId: store.id,
-          type: 'PAYMENT_PROOF_SUBMITTED',
-          entityType: 'Order',
-          entityId: orderId,
-          title: 'Comprobante de pago recibido',
-          body: `El comprador envió un comprobante de ${order.currency} ${numericAmount} para revisar.`,
-        },
-        tx,
-      );
-      return created;
+        status: order.status,
+        paymentStatus: order.paymentStatus,
+        fulfillmentStatus: order.fulfillmentStatus,
+        expiresAt: order.expiresAt ?? null,
+        requiredAmount: order.requiredAmount,
+        currency: order.currency,
+        payments: order.payments ?? [],
+      },
+      file,
+      amount,
+      method,
+      note,
     });
 
     return toOrderPaymentDto(payment);

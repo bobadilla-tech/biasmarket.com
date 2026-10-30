@@ -7,6 +7,7 @@ set -euo pipefail
 : "${API_E2E_CHANGED:?API_E2E_CHANGED is required}"
 : "${EVENT_NAME:?EVENT_NAME is required}"
 : "${RUN_E2E:?RUN_E2E is required}"
+: "${HYGIENE_RESULT:?HYGIENE_RESULT is required}"
 
 if [[ "$DETECT_RESULT" != "success" ]]; then
   echo "Detect Changed Packages must succeed; got $DETECT_RESULT"
@@ -32,13 +33,19 @@ check_package() {
   fi
 }
 
-package_names=(API Web Mobile Workers DB i18n Queue Types "Design Tokens" Utils Validation Query "Web E2E (a11y)")
-package_keys=(API WEB MOBILE WORKERS DB I18N QUEUE TYPES DESIGN_TOKENS UTILS VALIDATION QUERY WEB_E2E)
+package_names=(API Web Mobile Workers DB i18n Queue Types "Design Tokens" Utils Validation Query Sanity "Web E2E (a11y)")
+package_keys=(API WEB MOBILE WORKERS DB I18N QUEUE TYPES DESIGN_TOKENS UTILS VALIDATION QUERY SANITY WEB_E2E)
 for index in "${!package_names[@]}"; do
   changed_var="${package_keys[$index]}_CHANGED"
   result_var="${package_keys[$index]}_RESULT"
   check_package "${package_names[$index]}" "${!changed_var:?$changed_var is required}" "${!result_var:?$result_var is required}"
 done
+
+# Hygiene has no path filter: it runs on every event and must always pass.
+if [[ "$HYGIENE_RESULT" != "success" ]]; then
+  echo "Hygiene must succeed; got $HYGIENE_RESULT"
+  exit 1
+fi
 
 expected_e2e="skipped"
 if [[ "$API_E2E_CHANGED" != "true" && "$API_E2E_CHANGED" != "false" ]]; then

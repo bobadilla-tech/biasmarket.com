@@ -120,7 +120,7 @@ test("when the clipboard is unavailable it explains and keeps the text selectabl
 test("shows the order summary with a single #", async () => {
   setup();
   await messageBox();
-  expect(screen.getByText("Pedido #CDEF · PEN 50.00")).toBeTruthy();
+  expect(screen.getByText("Pedido #ABCDEF · PEN 50.00")).toBeTruthy();
 });
 
 test("the private link is text only (never an anchor, so the seller can't stamp the first open) and is never stored", async () => {
@@ -164,7 +164,9 @@ test("a custom template reaches the wa.me text once loaded", async () => {
     await screen.findByRole("button", { name: "Sí, abrir WhatsApp" }),
   );
   expect(open).toHaveBeenCalledWith(
-    `https://wa.me/51987654321?text=${encodeURIComponent(`Custom #ABCDEF ${link}`)}`,
+    `https://wa.me/51987654321?text=${encodeURIComponent(
+      `Custom #ABCDEF ${link}`,
+    )}`,
     "_blank",
     "noopener,noreferrer",
   );

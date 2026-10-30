@@ -199,9 +199,6 @@ export class OrderResponseDto {
   customerId: string | null;
 
   @ApiProperty({ type: String, nullable: true })
-  buyerAccountId: string | null;
-
-  @ApiProperty({ type: String, nullable: true })
   customerEmail: string | null;
 
   @ApiProperty()
@@ -341,6 +338,13 @@ export class OrderResponseDto {
   @ApiProperty({
     type: String,
     nullable: true,
+    description: 'When the buyer confirmed receiving the order.',
+  })
+  buyerConfirmedReceivedAt: string | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
     description: 'Display name of the seller who created an assisted order.',
   })
   createdByName: string | null;
@@ -367,9 +371,6 @@ export class OrderStatusResponseDto {
 
   @ApiProperty({ type: String, nullable: true })
   customerId: string | null;
-
-  @ApiProperty({ type: String, nullable: true })
-  buyerAccountId: string | null;
 
   @ApiProperty({ type: String, nullable: true })
   customerEmail: string | null;

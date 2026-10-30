@@ -5,8 +5,12 @@ import type { Locale } from "next-intl";
 import StorePage, { generateMetadata } from "./page";
 import { StoreSectionRenderer } from "@/components/storefront/section-renderer";
 
+const { translateMock } = vi.hoisted(() => ({
+  translateMock: vi.fn((key: string) => key),
+}));
+
 vi.mock("next-intl/server", () => ({
-  getTranslations: vi.fn(async () => (key: string) => key),
+  getTranslations: vi.fn(async () => translateMock),
 }));
 
 function mockStoreResponse(store: Record<string, unknown>) {
@@ -104,6 +108,54 @@ describe("store page metadata — D6 thin-content gate", () => {
     });
 
     expect(metadata.robots).toBeUndefined();
+  });
+
+  it("uses the redesigned catalog count in the store description", async () => {
+    vi.stubEnv("INTERNAL_API_URL", "https://api.example.test");
+    vi.stubEnv(
+      "NEXT_PUBLIC_STOREFRONT_REDESIGN_STORE_SLUGS",
+      "demo-kpop-corner",
+    );
+    const fetchMock = vi.fn(async (input: string | URL | Request) => {
+      if (String(input).endsWith("/api/stores/storefront/catalog")) {
+        return {
+          ok: true,
+          json: async () => ({
+            items: [{ images: ["https://cdn.example.test/first-product.jpg"] }],
+            total: 37,
+            page: 1,
+            limit: 24,
+          }),
+        };
+      }
+      return {
+        ok: true,
+        json: async () => ({
+          ...baseStore,
+          bio: null,
+          aboutMarkdown: null,
+          sections: [],
+        }),
+      };
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const metadata = await generateMetadata({
+      params: Promise.resolve({
+        locale: "es" as Locale,
+        slug: "demo-kpop-corner",
+      }),
+    });
+
+    expect(metadata.description).toBe("shopProductsAvailable");
+    expect(translateMock).toHaveBeenCalledWith("shopProductsAvailable", {
+      storeName: "Demo K-pop Corner",
+      count: 37,
+    });
+    expect(metadata.openGraph?.images).toEqual([
+      "https://cdn.example.test/first-product.jpg",
+    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
 

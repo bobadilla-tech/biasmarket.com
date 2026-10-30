@@ -195,7 +195,7 @@ describe("storefront empty states", () => {
     expect(screen.getByRole("img", { name: "Categoría Álbumes" })).toBeTruthy();
   });
 
-  it("renders category tabs and single-select filter chips", () => {
+  it("renders mobile category chips that select a single category", () => {
     navigation.url = "/es/store/tienda?tab=productos";
     navigation.push.mockClear();
     withMessages(
@@ -220,7 +220,190 @@ describe("storefront empty states", () => {
     );
   });
 
-  it("clears a selected category from navigation and filter chips", () => {
+  it("keeps mobile category chips single-select when switching categories", () => {
+    navigation.url = "/es/store/tienda?tab=productos&categoria=albumes";
+    navigation.push.mockClear();
+    withMessages(
+      <StoreSectionRenderer
+        slug="tienda"
+        sections={[]}
+        catalogControls
+        storeCategories={[
+          { id: "1", slug: "albumes", name: "Álbumes", productCount: 4 },
+          { id: "2", slug: "photocards", name: "Photocards", productCount: 2 },
+        ]}
+      />,
+    );
+
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Categorías" })).getByRole(
+        "button",
+        { name: "Photocards" },
+      ),
+    );
+    expect(navigation.push).toHaveBeenLastCalledWith(
+      "/es/store/tienda?tab=productos&categoria=photocards",
+      { scroll: false },
+    );
+  });
+
+  it("shows a collapsed desktop filter with checkboxes for categories with products", () => {
+    navigation.url = "/es/store/tienda?tab=productos";
+    withMessages(
+      <StoreSectionRenderer
+        slug="tienda"
+        sections={[]}
+        catalogControls
+        storeCategories={[
+          { id: "1", slug: "albumes", name: "Álbumes", productCount: 4 },
+          { id: "2", slug: "photocards", name: "Photocards", productCount: 0 },
+        ]}
+      />,
+    );
+
+    const toggle = screen.getByRole("button", {
+      name: "Filtrar por categoría",
+    });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByRole("checkbox", { name: /Álbumes/ })).toBeTruthy();
+    expect(screen.queryByRole("checkbox", { name: /Photocards/ })).toBeNull();
+    expect(
+      within(screen.getByRole("group", { name: "Categorías" })).queryByRole(
+        "button",
+        { name: "Photocards" },
+      ),
+    ).toBeNull();
+  });
+
+  it("allows multiple desktop checkbox selections and persists them in the URL", () => {
+    navigation.url = "/es/store/tienda?tab=productos";
+    navigation.push.mockClear();
+    const catalog = (
+      <StoreSectionRenderer
+        slug="tienda"
+        sections={[]}
+        catalogControls
+        storeCategories={[
+          { id: "1", slug: "albumes", name: "Álbumes", productCount: 4 },
+          { id: "2", slug: "photocards", name: "Photocards", productCount: 2 },
+        ]}
+      />
+    );
+    const view = withMessages(catalog);
+    fireEvent.click(
+      screen.getByRole("button", { name: /Filtrar por categoría/ }),
+    );
+    fireEvent.click(screen.getByRole("checkbox", { name: /Álbumes/ }));
+    expect(navigation.push).toHaveBeenLastCalledWith(
+      "/es/store/tienda?tab=productos&categoria=albumes",
+      { scroll: false },
+    );
+
+    navigation.url = "/es/store/tienda?tab=productos&categoria=albumes";
+    view.rerender(
+      <QueryClientProvider client={new QueryClient()}>
+        <NextIntlClientProvider locale="es" messages={getMessages("es")}>
+          {catalog}
+        </NextIntlClientProvider>
+      </QueryClientProvider>,
+    );
+    fireEvent.click(screen.getByRole("checkbox", { name: /Photocards/ }));
+    expect(navigation.push).toHaveBeenLastCalledWith(
+      "/es/store/tienda?tab=productos&categoria=albumes%2Cphotocards",
+      { scroll: false },
+    );
+  });
+
+  it("keeps mobile category chips single-select after opening a multi-filter URL", () => {
+    navigation.url =
+      "/es/store/tienda?tab=productos&categoria=albumes%2Cphotocards";
+    navigation.push.mockClear();
+    const view = withMessages(
+      <StoreSectionRenderer
+        slug="tienda"
+        sections={[]}
+        catalogControls
+        storeCategories={[
+          { id: "1", slug: "albumes", name: "Álbumes" },
+          { id: "2", slug: "photocards", name: "Photocards" },
+        ]}
+      />,
+    );
+
+    const categoryChips = within(
+      screen.getByRole("group", { name: "Categorías" }),
+    );
+    expect(
+      categoryChips
+        .getByRole("button", { name: "Álbumes" })
+        .getAttribute("aria-pressed"),
+    ).toBe("true");
+    expect(
+      categoryChips
+        .getByRole("button", { name: "Photocards" })
+        .getAttribute("aria-pressed"),
+    ).toBe("true");
+
+    fireEvent.click(categoryChips.getByRole("button", { name: "Álbumes" }));
+    expect(navigation.push).toHaveBeenLastCalledWith(
+      "/es/store/tienda?tab=productos&categoria=albumes",
+      { scroll: false },
+    );
+    view.unmount();
+  });
+
+  it("shows selected category names on the collapsed desktop filter", () => {
+    navigation.url = "/es/store/tienda?tab=productos&categoria=albumes";
+    const view = withMessages(
+      <StoreSectionRenderer
+        slug="tienda"
+        sections={[]}
+        catalogControls
+        storeCategories={[
+          { id: "1", slug: "albumes", name: "Álbumes" },
+          { id: "2", slug: "photocards", name: "Photocards" },
+        ]}
+      />,
+    );
+
+    const toggle = screen.getByRole("button", {
+      name: "Filtrar por categoría: Álbumes",
+    });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(toggle.textContent).toContain("Álbumes");
+    view.unmount();
+  });
+
+  it("uses two to five columns across product grid breakpoints", () => {
+    navigation.url = "/es/store/tienda?tab=productos";
+    const product = catalogProduct("album", "Moonlight", "12.00");
+    const { container } = withMessages(
+      <StoreSectionRenderer
+        slug="tienda"
+        catalogControls
+        sections={[
+          {
+            id: "catalog",
+            type: "COLLECTION",
+            collection: {
+              name: "",
+              products: [{ productId: product.id, product }],
+            },
+          },
+        ]}
+      />,
+    );
+
+    const grid = container.querySelector(".grid-cols-2");
+    expect(grid?.className).toContain("grid-cols-2");
+    expect(grid?.className).toContain("sm:grid-cols-3");
+    expect(grid?.className).toContain("lg:grid-cols-4");
+    expect(grid?.className).toContain("xl:grid-cols-5");
+  });
+
+  it("clears a selected category from the desktop and mobile filters", () => {
     const renderer = (
       <StoreSectionRenderer
         slug="tienda"
@@ -236,24 +419,23 @@ describe("storefront empty states", () => {
     navigation.push.mockClear();
     const view = withMessages(renderer);
 
-    const categoryTabs = within(
-      screen.getByRole("navigation", { name: "Categorías" }),
-    );
     const categoryChips = within(
       screen.getByRole("group", { name: "Categorías" }),
     );
-    expect(
-      categoryTabs
-        .getByRole("button", { name: "Álbumes" })
-        .getAttribute("aria-pressed"),
-    ).toBe("true");
     expect(
       categoryChips
         .getByRole("button", { name: "Álbumes" })
         .getAttribute("aria-pressed"),
     ).toBe("true");
+    fireEvent.click(
+      screen.getByRole("button", { name: /Filtrar por categoría/ }),
+    );
+    expect(
+      (screen.getByRole("checkbox", { name: /Álbumes/ }) as HTMLInputElement)
+        .checked,
+    ).toBe(true);
 
-    fireEvent.click(categoryTabs.getByRole("button", { name: "Álbumes" }));
+    fireEvent.click(categoryChips.getByRole("button", { name: "Álbumes" }));
     expect(navigation.push).toHaveBeenLastCalledWith(
       "/es/store/tienda?tab=productos",
       { scroll: false },

@@ -58,6 +58,7 @@ export class ExpireOrdersUseCase {
             },
             data: {
               status: 'CANCELLED',
+              closedAt: new Date(),
               paymentStatus: entity.currentPaymentStatus,
               cancellationResolution: 'RETAINED',
               retainedAmount: new Prisma.Decimal(paidAmount),

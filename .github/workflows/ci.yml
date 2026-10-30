@@ -7,8 +7,8 @@ on:
       - ".gitignore"
       - "*.md"
       - "**/*.md"
+  # No `branches:` filter: stacked PRs (base != main) get the same CI.
   pull_request:
-    branches: [main]
   workflow_dispatch:
     inputs:
       run_e2e:
@@ -37,6 +37,9 @@ concurrency:
 # run reads.
 
 env:
+  # Prettier changed-files gate (scripts/lint-changed-files.mjs) diffs against
+  # the PR's own base, so a stacked PR is not re-flagged for lower PRs' files.
+  BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || 'origin/main' }}
   TURBO_CACHE_SCOPE: ${{ github.event_name == 'pull_request' && format('pr{0}-', github.event.pull_request.number) || '' }}
   NODE_VERSION: "24"
   PNPM_VERSION: "10.11.0"
@@ -58,6 +61,7 @@ jobs:
       validation: ${{ steps.filter.outputs.validation }}
       query: ${{ steps.filter.outputs.query }}
       mobile: ${{ steps.filter.outputs.mobile }}
+      sanity: ${{ steps.filter.outputs.sanity }}
       web_e2e: ${{ steps.filter.outputs.web_e2e }}
       api_e2e: ${{ steps.filter.outputs.api_e2e }}
     steps:
@@ -81,6 +85,8 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
             web:
               - 'apps/web/**'
               - 'packages/design-tokens/**'
@@ -91,6 +97,8 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
             workers:
               - 'apps/workers/**'
               - 'packages/queue/**'
@@ -99,6 +107,8 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
             db:
               - 'packages/db/**'
               - 'pnpm-lock.yaml'
@@ -106,6 +116,8 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
             i18n:
               - 'packages/i18n/**'
               - 'pnpm-lock.yaml'
@@ -113,6 +125,8 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
             queue:
               - 'packages/queue/**'
               - 'pnpm-lock.yaml'
@@ -120,13 +134,19 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
             types:
               - 'packages/types/**'
+              - 'apps/api/openapi.json'
+              - 'scripts/ci/check-types-sdk-drift.sh'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
             design_tokens:
               - 'packages/design-tokens/**'
               - 'pnpm-lock.yaml'
@@ -134,6 +154,8 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
             utils:
               - 'packages/utils/**'
               - 'pnpm-lock.yaml'
@@ -141,6 +163,8 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
             validation:
               - 'packages/validation/**'
               - 'pnpm-lock.yaml'
@@ -148,6 +172,8 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
             query:
               - 'packages/query/**'
               - 'pnpm-lock.yaml'
@@ -155,9 +181,12 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
             mobile:
               - 'apps/mobile/**'
               - 'packages/design-tokens/**'
+              - 'packages/i18n/**'
               - 'packages/query/**'
               - 'packages/types/**'
               - 'packages/validation/**'
@@ -167,6 +196,17 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
+            sanity:
+              - 'apps/sanity/**'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'turbo.json'
+              - 'package.json'
+              - '.github/workflows/ci.yml'
+              - 'eslint.config.mjs'
+              - 'scripts/lint-changed-files.mjs'
             # The a11y browser E2E job builds and runs BOTH apps plus the seed,
             # so it is sensitive to api/db/seed changes on top of everything the
             # `web` filter covers.
@@ -363,6 +403,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          # `lint-changed-files.mjs` diffs against the base branch; a shallow
+          # checkout has no base ref, which would fail the lint step.
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v6
         with:
@@ -392,6 +435,20 @@ jobs:
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=mobile
 
+      - name: Test with coverage
+        run: pnpm turbo run test:cov --filter=mobile
+
+      - name: Check coverage report exists
+        run: test -f apps/mobile/coverage/lcov.info
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: apps/mobile/coverage/lcov.info
+          flags: mobile
+          fail_ci_if_error: false
+
       # See "Turbo cache policy" at the top of this file.
       - name: Prune turbo cache
         if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
@@ -414,6 +471,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          # `lint-changed-files.mjs` diffs against the base branch; a shallow
+          # checkout has no base ref, which would fail the lint step.
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v6
         with:
@@ -479,6 +539,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          # `lint-changed-files.mjs` diffs against the base branch; a shallow
+          # checkout has no base ref, which would fail the lint step.
+          fetch-depth: 0
 
       - name: Load shared CI test environment
         run: bash scripts/ci/load-e2e-env.sh
@@ -507,6 +570,9 @@ jobs:
 
       - name: Build (prisma generate)
         run: pnpm turbo run build --filter=@biasmarket/db
+
+      - name: Lint
+        run: pnpm turbo run lint --filter=@biasmarket/db
 
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/db
@@ -558,6 +624,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          # `lint-changed-files.mjs` diffs against the base branch; a shallow
+          # checkout has no base ref, which would fail the lint step.
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v6
         with:
@@ -584,6 +653,9 @@ jobs:
       - name: Build
         run: pnpm turbo run build --filter=@biasmarket/i18n
 
+      - name: Lint
+        run: pnpm turbo run lint --filter=@biasmarket/i18n
+
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/i18n
 
@@ -609,6 +681,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          # `lint-changed-files.mjs` diffs against the base branch; a shallow
+          # checkout has no base ref, which would fail the lint step.
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v6
         with:
@@ -635,6 +710,9 @@ jobs:
       - name: Build
         run: pnpm turbo run build --filter=@biasmarket/queue
 
+      - name: Lint
+        run: pnpm turbo run lint --filter=@biasmarket/queue
+
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/queue
 
@@ -660,6 +738,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          # `lint-changed-files.mjs` diffs against the base branch; a shallow
+          # checkout has no base ref, which would fail the lint step.
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v6
         with:
@@ -672,6 +753,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: SDK drift check
+        run: bash scripts/ci/check-types-sdk-drift.sh
 
       - name: Restore turbo cache
         id: turbo-cache
@@ -686,8 +770,25 @@ jobs:
       - name: Build
         run: pnpm turbo run build --filter=@biasmarket/types
 
+      - name: Lint
+        run: pnpm turbo run lint --filter=@biasmarket/types
+
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/types
+
+      - name: Test with coverage
+        run: pnpm turbo run test:cov --filter=@biasmarket/types
+
+      - name: Check coverage report exists
+        run: test -f packages/types/coverage/lcov.info
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: packages/types/coverage/lcov.info
+          flags: types
+          fail_ci_if_error: false
 
       # See "Turbo cache policy" at the top of this file.
       - name: Prune turbo cache
@@ -711,6 +812,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          # `lint-changed-files.mjs` diffs against the base branch; a shallow
+          # checkout has no base ref, which would fail the lint step.
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v6
         with:
@@ -737,8 +841,25 @@ jobs:
       - name: Build
         run: pnpm turbo run build --filter=@biasmarket/design-tokens
 
+      - name: Lint
+        run: pnpm turbo run lint --filter=@biasmarket/design-tokens
+
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/design-tokens
+
+      - name: Test with coverage
+        run: pnpm turbo run test:cov --filter=@biasmarket/design-tokens
+
+      - name: Check coverage report exists
+        run: test -f packages/design-tokens/coverage/lcov.info
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: packages/design-tokens/coverage/lcov.info
+          flags: design-tokens
+          fail_ci_if_error: false
 
       # See "Turbo cache policy" at the top of this file.
       - name: Prune turbo cache
@@ -762,6 +883,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          # `lint-changed-files.mjs` diffs against the base branch; a shallow
+          # checkout has no base ref, which would fail the lint step.
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v6
         with:
@@ -787,6 +911,9 @@ jobs:
 
       - name: Build
         run: pnpm turbo run build --filter=@biasmarket/utils
+
+      - name: Lint
+        run: pnpm turbo run lint --filter=@biasmarket/utils
 
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/utils
@@ -824,6 +951,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          # `lint-changed-files.mjs` diffs against the base branch; a shallow
+          # checkout has no base ref, which would fail the lint step.
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v6
         with:
@@ -889,6 +1019,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          # `lint-changed-files.mjs` diffs against the base branch; a shallow
+          # checkout has no base ref, which would fail the lint step.
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v6
         with:
@@ -915,6 +1048,9 @@ jobs:
       - name: Build
         run: pnpm turbo run build --filter=@biasmarket/query
 
+      - name: Lint
+        run: pnpm turbo run lint --filter=@biasmarket/query
+
       - name: Typecheck
         run: pnpm turbo run typecheck --filter=@biasmarket/query
 
@@ -929,6 +1065,73 @@ jobs:
         with:
           path: .turbo/cache
           key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
+
+  sanity:
+    name: Sanity
+    needs: detect-changes
+    if: needs.detect-changes.outputs.sanity == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm turbo run lint --filter=project-cerise-globe
+
+      # No `sanity build`: it needs project credentials.
+      - name: Typecheck
+        run: pnpm turbo run typecheck --filter=project-cerise-globe
+
+  # Always runs (no path filter): repo-wide guards that need no install.
+  hygiene:
+    name: Hygiene
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Every workspace defines lint and typecheck
+        run: node scripts/ci/check-workspace-scripts.mjs
+
+      - name: Guard script tests
+        run: node --test scripts/ci/check-workspace-scripts.test.mjs
+
+      - name: Install actionlint
+        run: bash scripts/ci/install-actionlint.sh "$RUNNER_TEMP/actionlint"
+
+      # Lints .github/workflows/*.yml (not composite actions).
+      - name: Lint workflows
+        run: |
+          "$RUNNER_TEMP/actionlint/actionlint"
+
+      # scripts/ci only: infra/vps/*.sh are production deploy scripts, any
+      # fix there is behavioral and needs its own supervised change.
+      - name: Shellcheck CI scripts
+        run: shellcheck scripts/ci/*.sh
 
   e2e:
     name: E2E (API)
@@ -1168,6 +1371,8 @@ jobs:
       - utils
       - validation
       - query
+      - sanity
+      - hygiene
       - e2e
       - web-e2e
     if: always()
@@ -1193,6 +1398,8 @@ jobs:
           UTILS_RESULT: ${{ needs.utils.result }}
           VALIDATION_RESULT: ${{ needs.validation.result }}
           QUERY_RESULT: ${{ needs.query.result }}
+          SANITY_RESULT: ${{ needs.sanity.result }}
+          HYGIENE_RESULT: ${{ needs.hygiene.result }}
           E2E_RESULT: ${{ needs.e2e.result }}
           WEB_E2E_RESULT: ${{ needs.web-e2e.result }}
           API_CHANGED: ${{ needs.detect-changes.outputs.api }}
@@ -1207,6 +1414,7 @@ jobs:
           UTILS_CHANGED: ${{ needs.detect-changes.outputs.utils }}
           VALIDATION_CHANGED: ${{ needs.detect-changes.outputs.validation }}
           QUERY_CHANGED: ${{ needs.detect-changes.outputs.query }}
+          SANITY_CHANGED: ${{ needs.detect-changes.outputs.sanity }}
           WEB_E2E_CHANGED: ${{ needs.detect-changes.outputs.web_e2e }}
           API_E2E_CHANGED: ${{ needs.detect-changes.outputs.api_e2e }}
           EVENT_NAME: ${{ github.event_name }}

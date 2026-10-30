@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Headers,
+  Param,
   Post,
   Res,
   UseGuards,
@@ -24,6 +25,7 @@ import {
   CUSTOMER_SESSION_TTL_MS,
 } from './customer-session.constants.js';
 import {
+  GlobalAccountOrderDetailResponseDto,
   GlobalAccountOrderResponseDto,
   GlobalAccountProfileResponseDto,
 } from './dto/global-account-response.dto.js';
@@ -56,6 +58,20 @@ export class GlobalAccountController {
     @CustomerSession() session: { buyerAccountId: string },
   ): Promise<GlobalAccountOrderResponseDto[]> {
     return this.customerAuth.getGlobalOrders(session.buyerAccountId);
+  }
+
+  @Public()
+  @ApiBearerAuth('bearer')
+  @UseGuards(CustomerSessionGuard)
+  @Get('orders/:orderId')
+  orderDetail(
+    @Param('orderId') orderId: string,
+    @CustomerSession() session: { buyerAccountId: string },
+  ): Promise<GlobalAccountOrderDetailResponseDto> {
+    return this.customerAuth.getGlobalOrderDetail(
+      session.buyerAccountId,
+      orderId,
+    );
   }
 
   // Global (no-store) phone + password login, for the My purchases page. Same

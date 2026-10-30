@@ -58,7 +58,10 @@ build-generated — deliberately, to keep `web`'s build/typecheck independent of
 `apps/api` (no turbo cross-package dependency, no live app boot needed in CI).
 Regenerate both by hand after changing a migrated module's response DTOs:
 `pnpm --filter api generate:openapi && pnpm --filter @biasmarket/types generate`,
-then commit the diff.
+then commit the diff. `orval` is pinned to an exact version in `packages/types`
+(a different version renames generated operations); CI's
+`check-types-sdk-drift.sh` fails when the committed SDK differs from a fresh
+`generate`.
 
 Inside `apps/api`:
 
@@ -212,6 +215,9 @@ automatically on container boot. Full runbook: `docs/core/deploy.md`.
 - `docs/core/security-payments.md` — validation rules, REST-over-tRPC rationale,
   manual payment flow state machine (implemented — see the Database section
   above for where)
+- `docs/core/ci.md` - what CI guarantees per workspace (lint, tests, coverage
+  floors), the guard script, and the 7-place wiring list for new path-filtered
+  jobs
 - `docs/core/product.md`, `docs/core/roadmap.md`, `docs/core/i18n.md`
 - `.artifacts/` — historical plans, audits, handoff prompts, implementation
   logs, and other work records; read `.artifacts/README.md` and

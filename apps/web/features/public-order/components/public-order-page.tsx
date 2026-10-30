@@ -94,7 +94,9 @@ export function PublicOrderPage({
         </div>
       )}
 
-      {!isError && data && <PublicOrderView slug={slug} order={data} />}
+      {!isError && data && (
+        <PublicOrderView slug={slug} token={token} order={data} />
+      )}
     </main>
   );
 }

@@ -194,6 +194,22 @@ describe('whatsapp-templates (e2e)', () => {
     expect(getRes.body.template).toBe(template);
   });
 
+  it('accepts a buyer-notice template without any required token', async () => {
+    const template =
+      'Hola {{customerName}}, tu pedido {{orderRef}} va en camino';
+    const putRes = await request(app.getHttpServer())
+      .put(`/stores/${storeId}/whatsapp-templates/ASSISTED_IN_TRANSIT`)
+      .set('Cookie', sessionCookie)
+      .send({ template })
+      .expect(200);
+    expect(putRes.body.type).toBe('ASSISTED_IN_TRANSIT');
+    const getRes = await request(app.getHttpServer())
+      .get(`/stores/${storeId}/whatsapp-templates/ASSISTED_IN_TRANSIT`)
+      .set('Cookie', sessionCookie)
+      .expect(200);
+    expect(getRes.body.template).toBe(template);
+  });
+
   it('rejects an unknown message type', async () => {
     await request(app.getHttpServer())
       .put(`/stores/${storeId}/whatsapp-templates/ORDER_INQUIRY`)

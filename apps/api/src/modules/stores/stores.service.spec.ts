@@ -379,7 +379,6 @@ describe('StoresService', () => {
         data: {
           bio: 'Official merch, ships nationwide.',
           aboutMarkdown: '## About\n\nWe are the real deal.',
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any() is untyped
           contentStaleAt: expect.any(Date),
         },
       });

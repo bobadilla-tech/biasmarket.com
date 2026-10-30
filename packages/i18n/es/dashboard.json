@@ -466,6 +466,24 @@
       "assistedOrderLink": {
         "title": "Mensaje de enlace de pedido asistido",
         "description": "Se usa cuando creas un pedido por un comprador y le envías su enlace privado. Variable requerida: '{{link}}'."
+      },
+      "buyerNotices": {
+        "paymentValidated": {
+          "title": "Aviso al comprador: pago validado",
+          "description": "Se usa cuando validas el pago de un pedido asistido y avisas al comprador. No lleva enlace: el comprador ya tiene el suyo. '{{saveInvite}}' agrega la invitación a guardar el pedido y queda vacío si ya lo guardó."
+        },
+        "inTransit": {
+          "title": "Aviso al comprador: pedido en camino",
+          "description": "Se usa cuando el pedido pasa a en camino. '{{trackingNumber}}' es el código de seguimiento, si lo registraste."
+        },
+        "ready": {
+          "title": "Aviso al comprador: pedido listo",
+          "description": "Se usa cuando el pedido queda listo para recoger."
+        },
+        "delivered": {
+          "title": "Aviso al comprador: pedido entregado",
+          "description": "Se usa cuando marcas el pedido como entregado. '{{saveInvite}}' agrega la invitación a guardar el pedido y queda vacío si ya lo guardó."
+        }
       }
     }
   },
@@ -483,7 +501,9 @@
     "types": {
       "LOW_STOCK": "Stock bajo",
       "OUT_OF_STOCK": "Sin stock",
-      "PAYMENT_PROOF_SUBMITTED": "Comprobante de pago enviado"
+      "PAYMENT_PROOF_SUBMITTED": "Comprobante de pago enviado",
+      "RECEIPT_CONFIRMED": "Recepción confirmada",
+      "GENERIC": "Notificación"
     }
   },
   "preferences": {
@@ -659,7 +679,30 @@
       "imagePreview": "Vista previa",
       "imageSize": "{size} KB",
       "removeImage": "Eliminar imagen",
-      "paymentProofDialogTitle": "Vista previa del comprobante de pago"
+      "paymentProofDialogTitle": "Vista previa del comprobante de pago",
+      "paidAt": "Fecha del pago",
+      "operationCode": "Número de operación (opcional)",
+      "operationCodeLine": "Operación {code}",
+      "pendingProofHint": "Hay un comprobante del comprador por revisar. Valídalo en vez de crear otro pago.",
+      "captureOptionalForCash": "En efectivo la captura es opcional",
+      "errors": {
+        "amountInvalid": "Escribe un monto válido, por ejemplo 40.50.",
+        "amountTooHigh": "El monto es mayor a lo que se puede registrar (el saldo menos los comprobantes por revisar).",
+        "methodRequired": "Elige un método de pago.",
+        "codeInvalid": "El número de operación no es válido.",
+        "dateInvalid": "Elige la fecha del pago.",
+        "dateFuture": "La fecha no puede ser futura.",
+        "fileRequired": "Adjunta la captura del pago (solo el efectivo no la necesita).",
+        "fileTooLarge": "La imagen pesa más de 5 MB.",
+        "fileType": "Usa una imagen JPG o PNG."
+      },
+      "duplicate": {
+        "title": "Este número de operación ya existe",
+        "body": "Ya registraste este número de operación en otro pago de tu tienda. Puede ser un pago repetido. ¿Quieres registrarlo igual?",
+        "viewOrder": "Ver el otro pedido",
+        "cancel": "Cancelar",
+        "confirm": "Registrar igual"
+      }
     },
     "approve": "Aprobar",
     "approveDisabledNoPayment": "No se puede aprobar sin ningún pago registrado.",
@@ -715,7 +758,17 @@
     "amountToRetain": "Monto a retener",
     "remaining": "Restante",
     "refund": "Reembolso",
-    "retentionBalance": "Saldo"
+    "retentionBalance": "Saldo",
+    "void": {
+      "button": "Anular pago",
+      "title": "Anular pago",
+      "description": "El pago de {amount} dejará de contar y el saldo del pedido se actualizará. El historial se conserva.",
+      "reasonLabel": "Motivo (obligatorio)",
+      "cancel": "Cancelar",
+      "confirm": "Anular pago",
+      "error": "No se pudo anular el pago.",
+      "voidedLine": "Anulado el {date}. Motivo: {reason}"
+    }
   },
   "overview": {
     "title": "Resumen",
@@ -867,6 +920,8 @@
     "submit": "Crear pedido",
     "submitting": "Creando pedido…",
     "errors": {
+      "alreadyCreated": "Ya creaste este pedido.",
+      "viewExistingOrder": "Ver el pedido",
       "phoneRequired": "Ingresa el WhatsApp del comprador.",
       "phoneInvalid": "El número no es válido.",
       "aliasTooLong": "Máximo 60 caracteres.",
@@ -945,6 +1000,20 @@
           "REJECTED": "Pago rechazado",
           "CANCELLED": "Cancelado"
         }
+      },
+      "receiptConfirmed": "El comprador confirmó la recepción el {date}",
+      "claimedBadge": "Reclamado"
+    },
+    "buyerNotice": {
+      "title": "Avisar al comprador",
+      "notNow": "Ahora no",
+      "dismiss": "Cerrar",
+      "templateError": "No pudimos cargar tu mensaje guardado, así que este es el texto por defecto.",
+      "reason": {
+        "ASSISTED_PAYMENT_VALIDATED": "Validaste su pago. Avísale por WhatsApp si quieres.",
+        "ASSISTED_IN_TRANSIT": "El pedido va en camino. Avísale por WhatsApp si quieres.",
+        "ASSISTED_READY": "El pedido está listo. Avísale por WhatsApp si quieres.",
+        "ASSISTED_DELIVERED": "Marcaste el pedido como entregado. Avísale por WhatsApp si quieres."
       }
     }
   }

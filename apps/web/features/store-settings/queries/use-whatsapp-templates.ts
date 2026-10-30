@@ -14,6 +14,10 @@ export interface WhatsAppTemplatesByStore {
   newOrder: WhatsAppTemplateResponseDto | null;
   paymentReminder: WhatsAppTemplateResponseDto | null;
   assistedOrderLink: WhatsAppTemplateResponseDto | null;
+  paymentValidated: WhatsAppTemplateResponseDto | null;
+  inTransit: WhatsAppTemplateResponseDto | null;
+  ready: WhatsAppTemplateResponseDto | null;
+  delivered: WhatsAppTemplateResponseDto | null;
 }
 
 export function useWhatsAppTemplates(storeId: string | undefined) {

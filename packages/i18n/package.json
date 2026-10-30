@@ -7,7 +7,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc && tsc -p tsconfig.mobile.json",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.mobile.json --noEmit"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.mobile.json --noEmit",
+    "lint": "node ../../scripts/lint-changed-files.mjs packages/i18n && eslint . --max-warnings 0"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

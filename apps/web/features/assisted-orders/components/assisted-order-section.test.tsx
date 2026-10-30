@@ -31,7 +31,6 @@ const base = {
   id: "order-abcdef",
   storeId: "store-1",
   customerId: "c1",
-  buyerAccountId: null,
   customerEmail: null,
   customerName: "Sofi",
   customerPhone: "+51987654321",
@@ -43,6 +42,7 @@ const base = {
   paidPercentage: 0,
   linkFirstOpenedAt: null,
   claimedAt: null,
+  buyerConfirmedReceivedAt: null,
   createdByName: "Mica Seller",
   currency: "PEN",
   status: "ACTIVE",
@@ -387,4 +387,47 @@ test("the order detail shows the assisted section only for assisted orders", () 
   unmount();
   renderSheet({ ...base, source: "MARKETPLACE" } as OrderResponseDto);
   expect(screen.queryByText("Pedido asistido")).toBeNull();
+});
+
+test("shows when the buyer confirmed receipt, apart from the fulfillment status", async () => {
+  findTemplate.mockResolvedValue({ template: null });
+  renderWithProviders(
+    <AssistedOrderSection
+      order={{
+        ...base,
+        buyerConfirmedReceivedAt: "2026-10-02T15:00:00.000Z",
+      }}
+      storeId="store-1"
+      storeName="Mi Tienda"
+    />,
+  );
+  expect(
+    await screen.findByText(/El comprador confirmó la recepción el/),
+  ).toBeTruthy();
+});
+
+test("shows a Reclamado badge only once the buyer claimed the order, and no buyer data", async () => {
+  findTemplate.mockResolvedValue({ template: null });
+  const unclaimed = renderWithProviders(
+    <AssistedOrderSection
+      order={base}
+      storeId="store-1"
+      storeName="Mi Tienda"
+    />,
+  );
+  expect(screen.queryByText("Reclamado")).toBeNull();
+  unclaimed.unmount();
+
+  renderWithProviders(
+    <AssistedOrderSection
+      order={{
+        ...base,
+        claimedAt: "2026-10-02T10:00:00.000Z",
+      }}
+      storeId="store-1"
+      storeName="Mi Tienda"
+    />,
+  );
+  expect(await screen.findByText("Reclamado")).toBeTruthy();
+  expect(document.body.innerHTML).not.toContain("buyer-secret-id");
 });

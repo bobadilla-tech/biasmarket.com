@@ -318,6 +318,10 @@ model Order {
   source                  OrderSource             @default(MARKETPLACE)
   // Seller who created a VENDOR_ASSISTED order. Null for marketplace checkout.
   createdByUserId         String?
+  // Optional `Idempotency-Key` of a seller-created assisted order (a retried
+  // request returns the existing order instead of creating a second one).
+  // NULLs are distinct in Postgres, so orders without a key never collide.
+  idempotencyKey          String?
   // SHA-256 of the private-link token. The raw token is never stored.
   accessTokenHash         String?                 @unique
   accessTokenRevokedAt    DateTime?
@@ -325,6 +329,13 @@ model Order {
   linkFirstOpenedAt       DateTime?
   // When a buyer claimed the order. Who claimed it is buyerAccountId.
   claimedAt               DateTime?
+  // Set when fulfilment becomes terminal; starts the assisted identity-retention clock.
+  closedAt                 DateTime?
+  // Identity was erased after a buyer request or retention.
+  buyerIdentityErasedAt    DateTime?
+  // Buyer tapped "Ya lo recibí" on the private link. Independent of
+  // fulfillmentStatus: the seller still owns that transition.
+  buyerConfirmedReceivedAt DateTime?
   // Not set by Google sign-in. Stays false until a later verification step.
   phoneVerified           Boolean                 @default(false)
   deliveryMethodType      DeliveryMethodType
@@ -376,10 +387,13 @@ model Order {
   @@index([storeId, paymentStatus])
   @@index([storeId, createdAt])
   @@index([storeId, customerPhoneNormalized, createdAt])
+  @@index([createdByUserId, storeId, source, createdAt, customerPhoneNormalized], map: "Order_seller_store_source_createdAt_phone_idx")
   @@index([paymentStatus, expiresAt])
   @@index([buyerAccountId])
+  @@index([source, closedAt, buyerIdentityErasedAt])
   // ON DELETE SET NULL walks this column when a user is deleted.
   @@index([createdByUserId])
+  @@unique([storeId, createdByUserId, idempotencyKey])
 }
 
 enum OrderEventActor {
@@ -607,6 +621,10 @@ enum WhatsAppMessageType {
   NEW_ORDER
   PAYMENT_REMINDER
   ASSISTED_ORDER_LINK
+  ASSISTED_PAYMENT_VALIDATED
+  ASSISTED_IN_TRANSIT
+  ASSISTED_READY
+  ASSISTED_DELIVERED
 }
 
 // Per-store override for the WhatsApp message a seller sends to a buyer —
@@ -657,6 +675,8 @@ model Customer {
   pendingEmail  String?
   pendingPhone  String?
   name          String?
+  // Preserve the stable row/FK while hiding erased contacts from sellers.
+  identityErasedAt DateTime?
   createdAt     DateTime @default(now())
 
   store  Store   @relation(fields: [storeId], references: [id])
@@ -664,6 +684,7 @@ model Customer {
 
   @@unique([storeId, phone])
   @@index([storeId])
+  @@index([storeId, identityErasedAt])
 }
 
 // Global buyer identity — one per phone number across every store, replacing
@@ -683,6 +704,10 @@ model BuyerAccount {
   passwordVersion Int      @default(0)
   email           String?
   emailVerified   Boolean  @default(false)
+  // Google's stable `sub` claim. Linking by this (not by email alone) means a
+  // later email change or an unverified duplicate can never redirect a Google
+  // login into another account.
+  googleSub       String?  @unique
   pendingEmail    String?
   pendingPhone    String?
   name            String?
@@ -763,6 +788,7 @@ enum NotificationType {
   LOW_STOCK
   OUT_OF_STOCK
   PAYMENT_PROOF_SUBMITTED
+  RECEIPT_CONFIRMED
 }
 
 model Notification {

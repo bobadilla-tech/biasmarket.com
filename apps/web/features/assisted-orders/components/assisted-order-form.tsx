@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
+import Link from "next/link";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { formatPhone, validatePhone } from "@biasmarket/utils/phone-country";
 import {
   ASSISTED_PICKUP_DEPOSIT_PERCENT,
@@ -13,8 +14,8 @@ import {
 import { isPaymentMethodConfigured } from "@biasmarket/utils/payment-methods";
 import type { CreateAssistedOrderResponseDto } from "@biasmarket/types";
 import {
-  buildAssistedOrderSchema,
   type AssistedOrderFormInput,
+  buildAssistedOrderSchema,
 } from "@biasmarket/validation";
 import { Button } from "@/components/ui/button";
 import { PhoneInput } from "@/components/ui/phone-input";
@@ -37,15 +38,16 @@ import {
   useOrderableProducts,
   useProductDetails,
 } from "../queries/use-orderable-products";
+import { IdempotentReplayError } from "../api/assisted-orders.api";
 import { useCreateAssistedOrder } from "../mutations/use-create-assisted-order";
 import {
   buildAssistedOrderPayload,
   centsToAmount,
   hasMixedCurrencies,
   orderCurrency,
+  type PricedProduct,
   subtotalCents,
   unitPriceCents,
-  type PricedProduct,
 } from "../lib/order-totals";
 import { OrderItemRow } from "./order-item-row";
 
@@ -95,6 +97,13 @@ export function AssistedOrderForm({
   const deliveryOptions = useDeliveryOptions(slug);
   const productsQuery = useOrderableProducts(storeId);
   const createOrder = useCreateAssistedOrder(storeId);
+  const locale = useLocale();
+
+  // One key per "attempt at this exact order": a retry (double click, network
+  // error, replay) reuses it so the API cannot create a second order. It is
+  // dropped after a success and after ANY edit of the form values, otherwise a
+  // corrected resubmit would be answered with the old order.
+  const idempotencyKey = useRef<string | null>(null);
 
   const methods = deliveryOptions.data?.methods ?? [];
   const points = deliveryOptions.data?.points ?? [];
@@ -143,6 +152,13 @@ export function AssistedOrderForm({
     },
   });
   const itemsArray = useFieldArray({ control: form.control, name: "items" });
+
+  useEffect(() => {
+    const subscription = form.watch(() => {
+      idempotencyKey.current = null;
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   const customerPhone = form.watch("customerPhone");
   const items = form.watch("items");
@@ -343,13 +359,19 @@ export function AssistedOrderForm({
     }
   };
 
+  const replayOrderId =
+    createOrder.error instanceof IdempotentReplayError
+      ? createOrder.error.orderId
+      : null;
   const submitError = mixedCurrencies
     ? t("errors.mixedCurrencies")
-    : createOrder.error
-      ? createOrder.error instanceof Error && createOrder.error.message
-        ? createOrder.error.message
-        : t("errors.generic")
-      : undefined;
+    : replayOrderId
+      ? t("errors.alreadyCreated")
+      : createOrder.error
+        ? createOrder.error instanceof Error && createOrder.error.message
+          ? createOrder.error.message
+          : t("errors.generic")
+        : undefined;
   const hasFieldErrors = Object.keys(errors).length > 0;
   const selectedProductDetailsReady = items.every((item) => {
     if (!item.productId) return true;
@@ -384,10 +406,13 @@ export function AssistedOrderForm({
     });
     if (missingVariant) return;
 
+    idempotencyKey.current ??= crypto.randomUUID();
     try {
-      const result = await createOrder.mutateAsync(
-        buildAssistedOrderPayload(values, requiringDate),
-      );
+      const result = await createOrder.mutateAsync({
+        payload: buildAssistedOrderPayload(values, requiringDate),
+        idempotencyKey: idempotencyKey.current,
+      });
+      idempotencyKey.current = null;
       onCreated(result);
     } catch {
       // Shown through `submitError` from the mutation state.
@@ -414,6 +439,16 @@ export function AssistedOrderForm({
           submitError ?? "",
         ].filter(Boolean)}
       />
+      {replayOrderId && slug ? (
+        <Link
+          href={`/${locale}/dashboard/${slug}/orders?order=${encodeURIComponent(
+            replayOrderId,
+          )}`}
+          className="-mt-3 text-sm font-semibold text-[#341b55] underline underline-offset-2"
+        >
+          {t("errors.viewExistingOrder")}
+        </Link>
+      ) : null}
 
       <Section title={t("phone.label")}>
         <FormField

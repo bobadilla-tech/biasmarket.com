@@ -18,9 +18,12 @@ export function Faq() {
   const items = t.raw("items") as FaqItem[];
 
   return (
-    <section id="faq" className="px-4 py-12 sm:px-10 sm:py-20">
+    <section
+      id="faq"
+      className="landing-faq-section px-4 py-12 sm:px-10 sm:py-20"
+    >
       <div className="mx-auto max-w-2xl">
-        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+        <h2 className="landing-section-title text-3xl font-bold tracking-tight sm:text-4xl">
           {t("title")}
         </h2>
         <Accordion className="mt-8">

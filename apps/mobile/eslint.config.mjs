@@ -1,10 +1,11 @@
 import babelParser from "@babel/eslint-parser";
 import reactHooks from "eslint-plugin-react-hooks";
 import globals from "globals";
+import { baseRules } from "../../eslint.config.mjs";
 
 export default [
   {
-    ignores: [".expo/**", "dist/**", "node_modules/**"],
+    ignores: [".expo/**", "coverage/**", "dist/**", "node_modules/**"],
   },
   {
     files: ["**/*.{js,jsx,ts,tsx,mjs,cjs}"],
@@ -33,6 +34,9 @@ export default [
     plugins: {
       "react-hooks": reactHooks,
     },
-    rules: reactHooks.configs.flat.recommended.rules,
+    rules: {
+      ...baseRules,
+      ...reactHooks.configs.flat.recommended.rules,
+    },
   },
 ];

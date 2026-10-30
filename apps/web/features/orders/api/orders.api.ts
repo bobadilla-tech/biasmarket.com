@@ -1,8 +1,22 @@
 import { apiClient } from "@/lib/api-client";
-import type { RegisterPaymentInput } from "@biasmarket/validation";
+import type { SellerPaymentInput } from "@biasmarket/validation";
+import { limaDayInstant } from "@/lib/lima-date";
 
 function apiUrl() {
   return process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
+}
+
+// The API answers a duplicate operation code with a 409 whose body is exactly
+// `{ code, orderId }`. `ApiError` carries no body, so the multipart call below
+// reads it and throws this typed error for the form's duplicate dialog.
+export class DuplicateOperationCodeError extends Error {
+  orderId: string;
+
+  constructor(orderId: string) {
+    super("duplicate operation code");
+    this.name = "DuplicateOperationCodeError";
+    this.orderId = orderId;
+  }
 }
 
 export const ordersApi = {
@@ -44,13 +58,19 @@ export const ordersApi = {
   async registerPayment(
     storeId: string,
     orderId: string,
-    values: RegisterPaymentInput,
-    fallbackErrorMessage?: string,
+    values: SellerPaymentInput,
+    options: { confirmDuplicate?: boolean; fallbackErrorMessage?: string } = {},
   ) {
     const formData = new FormData();
     formData.append("amount", values.amount);
     formData.append("method", values.method);
     if (values.note) formData.append("note", values.note);
+    if (values.operationCode.trim()) {
+      formData.append("operationCode", values.operationCode.trim());
+    }
+    // A picked day, sent as noon Lima so it never drifts to the day before.
+    formData.append("paidAt", limaDayInstant(values.paidAt));
+    if (options.confirmDuplicate) formData.append("confirmDuplicate", "true");
     if (values.file instanceof File) formData.append("file", values.file);
 
     const res = await fetch(
@@ -62,10 +82,35 @@ export const ordersApi = {
       },
     );
     const data = await res.json().catch(() => null);
+    if (
+      res.status === 409 &&
+      data?.code === "DUPLICATE_OPERATION_CODE" &&
+      typeof data.orderId === "string"
+    ) {
+      throw new DuplicateOperationCodeError(data.orderId);
+    }
     if (!res.ok) {
-      throw new Error(data?.message ?? fallbackErrorMessage ?? "Network error");
+      throw new Error(
+        data?.message ?? options.fallbackErrorMessage ?? "Network error",
+      );
     }
     return data;
+  },
+
+  voidPayment(
+    storeId: string,
+    orderId: string,
+    paymentId: string,
+    reason: string,
+    fallbackErrorMessage?: string,
+  ) {
+    return apiClient.orders.voidPayment(
+      storeId,
+      orderId,
+      paymentId,
+      { reason },
+      { fallbackErrorMessage },
+    );
   },
 
   paymentImageUrl(storeId: string, orderId: string, paymentId: string) {

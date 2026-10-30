@@ -316,9 +316,7 @@
         },
         {
           "heading": "Contact",
-          "paragraphs": [
-            "Bias Market — hello@biasmarket.com"
-          ]
+          "paragraphs": ["Bias Market — hello@biasmarket.com"]
         }
       ]
     }
@@ -364,9 +362,7 @@
         },
         {
           "heading": "Need help?",
-          "paragraphs": [
-            "See the FAQ or contact us at hello@biasmarket.com."
-          ]
+          "paragraphs": ["See the FAQ or contact us at hello@biasmarket.com."]
         }
       ]
     },
@@ -478,9 +474,7 @@
         },
         {
           "heading": "Legal",
-          "paragraphs": [
-            "Read our Privacy Policy and Terms of Service."
-          ]
+          "paragraphs": ["Read our Privacy Policy and Terms of Service."]
         }
       ]
     }

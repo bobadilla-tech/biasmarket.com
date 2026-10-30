@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowUpRight, Images, Search, Shapes } from "lucide-react";
@@ -8,10 +8,11 @@ import { ProductCard } from "@/features/storefront/components/product-card";
 import { isProductOutOfStock } from "@/features/discovery/lib/product-stock";
 import {
   CategoryFilter,
+  DesktopCategoryFilter,
   normalizeStoreTab,
+  type StorefrontCategory,
   StoreSearchBar,
   StoreTabs,
-  type StorefrontCategory,
 } from "@/features/storefront/components/storefront";
 
 export interface RenderableSectionVariant {
@@ -231,15 +232,21 @@ export function StoreSectionRenderer({
     for (const section of sections) {
       for (const item of section.collection?.products ?? []) {
         for (const relation of item.product.categories ?? []) {
-          byId.set(relation.category.slug ?? relation.category.id, {
+          const categoryId = relation.category.slug ?? relation.category.id;
+          byId.set(categoryId, {
+            ...byId.get(categoryId),
             ...relation.category,
-            id: relation.category.slug ?? relation.category.id,
+            id: categoryId,
           });
         }
       }
     }
     return [...byId.values()];
   }, [sections, storeCategories]);
+  const productCategories = categories.filter(
+    (category) =>
+      category.productCount === undefined || category.productCount > 0,
+  );
   const normalizedQuery = catalogControls
     ? normalizeSearchText(query.trim())
     : "";
@@ -273,12 +280,15 @@ export function StoreSectionRenderer({
                   Number(variant.priceOverride ?? product.price),
                 ),
               );
-            if (sort === "precio_asc")
+            if (sort === "precio_asc") {
               return effectivePrice(a.product) - effectivePrice(b.product);
-            if (sort === "precio_desc")
+            }
+            if (sort === "precio_desc") {
               return effectivePrice(b.product) - effectivePrice(a.product);
-            if (sort === "nombre_asc")
+            }
+            if (sort === "nombre_asc") {
               return a.product.name.localeCompare(b.product.name);
+            }
             return (
               Number(isProductOutOfStock(a.product)) -
               Number(isProductOutOfStock(b.product))
@@ -292,14 +302,16 @@ export function StoreSectionRenderer({
           if (
             cp.product.discontinued ||
             (!catalogControls && isProductOutOfStock(cp.product))
-          )
+          ) {
             return false;
+          }
           if (
             !serverSorted &&
             normalizedQuery &&
             !normalizeSearchText(cp.product.name).includes(normalizedQuery)
-          )
+          ) {
             return false;
+          }
           if (
             catalogControls &&
             !serverSorted &&
@@ -307,8 +319,9 @@ export function StoreSectionRenderer({
             !cp.product.categories?.some((item) =>
               categoryIds.includes(item.category.slug ?? item.category.id),
             )
-          )
+          ) {
             return false;
+          }
           return true;
         });
         if (visible.length === 0) return null;
@@ -321,7 +334,11 @@ export function StoreSectionRenderer({
               </h2>
             )}
             <div
-              className={`grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 ${catalogControls ? "lg:grid-cols-4 xl:grid-cols-4" : "lg:grid-cols-4"}`}
+              className={`grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 ${
+                catalogControls
+                  ? "lg:grid-cols-4 xl:grid-cols-5"
+                  : "lg:grid-cols-4"
+              }`}
             >
               {visible.map((cp) => (
                 <ProductCard
@@ -381,98 +398,94 @@ export function StoreSectionRenderer({
       >
         {catalogControls ? (
           <div className="space-y-5">
-            {categories.length > 0 && (
-              <nav
-                aria-label={t("categories")}
-                className="flex gap-7 overflow-x-auto border-b border-(--store-border)"
-              >
-                <button
-                  type="button"
-                  aria-pressed={categoryIds.length === 0}
-                  onClick={() => updateCategories([])}
-                  className={`min-h-11 shrink-0 border-b-2 px-1 py-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) ${categoryIds.length === 0 ? "border-(--store-primary) text-(--store-primary)" : "border-transparent text-(--store-muted) hover:text-(--store-text)"}`}
-                >
-                  {t("productsTab")}
-                </button>
-                {categories.map((category) => {
-                  const id = category.slug ?? category.id;
-                  const active = categoryIds.includes(id);
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      aria-pressed={active}
-                      onClick={() => updateCategories(active ? [] : [id])}
-                      className={`min-h-11 shrink-0 border-b-2 px-1 py-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) ${active ? "border-(--store-primary) text-(--store-primary)" : "border-transparent text-(--store-muted) hover:text-(--store-text)"}`}
-                    >
-                      {category.name}
-                    </button>
-                  );
-                })}
-              </nav>
-            )}
             <StoreSearchBar
               value={query}
               onChange={setQuery}
               sort={sort}
               onSortChange={setSort}
             />
-            <CategoryFilter
-              categories={categories}
-              selected={categoryIds}
-              onChange={updateCategories}
-            />
-            {renderSections()}
-            {(normalizedQuery || categoryIds.length > 0) &&
-            !hasVisibleProducts ? (
-              <div
-                role="status"
-                aria-live="polite"
-                className="rounded-2xl bg-(--store-card) px-4 py-10 text-center text-sm text-(--store-muted)"
-              >
-                <p>{t("noSearchResults")}</p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setQuery("");
-                    updateCategories([]);
-                  }}
-                  className="mt-3 min-h-10 rounded-full bg-(--store-primary) px-4 font-semibold text-(--store-primary-text)"
-                >
-                  {t("clearFilters")}
-                </button>
-              </div>
-            ) : displayedSections.every(
-                (section) => section.collection?.products.length === 0,
-              ) ? (
-              <p className="text-center text-(--store-muted)">
-                {t("noProducts")}
-              </p>
-            ) : null}
-            {catalogPagination &&
-              catalogPagination.page * catalogPagination.limit <
-                catalogPagination.total && (
-                <nav
-                  aria-label={t("catalogPagination")}
-                  className="flex justify-center pt-2"
-                >
-                  <button
-                    type="button"
-                    disabled={isLoadingMore}
-                    onClick={() => {
-                      const params = new URLSearchParams(searchString);
-                      params.set("page", String(catalogPagination.page + 1));
-                      setIsLoadingMore(true);
-                      router.push(`${pathname}?${params.toString()}`, {
-                        scroll: false,
-                      });
-                    }}
-                    className="store-theme-primary-button min-h-11 rounded-full px-6 text-sm font-semibold disabled:cursor-wait disabled:opacity-60"
-                  >
-                    {isLoadingMore ? t("loadingMore") : t("loadMore")}
-                  </button>
-                </nav>
+            <div
+              className={`grid items-start gap-5 ${
+                productCategories.length > 0
+                  ? "md:grid-cols-[13rem_minmax(0,1fr)] lg:grid-cols-[14rem_minmax(0,1fr)] xl:grid-cols-[15rem_minmax(0,1fr)]"
+                  : ""
+              }`}
+            >
+              {productCategories.length > 0 && (
+                <>
+                  <div className="md:hidden">
+                    <CategoryFilter
+                      categories={productCategories}
+                      selected={categoryIds}
+                      onChange={updateCategories}
+                    />
+                  </div>
+                  <div className="hidden md:block">
+                    <DesktopCategoryFilter
+                      categories={productCategories}
+                      selected={categoryIds}
+                      onChange={updateCategories}
+                    />
+                  </div>
+                </>
               )}
+              <div className="min-w-0 space-y-5">
+                {renderSections()}
+                {(normalizedQuery || categoryIds.length > 0) &&
+                !hasVisibleProducts ? (
+                  <div
+                    role="status"
+                    aria-live="polite"
+                    className="rounded-2xl bg-(--store-card) px-4 py-10 text-center text-sm text-(--store-muted)"
+                  >
+                    <p>{t("noSearchResults")}</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQuery("");
+                        updateCategories([]);
+                      }}
+                      className="mt-3 min-h-10 rounded-full bg-(--store-primary) px-4 font-semibold text-(--store-primary-text)"
+                    >
+                      {t("clearFilters")}
+                    </button>
+                  </div>
+                ) : displayedSections.every(
+                    (section) => section.collection?.products.length === 0,
+                  ) ? (
+                  <p className="text-center text-(--store-muted)">
+                    {t("noProducts")}
+                  </p>
+                ) : null}
+                {catalogPagination &&
+                  catalogPagination.page * catalogPagination.limit <
+                    catalogPagination.total && (
+                    <nav
+                      aria-label={t("catalogPagination")}
+                      className="flex justify-center pt-2"
+                    >
+                      <button
+                        type="button"
+                        disabled={isLoadingMore}
+                        onClick={() => {
+                          const params = new URLSearchParams(searchString);
+                          params.set(
+                            "page",
+                            String(catalogPagination.page + 1),
+                          );
+                          setIsLoadingMore(true);
+                          router.push(`${pathname}?${params.toString()}`, {
+                            scroll: false,
+                          });
+                        }}
+                        className="store-theme-primary-button min-h-11 rounded-full px-6 text-sm font-semibold disabled:cursor-wait disabled:opacity-60"
+                      >
+                        {isLoadingMore ? t("loadingMore") : t("loadMore")}
+                      </button>
+                    </nav>
+                  )}
+              </div>
+            </div>
           </div>
         ) : (
           <>
@@ -550,7 +563,9 @@ export function StoreSectionRenderer({
                 .map((category) => (
                   <a
                     key={category.id}
-                    href={`?tab=productos&categoria=${encodeURIComponent(category.slug ?? category.id)}`}
+                    href={`?tab=productos&categoria=${encodeURIComponent(
+                      category.slug ?? category.id,
+                    )}`}
                     className="group flex min-h-[76px] items-center gap-3 rounded-2xl border border-(--store-border) bg-(--store-card) p-3 text-left text-sm font-semibold text-(--store-text) shadow-sm transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-(--store-primary) hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) motion-reduce:transform-none motion-reduce:transition-none"
                   >
                     <span

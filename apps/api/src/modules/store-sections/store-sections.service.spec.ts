@@ -156,7 +156,6 @@ describe('StoreSectionsService', () => {
 
       expect(prisma.store.update).toHaveBeenCalledWith({
         where: { id: storeId },
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any() is untyped
         data: { contentStaleAt: expect.any(Date) },
       });
     });

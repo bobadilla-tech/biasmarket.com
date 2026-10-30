@@ -14,6 +14,7 @@ import { PrismaService } from '../../../prisma/prisma.service.js';
 import { StorageService } from '../../../storage/storage.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 import { OrderEventsService } from '../application/order-events.service.js';
+import { BuyerPaymentProofService } from '../application/buyer-payment-proof.service.js';
 import { CustomerSessionGuard } from '../../customer-auth/customer-session.guard.js';
 
 describe('CustomerOrderPaymentsController.submit', () => {
@@ -21,6 +22,7 @@ describe('CustomerOrderPaymentsController.submit', () => {
   let events: { record: Mock };
   let tx: {
     $queryRaw: Mock;
+    order: { findFirst: Mock };
     orderPayment: { findMany: Mock; create: Mock };
   };
 
@@ -29,6 +31,15 @@ describe('CustomerOrderPaymentsController.submit', () => {
   beforeEach(async () => {
     tx = {
       $queryRaw: vi.fn().mockResolvedValue([{ id: orderId }]),
+      order: {
+        findFirst: vi.fn().mockResolvedValue({
+          status: 'ACTIVE',
+          paymentStatus: 'PENDING_PAYMENT',
+          fulfillmentStatus: 'ORDERING',
+          expiresAt: null,
+          requiredAmount: 100,
+        }),
+      },
       orderPayment: {
         findMany: vi.fn().mockResolvedValue([]),
         create: vi.fn().mockResolvedValue({
@@ -52,6 +63,8 @@ describe('CustomerOrderPaymentsController.submit', () => {
           provide: OrderRepository,
           useValue: {
             findOrderForBuyer: vi.fn().mockResolvedValue({
+              status: 'ACTIVE',
+              expiresAt: null,
               paymentStatus: 'PENDING_PAYMENT',
               fulfillmentStatus: 'ORDERING',
               pendingAmount: 100,
@@ -70,13 +83,17 @@ describe('CustomerOrderPaymentsController.submit', () => {
         },
         {
           provide: StorageService,
-          useValue: { uploadPaymentImage: vi.fn().mockResolvedValue('url') },
+          useValue: {
+            uploadPaymentImage: vi.fn().mockResolvedValue('url'),
+            deleteImage: vi.fn().mockResolvedValue(undefined),
+          },
         },
         {
           provide: NotificationsService,
           useValue: { createIfNotOpen: vi.fn() },
         },
         { provide: OrderEventsService, useValue: events },
+        BuyerPaymentProofService,
       ],
     })
       .overrideGuard(CustomerSessionGuard)

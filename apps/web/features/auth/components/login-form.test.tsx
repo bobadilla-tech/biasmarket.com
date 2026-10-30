@@ -52,6 +52,35 @@ test("exposes labelled fields and accessible validation relationships", async ()
   expectNoA11yViolations(await axe(container));
 });
 
+test("reveals and masks the password through the visibility toggle", async () => {
+  const user = userEvent.setup();
+  renderWithProviders(<LoginForm />);
+
+  const password = screen.getByLabelText("Contraseña");
+  expect(password.getAttribute("type")).toBe("password");
+  expect(
+    screen
+      .getByRole("button", { name: "Mostrar contraseña" })
+      .getAttribute("aria-pressed"),
+  ).toBe("false");
+
+  await user.click(screen.getByRole("button", { name: "Mostrar contraseña" }));
+  expect(password.getAttribute("type")).toBe("text");
+  expect(
+    screen
+      .getByRole("button", { name: "Ocultar contraseña" })
+      .getAttribute("aria-pressed"),
+  ).toBe("true");
+
+  await user.click(screen.getByRole("button", { name: "Ocultar contraseña" }));
+  expect(password.getAttribute("type")).toBe("password");
+  expect(
+    screen
+      .getByRole("button", { name: "Mostrar contraseña" })
+      .getAttribute("aria-pressed"),
+  ).toBe("false");
+});
+
 async function submitValidCredentials() {
   const user = userEvent.setup();
   renderWithProviders(<LoginForm />);

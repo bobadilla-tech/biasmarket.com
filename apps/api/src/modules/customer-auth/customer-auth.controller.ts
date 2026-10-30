@@ -172,7 +172,6 @@ export class CustomerAuthController {
       ...toOrderDto(row),
       createdByName: null,
       linkFirstOpenedAt: null,
-      claimedAt: null,
     };
   }
 

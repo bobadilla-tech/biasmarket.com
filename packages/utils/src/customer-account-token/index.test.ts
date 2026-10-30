@@ -19,14 +19,12 @@ describe("customer account token", () => {
   });
 
   it("round-trips each explicit purpose", () => {
-    for (
-      const purpose of [
-        "confirm",
-        "reset",
-        "change-email",
-        "change-phone",
-      ] as const
-    ) {
+    for (const purpose of [
+      "confirm",
+      "reset",
+      "change-email",
+      "change-phone",
+    ] as const) {
       const token = createCustomerAccountToken("buyer-1", secret, purpose);
       expect(verifyCustomerAccountToken(token, secret)).toEqual({
         buyerAccountId: "buyer-1",
@@ -60,11 +58,7 @@ describe("customer account token", () => {
   it("expires a 'reset' token after its much shorter TTL, while a 'confirm' token from the same moment is still valid", () => {
     const realNow = Date.now;
     Date.now = () => new Date("2020-01-01T00:00:00Z").getTime();
-    const resetToken = createCustomerAccountToken(
-      "buyer-1",
-      secret,
-      "reset",
-    );
+    const resetToken = createCustomerAccountToken("buyer-1", secret, "reset");
     const confirmToken = createCustomerAccountToken(
       "buyer-1",
       secret,

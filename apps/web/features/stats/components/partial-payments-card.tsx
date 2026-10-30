@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/shared/empty-state";
 import type { OutstandingPartialPaymentResponseDto } from "@biasmarket/types";
+import { orderRef } from "@biasmarket/utils/order-ref";
 
 function formatMoney(amount: number, currency: string) {
   return `${currency} ${amount.toFixed(2)}`;
@@ -38,7 +39,7 @@ export function PartialPaymentsCard({
                     {order.customerName ?? order.customerPhone}
                   </p>
                   <p className="text-xs text-[#8f7da8]">
-                    #{order.id.slice(-4).toUpperCase()}
+                    #{orderRef(order.id)}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-6">

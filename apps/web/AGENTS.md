@@ -184,6 +184,8 @@ to git, not build-generated** — unchanged from the original decision (kept
 step, no live app boot needed in CI). After changing a migrated feature's
 backend response DTOs, regenerate by hand and commit the diff:
 `pnpm --filter api generate:openapi && pnpm --filter @biasmarket/types generate`.
+Orval is pinned to an exact version; bumping it needs `operationName` handling
+first (8.43 renames ~49 call sites), and CI's SDK drift check fails otherwise.
 
 **Orval config notes:** `orval.config.ts`'s `input.filters` includes every tag
 now — `Collections`, `Products`, `Categories`, `Notifications`, `Contact`,
@@ -281,11 +283,13 @@ own `OrderResponseDto`), `stats` (`Stats` tag — `overview`/`analytics`/
 this tag). The hand-written `apiFetch` wrapper is gone entirely — the only
 remaining raw `fetch`/`FormData` call sites are the documented multipart
 carve-outs (`products`' image uploads, `orders`' `registerPayment`, `stores`'
-`uploadLogo`) and server-component fetches in storefront `page`/`layout` files.
-Error responses are still explicitly out of scope for the generated client (see
-the plan doc's Phase 3 note) — the mutator's defensive `message`-field parsing
-and `fallbackErrorMessage` stay the pattern for error paths even in migrated
-features.
+`uploadLogo`, `public-order`'s buyer proof upload in `api/submit-proof.ts`,
+which uses `credentials: "omit"`, sends no custom headers so the browser skips a
+CORS preflight, and throws `ApiError`) and server-component fetches in
+storefront `page`/`layout` files. Error responses are still explicitly out of
+scope for the generated client (see the plan doc's Phase 3 note) — the mutator's
+defensive `message`-field parsing and `fallbackErrorMessage` stay the pattern
+for error paths even in migrated features.
 
 ## Feature-specific patterns worth knowing
 

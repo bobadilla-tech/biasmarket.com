@@ -36,13 +36,16 @@ export function CheckoutSummary({
   const pending = isPartial ? total - payNow : 0;
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-3">
+    <div
+      data-store-card
+      className="flex flex-col gap-3 rounded-[1.5rem] border border-(--store-border) bg-(--store-card) p-6 shadow-[var(--shadow-soft)]"
+    >
       {items.map((item) => (
         <div
           key={`${item.productId}:${item.variantId ?? ""}`}
           className="flex items-center gap-3"
         >
-          <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-gray-100">
+          <div className="relative size-12 shrink-0 overflow-hidden rounded-xl bg-(--store-surface) ring-1 ring-(--store-border)">
             {item.image ? (
               <Image
                 src={item.image}

@@ -21,6 +21,10 @@ const templates = {
   newOrder: null,
   paymentReminder: null,
   assistedOrderLink: null,
+  paymentValidated: null,
+  inTransit: null,
+  ready: null,
+  delivered: null,
 };
 
 function renderSection(queryClient: QueryClient) {
@@ -83,4 +87,22 @@ test("saving the assisted-order template writes only that key into the templates
       assistedOrderLink: saved,
     }),
   );
+});
+
+test("renders one editor per buyer notice, with a live preview that has no link", () => {
+  renderSection(new QueryClient());
+
+  for (const title of [
+    "Aviso al comprador: pago validado",
+    "Aviso al comprador: pedido en camino",
+    "Aviso al comprador: pedido listo",
+    "Aviso al comprador: pedido entregado",
+  ]) {
+    expect(screen.getByLabelText(title)).toBeDefined();
+  }
+  const editor = screen.getByLabelText("Aviso al comprador: pedido en camino");
+  fireEvent.change(editor, {
+    target: { value: "Va en camino {{orderRef}} {{trackingNumber}}" },
+  });
+  expect(screen.getByText("Va en camino #123456 OLV-123456")).toBeDefined();
 });

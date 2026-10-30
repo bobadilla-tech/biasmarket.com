@@ -8,6 +8,8 @@ import { Link } from "@/i18n/navigation";
 import { OrderStatusBadge } from "@/features/orders";
 import { CustomerLoginForm } from "@/features/customer-auth";
 import { LoadingState } from "@/components/shared/loading-state";
+import { ClaimErrorBanner } from "./claim-error-banner";
+import { OriginLabel } from "./origin-label";
 import { useGlobalLogout } from "../mutations/use-global-logout";
 import {
   globalAccountKeys,
@@ -38,7 +40,7 @@ function groupByStore(orders: GlobalAccountOrderResponseDto[]): StoreGroup[] {
   return [...groups.values()];
 }
 
-export function MyPurchases() {
+export function MyPurchases({ claimCode }: { claimCode?: string }) {
   const t = useTranslations("storefront.myPurchases");
   const profile = useGlobalAccount();
   const orders = useGlobalOrders(Boolean(profile.data));
@@ -50,6 +52,7 @@ export function MyPurchases() {
   if (profile.isError) {
     return (
       <div className="flex flex-col items-center gap-6">
+        <ClaimErrorBanner code={claimCode} />
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900">
             {t("loggedOutTitle")}
@@ -73,6 +76,7 @@ export function MyPurchases() {
 
   return (
     <div className="flex flex-col gap-8">
+      <ClaimErrorBanner code={claimCode} />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">{t("title")}</h1>
@@ -111,12 +115,17 @@ export function MyPurchases() {
             {group.orders.map((order) => (
               <Link
                 key={order.id}
-                href={`/store/${group.slug}/account/orders/${order.id}`}
+                href={
+                  order.claimedAt
+                    ? `/my-purchases/orders/${order.id}`
+                    : `/store/${group.slug}/account/orders/${order.id}`
+                }
                 className="flex items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:border-gray-200 hover:shadow-md"
               >
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">
+                  <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-gray-900">
                     #{order.id.slice(0, 8)}
+                    <OriginLabel source={order.source} />
                   </p>
                   <p className="text-xs text-gray-500">
                     {new Date(order.createdAt).toLocaleDateString()}

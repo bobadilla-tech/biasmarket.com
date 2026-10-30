@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { Bell, Check, Clock, ShoppingCart } from "lucide-react";
+import { Bell, Check, Clock, ShoppingCart, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "@/i18n/navigation";
 import { Select } from "@/components/ui/select";
@@ -103,20 +103,23 @@ export function ProductCard({
   };
 
   return (
-    <article className="rounded-2xl border border-(--store-border) bg-(--store-card) p-2 shadow-[0_1px_2px_rgba(40,20,60,0.04)] transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-2">
+    <article
+      data-store-card
+      className="group rounded-[1.35rem] border border-(--store-border) bg-(--store-card) p-2.5 shadow-[0_4px_14px_color-mix(in_srgb,var(--store-primary)_7%,transparent)] transition-[transform,box-shadow,border-color] duration-300 ease-out hover:-translate-y-1 hover:border-(--store-primary)/35 hover:shadow-[0_16px_32px_color-mix(in_srgb,var(--store-primary)_15%,transparent)] sm:p-2.5"
+    >
       <Link href={`/store/${slug}/product/${product.id}`}>
         {(() => {
           const imageUrl =
             selectedVariant?.imageOverride ?? product.images?.[0];
           return imageUrl ? (
-            <div className="relative mb-3 aspect-square w-full overflow-hidden rounded-xl">
+            <div className="photocard-frame relative mb-3 aspect-square w-full overflow-hidden rounded-[1.1rem] bg-(--store-surface)">
               <Image
                 src={imageUrl}
                 alt={product.name}
                 fill
                 sizes="(min-width: 768px) 220px, 50vw"
                 className={cn(
-                  "object-cover",
+                  "object-cover transition-transform duration-500 ease-out group-hover:scale-[1.035]",
                   outOfStock && "opacity-70 grayscale",
                 )}
               />
@@ -195,11 +198,19 @@ export function ProductCard({
         <button
           type="button"
           onClick={handleAddToCart}
-          className="store-theme-primary-button mt-2 min-h-11 w-full rounded-lg px-3 py-1.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className={`store-theme-primary-button mt-2 min-h-11 w-full rounded-xl px-3 py-1.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+            added ? "fan-added" : ""
+          }`}
         >
           <span className="inline-flex items-center justify-center gap-2">
             {added ? (
-              <Check aria-hidden="true" className="size-4" />
+              <span className="relative inline-flex items-center">
+                <Check aria-hidden="true" className="size-4" />
+                <Sparkles
+                  aria-hidden="true"
+                  className="fan-pop absolute -top-2 -right-3 size-3.5 text-amber-200"
+                />
+              </span>
             ) : (
               <ShoppingCart aria-hidden="true" className="size-4" />
             )}

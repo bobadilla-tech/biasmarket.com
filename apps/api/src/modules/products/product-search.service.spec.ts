@@ -41,6 +41,7 @@ describe('ProductSearchService', () => {
           status: 'PUBLISHED',
           deletedAt: null,
           discontinued: false,
+          images: { isEmpty: false },
           store: {
             isPublic: true,
             isDemo: false,
@@ -49,6 +50,34 @@ describe('ProductSearchService', () => {
         },
       }),
     );
+  });
+
+  it('keeps imageless products on a single store page (storeSlug set)', async () => {
+    prisma.product.findMany.mockResolvedValue([]);
+    prisma.product.count.mockResolvedValue(0);
+
+    await service.search(1, 24, undefined, undefined, 'latest', 'my-store');
+
+    for (const mock of [prisma.product.findMany, prisma.product.count]) {
+      const where = mock.mock.calls[0][0].where;
+      expect(where).not.toHaveProperty('images');
+      expect(where.store.slug).toBe('my-store');
+    }
+  });
+
+  it('hides imageless products from the count and the bestseller query too (no storeSlug)', async () => {
+    prisma.product.count.mockResolvedValue(0);
+    prisma.orderItem.groupBy.mockResolvedValue([]);
+    prisma.product.findMany.mockResolvedValue([]);
+
+    await service.search(1, 24, undefined, undefined, 'bestseller');
+
+    expect(prisma.product.count.mock.calls[0][0].where.images).toEqual({
+      isEmpty: false,
+    });
+    expect(
+      prisma.orderItem.groupBy.mock.calls[0][0].where.product.images,
+    ).toEqual({ isEmpty: false });
   });
 
   it('adds a case-insensitive name filter when q is provided', async () => {
@@ -128,6 +157,7 @@ describe('ProductSearchService', () => {
             status: 'PUBLISHED',
             deletedAt: null,
             discontinued: false,
+            images: { isEmpty: false },
             store: {
               isPublic: true,
               isDemo: false,
@@ -146,6 +176,7 @@ describe('ProductSearchService', () => {
         status: 'PUBLISHED',
         deletedAt: null,
         discontinued: false,
+        images: { isEmpty: false },
         store: {
           isPublic: true,
           isDemo: false,

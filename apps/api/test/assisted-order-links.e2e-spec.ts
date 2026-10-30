@@ -1,6 +1,7 @@
 import { Test, type TestingModule } from '@nestjs/testing';
-import { ValidationPipe, type INestApplication } from '@nestjs/common';
+import { type INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
+import { orderRef } from '@biasmarket/utils/order-ref';
 import { randomUUID } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { createOrderAccessToken } from '@biasmarket/utils/assisted-order';
@@ -391,7 +392,7 @@ describe('assisted order links (e2e)', () => {
       const res = await open(token).expect(200);
       const serialized = JSON.stringify(res.body);
       expect(res.body.customerAlias).toBe('Sofi');
-      expect(res.body.orderNumber).toBe(id.slice(-4).toUpperCase());
+      expect(res.body.orderNumber).toBe(orderRef(id));
       expect(new Date(res.body.createdAt).toISOString()).toBe(
         res.body.createdAt,
       );
