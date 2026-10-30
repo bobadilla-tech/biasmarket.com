@@ -36,7 +36,7 @@ This operation does not clear `OrderPayment.imageUrl` or `OrderPayment.note`, `O
    ```sh
    SERVICE=api-blue
    API_CONTAINER="$(docker ps -q --filter "label=com.docker.compose.service=$SERVICE" | head -n 1)"
-   docker exec -i "$API_CONTAINER" node -e 'const body = { storeId: "STORE_ID", customerPhone: "+51987654321", operatorId: "OPERATOR_ID", requestReference: "PRIV-123" }; const response = await fetch("http://127.0.0.1:3000/internal/orders/assisted-identity-erasure-request", { method: "POST", headers: { "content-type": "application/json", "x-internal-jobs-secret": process.env.INTERNAL_JOBS_SECRET }, body: JSON.stringify(body) }); console.log(response.status, await response.text()); if (!response.ok) process.exit(1)' 
+   docker exec -i "$API_CONTAINER" node -e '(async () => { const body = { storeId: "STORE_ID", customerPhone: "+51987654321", operatorId: "OPERATOR_ID", requestReference: "PRIV-123" }; const response = await fetch("http://127.0.0.1:3000/internal/orders/assisted-identity-erasure-request", { method: "POST", headers: { "content-type": "application/json", "x-internal-jobs-secret": process.env.INTERNAL_JOBS_SECRET }, body: JSON.stringify(body) }); console.log(response.status, await response.text()); if (!response.ok) process.exit(1); })().catch((error) => { console.error(error); process.exit(1); })' 
    ```
 
    The secret is read from the API container environment and is not placed in the shell command or host history. The endpoint requires `INTERNAL_JOBS_SECRET` and is excluded from public Swagger.
