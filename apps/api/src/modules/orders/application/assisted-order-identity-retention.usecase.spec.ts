@@ -218,4 +218,30 @@ describe('AssistedOrderIdentityRetentionUseCase', () => {
     expect(repeated).toEqual({ anonymized: 0, deferred: 0 });
     expect(prisma.auditLog.create).toHaveBeenCalledTimes(1);
   });
+
+  it('keeps the shared Customer while another un-erased order still references it', async () => {
+    prisma.order.findMany.mockResolvedValue([{
+      id: 'closed-assisted-order',
+      storeId: 'store-1',
+      customerId: 'customer-1',
+      customerPhone: '+51987654321',
+      customerPhoneNormalized: '+51987654321',
+      buyerAccountId: null,
+      claimedAt: null,
+      status: 'CANCELLED',
+      fulfillmentStatus: 'ORDERING',
+      accessTokenRevokedAt: null,
+    }]);
+    prisma.order.count.mockResolvedValue(1);
+
+    const result = await useCase.eraseOnBuyerRequest(
+      'store-1',
+      '+51987654321',
+      'operator-1',
+      'PRIV-460',
+    );
+
+    expect(result).toEqual({ anonymized: 1, deferred: 0 });
+    expect(prisma.customer.updateMany).not.toHaveBeenCalled();
+  });
 });
