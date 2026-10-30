@@ -1,5 +1,7 @@
 import { type Mock, vi } from 'vitest';
-import { AssistedOrderIdentityRetentionUseCase } from './assisted-order-identity-retention.usecase.js';
+import {
+  AssistedOrderIdentityRetentionUseCase,
+} from './assisted-order-identity-retention.usecase.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 
 describe('AssistedOrderIdentityRetentionUseCase', () => {
@@ -193,7 +195,12 @@ describe('AssistedOrderIdentityRetentionUseCase', () => {
       ]);
       prisma.order.updateMany.mockResolvedValue({ count: 0 });
 
-      const result = await useCase.eraseOnBuyerRequest('store-1', '+51987654321', 'operator-1', 'PRIV-460');
+      const result = await useCase.eraseOnBuyerRequest(
+        'store-1',
+        '+51987654321',
+        'operator-1',
+        'PRIV-460',
+      );
 
       expect(result).toEqual({ anonymized: 0, deferred: 0 });
       expect(prisma.auditLog.create).not.toHaveBeenCalled();
@@ -240,7 +247,7 @@ describe('AssistedOrderIdentityRetentionUseCase', () => {
   );
 
   it(
-    'keeps the shared Customer while another un-erased order still references it',
+    'keeps a shared Customer while another order remains',
     async () => {
       prisma.order.findMany.mockResolvedValue([
         {
