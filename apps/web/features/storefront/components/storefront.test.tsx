@@ -656,6 +656,12 @@ describe("storefront tabs", () => {
         .getByRole("tab", { name: "Categorías" })
         .getAttribute("aria-selected"),
     ).toBe("true");
+    expect(screen.getByRole("tab", { name: "Categorías" }).className).toContain(
+      "text-white",
+    );
+    expect(screen.getByRole("tab", { name: "Productos" }).className).toContain(
+      "text-(--store-muted)",
+    );
 
     navigation.url = "/es/store/tienda?tab=referencias";
     view.rerender(
