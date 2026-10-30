@@ -7,11 +7,6 @@ ALTER TABLE "Order"
 ALTER TABLE "Customer"
   ADD COLUMN "identityErasedAt" TIMESTAMP(3);
 
-CREATE INDEX "Order_source_closedAt_buyerIdentityErasedAt_idx"
-  ON "Order"("source", "closedAt", "buyerIdentityErasedAt");
-
-CREATE INDEX "Customer_storeId_identityErasedAt_idx"
-  ON "Customer"("storeId", "identityErasedAt");
 
 -- Backfill terminal timestamps from the existing, non-PII event history. Do
 -- not infer a close date for legacy terminal rows without a corresponding
