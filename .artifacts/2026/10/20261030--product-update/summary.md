@@ -1,8 +1,8 @@
 # Actualización diaria de producto y QA
 
 **Fecha:** 2026-10-30\
-**Ventana:** 00:00–18:21, hora de Lima (America/Lima, UTC−5). Equivale a
-2026-10-30 05:00–23:21 UTC.\
+**Ventana:** 00:00–18:22, hora de Lima (America/Lima, UTC−5). Equivale a
+2026-10-30 05:00–23:22 UTC.\
 **Repositorio:**
 [bobadilla-tech/biasmarket.com](https://github.com/bobadilla-tech/biasmarket.com)\
 **Alcance:** actividad del día hasta la hora de generación; modos `ambos`.
@@ -50,7 +50,10 @@
   [#547](https://github.com/bobadilla-tech/biasmarket.com/pull/547), fusionado
   con CI exitoso. Los siguientes pasos de seguridad/alertas/conexión siguen en
   los issues abiertos
-  [#533–#536](https://github.com/bobadilla-tech/biasmarket.com/issues/533).
+  [#533](https://github.com/bobadilla-tech/biasmarket.com/issues/533),
+  [#534](https://github.com/bobadilla-tech/biasmarket.com/issues/534),
+  [#535](https://github.com/bobadilla-tech/biasmarket.com/issues/535) y
+  [#536](https://github.com/bobadilla-tech/biasmarket.com/issues/536).
 - **Pedidos y privacidad:** PR
   [#467](https://github.com/bobadilla-tech/biasmarket.com/pull/467) agrega
   auditoría de acciones del pedido asistido y limpieza ante fallo de carga; PR
