@@ -330,6 +330,16 @@ export class CustomerAuthService {
         actor: 'BUYER',
         payload: ticket.moment ? { moment: ticket.moment } : {},
       });
+      await tx.auditLog.create({
+        data: {
+          actorId: account.id,
+          storeId: order.storeId,
+          action: 'order.claimed',
+          entityType: 'Order',
+          entityId: order.id,
+          metadata: { actorType: 'BUYER' },
+        },
+      });
     });
 
     return {

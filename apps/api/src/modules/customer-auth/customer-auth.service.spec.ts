@@ -34,6 +34,7 @@ describe('CustomerAuthService', () => {
     customerStoreLink: { upsert: Mock };
     store: { findUnique: Mock };
     order: { findMany: Mock; findFirst: Mock; updateMany: Mock };
+    auditLog: { create: Mock };
     $transaction: Mock;
     $queryRaw: Mock;
   };
@@ -67,6 +68,7 @@ describe('CustomerAuthService', () => {
         findFirst: vi.fn(),
         updateMany: vi.fn(),
       },
+      auditLog: { create: vi.fn() },
       $queryRaw: vi.fn().mockResolvedValue([{ id: 'order-1' }]),
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
     };
@@ -729,6 +731,19 @@ describe('CustomerAuthService', () => {
         actor: 'BUYER',
         payload: { moment: 'pago_validado' },
       });
+      expect(prisma.auditLog.create).toHaveBeenCalledWith({
+        data: {
+          actorId: 'buyer-new',
+          storeId: 'store-1',
+          action: 'order.claimed',
+          entityType: 'Order',
+          entityId: 'order-1',
+          metadata: { actorType: 'BUYER' },
+        },
+      });
+      expect(JSON.stringify(prisma.auditLog.create.mock.calls)).not.toMatch(
+        /g-sub|b@example\.com|Buyer|token|phone|moment/,
+      );
       expect(result.orderId).toBe('order-1');
       expect(verifyCustomerSessionToken(result.token, 'test-secret')).toEqual({
         buyerAccountId: 'buyer-new',
@@ -759,6 +774,7 @@ describe('CustomerAuthService', () => {
           data: { buyerAccountId: 'buyer-old', claimedAt: expect.any(Date) },
         }),
       );
+      expect(prisma.auditLog.create).toHaveBeenCalledTimes(1);
       expect(verifyCustomerSessionToken(result.token, 'test-secret')).toEqual({
         buyerAccountId: 'buyer-old',
         passwordVersion: 3,
@@ -815,6 +831,7 @@ describe('CustomerAuthService', () => {
       ).rejects.toMatchObject({ code: 'not_claimable' });
       expect(prisma.order.updateMany).not.toHaveBeenCalled();
       expect(events.record).not.toHaveBeenCalled();
+      expect(prisma.auditLog.create).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -851,6 +868,7 @@ describe('CustomerAuthService', () => {
       expect(error).toBeInstanceOf(ClaimOrderError);
       expect(error).toMatchObject({ code: 'already_claimed' });
       expect(events.record).not.toHaveBeenCalled();
+      expect(prisma.auditLog.create).not.toHaveBeenCalled();
     });
 
     it('treats a re-claim by the same account as success: session, no new event', async () => {
@@ -866,6 +884,7 @@ describe('CustomerAuthService', () => {
 
       expect(prisma.order.updateMany).not.toHaveBeenCalled();
       expect(events.record).not.toHaveBeenCalled();
+      expect(prisma.auditLog.create).not.toHaveBeenCalled();
       expect(prisma.customerStoreLink.upsert).toHaveBeenCalled();
       expect(verifyCustomerSessionToken(result.token, 'test-secret')).toEqual({
         buyerAccountId: 'buyer-old',
@@ -880,6 +899,7 @@ describe('CustomerAuthService', () => {
         service.claimWithGoogle(identity, ticket),
       ).rejects.toMatchObject({ code: 'already_claimed' });
       expect(events.record).not.toHaveBeenCalled();
+      expect(prisma.auditLog.create).not.toHaveBeenCalled();
       expect(prisma.customerStoreLink.upsert).not.toHaveBeenCalled();
     });
 

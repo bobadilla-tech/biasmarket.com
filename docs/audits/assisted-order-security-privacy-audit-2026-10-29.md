@@ -23,8 +23,27 @@
 3. **Deletion and retention:** Defined, implemented, and tested in [assisted-order-data-retention-2026-10-29.md](./assisted-order-data-retention-2026-10-29.md): a verified per-store request workflow and daily erasure of unclaimed assisted orders 90 days after closure. The workflow preserves financial, order, event, and audit records and does not delete buyer accounts.
 4. **Test evidence:** Existing focused tests are present for event sanitation, audit metadata, public token access, and tenant boundaries, but this audit did not run them. Review their current coverage and record the exact passing commands/results before calling the verification criteria complete.
 5. **Operational evidence:** Source inspection cannot establish whether production Caddy access logs are enabled or whether deployed API/web error-tracking configuration uses these scrubbers. Confirm deployment settings and log samples without exposing buyer data.
-6. **Audit coverage completeness:** Source shows audit records in creation, phone/link changes, payment review/void, cancellation/expiry, and fulfillment code paths; verify each criterion against its concrete path and ensure buyer claim and photo/tracking actions are covered. Do not treat this source search as runtime proof.
+6. **Audit coverage completeness:** Addressed in source by adding actor-attributed records for assisted tracking, packed-photo, and buyer-claim actions. The mapping below records the relevant existing and added paths. Runtime behavior still requires the focused tests to pass.
 
 ## Verification boundary
 
 This document records source evidence only. It does not certify deployed behavior, live Caddy or GlitchTip settings, database retention, or end-to-end tenant isolation. The checklist in issue #279 remains open until the open items above are resolved and required tests are run.
+
+## Assisted-order AuditLog coverage mapping
+
+| #279 action | AuditLog action | Actor | Metadata |
+| --- | --- | --- | --- |
+| Creation | `order.assisted_created` | Creating seller (`User.id`) | Source, item count, delivery method, payment method; no phone, alias, or token |
+| Phone correction | `order.phone_corrected` | Correcting seller (`User.id`) | Empty |
+| Link regeneration | `order.link_regenerated` | Seller (`User.id`) | Empty |
+| Payment registration | `payment.partial` or `payment.recorded`; settlement also writes `payment.approved` | Recording/reviewing seller (`User.id`) | Amount, method, resulting status where relevant; no proof contents |
+| Payment proof decision | `payment_proof.approved` / `payment_proof.rejected` | Reviewing seller (`User.id`) | Sanitized reason only |
+| Payment void | `payment.voided` | Voiding seller (`User.id`) | Order ID and sanitized reason |
+| Fulfillment state change | `fulfillment.advanced` | Advancing seller (`User.id`) | From/to statuses |
+| Cancellation | `order.cancelled` | Cancelling seller (`User.id`) | Resolution and bounded money amounts |
+| Automatic expiry | `order.expired` | System | Resolution and bounded money amounts |
+| Tracking details changed | `order.tracking_updated` | Editing seller (`User.id`) | Empty; added/replaced/cleared tracking numbers and URL-only edits are recorded without their values |
+| Packed photo uploaded | `order.packed_photo_added` | Uploading seller (`User.id`) | Empty; photo URL and contents are excluded |
+| Buyer claim | `order.claimed` | Claiming buyer (`BuyerAccount.id`) | Actor type only; email, Google subject, phone, token, and claim-ticket data are excluded |
+
+The tracking, packed-photo, and claim AuditLog inserts share the corresponding successful write transaction. Tracking writes lock the order before reading current values, so concurrent duplicate updates do not create duplicate audit rows. The buyer-facing tracking event remains limited to adding or replacing a non-empty number; clearing the number and URL-only edits are seller-audited without a buyer event. Rejected or repeated claims write no new audit row. Tracking/photo audit rows are limited to `VENDOR_ASSISTED` orders so marketplace paths do not gain unrelated duplicate audit records. Focused tests cover attribution, sensitive-value exclusion, no-op changes, and rejected claims; photo cleanup on transaction failure is also covered.
