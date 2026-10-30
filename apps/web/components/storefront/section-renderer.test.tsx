@@ -3,7 +3,9 @@ import { NextIntlClientProvider } from "next-intl";
 import { describe, expect, it, vi } from "vitest";
 import { getMessages } from "@biasmarket/i18n";
 import {
+  mergeCatalogPages,
   type RenderableSection,
+  type RenderableSectionProduct,
   StoreSectionRenderer,
 } from "./section-renderer";
 
@@ -92,5 +94,66 @@ describe("StoreSectionRenderer — TEXT_BLOCK", () => {
     ]);
 
     expect(container.querySelectorAll(".prose p")).toHaveLength(0);
+  });
+});
+
+describe("mergeCatalogPages", () => {
+  it("keeps loaded products deduplicated and ordered by catalog page", () => {
+    const page = (...ids: string[]): RenderableSection[] => [
+      {
+        id: "catalog",
+        type: "COLLECTION",
+        collection: {
+          name: "",
+          products: ids.map((id) => ({
+            productId: id,
+            product: {
+              id,
+              name: id,
+              price: "1",
+              currency: "PEN",
+              soldOut: false,
+              discontinued: false,
+              variants: [],
+              availableUntil: null,
+              images: [],
+            } satisfies RenderableSectionProduct,
+          })),
+        },
+      },
+    ];
+    const merged = mergeCatalogPages(
+      new Map([
+        [3, page("product-3", "shared")],
+        [1, page("product-1", "shared")],
+        [2, page("product-2")],
+      ]),
+    );
+
+    expect(
+      merged[0]?.collection?.products.map(({ productId }) => productId),
+    ).toEqual(["product-1", "shared", "product-2", "product-3"]);
+  });
+});
+
+describe("StoreSectionRenderer catalog pagination", () => {
+  it("hides a page count when the requested page is out of range", () => {
+    navigation.search = "tab=productos&page=3";
+    const view = render(
+      <NextIntlClientProvider locale="es" messages={getMessages("es")}>
+        <StoreSectionRenderer
+          slug="demo"
+          sections={[]}
+          catalogControls
+          serverSorted
+          catalogPagination={{ page: 3, limit: 24, total: 25 }}
+        />
+      </NextIntlClientProvider>,
+    );
+
+    expect(view.queryByText("Página 3 de 2")).toBeNull();
+    expect(view.getByRole("button", { name: "Anterior" })).toBeTruthy();
+    view.unmount();
+    navigation.search = "";
   });
 });

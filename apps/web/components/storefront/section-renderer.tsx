@@ -55,20 +55,24 @@ function parseCategorySlugs(value: string | null): string[] {
   ];
 }
 
-function mergeCatalogPages(
-  previous: RenderableSection[],
-  next: RenderableSection[],
+export function mergeCatalogPages(
+  pages: ReadonlyMap<number, RenderableSection[]>,
 ): RenderableSection[] {
   const products = new Map<
     string,
     { productId: string; product: RenderableSectionProduct }
   >();
-  for (const section of [...previous, ...next]) {
-    for (const item of section.collection?.products ?? []) {
-      products.set(item.productId, item);
+  let section: RenderableSection | undefined;
+  for (const [, pageSections] of [...pages.entries()].sort(
+    ([pageA], [pageB]) => pageA - pageB,
+  )) {
+    section ??= pageSections[0];
+    for (const currentSection of pageSections) {
+      for (const item of currentSection.collection?.products ?? []) {
+        if (!products.has(item.productId)) products.set(item.productId, item);
+      }
     }
   }
-  const section = next[0] ?? previous[0];
   if (!section) return [];
   return [
     {
@@ -79,6 +83,22 @@ function mergeCatalogPages(
       },
     },
   ];
+}
+
+function catalogSectionsForPage(page: number, sections: RenderableSection[]) {
+  return new Map<number, RenderableSection[]>([[page, sections]]);
+}
+
+/* Keep loaded pages keyed by their server page so backward navigation cannot
+ * discard products or reorder them relative to the selected server sort. */
+function addCatalogPage(
+  pages: ReadonlyMap<number, RenderableSection[]>,
+  page: number,
+  sections: RenderableSection[],
+) {
+  const next = new Map(pages);
+  next.set(page, sections);
+  return next;
 }
 
 export interface RenderableSection {
@@ -142,13 +162,14 @@ export function StoreSectionRenderer({
   const catalogQueryKey = new URLSearchParams(searchString);
   catalogQueryKey.delete("page");
   const catalogKey = catalogQueryKey.toString();
+  const currentPage = catalogPagination?.page ?? 1;
   const [loadedCatalog, setLoadedCatalog] = useState({
     key: catalogKey,
-    sections,
+    pages: catalogSectionsForPage(currentPage, sections),
   });
   const displayedSections =
     serverSorted && loadedCatalog.key === catalogKey
-      ? loadedCatalog.sections
+      ? mergeCatalogPages(loadedCatalog.pages)
       : sections;
   useEffect(() => {
     setCategoryIds(parseCategorySlugs(searchParams?.get("categoria") ?? null));
@@ -159,20 +180,25 @@ export function StoreSectionRenderer({
   useEffect(() => {
     setIsLoadingMore(false);
     if (!serverSorted) {
-      setLoadedCatalog({ key: catalogKey, sections });
+      setLoadedCatalog({
+        key: catalogKey,
+        pages: catalogSectionsForPage(currentPage, sections),
+      });
       return;
     }
 
     setLoadedCatalog((previous) => {
-      if (previous.key !== catalogKey || (catalogPagination?.page ?? 1) <= 1) {
-        return { key: catalogKey, sections };
-      }
+      if (previous.key !== catalogKey)
+        return {
+          key: catalogKey,
+          pages: catalogSectionsForPage(currentPage, sections),
+        };
       return {
         key: catalogKey,
-        sections: mergeCatalogPages(previous.sections, sections),
+        pages: addCatalogPage(previous.pages, currentPage, sections),
       };
     });
-  }, [catalogKey, catalogPagination?.page, sections, serverSorted]);
+  }, [catalogKey, currentPage, sections, serverSorted]);
 
   useEffect(() => {
     if (!catalogControls) return;
@@ -449,13 +475,48 @@ export function StoreSectionRenderer({
                 {t("noProducts")}
               </p>
             ) : null}
-            {catalogPagination &&
-              catalogPagination.page * catalogPagination.limit <
-                catalogPagination.total && (
-                <nav
-                  aria-label={t("catalogPagination")}
-                  className="flex justify-center pt-2"
-                >
+            {catalogPagination && catalogPagination.total > 0 && (
+              <nav
+                aria-label={t("catalogPagination")}
+                className="flex flex-wrap items-center justify-center gap-3 pt-2"
+              >
+                {catalogPagination.page > 1 && (
+                  <button
+                    type="button"
+                    disabled={isLoadingMore}
+                    onClick={() => {
+                      const params = new URLSearchParams(searchString);
+                      const previousPage = catalogPagination.page - 1;
+                      if (previousPage === 1) params.delete("page");
+                      else params.set("page", String(previousPage));
+                      setIsLoadingMore(true);
+                      router.push(`${pathname}?${params.toString()}`, {
+                        scroll: false,
+                      });
+                    }}
+                    className="min-h-11 rounded-full border border-(--store-border) px-5 text-sm font-semibold text-(--store-text) disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {t("previousPage")}
+                  </button>
+                )}
+                {catalogPagination.page <=
+                  Math.ceil(
+                    catalogPagination.total / catalogPagination.limit,
+                  ) && (
+                  <span
+                    className="text-sm text-(--store-muted)"
+                    aria-live="polite"
+                  >
+                    {t("pageOf", {
+                      page: catalogPagination.page,
+                      pages: Math.ceil(
+                        catalogPagination.total / catalogPagination.limit,
+                      ),
+                    })}
+                  </span>
+                )}
+                {catalogPagination.page * catalogPagination.limit <
+                  catalogPagination.total && (
                   <button
                     type="button"
                     disabled={isLoadingMore}
@@ -471,8 +532,9 @@ export function StoreSectionRenderer({
                   >
                     {isLoadingMore ? t("loadingMore") : t("loadMore")}
                   </button>
-                </nav>
-              )}
+                )}
+              </nav>
+            )}
           </div>
         ) : (
           <>
