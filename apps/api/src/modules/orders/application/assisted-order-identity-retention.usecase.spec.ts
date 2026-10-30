@@ -230,15 +230,15 @@ describe('AssistedOrderIdentityRetentionUseCase', () => {
   it('keeps the shared Customer while another un-erased order still references it', async () => {
     prisma.order.findMany.mockResolvedValue([
       {
-      id: 'closed-assisted-order',
-      storeId: 'store-1',
-      customerId: 'customer-1',
-      customerPhone: '+51987654321',
-      customerPhoneNormalized: '+51987654321',
-      buyerAccountId: null,
-      claimedAt: null,
-      status: 'CANCELLED',
-      fulfillmentStatus: 'ORDERING',
+        id: 'closed-assisted-order',
+        storeId: 'store-1',
+        customerId: 'customer-1',
+        customerPhone: '+51987654321',
+        customerPhoneNormalized: '+51987654321',
+        buyerAccountId: null,
+        claimedAt: null,
+        status: 'CANCELLED',
+        fulfillmentStatus: 'ORDERING',
         accessTokenRevokedAt: null,
       },
     ]);
