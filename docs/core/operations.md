@@ -153,6 +153,45 @@ URL do not survive losing `uptime_kuma_data`, and hand-added notifications have
 to be recreated in the UI. What fires when a monitor misses is in
 [incident-response.md](incident-response.md).
 
+## Logs
+
+The `api` writes one structured JSON line per request (pino, via `nestjs-pino`),
+and Nest's own `Logger` calls come out in the same format. Config:
+`apps/api/src/common/logging/logger.config.ts`.
+
+```json
+{
+  "level": 40,
+  "service": "api",
+  "method": "GET",
+  "path": "/api/public/orders/:token",
+  "requestId": "…",
+  "statusCode": 404,
+  "responseTime": 1,
+  "msg": "request completed"
+}
+```
+
+- **What a line has:** `method`, the path without its query string (order
+  tokens replaced by `:token`), `statusCode`, `responseTime`, a `requestId`
+  (echoed as the `x-request-id` response header), and `storeId`/`storeSlug` when
+  the route has one. Health probes are not logged. 5xx is `error`, 4xx `warn`.
+- **Where to read them:** `docker compose logs --tail 100 api-<color>` for the
+  last few minutes on the VPS (capped at 5 files of 10 MB per container). For
+  history, GlitchTip's **Logs** view: with `SENTRY_DSN` set, lines at `info` and
+  above are also sent there, so they survive a deploy (the container and its
+  local logs are deleted on every blue/green switch) and are searchable next to
+  errors and traces.
+- **How long:** set on the GlitchTip server, not here.
+  `GLITCHTIP_LOG_HOT_DAYS` (default 7, kept in Postgres) and
+  `GLITCHTIP_LOG_RETENTION_DAYS` (default 90 in total).
+- **Level:** `LOG_LEVEL` (default `info`) sets what the process emits to
+  stdout. Only `info` and above are forwarded to GlitchTip, and Nest's boot
+  chatter (`InstanceLoader`, `RoutesResolver`, ...) stays local.
+- **Adding a log line:** use Nest's `Logger` as usual. Never put a token, a
+  password or a query string in the message; the scrubbers only know the paths
+  listed in [incident-response.md](incident-response.md#error-tracking-and-redaction).
+
 ## Restore
 
 ### Pre-migration dumps

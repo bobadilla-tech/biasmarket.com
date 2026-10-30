@@ -1,10 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ErrorEvent, Event } from "@sentry/node";
 
-const { initMock } = vi.hoisted(() => ({ initMock: vi.fn() }));
+const { initMock, pinoIntegrationMock } = vi.hoisted(() => ({
+  initMock: vi.fn(),
+  pinoIntegrationMock: vi.fn(() => ({ name: "Pino" })),
+}));
 
 vi.mock("@sentry/node", () => ({
   init: initMock,
+  pinoIntegration: pinoIntegrationMock,
   getClient: () => undefined,
   captureException: vi.fn(),
 }));
@@ -108,6 +112,56 @@ describe("initErrorTracking", () => {
     expect(fromTransaction.transaction).toBe("GET /api/public/orders/:token");
     expect(JSON.stringify(fromError)).not.toContain(TOKEN);
     expect(JSON.stringify(fromTransaction)).not.toContain(TOKEN);
+  });
+
+  it("forwards info-and-above pino logs, never as issues, and scrubs them", () => {
+    process.env.SENTRY_DSN = "https://example@sentry.test/1";
+    initErrorTracking();
+
+    expect(initMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        enableLogs: true,
+        beforeSendLog: expect.any(Function),
+      }),
+    );
+    expect(pinoIntegrationMock).toHaveBeenCalledWith({
+      log: { levels: ["info", "warn", "error", "fatal"] },
+      error: { levels: [] },
+    });
+
+    const { beforeSendLog } = initMock.mock.calls[0][0] as {
+      beforeSendLog: (log: object) => object | null;
+    };
+    const scrubbed = beforeSendLog({
+      level: "info",
+      message: `GET /api/public/orders/${TOKEN}/payments`,
+      attributes: { url: { value: `/pedido/${TOKEN}`, type: "string" } },
+    });
+    expect(JSON.stringify(scrubbed)).not.toContain(TOKEN);
+  });
+
+  it("does not forward Nest's framework boot lines", () => {
+    process.env.SENTRY_DSN = "https://example@sentry.test/1";
+    initErrorTracking();
+    const { beforeSendLog } = initMock.mock.calls[0][0] as {
+      beforeSendLog: (log: object) => object | null;
+    };
+
+    for (const context of [
+      "InstanceLoader",
+      { value: "RoutesResolver", type: "string" },
+    ]) {
+      expect(
+        beforeSendLog({ level: "info", message: "x", attributes: { context } }),
+      ).toBeNull();
+    }
+    expect(
+      beforeSendLog({
+        level: "info",
+        message: "x",
+        attributes: { context: "ExpireOrdersUseCase" },
+      }),
+    ).not.toBeNull();
   });
 });
 
