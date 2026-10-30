@@ -162,6 +162,7 @@ export function StoreSectionRenderer({
   storeCategories = [],
   storeReferences = [],
   referencesPagination = null,
+  referencesLoadError = false,
   catalogPagination,
   serverSorted = false,
 }: {
@@ -176,6 +177,7 @@ export function StoreSectionRenderer({
   storeCategories?: StorefrontCategory[];
   storeReferences?: RenderableStoreReference[];
   referencesPagination?: { page: number; limit: number; total: number } | null;
+  referencesLoadError?: boolean;
   catalogPagination?: { page: number; limit: number; total: number } | null;
   serverSorted?: boolean;
 }) {
@@ -219,9 +221,11 @@ export function StoreSectionRenderer({
       ? mergeCatalogPages(loadedCatalog.pages)
       : sections;
   useEffect(() => {
-    setCategoryIds(parseCategorySlugs(searchParams?.get("categoria") ?? null));
-    setQuery(searchParams?.get("q") ?? "");
-    setSort(searchParams?.get("orden") ?? defaultSort);
+    const params = new URLSearchParams(searchString);
+    setSelectedReference(null);
+    setCategoryIds(parseCategorySlugs(params.get("categoria")));
+    setQuery(params.get("q") ?? "");
+    setSort(params.get("orden") ?? defaultSort);
   }, [defaultSort, searchString]);
 
   useEffect(() => {
@@ -765,58 +769,67 @@ export function StoreSectionRenderer({
               <option value="antiguas">{t("sortOldest")}</option>
             </select>
           </label>
-          {storeReferences.length ? (
+          {storeReferences.length ||
+          (referencesPagination?.total ?? 0) > 0 ||
+          (referencesPagination?.page ?? 1) > 1 ? (
             <>
-              <div className="columns-2 gap-3 md:columns-3 xl:columns-4">
-                {storeReferences.map((reference, index) => (
-                  <article
-                    key={reference.id}
-                    className="mb-3 break-inside-avoid overflow-hidden rounded-xl border border-(--store-border) bg-(--store-card)"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setSelectedReference(index)}
-                      aria-label={t("openReference", {
-                        date: referenceDate(reference.takenAt, locale),
-                      })}
-                      className="block w-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary)"
+              {storeReferences.length ? (
+                <div className="columns-2 gap-3 md:columns-3 xl:columns-4">
+                  {storeReferences.map((reference, index) => (
+                    <article
+                      key={reference.id}
+                      className="mb-3 break-inside-avoid overflow-hidden rounded-xl border border-(--store-border) bg-(--store-card)"
                     >
-                      <Image
-                        src={reference.imageUrl}
-                        alt={t("referenceImageAlt", {
-                          date: referenceDate(reference.takenAt, locale),
-                          caption: reference.caption ?? "",
-                        })}
-                        width={reference.width}
-                        height={reference.height}
-                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                        className="h-auto w-full object-cover"
-                      />
-                    </button>
-                    <div className="p-3 text-sm">
-                      <p className="font-semibold text-(--store-text)">
-                        {t("referenceDay", {
+                      <button
+                        type="button"
+                        onClick={() => setSelectedReference(index)}
+                        aria-label={t("openReference", {
                           date: referenceDate(reference.takenAt, locale),
                         })}
-                      </p>
-                      <p className="text-(--store-muted)">
-                        {t(
-                          reference.source === "BUYER"
-                            ? "uploadedByBuyer"
-                            : "uploadedByStore",
-                        )}
-                      </p>
-                      {reference.caption ? (
-                        <p className="mt-1 break-words text-(--store-text)">
-                          {reference.caption}
+                        className="block w-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary)"
+                      >
+                        <Image
+                          src={reference.imageUrl}
+                          alt={t("referenceImageAlt", {
+                            date: referenceDate(reference.takenAt, locale),
+                            caption: reference.caption ?? "",
+                          })}
+                          width={reference.width}
+                          height={reference.height}
+                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                          className="h-auto w-full object-cover"
+                        />
+                      </button>
+                      <div className="p-3 text-sm">
+                        <p className="font-semibold text-(--store-text)">
+                          {t("referenceDay", {
+                            date: referenceDate(reference.takenAt, locale),
+                          })}
                         </p>
-                      ) : null}
-                    </div>
-                  </article>
-                ))}
-              </div>
+                        <p className="text-(--store-muted)">
+                          {t(
+                            reference.source === "BUYER"
+                              ? "uploadedByBuyer"
+                              : "uploadedByStore",
+                          )}
+                        </p>
+                        {reference.caption ? (
+                          <p className="mt-1 break-words text-(--store-text)">
+                            {reference.caption}
+                          </p>
+                        ) : null}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <p className="rounded-xl border border-dashed border-(--store-border) bg-(--store-card) p-8 text-center text-(--store-muted)">
+                  {t("referencesPageEmpty")}
+                </p>
+              )}
               {referencesPagination &&
-              referencesPagination.total > referencesPagination.limit ? (
+              (referencesPagination.total > referencesPagination.limit ||
+                referencesPagination.page > 1) ? (
                 <nav
                   aria-label={t("referencesPagination")}
                   className="flex items-center justify-center gap-3"
@@ -834,8 +847,12 @@ export function StoreSectionRenderer({
                   <span className="text-sm text-(--store-muted)">
                     {t("pageOf", {
                       page: referencesPagination.page,
-                      pages: Math.ceil(
-                        referencesPagination.total / referencesPagination.limit,
+                      pages: Math.max(
+                        1,
+                        Math.ceil(
+                          referencesPagination.total /
+                            referencesPagination.limit,
+                        ),
                       ),
                     })}
                   </span>
@@ -939,7 +956,9 @@ export function StoreSectionRenderer({
                 {t("referencesEmptyTitle")}
               </p>
               <p className="mx-auto mt-1 max-w-md text-sm leading-6 text-(--store-muted)">
-                {t("referencesEmpty")}
+                {referencesLoadError
+                  ? t("referencesLoadError")
+                  : t("referencesEmpty")}
               </p>
             </div>
           )}

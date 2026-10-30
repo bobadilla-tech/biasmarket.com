@@ -48,7 +48,7 @@ export function DashboardNav({
   ];
 
   return (
-    <nav className="flex gap-4 text-sm">
+    <nav className="flex flex-wrap gap-4 text-sm">
       {links.map((link) => (
         <a
           key={link.key}

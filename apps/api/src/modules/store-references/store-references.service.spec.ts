@@ -19,6 +19,7 @@ describe('StoreReferencesService', () => {
     };
     auditLog: { create: Mock };
     $transaction: Mock;
+    $queryRaw: Mock;
   };
 
   beforeEach(async () => {
@@ -34,6 +35,7 @@ describe('StoreReferencesService', () => {
         delete: vi.fn(),
       },
       auditLog: { create: vi.fn() },
+      $queryRaw: vi.fn().mockResolvedValue([]),
       $transaction: vi.fn((callback: (tx: unknown) => unknown) =>
         callback(prisma),
       ),
@@ -84,6 +86,7 @@ describe('StoreReferencesService', () => {
         imageUrl: 'https://cdn.test/ref.jpg',
       }),
     });
+    expect(prisma.$queryRaw).toHaveBeenCalled();
     expect(prisma.auditLog.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         storeId: 'store-a',

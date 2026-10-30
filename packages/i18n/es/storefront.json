@@ -18,6 +18,8 @@
   "referencesSubtitle": "Opiniones y evidencias de entrega.",
   "referencesEmptyTitle": "Esta tienda aún no tiene referencias",
   "referencesEmpty": "Opiniones y evidencias de entrega.",
+  "referencesLoadError": "No se pudieron cargar las referencias. Inténtalo de nuevo.",
+  "referencesPageEmpty": "No hay referencias en esta página.",
   "openReference": "Ampliar referencia del {date}",
   "referenceImageAlt": "Referencia del {date}. {caption}",
   "referenceDay": "Día: {date}",

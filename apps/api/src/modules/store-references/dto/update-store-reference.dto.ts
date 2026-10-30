@@ -2,7 +2,7 @@ import { IsDateString, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class UpdateStoreReferenceDto {
   @IsOptional()
-  @IsDateString()
+  @IsDateString({ strict: true })
   takenAt?: string;
 
   @IsOptional()

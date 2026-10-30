@@ -4,16 +4,18 @@ import {
   IsOptional,
   IsString,
   Max,
+  MaxLength,
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateStoreReferenceDto {
-  @IsDateString()
+  @IsDateString({ strict: true })
   takenAt: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(240)
   caption?: string;
 
   @IsInt()

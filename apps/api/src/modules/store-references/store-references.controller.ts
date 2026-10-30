@@ -30,6 +30,7 @@ import type { UserSession } from '@thallesp/nestjs-better-auth';
 import { StorageService } from '../../storage/storage.service.js';
 import {
   IMAGE_UPLOAD_MIME_TYPES,
+  MAX_UPLOAD_SIZE_BYTES,
   UploadedFileValidationPipe,
   type ValidatedUploadedFile,
 } from '../../common/uploaded-file-validation.pipe.js';
@@ -40,6 +41,7 @@ import {
   StoreReferenceResponseDto,
 } from './dto/store-reference-response.dto.js';
 import { StoreReferencesService } from './store-references.service.js';
+import { readImageDimensions } from './image-dimensions.js';
 
 const REFERENCE_IMAGE_PIPE = new UploadedFileValidationPipe({
   allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
@@ -89,7 +91,11 @@ export class StoreReferencesController {
       },
     },
   })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: MAX_UPLOAD_SIZE_BYTES + 1 },
+    }),
+  )
   async create(
     @Param('storeId') storeId: string,
     @Session() session: UserSession,
@@ -97,6 +103,12 @@ export class StoreReferencesController {
     @Body() dto: CreateStoreReferenceDto,
   ): Promise<StoreReferenceResponseDto> {
     await this.references.assertOwnership(storeId, session.user.id);
+    const dimensions = readImageDimensions(file.buffer, file.detectedMimeType);
+    if (dimensions.width !== dto.width || dimensions.height !== dto.height) {
+      throw new BadRequestException(
+        'Las dimensiones no coinciden con la imagen enviada',
+      );
+    }
     const imageUrl = await this.storage.uploadStoreReferenceImage(
       file.buffer,
       file.detectedMimeType,

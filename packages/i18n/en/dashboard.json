@@ -140,6 +140,7 @@
     "noImage": "{name} has no image set",
     "noImageShort": "No image",
     "hasProducts": "A category with linked products cannot be deleted.",
+    "hasChildren": "A category with subcategories cannot be deleted.",
     "confirmDelete": "Delete the {name} category?",
     "subtitle": "Organize your products",
     "searchPlaceholder": "Search categories...",

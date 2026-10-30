@@ -259,7 +259,17 @@ export class StoresController {
     @Param('storeId') storeId: string,
     @Session() session: UserSession,
   ): Promise<StoreResponseDto> {
+    const referenceImageUrls =
+      await this.stores.getReferenceImageUrlsForDeletion(
+        storeId,
+        session.user.id,
+      );
     const store = await this.stores.delete(storeId, session.user.id);
+    await Promise.all(
+      referenceImageUrls.map((url) =>
+        this.storage.deleteImage(url).catch(() => undefined),
+      ),
+    );
     return toStoreDto(store);
   }
 

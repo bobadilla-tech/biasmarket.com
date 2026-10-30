@@ -195,6 +195,22 @@ export class StoresService {
     }
   }
 
+  async getReferenceImageUrlsForDeletion(storeId: string, userId: string) {
+    const store = await this.prisma.store.findUnique({
+      where: { id: storeId },
+      select: { ownerId: true },
+    });
+    if (!store) throw new NotFoundException('Store no encontrada');
+    if (store.ownerId !== userId) {
+      throw new ForbiddenException('No eres dueño de esta store');
+    }
+    const references = await this.prisma.storeReference.findMany({
+      where: { storeId },
+      select: { imageUrl: true },
+    });
+    return references.map(({ imageUrl }) => imageUrl);
+  }
+
   async findBySlugForOwner(slug: string, userId: string) {
     const store = await this.prisma.store.findUnique({ where: { slug } });
     if (!store) throw new NotFoundException('Store no encontrada');

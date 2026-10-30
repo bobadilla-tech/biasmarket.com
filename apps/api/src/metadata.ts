@@ -3166,7 +3166,7 @@ export default async () => {
           {
             CreateStoreReferenceDto: {
               takenAt: { required: true, type: () => String },
-              caption: { required: false, type: () => String },
+              caption: { required: false, type: () => String, maxLength: 240 },
               width: {
                 required: true,
                 type: () => Number,
@@ -3206,7 +3206,7 @@ export default async () => {
               width: { required: true, type: () => Number },
               height: { required: true, type: () => Number },
               takenAt: { required: true, type: () => String },
-              source: { required: true, enum: ['BUYER', 'STORE'] },
+              source: { required: true, enum: ['STORE', 'BUYER'] },
               caption: { required: true, type: () => String, nullable: true },
               hidden: { required: true, type: () => Boolean },
               createdAt: { required: true, type: () => String },

@@ -508,6 +508,7 @@ export default async function StorePage({
           sections={productSections}
           storeCategories={publicCategories}
           storeReferences={publicReferences?.items ?? []}
+          referencesLoadError={tab === "referencias" && !publicReferences}
           referencesPagination={
             publicReferences
               ? {

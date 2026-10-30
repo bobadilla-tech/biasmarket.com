@@ -18,6 +18,8 @@
   "referencesSubtitle": "Reviews and delivery evidence.",
   "referencesEmptyTitle": "This store has no references yet",
   "referencesEmpty": "Reviews and delivery evidence.",
+  "referencesLoadError": "References could not be loaded. Please try again.",
+  "referencesPageEmpty": "There are no references on this page.",
   "openReference": "Enlarge reference from {date}",
   "referenceImageAlt": "Reference from {date}. {caption}",
   "referenceDay": "Day: {date}",

@@ -140,6 +140,7 @@
     "noImage": "{name} no tiene imagen configurada",
     "noImageShort": "Sin imagen",
     "hasProducts": "No se puede eliminar una categoría con productos asociados.",
+    "hasChildren": "No se puede eliminar una categoría con subcategorías.",
     "confirmDelete": "¿Eliminar la categoría {name}?",
     "subtitle": "Organiza tus productos",
     "searchPlaceholder": "Buscar categorías...",

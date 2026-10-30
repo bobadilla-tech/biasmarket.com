@@ -104,10 +104,23 @@ export class CategoriesService {
       });
       if (existing) throw new ConflictException('El slug ya está en uso');
     }
-    return this.prisma.category.update({
-      where: { id: categoryId },
-      data: dto,
-    });
+    try {
+      return await this.prisma.category.update({
+        where: { id: categoryId },
+        data: dto,
+        include: { _count: { select: { products: true } } },
+      });
+    } catch (error) {
+      if (
+        error !== null &&
+        typeof error === 'object' &&
+        'code' in error &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('El slug ya está en uso');
+      }
+      throw error;
+    }
   }
 
   async updateImage(
@@ -117,9 +130,17 @@ export class CategoriesService {
     imageUrl: string | null,
   ) {
     await this.findOwnedCategory(categoryId, storeId, userId);
-    return this.prisma.category.update({
-      where: { id: categoryId },
-      data: { imageUrl },
+    return this.prisma.$transaction(async (tx) => {
+      const category = await tx.category.update({
+        where: { id: categoryId },
+        data: { imageUrl },
+        include: { _count: { select: { products: true } } },
+      });
+      await tx.store.update({
+        where: { id: storeId },
+        data: { contentStaleAt: new Date() },
+      });
+      return category;
     });
   }
 

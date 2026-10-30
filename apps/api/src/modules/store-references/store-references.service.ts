@@ -42,15 +42,14 @@ export class StoreReferencesService {
     },
   ) {
     await this.assertOwnership(storeId, userId);
-    const count = await this.prisma.storeReference.count({
-      where: { storeId },
-    });
-    if (count >= MAX_REFERENCES_PER_STORE) {
-      throw new ConflictException(
-        `El límite es ${MAX_REFERENCES_PER_STORE} referencias por tienda`,
-      );
-    }
     return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "Store" WHERE "id" = ${storeId} FOR UPDATE`;
+      const count = await tx.storeReference.count({ where: { storeId } });
+      if (count >= MAX_REFERENCES_PER_STORE) {
+        throw new ConflictException(
+          `El límite es ${MAX_REFERENCES_PER_STORE} referencias por tienda`,
+        );
+      }
       const reference = await tx.storeReference.create({
         data: { ...input, storeId },
       });

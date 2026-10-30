@@ -53,6 +53,8 @@ export function ReferencesPageClient() {
   const [selected, setSelected] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(() => new Set());
+  const deletingIdsRef = useRef(new Set<string>());
   const dialogRef = useRef<HTMLDialogElement>(null);
   const items = useMemo(
     () =>
@@ -95,20 +97,27 @@ export function ReferencesPageClient() {
           width,
           height,
         });
+        setFiles((current) => current.filter((selected) => selected !== file));
       }
-      setFiles([]);
       setCaption("");
       setPrivacyConfirmed(false);
-      await client.invalidateQueries({ queryKey: queryKey(storeId) });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : tc("networkError"));
     } finally {
+      await client.invalidateQueries({ queryKey: queryKey(storeId) });
       setBusy(false);
     }
   }
 
   async function remove(id: string) {
-    if (!storeId || !window.confirm(t("confirmDelete"))) return;
+    if (
+      !storeId ||
+      deletingIdsRef.current.has(id) ||
+      !window.confirm(t("confirmDelete"))
+    )
+      return;
+    deletingIdsRef.current.add(id);
+    setDeletingIds(new Set(deletingIdsRef.current));
     setError(null);
     try {
       await apiClient.storeReferences.remove(storeId, id, {
@@ -117,6 +126,9 @@ export function ReferencesPageClient() {
       await client.invalidateQueries({ queryKey: queryKey(storeId) });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : tc("networkError"));
+    } finally {
+      deletingIdsRef.current.delete(id);
+      setDeletingIds(new Set(deletingIdsRef.current));
     }
   }
 
@@ -252,6 +264,7 @@ export function ReferencesPageClient() {
                   size="icon"
                   variant="ghost"
                   aria-label={t("deleteImage")}
+                  disabled={deletingIds.has(item.id)}
                   onClick={() => void remove(item.id)}
                 >
                   <Trash2 className="size-4" />

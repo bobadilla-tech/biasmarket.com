@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import { useQueryClient } from "@tanstack/react-query";
 import { ImagePlus, Save, Trash2, X } from "lucide-react";
@@ -21,6 +21,10 @@ export function CategoriesPageClient() {
     Record<string, { name: string; slug: string }>
   >({});
   const [pending, setPending] = useState<string | null>(null);
+  const [uploadingIds, setUploadingIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const uploadingIdsRef = useRef(new Set<string>());
   const [error, setError] = useState<string | null>(null);
   const categories = categoriesQuery.data ?? [];
 
@@ -55,6 +59,7 @@ export function CategoriesPageClient() {
   async function remove(category: (typeof categories)[number]) {
     if (
       category.productCount > 0 ||
+      categories.some((other) => other.parentId === category.id) ||
       !window.confirm(t("confirmDelete", { name: category.name }))
     )
       return;
@@ -73,8 +78,9 @@ export function CategoriesPageClient() {
   }
 
   async function upload(categoryId: string, file?: File) {
-    if (!file || !storeId) return;
-    setPending(categoryId);
+    if (!file || !storeId || uploadingIdsRef.current.has(categoryId)) return;
+    uploadingIdsRef.current.add(categoryId);
+    setUploadingIds(new Set(uploadingIdsRef.current));
     setError(null);
     try {
       await categoriesApi.uploadImage(
@@ -87,7 +93,8 @@ export function CategoriesPageClient() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : tc("networkError"));
     } finally {
-      setPending(null);
+      uploadingIdsRef.current.delete(categoryId);
+      setUploadingIds(new Set(uploadingIdsRef.current));
     }
   }
 
@@ -191,19 +198,24 @@ export function CategoriesPageClient() {
                   <Button
                     type="button"
                     size="sm"
-                    disabled={pending === category.id}
+                    disabled={
+                      pending === category.id || uploadingIds.has(category.id)
+                    }
                     onClick={() => void save(category)}
                   >
                     <Save className="mr-2 size-4" />
                     {t("save")}
                   </Button>
-                  <label className="inline-flex min-h-9 cursor-pointer items-center rounded-md border px-3 text-sm hover:bg-muted">
+                  <label
+                    className={`inline-flex min-h-9 items-center rounded-md border px-3 text-sm ${uploadingIds.has(category.id) ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-muted"}`}
+                  >
                     <ImagePlus className="mr-2 size-4" />
                     {t("uploadImage")}
                     <input
                       type="file"
                       accept="image/jpeg,image/png"
                       className="sr-only"
+                      disabled={uploadingIds.has(category.id)}
                       onChange={(event) => {
                         void upload(category.id, event.target.files?.[0]);
                         event.currentTarget.value = "";
@@ -215,7 +227,9 @@ export function CategoriesPageClient() {
                       type="button"
                       size="sm"
                       variant="outline"
-                      disabled={pending === category.id}
+                      disabled={
+                        pending === category.id || uploadingIds.has(category.id)
+                      }
                       onClick={() => void clearImage(category)}
                     >
                       <X className="mr-1 size-4" />
@@ -227,10 +241,19 @@ export function CategoriesPageClient() {
                     size="sm"
                     variant="destructive"
                     disabled={
-                      pending === category.id || category.productCount > 0
+                      pending === category.id ||
+                      uploadingIds.has(category.id) ||
+                      category.productCount > 0 ||
+                      categories.some((other) => other.parentId === category.id)
                     }
                     title={
-                      category.productCount > 0 ? t("hasProducts") : undefined
+                      category.productCount > 0
+                        ? t("hasProducts")
+                        : categories.some(
+                              (other) => other.parentId === category.id,
+                            )
+                          ? t("hasChildren")
+                          : undefined
                     }
                     onClick={() => void remove(category)}
                   >
