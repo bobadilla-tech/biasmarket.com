@@ -35,7 +35,7 @@ This operation does not clear `OrderPayment.imageUrl` or `OrderPayment.note`, `O
 
    ```sh
    read -r -s -p "Verified buyer phone: " CUSTOMER_PHONE
-   printf '\\n'
+   printf '\n'
    export CUSTOMER_PHONE
    SERVICE=api-blue
    API_CONTAINER="$(docker ps -q --filter "label=com.docker.compose.service=$SERVICE" | head -n 1)"
