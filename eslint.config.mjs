@@ -1,7 +1,9 @@
 // Shared ESLint config for backend and packages (api, workers, db, i18n, queue,
 // types, design-tokens, utils, query, validation). ESLint resolves the nearest
 // config from the cwd upward, so a workspace without its own file picks this
-// up. web, mobile and sanity keep local configs. Do not add a root `lint`
+// up. web and mobile keep local configs that only add their plugins and
+// globals on top of `parserFor` and `baseRules`; sanity keeps its studio preset.
+// Prettier is configured once, in the root `.prettierrc`. Do not add a root `lint`
 // script that runs `eslint .`: it would apply this config to those three.
 //
 // `typescript-eslint` cannot load on TypeScript 7, so TS is parsed with
@@ -11,7 +13,7 @@ import js from "@eslint/js";
 import babelParser from "@babel/eslint-parser";
 import globals from "globals";
 
-const parserFor = (plugins) => ({
+export const parserFor = (plugins, extraGlobals = {}) => ({
   ecmaVersion: "latest",
   sourceType: "module",
   parser: babelParser,
@@ -23,7 +25,7 @@ const parserFor = (plugins) => ({
       parserOpts: { plugins },
     },
   },
-  globals: { ...globals.node, ...globals.es2025 },
+  globals: { ...globals.node, ...globals.es2025, ...extraGlobals },
 });
 
 export const baseRules = {

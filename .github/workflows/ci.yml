@@ -85,6 +85,7 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - '.prettierrc'
               - 'eslint.config.mjs'
               - 'scripts/lint-changed-files.mjs'
             web:
@@ -97,6 +98,7 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - '.prettierrc'
               - 'eslint.config.mjs'
               - 'scripts/lint-changed-files.mjs'
             workers:
@@ -107,6 +109,7 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - '.prettierrc'
               - 'eslint.config.mjs'
               - 'scripts/lint-changed-files.mjs'
             db:
@@ -116,6 +119,7 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - '.prettierrc'
               - 'eslint.config.mjs'
               - 'scripts/lint-changed-files.mjs'
             i18n:
@@ -125,6 +129,7 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - '.prettierrc'
               - 'eslint.config.mjs'
               - 'scripts/lint-changed-files.mjs'
             queue:
@@ -134,6 +139,7 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - '.prettierrc'
               - 'eslint.config.mjs'
               - 'scripts/lint-changed-files.mjs'
             types:
@@ -145,6 +151,7 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - '.prettierrc'
               - 'eslint.config.mjs'
               - 'scripts/lint-changed-files.mjs'
             design_tokens:
@@ -154,6 +161,7 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - '.prettierrc'
               - 'eslint.config.mjs'
               - 'scripts/lint-changed-files.mjs'
             utils:
@@ -163,6 +171,7 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - '.prettierrc'
               - 'eslint.config.mjs'
               - 'scripts/lint-changed-files.mjs'
             validation:
@@ -172,6 +181,7 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - '.prettierrc'
               - 'eslint.config.mjs'
               - 'scripts/lint-changed-files.mjs'
             query:
@@ -181,6 +191,7 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - '.prettierrc'
               - 'eslint.config.mjs'
               - 'scripts/lint-changed-files.mjs'
             mobile:
@@ -196,6 +207,7 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - '.prettierrc'
               - 'eslint.config.mjs'
               - 'scripts/lint-changed-files.mjs'
             sanity:
@@ -205,6 +217,7 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - '.prettierrc'
               - 'eslint.config.mjs'
               - 'scripts/lint-changed-files.mjs'
             # The a11y browser E2E job builds and runs BOTH apps plus the seed,

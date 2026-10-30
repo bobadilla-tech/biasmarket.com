@@ -18,6 +18,7 @@
       "env": ["BASE_REF"],
       "inputs": [
         "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/.prettierrc",
         "$TURBO_ROOT$/eslint.config.mjs",
         "$TURBO_ROOT$/scripts/lint-changed-files.mjs"
       ]
@@ -27,6 +28,7 @@
       "inputs": [
         "$TURBO_DEFAULT$",
         "eslint.config.mjs",
+        "$TURBO_ROOT$/.prettierrc",
         "$TURBO_ROOT$/eslint.config.mjs",
         "../../scripts/lint-changed-files.mjs"
       ]

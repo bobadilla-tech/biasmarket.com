@@ -75,8 +75,11 @@ executed".
   TypeScript 7.
   `no-undef`/`no-unused-vars`/`no-redeclare`/`no-dupe-class-members` are off;
   `tsc` is the authority. `.ts` is parsed without `jsx` (it mis-parses `<T>x`).
-- `web` and `mobile` keep local configs that import `baseRules` from the root
-  config and add react-hooks (`exhaustive-deps` is a warning, so no
+- Prettier has one source of truth, the root `.prettierrc` (double quotes,
+  trailing commas, 80 columns); no workspace carries its own. Generated files
+  are listed in `.prettierignore`.
+- `web` and `mobile` keep local configs that import `baseRules` and `parserFor`
+  from the root config and add react-hooks (`exhaustive-deps` is a warning, so no
   `--max-warnings 0`). `sanity` keeps `@sanity/eslint-config-studio`.
 - Backend and package lint =
   `node ../../scripts/lint-changed-files.mjs <dir> && eslint . --max-warnings 0`.
@@ -202,7 +205,7 @@ A new path-filtered job must be added in seven places, in one PR: (1) the
 (7) `package_names`/`package_keys` in `scripts/ci/check-ci-success.sh`. A typo
 in a filter key makes the script fail on every run and blocks CD. The always-run
 `hygiene` job has no changed output; it only has `HYGIENE_RESULT`. Add
-`eslint.config.mjs` and `scripts/lint-changed-files.mjs` to package filters.
+`.prettierrc`, `eslint.config.mjs` and `scripts/lint-changed-files.mjs` to package filters.
 
 Two things are special-cased and do not follow the list above exactly: the `e2e`
 job's result is checked against an expectation derived from the event type and
