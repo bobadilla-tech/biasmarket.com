@@ -2,14 +2,17 @@ import { InjectQueue } from "@nestjs/bullmq";
 import { Injectable, Logger, type OnModuleInit } from "@nestjs/common";
 import type { Queue } from "bullmq";
 import {
+  ASSISTED_IDENTITY_RETENTION_CRON_PATTERN,
+  ASSISTED_IDENTITY_RETENTION_JOB_NAME,
+  ASSISTED_IDENTITY_RETENTION_SCHEDULER_ID,
   EXPIRE_ORDERS_CRON_PATTERN,
   EXPIRE_ORDERS_JOB_NAME,
   EXPIRE_ORDERS_SCHEDULER_ID,
   QUEUE_NAMES,
 } from "@biasmarket/queue";
 
-// apps/workers owns scheduling: a single BullMQ job scheduler dispatches
-// this job on a cron tick, regardless of how many apps/api replicas exist —
+// apps/workers owns scheduling: BullMQ job schedulers dispatch expiry and
+// retention jobs on cron ticks, regardless of how many apps/api replicas exist —
 // see the migration plan's "Decision: order-expiration sweep" section for
 // why this replaced apps/api's own in-process @Cron. upsertJobScheduler is
 // idempotent by schedulerId, so re-running this on every boot updates the
@@ -32,6 +35,11 @@ export class ExpireOrdersSchedulerService implements OnModuleInit {
       EXPIRE_ORDERS_SCHEDULER_ID,
       { pattern: EXPIRE_ORDERS_CRON_PATTERN },
       { name: EXPIRE_ORDERS_JOB_NAME },
+    );
+    await this.queue.upsertJobScheduler(
+      ASSISTED_IDENTITY_RETENTION_SCHEDULER_ID,
+      { pattern: ASSISTED_IDENTITY_RETENTION_CRON_PATTERN },
+      { name: ASSISTED_IDENTITY_RETENTION_JOB_NAME },
     );
     this.logger.log(
       `Registered "${EXPIRE_ORDERS_SCHEDULER_ID}" job scheduler (${EXPIRE_ORDERS_CRON_PATTERN})`,
