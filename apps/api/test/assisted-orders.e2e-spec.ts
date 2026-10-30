@@ -615,3 +615,4 @@ describe('assisted orders (e2e)', () => {
     expect(audit.metadata).toMatchObject({ cause: 'BUYER_REQUEST', requestReference: 'PRIV-460' });
   });
 });
+
