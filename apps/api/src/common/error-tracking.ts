@@ -2,6 +2,7 @@ import { Logger } from "@nestjs/common";
 import * as Sentry from "@sentry/node";
 import type { Event } from "@sentry/node";
 import { scrubOrDrop } from "@biasmarket/utils/sentry-scrub";
+import { tracesSampler } from "@biasmarket/utils/traces-sampler";
 
 // The exception filter scrubs stdout and the JSON `path`. Sentry/GlitchTip
 // still copy the raw URL into request.url, the transaction name, url tags,
@@ -23,7 +24,9 @@ export function initErrorTracking(): void {
 
   Sentry.init({
     dsn,
-    tracesSampleRate: 0.01,
+    // Per-route rates (never health, always money paths, 10% otherwise, parent
+    // decision inherited) instead of a flat 1%, see traces-sampler.
+    tracesSampler,
     beforeSend: scrubEvent,
     beforeSendTransaction: scrubEvent,
   });
