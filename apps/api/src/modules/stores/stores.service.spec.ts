@@ -1059,6 +1059,14 @@ describe('StoresService', () => {
           imageUrl: 'https://cdn.test/p1.jpg',
           productCount: 3,
         },
+        {
+          id: 'empty',
+          name: 'Empty',
+          slug: 'empty',
+          parentId: null,
+          imageUrl: null,
+          productCount: 0,
+        },
       ]);
     });
   });
