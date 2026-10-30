@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/node";
 import type { Event } from "@sentry/node";
 import { scrubOrDrop } from "@biasmarket/utils/sentry-scrub";
 import { tracesSampler } from "@biasmarket/utils/traces-sampler";
+import { FRAMEWORK_LOG_CONTEXTS } from "./logging/logger.config.js";
 
 // The exception filter scrubs stdout and the JSON `path`. Sentry/GlitchTip
 // still copy the raw URL into request.url, the transaction name, url tags,
@@ -10,6 +11,22 @@ import { tracesSampler } from "@biasmarket/utils/traces-sampler";
 // goes through the shared scrubber and is dropped if scrubbing fails.
 function scrubEvent<T extends Event>(event: T): T | null {
   return scrubOrDrop(event, (message) => Logger.warn(message, "ErrorTracking"));
+}
+
+// Logs are forwarded to GlitchTip too (see logger.config.ts). A scrub failure
+// must not warn through the logger: that warning would itself be forwarded and
+// fail again, in a loop. Dropping the line silently is the safe default.
+function scrubLog<T extends object>(log: T): T | null {
+  // `attributes.context` is a plain value or a `{ value, type }` wrapper
+  // depending on where in the SDK the log is seen.
+  const context = (log as { attributes?: Record<string, unknown> }).attributes
+    ?.context;
+  const name =
+    typeof context === "object" && context !== null
+      ? (context as { value?: unknown }).value
+      : context;
+  if (typeof name === "string" && FRAMEWORK_LOG_CONTEXTS.has(name)) return null;
+  return scrubOrDrop(log, () => undefined);
 }
 
 // Environment-gated error tracking (GlitchTip is Sentry-protocol-compatible,
@@ -29,6 +46,19 @@ export function initErrorTracking(): void {
     tracesSampler,
     beforeSend: scrubEvent,
     beforeSendTransaction: scrubEvent,
+    // Ship the pino lines (request log, Nest Logger calls) to GlitchTip so they
+    // survive container recreation and are searchable next to errors and
+    // traces. info and above only: debug/trace would cost storage for little
+    // signal. `error.levels: []` (also the default) keeps pino error lines from
+    // becoming duplicate issues, the exception filter already reports those.
+    enableLogs: true,
+    integrations: [
+      Sentry.pinoIntegration({
+        log: { levels: ["info", "warn", "error", "fatal"] },
+        error: { levels: [] },
+      }),
+    ],
+    beforeSendLog: scrubLog,
   });
 }
 

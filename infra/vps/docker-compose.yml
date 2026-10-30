@@ -47,6 +47,14 @@ name: biasmarket
 x-app-common: &app-common
   restart: unless-stopped
   networks: [stack]
+  # Docker's default json-file driver has no size cap. Keep the local copy
+  # bounded: the searchable history lives in GlitchTip (see docs/core/operations.md),
+  # because these files are deleted with the container on every deploy.
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "5"
 
 services:
   db:

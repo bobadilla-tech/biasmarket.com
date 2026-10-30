@@ -1,4 +1,6 @@
 import { Module } from "@nestjs/common";
+import { LoggerModule } from "nestjs-pino";
+import { buildLoggerParams } from "./common/logging/logger.config.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
 import { StorageModule } from "./storage/storage.module.js";
 import { MailerModule } from "./mailer/mailer.module.js";
@@ -29,6 +31,7 @@ import { CouriersModule } from "./modules/couriers/couriers.module.js";
 
 @Module({
   imports: [
+    LoggerModule.forRoot(buildLoggerParams()),
     StoresModule,
     ProductsModule,
     PrismaModule,

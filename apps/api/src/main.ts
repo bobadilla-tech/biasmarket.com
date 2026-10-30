@@ -4,6 +4,7 @@ import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module.js";
 import { RequestMethod, ValidationPipe } from "@nestjs/common";
 import helmet from "helmet";
+import { Logger as PinoLogger } from "nestjs-pino";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter.js";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { buildCorsOptions } from "./common/cors-options.js";
@@ -21,7 +22,11 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule, {
     bodyParser: false,
+    // Hold Nest's boot logs until the pino logger exists, so they come out as
+    // structured JSON too instead of the default console format.
+    bufferLogs: true,
   });
+  app.useLogger(app.get(PinoLogger));
 
   // Caddy is the only proxy that reaches this process, and it replaces the
   // forwarding headers with the visitor IP (see infra/vps/Caddyfile). One hop.
