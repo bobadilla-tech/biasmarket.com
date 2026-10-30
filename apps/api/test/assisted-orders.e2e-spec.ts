@@ -4,7 +4,9 @@ import request from 'supertest';
 import { createHash, randomInt, randomUUID } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { PrismaService } from '../src/prisma/prisma.service.js';
-import { AssistedOrderIdentityRetentionUseCase } from '../src/modules/orders/application/assisted-order-identity-retention.usecase.js';
+import {
+  AssistedOrderIdentityRetentionUseCase,
+} from '../src/modules/orders/application/assisted-order-identity-retention.usecase.js';
 import { AppModule } from './../src/app.module.js';
 import {
   deleteOrders,
