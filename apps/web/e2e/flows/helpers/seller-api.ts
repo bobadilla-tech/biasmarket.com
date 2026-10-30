@@ -138,3 +138,84 @@ export async function getOrder(
     "get order",
   );
 }
+
+export interface ApiOrder {
+  id: string;
+  /** What the order is called on screen (last 6 of the id, uppercase). */
+  number: string;
+  /** The buyer's private link. */
+  link: string;
+}
+
+// Creates an assisted order through the seller API (the UI path is covered by
+// the golden path), for specs that are about what the buyer sees afterwards.
+// `partial` makes it a pickup deposit order (30% of the total).
+export async function createAssistedOrder(
+  api: APIRequestContext,
+  shop: Shop,
+  e164: string,
+  options: { partial?: boolean } = {},
+): Promise<ApiOrder> {
+  const created = await ok<{ order: { id: string }; accessUrl: string }>(
+    await api.post(`/api/stores/${shop.storeId}/orders/assisted`, {
+      data: {
+        deliveryMethodType: "PICKUP",
+        customerPhone: e164,
+        items: [
+          { productId: shop.productId, variantId: shop.variantId, quantity: 1 },
+        ],
+        ...(options.partial
+          ? { paymentMethod: "TRANSFER", paymentType: "PARTIAL" }
+          : {}),
+      },
+    }),
+    "create assisted order",
+  );
+  return {
+    id: created.order.id,
+    number: created.order.id.slice(-6).toUpperCase(),
+    link: created.accessUrl,
+  };
+}
+
+// A seller-recorded TRANSFER (counts as paid at once; TRANSFER needs a
+// capture, so a 1x1 PNG goes along).
+export async function recordPayment(
+  api: APIRequestContext,
+  shop: Shop,
+  orderId: string,
+  amount: number,
+): Promise<void> {
+  const png = Buffer.from(
+    "89504e470d0a1a0a0000000d4948445200000001000000010802000000907753de0000000c4944415478da6360606060000000050001a5f645400000000049454e44ae426082",
+    "hex",
+  );
+  await ok(
+    await api.post(`/api/stores/${shop.storeId}/orders/${orderId}/payments`, {
+      multipart: {
+        amount: amount.toFixed(2),
+        method: "TRANSFER",
+        paidAt: new Date().toISOString(),
+        file: { name: "capture.png", mimeType: "image/png", buffer: png },
+      },
+    }),
+    "record payment",
+  );
+}
+
+export async function advanceFulfillment(
+  api: APIRequestContext,
+  shop: Shop,
+  orderId: string,
+  status: "IN_TRANSIT" | "READY" | "COMPLETED",
+): Promise<void> {
+  await ok(
+    await api.patch(
+      `/api/stores/${shop.storeId}/orders/${orderId}/fulfillment`,
+      {
+        data: { status },
+      },
+    ),
+    `advance to ${status}`,
+  );
+}
