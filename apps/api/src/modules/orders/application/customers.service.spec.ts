@@ -862,7 +862,11 @@ describe('CustomersService', () => {
         '  Ana  ',
       );
 
-      const [strings, ...values] = prisma.$executeRaw.mock.calls[0];
+      const [lockStrings, ...lockValues] = prisma.$executeRaw.mock.calls[0];
+      expect(lockStrings.join('?')).toContain('pg_advisory_xact_lock');
+      expect(lockValues).toContain('assisted-customer:store-1:+51987654321');
+
+      const [strings, ...values] = prisma.$executeRaw.mock.calls[1];
       expect(strings.join('?')).toContain('INSERT INTO "Customer"');
       expect(strings.join('?')).toContain('ON CONFLICT ("storeId", "phone")');
       expect(values).toContain(storeId);
