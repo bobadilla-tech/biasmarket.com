@@ -188,7 +188,7 @@ describe('scrubSentryEvent', () => {
       current = child;
     }
     current.token = TOKEN;
-    const event = { extra: { deep } } as ErrorEvent;
+    const event: Event = { extra: { deep } };
 
     scrubSentryEvent(event);
 
