@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from "@nestjs/swagger";
 
 // `GET /stores/:storeId/orders/:orderId/related` — other orders of the same
 // buyer phone in the same store, for the seller's order detail. Allow-listed:
@@ -12,32 +12,32 @@ export class RelatedOrderResponseDto {
   @ApiProperty()
   orderNumber: string;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   createdAt: string;
 
-  @ApiProperty({ enum: ['ACTIVE', 'CANCELLED'] })
-  status: 'ACTIVE' | 'CANCELLED';
+  @ApiProperty({ enum: ["ACTIVE", "CANCELLED"] })
+  status: "ACTIVE" | "CANCELLED";
 
   @ApiProperty({
     enum: [
-      'PENDING_PAYMENT',
-      'PARTIALLY_PAID',
-      'PAYMENT_SUBMITTED',
-      'VERIFIED',
-      'REJECTED',
-      'CANCELLED',
+      "PENDING_PAYMENT",
+      "PARTIALLY_PAID",
+      "PAYMENT_SUBMITTED",
+      "VERIFIED",
+      "REJECTED",
+      "CANCELLED",
     ],
   })
   paymentStatus:
-    | 'PENDING_PAYMENT'
-    | 'PARTIALLY_PAID'
-    | 'PAYMENT_SUBMITTED'
-    | 'VERIFIED'
-    | 'REJECTED'
-    | 'CANCELLED';
+    | "PENDING_PAYMENT"
+    | "PARTIALLY_PAID"
+    | "PAYMENT_SUBMITTED"
+    | "VERIFIED"
+    | "REJECTED"
+    | "CANCELLED";
 
-  @ApiProperty({ enum: ['ORDERING', 'IN_TRANSIT', 'READY', 'COMPLETED'] })
-  fulfillmentStatus: 'ORDERING' | 'IN_TRANSIT' | 'READY' | 'COMPLETED';
+  @ApiProperty({ enum: ["ORDERING", "IN_TRANSIT", "READY", "COMPLETED"] })
+  fulfillmentStatus: "ORDERING" | "IN_TRANSIT" | "READY" | "COMPLETED";
 
   @ApiProperty({ type: String })
   totalAmount: string;
@@ -45,8 +45,8 @@ export class RelatedOrderResponseDto {
   @ApiProperty()
   currency: string;
 
-  @ApiProperty({ enum: ['MARKETPLACE', 'VENDOR_ASSISTED'] })
-  source: 'MARKETPLACE' | 'VENDOR_ASSISTED';
+  @ApiProperty({ enum: ["MARKETPLACE", "VENDOR_ASSISTED"] })
+  source: "MARKETPLACE" | "VENDOR_ASSISTED";
 }
 
 export class RelatedOrdersResponseDto {

@@ -1,11 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Prisma } from '@biasmarket/db';
-import { computePaymentSummary } from '../../../common/payment-summary.js';
-import { PrismaService } from '../../../prisma/prisma.service.js';
-import { NotificationsService } from '../../notifications/notifications.service.js';
-import { Order } from '../domain/order.entity.js';
-import { OrderEventsService } from './order-events.service.js';
-import { RESERVED_HOLD_STATUSES } from '../domain/hold-statuses.js';
+import { Injectable, Logger } from "@nestjs/common";
+import { Prisma } from "@biasmarket/db";
+import { computePaymentSummary } from "../../../common/payment-summary.js";
+import { PrismaService } from "../../../prisma/prisma.service.js";
+import { NotificationsService } from "../../notifications/notifications.service.js";
+import { Order } from "../domain/order.entity.js";
+import { OrderEventsService } from "./order-events.service.js";
+import { RESERVED_HOLD_STATUSES } from "../domain/hold-statuses.js";
 
 @Injectable()
 export class ExpireOrdersUseCase {
@@ -57,10 +57,10 @@ export class ExpireOrdersUseCase {
               paymentStatus: { in: [...RESERVED_HOLD_STATUSES] },
             },
             data: {
-              status: 'CANCELLED',
+              status: "CANCELLED",
               closedAt: new Date(),
               paymentStatus: entity.currentPaymentStatus,
-              cancellationResolution: 'RETAINED',
+              cancellationResolution: "RETAINED",
               retainedAmount: new Prisma.Decimal(paidAmount),
               releasedAmount: new Prisma.Decimal(0),
               releasedResolution: null,
@@ -71,13 +71,13 @@ export class ExpireOrdersUseCase {
 
           await tx.auditLog.create({
             data: {
-              actorId: 'system',
+              actorId: "system",
               storeId: order.storeId,
-              action: 'order.expired',
-              entityType: 'Order',
+              action: "order.expired",
+              entityType: "Order",
               entityId: order.id,
               metadata: {
-                resolution: 'RETAINED',
+                resolution: "RETAINED",
                 retainedAmount: paidAmount,
                 releasedAmount: 0,
               },
@@ -86,9 +86,9 @@ export class ExpireOrdersUseCase {
           await this.events.record(tx, {
             orderId: order.id,
             storeId: order.storeId,
-            type: 'ORDER_CANCELLED',
-            actor: 'SYSTEM',
-            payload: { resolution: 'RETAINED' },
+            type: "ORDER_CANCELLED",
+            actor: "SYSTEM",
+            payload: { resolution: "RETAINED" },
           });
 
           const store = await tx.store.findUnique({

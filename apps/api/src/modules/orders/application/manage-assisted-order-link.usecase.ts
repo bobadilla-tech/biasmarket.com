@@ -3,20 +3,20 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
-import type { Prisma, Store } from '@biasmarket/db';
-import { validatePhone } from '@biasmarket/utils/phone-country';
-import type { WHATSAPP_BUYER_NOTICE_TYPES } from '@biasmarket/utils/whatsapp';
+} from "@nestjs/common";
+import type { Prisma, Store } from "@biasmarket/db";
+import { validatePhone } from "@biasmarket/utils/phone-country";
+import type { WHATSAPP_BUYER_NOTICE_TYPES } from "@biasmarket/utils/whatsapp";
 import {
   assertVendorAssistedOrder,
   AssistedOrderInvariantError,
   createOrderAccessToken,
-} from '@biasmarket/utils/assisted-order';
-import { PrismaService } from '../../../prisma/prisma.service.js';
-import { RESERVED_HOLD_STATUSES } from '../domain/hold-statuses.js';
-import { upsertAssistedCustomer } from './assisted-customer.js';
-import { OrderEventsService } from './order-events.service.js';
-import { buildOrderAccessUrl } from './order-access-url.js';
+} from "@biasmarket/utils/assisted-order";
+import { PrismaService } from "../../../prisma/prisma.service.js";
+import { RESERVED_HOLD_STATUSES } from "../domain/hold-statuses.js";
+import { upsertAssistedCustomer } from "./assisted-customer.js";
+import { OrderEventsService } from "./order-events.service.js";
+import { buildOrderAccessUrl } from "./order-access-url.js";
 
 type Tx = Prisma.TransactionClient;
 type BuyerNoticeType = (typeof WHATSAPP_BUYER_NOTICE_TYPES)[number];
@@ -42,7 +42,7 @@ export class ManageAssistedOrderLinkUseCase {
         where: { id: orderId, storeId: store.id },
         data: { accessTokenHash: tokenHash, accessTokenRevokedAt: null },
       });
-      await this.record(tx, store.id, userId, orderId, 'LINK_REGENERATED');
+      await this.record(tx, store.id, userId, orderId, "LINK_REGENERATED");
     });
     return { accessUrl: buildOrderAccessUrl(token, store.slug) };
   }
@@ -62,17 +62,17 @@ export class ManageAssistedOrderLinkUseCase {
       const order = await this.lockActiveOrder(tx, store.id, orderId);
       if (order.linkFirstOpenedAt || order.claimedAt) {
         throw new ConflictException(
-          'El comprador ya abrió o reclamó el pedido; no se puede corregir el número',
+          "El comprador ya abrió o reclamó el pedido; no se puede corregir el número",
         );
       }
       if (order.customerPhone === phone) {
         throw new BadRequestException(
-          'El número es el mismo que ya tiene el pedido',
+          "El número es el mismo que ya tiene el pedido",
         );
       }
       try {
         assertVendorAssistedOrder({
-          source: 'VENDOR_ASSISTED',
+          source: "VENDOR_ASSISTED",
           customerPhone: phone,
           createdByUserId: order.createdByUserId ?? userId,
         });
@@ -97,7 +97,7 @@ export class ManageAssistedOrderLinkUseCase {
           accessTokenRevokedAt: null,
         },
       });
-      await this.record(tx, store.id, userId, orderId, 'PHONE_CORRECTED');
+      await this.record(tx, store.id, userId, orderId, "PHONE_CORRECTED");
     });
     return { accessUrl: buildOrderAccessUrl(token, store.slug) };
   }
@@ -114,14 +114,14 @@ export class ManageAssistedOrderLinkUseCase {
       where: { id: orderId, storeId: store.id },
       select: { source: true },
     });
-    if (!order || order.source !== 'VENDOR_ASSISTED') {
-      throw new NotFoundException('Pedido no encontrado');
+    if (!order || order.source !== "VENDOR_ASSISTED") {
+      throw new NotFoundException("Pedido no encontrado");
     }
     await this.events.record(this.prisma, {
       orderId,
       storeId: store.id,
-      type: 'BUYER_NOTIFIED',
-      actor: 'SELLER',
+      type: "BUYER_NOTIFIED",
+      actor: "SELLER",
       payload: { notice },
     });
   }
@@ -147,8 +147,8 @@ export class ManageAssistedOrderLinkUseCase {
           },
         })
       : null;
-    if (!order || order.source !== 'VENDOR_ASSISTED') {
-      throw new NotFoundException('Pedido no encontrado');
+    if (!order || order.source !== "VENDOR_ASSISTED") {
+      throw new NotFoundException("Pedido no encontrado");
     }
     // The expiry check applies only to hold statuses: the sweep cancels only
     // those, and nothing clears `expiresAt` on a VERIFIED order.
@@ -156,12 +156,12 @@ export class ManageAssistedOrderLinkUseCase {
       RESERVED_HOLD_STATUSES.includes(order.paymentStatus) &&
       order.expiresAt.getTime() <= Date.now();
     if (
-      order.status === 'CANCELLED' ||
-      order.paymentStatus === 'CANCELLED' ||
+      order.status === "CANCELLED" ||
+      order.paymentStatus === "CANCELLED" ||
       expired
     ) {
       throw new ConflictException(
-        'El pedido está cancelado o venció; ya no se puede enviar un enlace',
+        "El pedido está cancelado o venció; ya no se puede enviar un enlace",
       );
     }
     return order;
@@ -173,23 +173,23 @@ export class ManageAssistedOrderLinkUseCase {
     storeId: string,
     userId: string,
     orderId: string,
-    type: 'LINK_REGENERATED' | 'PHONE_CORRECTED',
+    type: "LINK_REGENERATED" | "PHONE_CORRECTED",
   ) {
     await this.events.record(tx, {
       orderId,
       storeId,
       type,
-      actor: 'SELLER',
+      actor: "SELLER",
     });
     await tx.auditLog.create({
       data: {
         actorId: userId,
         storeId,
         action:
-          type === 'LINK_REGENERATED'
-            ? 'order.link_regenerated'
-            : 'order.phone_corrected',
-        entityType: 'Order',
+          type === "LINK_REGENERATED"
+            ? "order.link_regenerated"
+            : "order.phone_corrected",
+        entityType: "Order",
         entityId: orderId,
         metadata: {},
       },

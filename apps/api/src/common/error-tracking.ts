@@ -1,14 +1,14 @@
-import { Logger } from '@nestjs/common';
-import * as Sentry from '@sentry/node';
-import type { Event } from '@sentry/node';
-import { scrubOrDrop } from '@biasmarket/utils/sentry-scrub';
+import { Logger } from "@nestjs/common";
+import * as Sentry from "@sentry/node";
+import type { Event } from "@sentry/node";
+import { scrubOrDrop } from "@biasmarket/utils/sentry-scrub";
 
 // The exception filter scrubs stdout and the JSON `path`. Sentry/GlitchTip
 // still copy the raw URL into request.url, the transaction name, url tags,
 // and span descriptions (about 1% of requests are traced), so every event
 // goes through the shared scrubber and is dropped if scrubbing fails.
 function scrubEvent<T extends Event>(event: T): T | null {
-  return scrubOrDrop(event, (message) => Logger.warn(message, 'ErrorTracking'));
+  return scrubOrDrop(event, (message) => Logger.warn(message, "ErrorTracking"));
 }
 
 // Environment-gated error tracking (GlitchTip is Sentry-protocol-compatible,
@@ -17,7 +17,7 @@ function scrubEvent<T extends Event>(event: T): T | null {
 export function initErrorTracking(): void {
   const dsn = process.env.SENTRY_DSN;
   if (!dsn) {
-    Logger.log('SENTRY_DSN not set — error tracking disabled', 'ErrorTracking');
+    Logger.log("SENTRY_DSN not set — error tracking disabled", "ErrorTracking");
     return;
   }
 

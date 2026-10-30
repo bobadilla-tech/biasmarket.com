@@ -1,23 +1,23 @@
-import { resolve } from 'node:path';
-import swc from 'unplugin-swc';
-import { defineConfig } from 'vitest/config';
+import { resolve } from "node:path";
+import swc from "unplugin-swc";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
     globals: true,
-    root: './',
-    include: ['src/**/*.spec.ts'],
+    root: "./",
+    include: ["src/**/*.spec.ts"],
     coverage: {
-      provider: 'v8',
-      reporter: ['text', 'lcov'],
+      provider: "v8",
+      reporter: ["text", "lcov"],
       // Count source files no test loads (without `include` v8 only reports
       // loaded files, which inflates the numbers).
-      include: ['src/**/*.ts'],
+      include: ["src/**/*.ts"],
       exclude: [
-        '**/*.spec.ts',
-        '**/*.e2e-spec.ts',
-        '**/*.d.ts',
-        'src/metadata.ts',
+        "**/*.spec.ts",
+        "**/*.e2e-spec.ts",
+        "**/*.d.ts",
+        "src/metadata.ts",
       ],
       thresholds: { statements: 75, branches: 73, functions: 67, lines: 75 },
     },
@@ -30,7 +30,7 @@ export default defineConfig({
       // PrismaService via `useValue` — so this stub only needs *some* class
       // to `extend`. Not aliased in vitest.config.e2e.ts, which boots the
       // real AppModule.
-      '@biasmarket/db': resolve(__dirname, './test/mocks/biasmarket-db.ts'),
+      "@biasmarket/db": resolve(__dirname, "./test/mocks/biasmarket-db.ts"),
     },
   },
   plugins: [
@@ -38,7 +38,7 @@ export default defineConfig({
     swc.vite({
       // Explicitly set the module type to avoid inheriting this value from
       // the project's .swcrc config file
-      module: { type: 'es6' },
+      module: { type: "es6" },
     }),
   ],
 });

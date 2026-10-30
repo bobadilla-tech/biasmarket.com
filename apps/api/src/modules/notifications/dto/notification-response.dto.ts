@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from "@nestjs/swagger";
 
 // Date-as-string convention (no Decimal here, but same rationale) — see
 // `../../collections/dto/collection-response.dto.ts`.
@@ -11,17 +11,17 @@ export class NotificationResponseDto {
 
   @ApiProperty({
     enum: [
-      'LOW_STOCK',
-      'OUT_OF_STOCK',
-      'PAYMENT_PROOF_SUBMITTED',
-      'RECEIPT_CONFIRMED',
+      "LOW_STOCK",
+      "OUT_OF_STOCK",
+      "PAYMENT_PROOF_SUBMITTED",
+      "RECEIPT_CONFIRMED",
     ],
   })
   type:
-    | 'LOW_STOCK'
-    | 'OUT_OF_STOCK'
-    | 'PAYMENT_PROOF_SUBMITTED'
-    | 'RECEIPT_CONFIRMED';
+    | "LOW_STOCK"
+    | "OUT_OF_STOCK"
+    | "PAYMENT_PROOF_SUBMITTED"
+    | "RECEIPT_CONFIRMED";
 
   @ApiProperty()
   entityType: string;
@@ -35,22 +35,22 @@ export class NotificationResponseDto {
   @ApiProperty()
   body: string;
 
-  @ApiProperty({ type: 'object', additionalProperties: true })
+  @ApiProperty({ type: "object", additionalProperties: true })
   metadata: Record<string, unknown>;
 
   @ApiProperty()
   read: boolean;
 
-  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  @ApiProperty({ type: String, format: "date-time", nullable: true })
   readAt: string | null;
 
   @ApiProperty()
   archived: boolean;
 
-  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  @ApiProperty({ type: String, format: "date-time", nullable: true })
   archivedAt: string | null;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   createdAt: string;
 }
 

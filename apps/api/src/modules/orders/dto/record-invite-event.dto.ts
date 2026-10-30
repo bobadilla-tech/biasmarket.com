@@ -1,11 +1,11 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsOptional } from 'class-validator';
-import { CLAIM_MOMENTS } from '../../customer-auth/claim-ticket.js';
+import { ApiPropertyOptional } from "@nestjs/swagger";
+import { IsIn, IsOptional } from "class-validator";
+import { CLAIM_MOMENTS } from "../../customer-auth/claim-ticket.js";
 
 export const INVITE_EVENT_TYPES = [
-  'INVITE_SHOWN',
-  'INVITE_CLICKED',
-  'INVITE_DISMISSED',
+  "INVITE_SHOWN",
+  "INVITE_CLICKED",
+  "INVITE_DISMISSED",
 ] as const;
 
 export class RecordInviteEventDto {

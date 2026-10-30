@@ -3,22 +3,22 @@ import {
   type ExecutionContext,
   Injectable,
   UnauthorizedException,
-} from '@nestjs/common';
-import type { Request, Response } from 'express';
+} from "@nestjs/common";
+import type { Request, Response } from "express";
 import {
   createCustomerSessionToken,
   verifyCustomerSessionToken,
-} from '@biasmarket/utils/customer-account-token';
-import { PrismaService } from '../../prisma/prisma.service.js';
+} from "@biasmarket/utils/customer-account-token";
+import { PrismaService } from "../../prisma/prisma.service.js";
 import {
   CUSTOMER_SESSION_COOKIE,
   CUSTOMER_SESSION_TTL_MS,
-} from './customer-session.constants.js';
-import { requiredEnv } from '../../config/env.validation.js';
+} from "./customer-session.constants.js";
+import { requiredEnv } from "../../config/env.validation.js";
 import {
   extractBearerTokenFromAuthorization,
   extractCustomerSessionToken,
-} from './customer-session-token.js';
+} from "./customer-session-token.js";
 
 // No `storeId` here — the session identifies a global `BuyerAccount`, not a
 // per-store `Customer`. Any endpoint that needs store scoping does its own
@@ -50,11 +50,11 @@ export class CustomerSessionGuard implements CanActivate {
     // `Authorization: Bearer <token>` header (mobile path). One token is
     // accepted per request; a cookie takes precedence when both are present.
     const token = extractCustomerSessionToken(req);
-    if (!token) throw new UnauthorizedException('No autenticado');
+    if (!token) throw new UnauthorizedException("No autenticado");
 
-    const secret = requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET');
+    const secret = requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET");
     const verified = verifyCustomerSessionToken(token, secret);
-    if (!verified) throw new UnauthorizedException('Sesión expirada');
+    if (!verified) throw new UnauthorizedException("Sesión expirada");
 
     const buyerAccount = await this.prisma.buyerAccount.findUnique({
       where: { id: verified.buyerAccountId },
@@ -69,7 +69,7 @@ export class CustomerSessionGuard implements CanActivate {
     ) {
       // Covers: account deleted, or (most commonly) password changed since
       // this token was issued — see BuyerAccount.passwordVersion.
-      throw new UnauthorizedException('Sesión expirada');
+      throw new UnauthorizedException("Sesión expirada");
     }
 
     // Sliding renewal: every authenticated request reissues a fresh 7-day
@@ -85,17 +85,17 @@ export class CustomerSessionGuard implements CanActivate {
       secret,
     );
     if (
-      req.headers['x-client'] === 'mobile' &&
+      req.headers["x-client"] === "mobile" &&
       extractBearerTokenFromAuthorization(req.headers.authorization) === token
     ) {
-      res.setHeader('X-Session-Token', fresh);
+      res.setHeader("X-Session-Token", fresh);
     }
     res.cookie(CUSTOMER_SESSION_COOKIE, fresh, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: CUSTOMER_SESSION_TTL_MS,
-      path: '/',
+      path: "/",
     });
 
     (req as CustomerSessionRequest).customerSession = {

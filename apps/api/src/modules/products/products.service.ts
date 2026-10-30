@@ -3,14 +3,14 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service.js';
-import type { CreateProductDto } from './dto/create-product.dto.js';
-import type { UpdateProductDto } from './dto/update-product.dto.js';
-import type { CreateVariantDto } from './dto/create-variant.dto.js';
-import type { UpdateVariantDto } from './dto/update-variant.dto.js';
-import { NotificationsService } from '../notifications/notifications.service.js';
-import { MAX_PRODUCT_IMAGES } from './product-images.constants.js';
+} from "@nestjs/common";
+import { PrismaService } from "../../prisma/prisma.service.js";
+import type { CreateProductDto } from "./dto/create-product.dto.js";
+import type { UpdateProductDto } from "./dto/update-product.dto.js";
+import type { CreateVariantDto } from "./dto/create-variant.dto.js";
+import type { UpdateVariantDto } from "./dto/update-variant.dto.js";
+import { NotificationsService } from "../notifications/notifications.service.js";
+import { MAX_PRODUCT_IMAGES } from "./product-images.constants.js";
 
 @Injectable()
 export class ProductsService {
@@ -32,9 +32,9 @@ export class ProductsService {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException('Store no encontrada');
+    if (!store) throw new NotFoundException("Store no encontrada");
     if (store.ownerId !== userId) {
-      throw new ForbiddenException('No sos dueño de esta store');
+      throw new ForbiddenException("No sos dueño de esta store");
     }
     return store;
   }
@@ -49,7 +49,7 @@ export class ProductsService {
       where: { id: productId },
     });
     if (!product || product.storeId !== storeId) {
-      throw new NotFoundException('Producto no encontrado');
+      throw new NotFoundException("Producto no encontrado");
     }
     return product;
   }
@@ -66,7 +66,7 @@ export class ProductsService {
     const publishedProductCount = await this.prisma.product.count({
       where: {
         storeId,
-        status: 'PUBLISHED',
+        status: "PUBLISHED",
         discontinued: false,
         deletedAt: null,
       },
@@ -86,7 +86,7 @@ export class ProductsService {
       where: { id: { in: categoryIds }, storeId },
     });
     if (count !== categoryIds.length) {
-      throw new BadRequestException('Categoría inválida');
+      throw new BadRequestException("Categoría inválida");
     }
   }
 
@@ -123,7 +123,7 @@ export class ProductsService {
           data: {
             productId: product.id,
             storeId,
-            name: 'Default',
+            name: "Default",
             stock,
           },
         });
@@ -153,7 +153,7 @@ export class ProductsService {
     if (products.length === 0) return [];
 
     const sold = await this.prisma.orderItem.groupBy({
-      by: ['productId'],
+      by: ["productId"],
       where: { storeId, productId: { in: products.map((p) => p.id) } },
       _sum: { quantity: true },
     });
@@ -183,7 +183,7 @@ export class ProductsService {
     });
 
     if (!product || product.storeId !== storeId || product.deletedAt) {
-      throw new NotFoundException('Producto no encontrado');
+      throw new NotFoundException("Producto no encontrado");
     }
 
     const sold = await this.prisma.orderItem.aggregate({
@@ -204,7 +204,7 @@ export class ProductsService {
     await this.findOwnedProduct(productId, storeId, userId);
     const product = await this.prisma.product.update({
       where: { id: productId },
-      data: { status: 'PUBLISHED' },
+      data: { status: "PUBLISHED" },
     });
     await this.recountPublishedProducts(storeId);
     return product;
@@ -236,7 +236,7 @@ export class ProductsService {
     });
     // `discontinued` is the only count-affecting field UpdateProductDto exposes
     // (publish/soft-delete are their own endpoints); recount only when it moved.
-    if ('discontinued' in data) {
+    if ("discontinued" in data) {
       await this.recountPublishedProducts(storeId);
     }
     return product;
@@ -246,7 +246,7 @@ export class ProductsService {
     await this.findOwnedProduct(productId, storeId, userId);
     const product = await this.prisma.product.update({
       where: { id: productId },
-      data: { deletedAt: new Date(), status: 'DRAFT', discontinued: false },
+      data: { deletedAt: new Date(), status: "DRAFT", discontinued: false },
     });
     await this.recountPublishedProducts(storeId);
     return product;
@@ -285,7 +285,7 @@ export class ProductsService {
       variant.productId !== productId ||
       variant.storeId !== storeId
     ) {
-      throw new NotFoundException('Variante no encontrada');
+      throw new NotFoundException("Variante no encontrada");
     }
     const updated = await this.prisma.productVariant.update({
       where: { id: variantId },
@@ -320,14 +320,14 @@ export class ProductsService {
       variant.productId !== productId ||
       variant.storeId !== storeId
     ) {
-      throw new NotFoundException('Variante no encontrada');
+      throw new NotFoundException("Variante no encontrada");
     }
     const usedCount = await this.prisma.orderItem.count({
       where: { variantId },
     });
     if (usedCount > 0) {
       throw new BadRequestException(
-        'No se puede eliminar una variante con ventas',
+        "No se puede eliminar una variante con ventas",
       );
     }
     return this.prisma.productVariant.delete({ where: { id: variantId } });
@@ -365,7 +365,7 @@ export class ProductsService {
   ) {
     const product = await this.findOwnedProduct(productId, storeId, userId);
     if (index < 0 || index >= product.images.length) {
-      throw new BadRequestException('Índice de imagen inválido');
+      throw new BadRequestException("Índice de imagen inválido");
     }
     const removed = product.images[index];
     const images = product.images.filter((_, i) => i !== index);
@@ -394,7 +394,7 @@ export class ProductsService {
       dedup.size !== images.length ||
       !images.every((url) => currentSet.has(url))
     ) {
-      throw new BadRequestException('URLs de imagen inválidas');
+      throw new BadRequestException("URLs de imagen inválidas");
     }
     return this.prisma.product.update({
       where: { id: productId },
@@ -428,7 +428,7 @@ export class ProductsService {
       variant.productId !== productId ||
       variant.storeId !== storeId
     ) {
-      throw new NotFoundException('Variante no encontrada');
+      throw new NotFoundException("Variante no encontrada");
     }
     return this.prisma.productVariant.update({
       where: { id: variantId },

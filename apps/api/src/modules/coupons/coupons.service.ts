@@ -3,16 +3,16 @@ import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
-} from '@nestjs/common';
-import type { UserSession } from '@thallesp/nestjs-better-auth';
-import { Prisma } from '@biasmarket/db';
-import { PrismaService } from '../../prisma/prisma.service.js';
+} from "@nestjs/common";
+import type { UserSession } from "@thallesp/nestjs-better-auth";
+import { Prisma } from "@biasmarket/db";
+import { PrismaService } from "../../prisma/prisma.service.js";
 import type {
   CouponRedemptionResponseDto,
   CouponResponseDto,
   CreateCouponDto,
   RedeemCouponDto,
-} from './dto/coupon.dto.js';
+} from "./dto/coupon.dto.js";
 
 function normalizeCode(code: string): string {
   return code.trim().toUpperCase();
@@ -26,7 +26,7 @@ function normalizeCode(code: string): string {
 function isUniqueCodeConflict(error: unknown): boolean {
   return (
     error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === 'P2002'
+    error.code === "P2002"
   );
 }
 
@@ -40,21 +40,21 @@ export class CouponsService {
     isActive: boolean;
     startsAt: Date | null;
     expiresAt: Date | null;
-  }): 'active' | 'inactive' | 'expired' | 'scheduled' {
+  }): "active" | "inactive" | "expired" | "scheduled" {
     if (!coupon.isActive) {
-      return 'inactive';
+      return "inactive";
     }
 
     const now = new Date();
     if (coupon.expiresAt && now > coupon.expiresAt) {
-      return 'expired';
+      return "expired";
     }
 
     if (coupon.startsAt && now < coupon.startsAt) {
-      return 'scheduled';
+      return "scheduled";
     }
 
-    return 'active';
+    return "active";
   }
 
   private toCouponResponse(
@@ -101,7 +101,7 @@ export class CouponsService {
 
     if (!/^[A-Z0-9]{4,8}$/.test(code)) {
       throw new BadRequestException(
-        'Coupon code must be 4 to 8 alphanumeric characters',
+        "Coupon code must be 4 to 8 alphanumeric characters",
       );
     }
 
@@ -110,7 +110,7 @@ export class CouponsService {
     });
 
     if (existing) {
-      throw new BadRequestException('Coupon code already exists');
+      throw new BadRequestException("Coupon code already exists");
     }
 
     const startsAt = dto.startsAt ? new Date(dto.startsAt) : null;
@@ -118,7 +118,7 @@ export class CouponsService {
 
     if (startsAt && expiresAt && expiresAt < startsAt) {
       throw new BadRequestException(
-        'Coupon end date must be after the start date',
+        "Coupon end date must be after the start date",
       );
     }
 
@@ -128,8 +128,8 @@ export class CouponsService {
         data: {
           code,
           name: dto.name,
-          description: dto.description ?? '',
-          plan: dto.plan ?? 'premium',
+          description: dto.description ?? "",
+          plan: dto.plan ?? "premium",
           durationDays: dto.durationDays ?? PREMIUM_DURATION_DAYS,
           maxUses: dto.maxUses ?? 1,
           isActive: dto.isActive ?? true,
@@ -140,7 +140,7 @@ export class CouponsService {
       });
     } catch (error) {
       if (isUniqueCodeConflict(error)) {
-        throw new BadRequestException('Coupon code already exists');
+        throw new BadRequestException("Coupon code already exists");
       }
       throw error;
     }
@@ -150,7 +150,7 @@ export class CouponsService {
 
   async listCoupons(): Promise<CouponResponseDto[]> {
     const coupons = await this.prisma.coupon.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       include: {
         _count: { select: { redemptions: true } },
       },
@@ -170,13 +170,13 @@ export class CouponsService {
     });
 
     if (!existing) {
-      throw new NotFoundException('Coupon not found');
+      throw new NotFoundException("Coupon not found");
     }
 
     const nextCode = dto.code ? normalizeCode(dto.code) : existing.code;
     if (!/^[A-Z0-9]{4,8}$/.test(nextCode)) {
       throw new BadRequestException(
-        'Coupon code must be 4 to 8 alphanumeric characters',
+        "Coupon code must be 4 to 8 alphanumeric characters",
       );
     }
 
@@ -185,7 +185,7 @@ export class CouponsService {
         where: { code: nextCode },
       });
       if (duplicate) {
-        throw new BadRequestException('Coupon code already exists');
+        throw new BadRequestException("Coupon code already exists");
       }
     }
 
@@ -204,7 +204,7 @@ export class CouponsService {
 
     if (startsAt && expiresAt && expiresAt < startsAt) {
       throw new BadRequestException(
-        'Coupon end date must be after the start date',
+        "Coupon end date must be after the start date",
       );
     }
 
@@ -216,7 +216,7 @@ export class CouponsService {
           ...(dto.code ? { code: nextCode } : {}),
           ...(dto.name ? { name: dto.name } : {}),
           ...(dto.description !== undefined
-            ? { description: dto.description ?? '' }
+            ? { description: dto.description ?? "" }
             : {}),
           ...(dto.maxUses !== undefined ? { maxUses: dto.maxUses } : {}),
           ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
@@ -228,7 +228,7 @@ export class CouponsService {
       });
     } catch (error) {
       if (isUniqueCodeConflict(error)) {
-        throw new BadRequestException('Coupon code already exists');
+        throw new BadRequestException("Coupon code already exists");
       }
       throw error;
     }
@@ -242,7 +242,7 @@ export class CouponsService {
     });
 
     if (!coupon) {
-      throw new NotFoundException('Coupon not found');
+      throw new NotFoundException("Coupon not found");
     }
 
     const updated = await this.prisma.coupon.update({
@@ -260,7 +260,7 @@ export class CouponsService {
     });
 
     if (!coupon) {
-      throw new NotFoundException('Coupon not found');
+      throw new NotFoundException("Coupon not found");
     }
 
     await this.prisma.coupon.delete({ where: { id: couponId } });
@@ -275,7 +275,7 @@ export class CouponsService {
     });
 
     if (!coupon) {
-      throw new NotFoundException('Coupon not found');
+      throw new NotFoundException("Coupon not found");
     }
 
     const rows = await this.prisma.couponRedemption.findMany({
@@ -283,11 +283,11 @@ export class CouponsService {
       include: {
         user: {
           include: {
-            stores: { select: { slug: true }, orderBy: { createdAt: 'asc' } },
+            stores: { select: { slug: true }, orderBy: { createdAt: "asc" } },
           },
         },
       },
-      orderBy: { redeemedAt: 'desc' },
+      orderBy: { redeemedAt: "desc" },
     });
 
     return rows.map((row) => ({
@@ -295,7 +295,7 @@ export class CouponsService {
       couponId: row.couponId,
       userId: row.userId,
       userEmail: row.user.email,
-      userName: row.user.name ?? '',
+      userName: row.user.name ?? "",
       storeSlug: row.user.stores[0]?.slug ?? null,
       redeemedAt: row.redeemedAt.toISOString(),
       expiresAt: row.expiresAt.toISOString(),
@@ -311,7 +311,7 @@ export class CouponsService {
     });
 
     if (!redemption || redemption.couponId !== couponId) {
-      throw new NotFoundException('Redemption not found');
+      throw new NotFoundException("Redemption not found");
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -352,7 +352,7 @@ export class CouponsService {
       if (remaining.length === 0) {
         await tx.user.update({
           where: { id: redemption.userId },
-          data: { plan: 'basic', premiumUntil: null },
+          data: { plan: "basic", premiumUntil: null },
         });
         return;
       }
@@ -381,21 +381,21 @@ export class CouponsService {
     });
 
     if (!coupon) {
-      throw new NotFoundException('Coupon not found');
+      throw new NotFoundException("Coupon not found");
     }
 
     if (!coupon.isActive) {
-      throw new BadRequestException('Coupon is inactive');
+      throw new BadRequestException("Coupon is inactive");
     }
 
     const now = new Date();
 
     if (coupon.startsAt && now < coupon.startsAt) {
-      throw new BadRequestException('Coupon is not available yet');
+      throw new BadRequestException("Coupon is not available yet");
     }
 
     if (coupon.expiresAt && now > coupon.expiresAt) {
-      throw new BadRequestException('Coupon has expired');
+      throw new BadRequestException("Coupon has expired");
     }
 
     const userId = session.user.id;
@@ -419,7 +419,7 @@ export class CouponsService {
       >`SELECT id FROM "Coupon" WHERE id = ${coupon.id} FOR UPDATE`;
 
       if (!lockedCoupon) {
-        throw new NotFoundException('Coupon not found');
+        throw new NotFoundException("Coupon not found");
       }
 
       const existingRedemption = await tx.couponRedemption.findUnique({
@@ -427,7 +427,7 @@ export class CouponsService {
       });
 
       if (existingRedemption) {
-        throw new BadRequestException('This user already redeemed this coupon');
+        throw new BadRequestException("This user already redeemed this coupon");
       }
 
       const redemptionCount = await tx.couponRedemption.count({
@@ -435,7 +435,7 @@ export class CouponsService {
       });
 
       if (redemptionCount >= coupon.maxUses) {
-        throw new BadRequestException('Coupon has reached its maximum uses');
+        throw new BadRequestException("Coupon has reached its maximum uses");
       }
 
       const [lockedUser] = await tx.$queryRaw<
@@ -443,7 +443,7 @@ export class CouponsService {
       >`SELECT id, "premiumUntil" FROM "user" WHERE id = ${userId} FOR UPDATE`;
 
       if (!lockedUser) {
-        throw new UnauthorizedException('User not found');
+        throw new UnauthorizedException("User not found");
       }
 
       // Stack the new duration on top of any remaining premium time instead of
@@ -470,7 +470,7 @@ export class CouponsService {
             include: {
               stores: {
                 select: { slug: true },
-                orderBy: { createdAt: 'asc' },
+                orderBy: { createdAt: "asc" },
               },
             },
           },
@@ -493,7 +493,7 @@ export class CouponsService {
       couponId: redemption.couponId,
       userId: redemption.userId,
       userEmail: redemption.user.email,
-      userName: redemption.user.name ?? '',
+      userName: redemption.user.name ?? "",
       storeSlug: redemption.user.stores[0]?.slug ?? null,
       redeemedAt: redemption.redeemedAt.toISOString(),
       expiresAt: redemption.expiresAt.toISOString(),

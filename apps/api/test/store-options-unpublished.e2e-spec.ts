@@ -1,17 +1,17 @@
-import { Test, type TestingModule } from '@nestjs/testing';
-import type { INestApplication } from '@nestjs/common';
-import request from 'supertest';
-import { randomUUID } from 'node:crypto';
-import { readdirSync, readFileSync } from 'node:fs';
-import { PrismaService } from '../src/prisma/prisma.service.js';
-import { AppModule } from './../src/app.module.js';
-import { mailerDevDir, waitForNewMailerFile } from './schema-assert.js';
+import { Test, type TestingModule } from "@nestjs/testing";
+import type { INestApplication } from "@nestjs/common";
+import request from "supertest";
+import { randomUUID } from "node:crypto";
+import { readdirSync, readFileSync } from "node:fs";
+import { PrismaService } from "../src/prisma/prisma.service.js";
+import { AppModule } from "./../src/app.module.js";
+import { mailerDevDir, waitForNewMailerFile } from "./schema-assert.js";
 
 // The seller's assisted-order form loads delivery, pickup, payment and courier
 // options from the PUBLIC endpoints (the same ones the storefront checkout
 // uses). A seller must be able to create orders before publishing, so those
 // endpoints must keep answering for a store that is not public.
-describe('public store options for an unpublished store (e2e)', () => {
+describe("public store options for an unpublished store (e2e)", () => {
   let app: INestApplication;
   let prisma: PrismaService;
   let userId: string;
@@ -28,32 +28,32 @@ describe('public store options for an unpublished store (e2e)', () => {
     prisma = moduleFixture.get(PrismaService);
 
     const email = `unpublished-${runId}@example.com`;
-    const password = 'correcthorsebatterystaple';
+    const password = "correcthorsebatterystaple";
     const existing = new Set(readdirSync(mailerDevDir));
     const signUp = await request(app.getHttpServer())
-      .post('/api/auth/sign-up/email')
-      .send({ email, password, name: 'Seller' })
+      .post("/api/auth/sign-up/email")
+      .send({ email, password, name: "Seller" })
       .expect(200);
     userId = signUp.body.user.id;
     const html = readFileSync(
       await waitForNewMailerFile(existing, email),
-      'utf-8',
+      "utf-8",
     );
     const token = html.match(/verify-email\?token=([^&"]+)/)?.[1];
     await request(app.getHttpServer()).get(
       `/api/auth/verify-email?token=${token}`,
     );
     const signIn = await request(app.getHttpServer())
-      .post('/api/auth/sign-in/email')
+      .post("/api/auth/sign-in/email")
       .send({ email, password })
       .expect(200);
-    const cookie = (signIn.headers['set-cookie'] as unknown as string[])
-      .find((c) => c.includes('session_token'))!
-      .split(';')[0]!;
+    const cookie = (signIn.headers["set-cookie"] as unknown as string[])
+      .find((c) => c.includes("session_token"))!
+      .split(";")[0]!;
     const store = await request(app.getHttpServer())
-      .post('/stores')
-      .set('Cookie', cookie)
-      .send({ name: slug, slug, whatsappNumber: '+51900000000' })
+      .post("/stores")
+      .set("Cookie", cookie)
+      .send({ name: slug, slug, whatsappNumber: "+51900000000" })
       .expect(201);
     storeId = store.body.id;
     await prisma.store.update({
@@ -73,11 +73,11 @@ describe('public store options for an unpublished store (e2e)', () => {
   });
 
   it.each([
-    ['delivery methods', 'public/delivery-methods'],
-    ['pickup points', 'public/pickup-points'],
-    ['payment methods', 'public/payment-methods'],
-    ['couriers', 'public/couriers'],
-  ])('serves %s', async (label, path) => {
+    ["delivery methods", "public/delivery-methods"],
+    ["pickup points", "public/pickup-points"],
+    ["payment methods", "public/payment-methods"],
+    ["couriers", "public/couriers"],
+  ])("serves %s", async (label, path) => {
     const store = await prisma.store.findUniqueOrThrow({
       where: { id: storeId },
     });
@@ -88,12 +88,12 @@ describe('public store options for an unpublished store (e2e)', () => {
     // Store creation seeds default delivery and payment rows; a future gate
     // that answered `200 []` for unpublished stores must not pass. Pickup
     // points and couriers start empty, so only the status is meaningful there.
-    if (label === 'delivery methods' || label === 'payment methods') {
+    if (label === "delivery methods" || label === "payment methods") {
       expect(res.body.length).toBeGreaterThan(0);
     }
   });
 
-  it('serves the public store detail the checkout options also read', async () => {
+  it("serves the public store detail the checkout options also read", async () => {
     await request(app.getHttpServer())
       .get(`/stores/${slug}/public`)
       .expect(200);

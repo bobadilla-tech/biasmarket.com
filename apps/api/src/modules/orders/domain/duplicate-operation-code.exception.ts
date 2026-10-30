@@ -1,6 +1,6 @@
-import { ConflictException } from '@nestjs/common';
+import { ConflictException } from "@nestjs/common";
 
-export const DUPLICATE_OPERATION_CODE = 'DUPLICATE_OPERATION_CODE';
+export const DUPLICATE_OPERATION_CODE = "DUPLICATE_OPERATION_CODE";
 
 /**
  * A seller tried to record a payment whose operation code is already on

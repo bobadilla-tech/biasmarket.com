@@ -1,13 +1,13 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { normalizePhone, validatePhone } from '@biasmarket/utils/phone-country';
-import type { Prisma } from '@biasmarket/db';
-import { PrismaService } from '../../../prisma/prisma.service.js';
-import { lockAssistedCustomer } from './assisted-customer.js';
+import { BadRequestException, Injectable, Logger } from "@nestjs/common";
+import { normalizePhone, validatePhone } from "@biasmarket/utils/phone-country";
+import type { Prisma } from "@biasmarket/db";
+import { PrismaService } from "../../../prisma/prisma.service.js";
+import { lockAssistedCustomer } from "./assisted-customer.js";
 
 export const ASSISTED_ORDER_IDENTITY_RETENTION_DAYS = 90;
 const RETENTION_BATCH_SIZE = 500;
 
-type ErasureCause = 'BUYER_REQUEST' | 'RETENTION';
+type ErasureCause = "BUYER_REQUEST" | "RETENTION";
 type RequestAuditContext = { operatorId: string; requestReference: string };
 
 @Injectable()
@@ -34,7 +34,7 @@ export class AssistedOrderIdentityRetentionUseCase {
     const candidates = await this.prisma.order.findMany({
       where: {
         storeId,
-        source: 'VENDOR_ASSISTED',
+        source: "VENDOR_ASSISTED",
         buyerIdentityErasedAt: null,
         OR: [
           { customerPhoneNormalized: phone.phone },
@@ -71,7 +71,7 @@ export class AssistedOrderIdentityRetentionUseCase {
         continue;
       }
       if (
-        await this.eraseOrder(order, 'BUYER_REQUEST', undefined, {
+        await this.eraseOrder(order, "BUYER_REQUEST", undefined, {
           operatorId,
           requestReference,
         })
@@ -144,13 +144,13 @@ export class AssistedOrderIdentityRetentionUseCase {
             data: {
               actorId: operatorId,
               storeId,
-              action: 'customer.assisted_identity_erased',
-              entityType: 'Customer',
+              action: "customer.assisted_identity_erased",
+              entityType: "Customer",
               entityId: contact.id,
               metadata: {
-                cause: 'BUYER_REQUEST',
+                cause: "BUYER_REQUEST",
                 requestReference,
-                fields: ['phone', 'name', 'email', 'credentials'],
+                fields: ["phone", "name", "email", "credentials"],
               },
             },
           });
@@ -171,14 +171,14 @@ export class AssistedOrderIdentityRetentionUseCase {
     );
     const candidates = await this.prisma.order.findMany({
       where: {
-        source: 'VENDOR_ASSISTED',
+        source: "VENDOR_ASSISTED",
         claimedAt: null,
         buyerAccountId: null,
         buyerIdentityErasedAt: null,
         closedAt: { lte: cutoff },
-        OR: [{ status: 'CANCELLED' }, { fulfillmentStatus: 'COMPLETED' }],
+        OR: [{ status: "CANCELLED" }, { fulfillmentStatus: "COMPLETED" }],
       },
-      orderBy: [{ closedAt: 'asc' }, { id: 'asc' }],
+      orderBy: [{ closedAt: "asc" }, { id: "asc" }],
       take: RETENTION_BATCH_SIZE,
       select: {
         id: true,
@@ -197,7 +197,7 @@ export class AssistedOrderIdentityRetentionUseCase {
     let anonymized = 0;
     for (const order of candidates) {
       try {
-        if (await this.eraseOrder(order, 'RETENTION', cutoff)) anonymized++;
+        if (await this.eraseOrder(order, "RETENTION", cutoff)) anonymized++;
       } catch {
         // Record only the stable order ID; database errors can include query values.
         this.logger.error(
@@ -285,14 +285,14 @@ export class AssistedOrderIdentityRetentionUseCase {
         where: {
           id: order.id,
           storeId: order.storeId,
-          source: 'VENDOR_ASSISTED',
+          source: "VENDOR_ASSISTED",
           buyerIdentityErasedAt: null,
           buyerAccountId: order.buyerAccountId,
           claimedAt: order.claimedAt,
-          status: order.status as 'ACTIVE' | 'CANCELLED',
+          status: order.status as "ACTIVE" | "CANCELLED",
           fulfillmentStatus: order.fulfillmentStatus as
-            'ORDERING' | 'IN_TRANSIT' | 'READY' | 'COMPLETED',
-          ...(cause === 'RETENTION'
+            "ORDERING" | "IN_TRANSIT" | "READY" | "COMPLETED",
+          ...(cause === "RETENTION"
             ? {
                 claimedAt: null,
                 buyerAccountId: null,
@@ -301,7 +301,7 @@ export class AssistedOrderIdentityRetentionUseCase {
             : {}),
         },
         data: {
-          customerPhone: '',
+          customerPhone: "",
           customerPhoneNormalized: null,
           customerName: null,
           customerEmail: null,
@@ -331,10 +331,10 @@ export class AssistedOrderIdentityRetentionUseCase {
 
       await tx.auditLog.create({
         data: {
-          actorId: requestAudit?.operatorId ?? 'system',
+          actorId: requestAudit?.operatorId ?? "system",
           storeId: order.storeId,
-          action: 'order.assisted_identity_erased',
-          entityType: 'Order',
+          action: "order.assisted_identity_erased",
+          entityType: "Order",
           entityId: order.id,
           metadata: {
             cause,
@@ -342,12 +342,12 @@ export class AssistedOrderIdentityRetentionUseCase {
               ? { requestReference: requestAudit.requestReference }
               : {}),
             fields: [
-              'customerPhone',
-              'customerName',
-              'customerEmail',
-              'deliveryDetails',
-              'buyerAccountId',
-              'accessTokenHash',
+              "customerPhone",
+              "customerName",
+              "customerEmail",
+              "deliveryDetails",
+              "buyerAccountId",
+              "accessTokenHash",
             ],
           },
         },
@@ -395,13 +395,13 @@ async function hasRemainingCustomerOrders(
   if (legacyUnlinkedOrders.length > RETENTION_BATCH_SIZE) return true;
   return legacyUnlinkedOrders.some(
     (row) =>
-      row.customerPhone.trim() !== '' &&
+      row.customerPhone.trim() !== "" &&
       normalizePhone(row.customerPhone) === customer.phone,
   );
 }
 
 function isClosed(status: string, fulfillmentStatus: string): boolean {
-  return status === 'CANCELLED' || fulfillmentStatus === 'COMPLETED';
+  return status === "CANCELLED" || fulfillmentStatus === "COMPLETED";
 }
 
 function erasedCustomerData(id: string, erasedAt = new Date()) {

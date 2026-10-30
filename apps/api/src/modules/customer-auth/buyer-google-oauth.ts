@@ -1,10 +1,10 @@
-import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
-import { requiredEnv } from '../../config/env.validation.js';
+import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { requiredEnv } from "../../config/env.validation.js";
 
-export const BUYER_GOOGLE_STATE_COOKIE = 'bm_buyer_google_state';
+export const BUYER_GOOGLE_STATE_COOKIE = "bm_buyer_google_state";
 export const BUYER_GOOGLE_STATE_TTL_MS = 10 * 60 * 1000;
 
-export type BuyerGoogleLocale = 'es' | 'en';
+export type BuyerGoogleLocale = "es" | "en";
 
 // `slug` is null when the buyer started from the global (no-store) page.
 export interface BuyerGoogleState {
@@ -17,17 +17,17 @@ export interface BuyerGoogleState {
   claim: boolean;
 }
 
-const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
-const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
+const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
+const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_ISSUERS = new Set([
-  'https://accounts.google.com',
-  'accounts.google.com',
+  "https://accounts.google.com",
+  "accounts.google.com",
 ]);
 
 export function normalizeBuyerGoogleLocale(
   locale: string | undefined,
 ): BuyerGoogleLocale {
-  return locale === 'en' ? 'en' : 'es';
+  return locale === "en" ? "en" : "es";
 }
 
 export function isBuyerGoogleConfigured(): boolean {
@@ -40,13 +40,13 @@ export function isBuyerGoogleConfigured(): boolean {
 // registered once in the Google Cloud OAuth client. The store the buyer came
 // from travels inside the signed `state` instead.
 export function buyerGoogleRedirectUri(): string {
-  return `${requiredEnv('BETTER_AUTH_URL')}/api/account/google/callback`;
+  return `${requiredEnv("BETTER_AUTH_URL")}/api/account/google/callback`;
 }
 
 function sign(payload: string): string {
-  return createHmac('sha256', requiredEnv('CUSTOMER_ACCOUNT_TOKEN_SECRET'))
+  return createHmac("sha256", requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET"))
     .update(`buyer-google-state:${payload}`)
-    .digest('base64url');
+    .digest("base64url");
 }
 
 export function createBuyerGoogleState(
@@ -55,7 +55,7 @@ export function createBuyerGoogleState(
   now = Date.now(),
   claim = false,
 ): { state: string; nonce: string } {
-  const nonce = randomBytes(16).toString('base64url');
+  const nonce = randomBytes(16).toString("base64url");
   const body: BuyerGoogleState = {
     slug,
     locale,
@@ -63,7 +63,7 @@ export function createBuyerGoogleState(
     exp: now + BUYER_GOOGLE_STATE_TTL_MS,
     claim,
   };
-  const payload = Buffer.from(JSON.stringify(body)).toString('base64url');
+  const payload = Buffer.from(JSON.stringify(body)).toString("base64url");
   return { state: `${payload}.${sign(payload)}`, nonce };
 }
 
@@ -73,7 +73,7 @@ export function verifyBuyerGoogleState(
   now = Date.now(),
 ): BuyerGoogleState | null {
   if (!state || !nonceCookie) return null;
-  const [payload, signature, ...rest] = state.split('.');
+  const [payload, signature, ...rest] = state.split(".");
   if (!payload || !signature || rest.length > 0) return null;
 
   const expected = Buffer.from(sign(payload));
@@ -84,14 +84,14 @@ export function verifyBuyerGoogleState(
 
   let body: BuyerGoogleState;
   try {
-    body = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+    body = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
   } catch {
     return null;
   }
   if (
-    (body.slug !== null && typeof body.slug !== 'string') ||
-    typeof body.nonce !== 'string' ||
-    typeof body.exp !== 'number' ||
+    (body.slug !== null && typeof body.slug !== "string") ||
+    typeof body.nonce !== "string" ||
+    typeof body.exp !== "number" ||
     body.exp < now
   ) {
     return null;
@@ -113,12 +113,12 @@ export function verifyBuyerGoogleState(
 
 export function buildBuyerGoogleAuthUrl(state: string): string {
   const params = new URLSearchParams({
-    client_id: requiredEnv('GOOGLE_CLIENT_ID'),
+    client_id: requiredEnv("GOOGLE_CLIENT_ID"),
     redirect_uri: buyerGoogleRedirectUri(),
-    response_type: 'code',
-    scope: 'openid email profile',
+    response_type: "code",
+    scope: "openid email profile",
     state,
-    prompt: 'select_account',
+    prompt: "select_account",
   });
   return `${GOOGLE_AUTH_URL}?${params.toString()}`;
 }
@@ -136,16 +136,16 @@ export async function exchangeBuyerGoogleCode(
   code: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<GoogleIdentity | null> {
-  const clientId = requiredEnv('GOOGLE_CLIENT_ID');
+  const clientId = requiredEnv("GOOGLE_CLIENT_ID");
   const response = await fetchImpl(GOOGLE_TOKEN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       code,
       client_id: clientId,
-      client_secret: requiredEnv('GOOGLE_CLIENT_SECRET'),
+      client_secret: requiredEnv("GOOGLE_CLIENT_SECRET"),
       redirect_uri: buyerGoogleRedirectUri(),
-      grant_type: 'authorization_code',
+      grant_type: "authorization_code",
     }),
   });
   if (!response.ok) return null;
@@ -153,7 +153,7 @@ export async function exchangeBuyerGoogleCode(
   const { id_token: idToken } = (await response.json()) as {
     id_token?: string;
   };
-  const claimsPart = idToken?.split('.')[1];
+  const claimsPart = idToken?.split(".")[1];
   if (!claimsPart) return null;
 
   let claims: {
@@ -166,21 +166,21 @@ export async function exchangeBuyerGoogleCode(
     name?: string;
   };
   try {
-    claims = JSON.parse(Buffer.from(claimsPart, 'base64url').toString('utf8'));
+    claims = JSON.parse(Buffer.from(claimsPart, "base64url").toString("utf8"));
   } catch {
     return null;
   }
 
   const verified =
-    claims.email_verified === true || claims.email_verified === 'true';
+    claims.email_verified === true || claims.email_verified === "true";
   if (
     !claims.iss ||
     !GOOGLE_ISSUERS.has(claims.iss) ||
     claims.aud !== clientId ||
-    typeof claims.exp !== 'number' ||
+    typeof claims.exp !== "number" ||
     claims.exp * 1000 < Date.now() ||
     !claims.email ||
-    typeof claims.sub !== 'string' ||
+    typeof claims.sub !== "string" ||
     !claims.sub ||
     !verified
   ) {

@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
-import type { Prisma } from '@biasmarket/db';
-import { PrismaService } from '../../prisma/prisma.service.js';
-import type { ProductSort } from '../../common/public-list-query.js';
-import { PUBLIC_STORE_VISIBILITY } from '../../common/public-store-visibility.js';
+import { Injectable } from "@nestjs/common";
+import type { Prisma } from "@biasmarket/db";
+import { PrismaService } from "../../prisma/prisma.service.js";
+import type { ProductSort } from "../../common/public-list-query.js";
+import { PUBLIC_STORE_VISIBILITY } from "../../common/public-store-visibility.js";
 
 const PRODUCT_SELECT = {
   id: true,
@@ -22,11 +22,11 @@ export class ProductSearchService {
     limit: number,
     q: string | undefined,
     category: string | undefined,
-    sort: ProductSort = 'latest',
+    sort: ProductSort = "latest",
     storeSlug?: string,
   ) {
     const where: Prisma.ProductWhereInput = {
-      status: 'PUBLISHED',
+      status: "PUBLISHED",
       deletedAt: null,
       discontinued: false,
       // Marketplace-wide listings (home, search) skip imageless products: they
@@ -37,12 +37,12 @@ export class ProductSearchService {
         owner: { banned: { not: true } },
         ...(storeSlug && { slug: storeSlug }),
       },
-      ...(q && { name: { contains: q, mode: 'insensitive' as const } }),
+      ...(q && { name: { contains: q, mode: "insensitive" as const } }),
       ...(category && {
         categories: {
           some: {
             category: {
-              name: { equals: category, mode: 'insensitive' as const },
+              name: { equals: category, mode: "insensitive" as const },
             },
           },
         },
@@ -51,20 +51,20 @@ export class ProductSearchService {
 
     const total = await this.prisma.product.count({
       where:
-        sort === 'bestseller'
+        sort === "bestseller"
           ? {
               ...where,
-              orderItems: { some: { order: { paymentStatus: 'VERIFIED' } } },
+              orderItems: { some: { order: { paymentStatus: "VERIFIED" } } },
             }
           : where,
     });
 
-    const products = await (sort === 'bestseller'
+    const products = await (sort === "bestseller"
       ? this.findBestsellers(page, limit, where)
       : this.prisma.product.findMany({
           where,
           select: PRODUCT_SELECT,
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
           skip: (page - 1) * limit,
           take: limit,
         }));
@@ -81,13 +81,13 @@ export class ProductSearchService {
     // `product` filter mirrors the search `where`, so eligibility is enforced
     // by the join itself instead of materializing a catalog-sized id list.
     const rows = await this.prisma.orderItem.groupBy({
-      by: ['productId'],
+      by: ["productId"],
       where: {
         product: where,
-        order: { paymentStatus: 'VERIFIED' },
+        order: { paymentStatus: "VERIFIED" },
       },
       _sum: { quantity: true },
-      orderBy: [{ _sum: { quantity: 'desc' } }, { productId: 'asc' }],
+      orderBy: [{ _sum: { quantity: "desc" } }, { productId: "asc" }],
       skip: (page - 1) * limit,
       take: limit,
     });

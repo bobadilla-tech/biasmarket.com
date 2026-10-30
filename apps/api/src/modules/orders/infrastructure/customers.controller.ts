@@ -5,26 +5,26 @@ import {
   Param,
   Query,
   UseGuards,
-} from '@nestjs/common';
-import { ApiQuery } from '@nestjs/swagger';
-import { AuthGuard, Session } from '@thallesp/nestjs-better-auth';
-import type { UserSession } from '@thallesp/nestjs-better-auth';
-import { CustomersService } from '../application/customers.service.js';
+} from "@nestjs/common";
+import { ApiQuery } from "@nestjs/swagger";
+import { AuthGuard, Session } from "@thallesp/nestjs-better-auth";
+import type { UserSession } from "@thallesp/nestjs-better-auth";
+import { CustomersService } from "../application/customers.service.js";
 import {
   CustomerDetailResponseDto,
   CustomerListItemResponseDto,
   CustomerLookupResponseDto,
-} from './customers-response.dto.js';
-import { toOrderDto } from './order.controller.js';
+} from "./customers-response.dto.js";
+import { toOrderDto } from "./order.controller.js";
 
-@Controller('stores/:storeId/customers')
+@Controller("stores/:storeId/customers")
 @UseGuards(AuthGuard)
 export class CustomersController {
   constructor(private customers: CustomersService) {}
 
   @Get()
   async findAll(
-    @Param('storeId') storeId: string,
+    @Param("storeId") storeId: string,
     @Session() session: UserSession,
   ): Promise<CustomerListItemResponseDto[]> {
     const rows = await this.customers.findAllForStore(storeId, session.user.id);
@@ -35,26 +35,26 @@ export class CustomersController {
     }));
   }
 
-  @Get('lookup')
-  @ApiQuery({ name: 'phone', required: true, type: String })
+  @Get("lookup")
+  @ApiQuery({ name: "phone", required: true, type: String })
   async lookup(
-    @Param('storeId') storeId: string,
-    @Query('phone') phone: string | undefined,
+    @Param("storeId") storeId: string,
+    @Query("phone") phone: string | undefined,
     @Session() session: UserSession,
   ): Promise<CustomerLookupResponseDto> {
     // A literal "+" in ?phone=+51… decodes to a space; clients should send
     // %2B. Harmless here because normalizePhone strips every non-digit, so
     // don't "fix" it by rejecting spaces.
-    if (typeof phone !== 'string' || !phone.trim()) {
-      throw new BadRequestException('El teléfono es requerido');
+    if (typeof phone !== "string" || !phone.trim()) {
+      throw new BadRequestException("El teléfono es requerido");
     }
     return this.customers.lookupByPhone(storeId, session.user.id, phone);
   }
 
-  @Get(':customerId')
+  @Get(":customerId")
   async findOne(
-    @Param('storeId') storeId: string,
-    @Param('customerId') customerId: string,
+    @Param("storeId") storeId: string,
+    @Param("customerId") customerId: string,
     @Session() session: UserSession,
   ): Promise<CustomerDetailResponseDto> {
     const result = await this.customers.findOneForStore(

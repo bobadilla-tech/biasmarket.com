@@ -8,39 +8,39 @@ import {
   Post,
   Res,
   UseGuards,
-} from '@nestjs/common';
-import { ApiBearerAuth, ApiParam } from '@nestjs/swagger';
-import { Public } from '@thallesp/nestjs-better-auth';
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
-import type { Response } from 'express';
-import { CustomerAuthService } from './customer-auth.service.js';
-import { CustomerSessionGuard } from './customer-session.guard.js';
-import { AllowNoOrigin, OriginGuard } from './origin.guard.js';
-import { CustomerSession } from './customer-session.decorator.js';
-import { RegisterCustomerDto } from './dto/register-customer.dto.js';
-import { LoginCustomerDto } from './dto/login-customer.dto.js';
-import { ChangeCustomerPasswordDto } from './dto/change-password.dto.js';
-import { UpdateCustomerProfileDto } from './dto/update-customer-profile.dto.js';
-import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
+} from "@nestjs/common";
+import { ApiBearerAuth, ApiParam } from "@nestjs/swagger";
+import { Public } from "@thallesp/nestjs-better-auth";
+import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
+import type { Response } from "express";
+import { CustomerAuthService } from "./customer-auth.service.js";
+import { CustomerSessionGuard } from "./customer-session.guard.js";
+import { AllowNoOrigin, OriginGuard } from "./origin.guard.js";
+import { CustomerSession } from "./customer-session.decorator.js";
+import { RegisterCustomerDto } from "./dto/register-customer.dto.js";
+import { LoginCustomerDto } from "./dto/login-customer.dto.js";
+import { ChangeCustomerPasswordDto } from "./dto/change-password.dto.js";
+import { UpdateCustomerProfileDto } from "./dto/update-customer-profile.dto.js";
+import { ForgotPasswordDto } from "./dto/forgot-password.dto.js";
 import {
   CUSTOMER_SESSION_COOKIE,
   CUSTOMER_SESSION_TTL_MS,
-} from './customer-session.constants.js';
+} from "./customer-session.constants.js";
 import {
   CustomerProfileResponseDto,
   OkResponseDto,
   UpdateCustomerProfileResponseDto,
-} from './dto/customer-auth-response.dto.js';
-import { toOrderDto } from '../orders/infrastructure/order.controller.js';
-import type { OrderDetailResponseDto } from '../orders/dto/order-response.dto.js';
+} from "./dto/customer-auth-response.dto.js";
+import { toOrderDto } from "../orders/infrastructure/order.controller.js";
+import type { OrderDetailResponseDto } from "../orders/dto/order-response.dto.js";
 
 function setSessionCookie(res: Response, token: string): void {
   res.cookie(CUSTOMER_SESSION_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
     maxAge: CUSTOMER_SESSION_TTL_MS,
-    path: '/',
+    path: "/",
   });
 }
 
@@ -55,12 +55,12 @@ function okWithSessionToken(
   client: string | undefined,
   token: string,
 ): OkResponseDto {
-  return client === 'mobile' ? { ok: true, sessionToken: token } : okNoToken;
+  return client === "mobile" ? { ok: true, sessionToken: token } : okNoToken;
 }
 
 const okNoToken: OkResponseDto = { ok: true };
 
-@Controller('stores/:slug/account')
+@Controller("stores/:slug/account")
 export class CustomerAuthController {
   constructor(private customerAuth: CustomerAuthService) {}
 
@@ -68,9 +68,9 @@ export class CustomerAuthController {
   @AllowNoOrigin()
   @UseGuards(OriginGuard, ThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 5 } })
-  @Post('register')
+  @Post("register")
   register(
-    @Param('slug') slug: string,
+    @Param("slug") slug: string,
     @Body() dto: RegisterCustomerDto,
   ): Promise<OkResponseDto> {
     return this.customerAuth
@@ -82,11 +82,11 @@ export class CustomerAuthController {
   @AllowNoOrigin()
   @UseGuards(OriginGuard, ThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 5 } })
-  @Post('login')
+  @Post("login")
   async login(
-    @Param('slug') slug: string,
+    @Param("slug") slug: string,
     @Body() dto: LoginCustomerDto,
-    @Headers('x-client') client: string | undefined,
+    @Headers("x-client") client: string | undefined,
     @Res({ passthrough: true }) res: Response,
   ): Promise<OkResponseDto> {
     const token = await this.customerAuth.login(slug, dto.phone, dto.password);
@@ -98,9 +98,9 @@ export class CustomerAuthController {
   @AllowNoOrigin()
   @UseGuards(OriginGuard, ThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 5 } })
-  @Post('forgot-password')
+  @Post("forgot-password")
   async forgotPassword(
-    @Param('slug') slug: string,
+    @Param("slug") slug: string,
     @Body() dto: ForgotPasswordDto,
   ): Promise<OkResponseDto> {
     await this.customerAuth.forgotPassword(slug, dto.phone);
@@ -116,15 +116,15 @@ export class CustomerAuthController {
   // considered and rejected as needless dead code once `@ApiParam` alone was
   // confirmed sufficient (verified by inspecting the regenerated
   // openapi.json's `parameters` for this path).
-  @ApiParam({ name: 'slug', type: String })
+  @ApiParam({ name: "slug", type: String })
   @Public()
-  @ApiBearerAuth('bearer')
+  @ApiBearerAuth("bearer")
   @UseGuards(CustomerSessionGuard, OriginGuard)
-  @Post('change-password')
+  @Post("change-password")
   async changePassword(
     @CustomerSession() session: { buyerAccountId: string },
     @Body() dto: ChangeCustomerPasswordDto,
-    @Headers('x-client') client: string | undefined,
+    @Headers("x-client") client: string | undefined,
     @Res({ passthrough: true }) res: Response,
   ): Promise<OkResponseDto> {
     const token = await this.customerAuth.changePassword(
@@ -137,11 +137,11 @@ export class CustomerAuthController {
   }
 
   @Public()
-  @ApiBearerAuth('bearer')
+  @ApiBearerAuth("bearer")
   @UseGuards(CustomerSessionGuard)
-  @Get('me')
+  @Get("me")
   async me(
-    @Param('slug') slug: string,
+    @Param("slug") slug: string,
     @CustomerSession() session: { buyerAccountId: string },
   ): Promise<CustomerProfileResponseDto> {
     const profile = await this.customerAuth.getProfile(slug, session);
@@ -159,12 +159,12 @@ export class CustomerAuthController {
   // `order.buyerAccountId === session.buyerAccountId`, enforced in
   // `CustomerAuthService.getOrderDetail`.
   @Public()
-  @ApiBearerAuth('bearer')
+  @ApiBearerAuth("bearer")
   @UseGuards(CustomerSessionGuard)
-  @Get('orders/:orderId')
+  @Get("orders/:orderId")
   async orderDetail(
-    @Param('slug') slug: string,
-    @Param('orderId') orderId: string,
+    @Param("slug") slug: string,
+    @Param("orderId") orderId: string,
     @CustomerSession() session: { buyerAccountId: string },
   ): Promise<OrderDetailResponseDto> {
     const row = await this.customerAuth.getOrderDetail(slug, session, orderId);
@@ -176,11 +176,11 @@ export class CustomerAuthController {
   }
 
   @Public()
-  @ApiBearerAuth('bearer')
+  @ApiBearerAuth("bearer")
   @UseGuards(CustomerSessionGuard, OriginGuard)
-  @Patch('me')
+  @Patch("me")
   updateMe(
-    @Param('slug') slug: string,
+    @Param("slug") slug: string,
     @CustomerSession() session: { buyerAccountId: string },
     @Body() dto: UpdateCustomerProfileDto,
   ): Promise<UpdateCustomerProfileResponseDto> {
@@ -194,11 +194,11 @@ export class CustomerAuthController {
   // harmless no-op, and clearing a cookie carries no meaningful CSRF risk.
   // Same missing-`slug`-parameter spec gap as `changePassword` above (this
   // method never took a `@Param("slug")` either) — same `@ApiParam` fix.
-  @ApiParam({ name: 'slug', type: String })
+  @ApiParam({ name: "slug", type: String })
   @Public()
-  @Post('logout')
+  @Post("logout")
   logout(@Res({ passthrough: true }) res: Response): OkResponseDto {
-    res.clearCookie(CUSTOMER_SESSION_COOKIE, { path: '/' });
+    res.clearCookie(CUSTOMER_SESSION_COOKIE, { path: "/" });
     return okNoToken;
   }
 }

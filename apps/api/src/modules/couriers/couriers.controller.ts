@@ -7,27 +7,27 @@ import {
   Patch,
   Post,
   UseGuards,
-} from '@nestjs/common';
-import { AuthGuard, Public, Session } from '@thallesp/nestjs-better-auth';
-import type { UserSession } from '@thallesp/nestjs-better-auth';
-import { ApiTags } from '@nestjs/swagger';
-import type { Prisma } from '@biasmarket/db';
-import { CouriersService } from './couriers.service.js';
-import { CreateCourierDto } from './dto/create-courier.dto.js';
-import { UpdateCourierDto } from './dto/update-courier.dto.js';
+} from "@nestjs/common";
+import { AuthGuard, Public, Session } from "@thallesp/nestjs-better-auth";
+import type { UserSession } from "@thallesp/nestjs-better-auth";
+import { ApiTags } from "@nestjs/swagger";
+import type { Prisma } from "@biasmarket/db";
+import { CouriersService } from "./couriers.service.js";
+import { CreateCourierDto } from "./dto/create-courier.dto.js";
+import { UpdateCourierDto } from "./dto/update-courier.dto.js";
 import {
   CourierModalityResponseDto,
   CourierResponseDto,
-} from './dto/courier-response.dto.js';
-import { PublicCourierDto } from './dto/public-courier-response.dto.js';
-import { BulkSaveCouriersBodyDto } from './dto/bulk-save-couriers.dto.js';
+} from "./dto/courier-response.dto.js";
+import { PublicCourierDto } from "./dto/public-courier-response.dto.js";
+import { BulkSaveCouriersBodyDto } from "./dto/bulk-save-couriers.dto.js";
 
 type CourierWithConfigs = Prisma.CourierGetPayload<{
   include: { configs: true };
 }>;
 
 function toCourierModalityDto(
-  row: CourierWithConfigs['configs'][number],
+  row: CourierWithConfigs["configs"][number],
 ): CourierModalityResponseDto {
   return {
     id: row.id,
@@ -60,15 +60,15 @@ function toPublicCourierDto(row: CourierWithConfigs): PublicCourierDto {
   };
 }
 
-@ApiTags('Couriers')
-@Controller('stores/:storeId/couriers')
+@ApiTags("Couriers")
+@Controller("stores/:storeId/couriers")
 @UseGuards(AuthGuard)
 export class CouriersController {
   constructor(private couriers: CouriersService) {}
 
   @Get()
   async findAll(
-    @Param('storeId') storeId: string,
+    @Param("storeId") storeId: string,
     @Session() session: UserSession,
   ): Promise<CourierResponseDto[]> {
     const rows = await this.couriers.findAllForStore(storeId, session.user.id);
@@ -77,7 +77,7 @@ export class CouriersController {
 
   @Post()
   async create(
-    @Param('storeId') storeId: string,
+    @Param("storeId") storeId: string,
     @Session() session: UserSession,
     @Body() dto: CreateCourierDto,
   ): Promise<CourierResponseDto> {
@@ -85,9 +85,9 @@ export class CouriersController {
     return toCourierDto(row);
   }
 
-  @Post('bulk-save')
+  @Post("bulk-save")
   async bulkSave(
-    @Param('storeId') storeId: string,
+    @Param("storeId") storeId: string,
     @Session() session: UserSession,
     @Body() dto: BulkSaveCouriersBodyDto,
   ): Promise<CourierResponseDto[]> {
@@ -95,10 +95,10 @@ export class CouriersController {
     return rows.map(toCourierDto);
   }
 
-  @Patch(':courierId')
+  @Patch(":courierId")
   async update(
-    @Param('storeId') storeId: string,
-    @Param('courierId') courierId: string,
+    @Param("storeId") storeId: string,
+    @Param("courierId") courierId: string,
     @Session() session: UserSession,
     @Body() dto: UpdateCourierDto,
   ): Promise<CourierResponseDto> {
@@ -111,10 +111,10 @@ export class CouriersController {
     return toCourierDto(row);
   }
 
-  @Delete(':courierId')
+  @Delete(":courierId")
   async remove(
-    @Param('storeId') storeId: string,
-    @Param('courierId') courierId: string,
+    @Param("storeId") storeId: string,
+    @Param("courierId") courierId: string,
     @Session() session: UserSession,
   ): Promise<CourierResponseDto> {
     const row = await this.couriers.remove(courierId, storeId, session.user.id);
@@ -122,14 +122,14 @@ export class CouriersController {
   }
 }
 
-@ApiTags('PublicCouriers')
-@Controller('stores/:slug/public/couriers')
+@ApiTags("PublicCouriers")
+@Controller("stores/:slug/public/couriers")
 export class PublicCouriersController {
   constructor(private couriers: CouriersService) {}
 
   @Public()
   @Get()
-  async findEnabled(@Param('slug') slug: string): Promise<PublicCourierDto[]> {
+  async findEnabled(@Param("slug") slug: string): Promise<PublicCourierDto[]> {
     const rows = await this.couriers.findEnabledForSlug(slug);
     return rows.map(toPublicCourierDto);
   }

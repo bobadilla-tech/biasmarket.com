@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { WHATSAPP_BUYER_NOTICE_TYPES } from '@biasmarket/utils/whatsapp';
+import { ApiProperty } from "@nestjs/swagger";
+import { WHATSAPP_BUYER_NOTICE_TYPES } from "@biasmarket/utils/whatsapp";
 
 // Literal union instead of the Prisma-generated `WhatsAppMessageType` enum
 // (same convention as delivery-config/payment-config response DTOs). The
@@ -14,21 +14,21 @@ export class WhatsAppTemplateResponseDto {
 
   @ApiProperty({
     enum: [
-      'NEW_ORDER',
-      'PAYMENT_REMINDER',
-      'ASSISTED_ORDER_LINK',
+      "NEW_ORDER",
+      "PAYMENT_REMINDER",
+      "ASSISTED_ORDER_LINK",
       ...WHATSAPP_BUYER_NOTICE_TYPES,
     ],
   })
   type:
-    | 'NEW_ORDER'
-    | 'PAYMENT_REMINDER'
-    | 'ASSISTED_ORDER_LINK'
+    | "NEW_ORDER"
+    | "PAYMENT_REMINDER"
+    | "ASSISTED_ORDER_LINK"
     | (typeof WHATSAPP_BUYER_NOTICE_TYPES)[number];
 
   @ApiProperty()
   template: string;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   updatedAt: string;
 }

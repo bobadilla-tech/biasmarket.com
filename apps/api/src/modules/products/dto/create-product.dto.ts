@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from "@nestjs/swagger";
 import {
   ArrayMaxSize,
   IsArray,
@@ -12,11 +12,11 @@ import {
   Min,
   MinLength,
   ValidateNested,
-} from 'class-validator';
-import { MAX_PRODUCT_IMAGES } from '../product-images.constants.js';
-import { SUPPORTED_CURRENCIES } from '@biasmarket/utils/currency';
-import { Type } from 'class-transformer';
-import { CreateVariantDto } from './create-variant.dto.js';
+} from "class-validator";
+import { MAX_PRODUCT_IMAGES } from "../product-images.constants.js";
+import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
+import { Type } from "class-transformer";
+import { CreateVariantDto } from "./create-variant.dto.js";
 
 export class CreateProductDto {
   @IsOptional()

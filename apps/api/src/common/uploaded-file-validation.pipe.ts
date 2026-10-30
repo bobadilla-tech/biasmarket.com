@@ -1,15 +1,15 @@
-import { BadRequestException, type PipeTransform } from '@nestjs/common';
+import { BadRequestException, type PipeTransform } from "@nestjs/common";
 
 export const MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024;
 
-export const IMAGE_UPLOAD_MIME_TYPES = ['image/jpeg', 'image/png'] as const;
+export const IMAGE_UPLOAD_MIME_TYPES = ["image/jpeg", "image/png"] as const;
 export const PROOF_UPLOAD_MIME_TYPES = [
   ...IMAGE_UPLOAD_MIME_TYPES,
-  'application/pdf',
+  "application/pdf",
 ] as const;
 
 export type SupportedUploadMimeType =
-  (typeof IMAGE_UPLOAD_MIME_TYPES)[number] | 'application/pdf';
+  (typeof IMAGE_UPLOAD_MIME_TYPES)[number] | "application/pdf";
 
 export type ValidatedUploadedFile = Express.Multer.File & {
   detectedMimeType: SupportedUploadMimeType;
@@ -29,9 +29,9 @@ type UploadedFileValidationOptions = {
 };
 
 const DEFAULT_MESSAGES: ValidationMessages = {
-  missingFile: 'Falta el archivo',
-  fileTooLarge: 'Máximo 5MB',
-  unsupportedType: 'Solo JPEG o PNG',
+  missingFile: "Falta el archivo",
+  fileTooLarge: "Máximo 5MB",
+  unsupportedType: "Solo JPEG o PNG",
 };
 
 const PNG_SIGNATURE = Buffer.from([
@@ -41,12 +41,12 @@ const PNG_SIGNATURE = Buffer.from([
 export function detectUploadMimeType(
   buffer: Buffer,
 ): SupportedUploadMimeType | null {
-  if (buffer[0] === 0xff && buffer[1] === 0xd8) return 'image/jpeg';
+  if (buffer[0] === 0xff && buffer[1] === 0xd8) return "image/jpeg";
   if (buffer.subarray(0, PNG_SIGNATURE.length).equals(PNG_SIGNATURE)) {
-    return 'image/png';
+    return "image/png";
   }
-  if (buffer.subarray(0, 4).toString('latin1') === '%PDF') {
-    return 'application/pdf';
+  if (buffer.subarray(0, 4).toString("latin1") === "%PDF") {
+    return "application/pdf";
   }
   return null;
 }
@@ -58,9 +58,9 @@ export function detectUploadMimeType(
  */
 export class UploadedFileValidationPipe implements PipeTransform {
   private readonly options: Required<
-    Pick<UploadedFileValidationOptions, 'fileIsRequired' | 'maxSizeBytes'>
+    Pick<UploadedFileValidationOptions, "fileIsRequired" | "maxSizeBytes">
   > &
-    Omit<UploadedFileValidationOptions, 'fileIsRequired' | 'maxSizeBytes'>;
+    Omit<UploadedFileValidationOptions, "fileIsRequired" | "maxSizeBytes">;
   private readonly messages: ValidationMessages;
 
   constructor(options: UploadedFileValidationOptions) {

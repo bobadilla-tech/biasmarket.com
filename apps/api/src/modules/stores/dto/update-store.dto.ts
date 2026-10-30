@@ -9,9 +9,9 @@ import {
   MaxLength,
   Min,
   ValidateIf,
-} from 'class-validator';
-import { SUPPORTED_CURRENCIES } from '@biasmarket/utils/currency';
-import { IsSafeMarkdown } from '../../../common/is-safe-markdown.validator.js';
+} from "class-validator";
+import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
+import { IsSafeMarkdown } from "../../../common/is-safe-markdown.validator.js";
 
 export class UpdateStoreDto {
   @IsOptional()
@@ -19,7 +19,7 @@ export class UpdateStoreDto {
   name?: string;
 
   @IsOptional()
-  @IsIn(['es', 'en'])
+  @IsIn(["es", "en"])
   locale?: string;
 
   @IsOptional()
@@ -27,22 +27,22 @@ export class UpdateStoreDto {
   whatsappNumber?: string;
 
   @IsOptional()
-  @ValidateIf((_, v) => v !== null && v !== '')
+  @ValidateIf((_, v) => v !== null && v !== "")
   @IsUrl()
   instagramUrl?: string | null;
 
   @IsOptional()
-  @ValidateIf((_, v) => v !== null && v !== '')
+  @ValidateIf((_, v) => v !== null && v !== "")
   @IsUrl()
   facebookUrl?: string | null;
 
   @IsOptional()
-  @ValidateIf((_, v) => v !== null && v !== '')
+  @ValidateIf((_, v) => v !== null && v !== "")
   @IsUrl()
   tiktokUrl?: string | null;
 
   @IsOptional()
-  @ValidateIf((_, v) => v !== null && v !== '')
+  @ValidateIf((_, v) => v !== null && v !== "")
   @IsUrl()
   twitterUrl?: string | null;
 

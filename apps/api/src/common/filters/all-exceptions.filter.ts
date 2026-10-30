@@ -6,21 +6,21 @@ import {
   HttpException,
   InternalServerErrorException,
   Logger,
-} from '@nestjs/common';
-import type { Response } from 'express';
-import { Temporal } from '@js-temporal/polyfill';
-import { extractMessage, stringifyError } from '@biasmarket/utils/errors';
-import { captureException } from '../error-tracking.js';
-import { scrubRequestUrl } from '../scrub-request-url.js';
-import { InvalidOrderTransitionError } from '../../modules/orders/domain/order-status.vo.js';
+} from "@nestjs/common";
+import type { Response } from "express";
+import { Temporal } from "@js-temporal/polyfill";
+import { extractMessage, stringifyError } from "@biasmarket/utils/errors";
+import { captureException } from "../error-tracking.js";
+import { scrubRequestUrl } from "../scrub-request-url.js";
+import { InvalidOrderTransitionError } from "../../modules/orders/domain/order-status.vo.js";
 import {
   DUPLICATE_OPERATION_CODE,
   DuplicateOperationCodeException,
-} from '../../modules/orders/domain/duplicate-operation-code.exception.js';
+} from "../../modules/orders/domain/duplicate-operation-code.exception.js";
 import {
   DuplicateIdempotencyKeyException,
   IDEMPOTENT_REPLAY,
-} from '../../modules/orders/domain/duplicate-idempotency-key.exception.js';
+} from "../../modules/orders/domain/duplicate-idempotency-key.exception.js";
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -34,10 +34,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
     // `@Header()` on the public-order routes does not run when a guard or
     // the body parser rejects the request. These two still have to be set
     // on 400/404/429 for a token URL.
-    const path = request.url?.split('?')[0] ?? '';
+    const path = request.url?.split("?")[0] ?? "";
     if (/\/public\/orders\//i.test(path)) {
-      response.setHeader('Cache-Control', 'no-store');
-      response.setHeader('Referrer-Policy', 'no-referrer');
+      response.setHeader("Cache-Control", "no-store");
+      response.setHeader("Referrer-Policy", "no-referrer");
     }
 
     if (exception instanceof InvalidOrderTransitionError) {

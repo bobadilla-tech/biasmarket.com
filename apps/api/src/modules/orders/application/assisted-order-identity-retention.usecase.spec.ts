@@ -1,8 +1,8 @@
-import { type Mock, vi } from 'vitest';
-import { AssistedOrderIdentityRetentionUseCase } from './assisted-order-identity-retention.usecase.js';
-import { PrismaService } from '../../../prisma/prisma.service.js';
+import { type Mock, vi } from "vitest";
+import { AssistedOrderIdentityRetentionUseCase } from "./assisted-order-identity-retention.usecase.js";
+import { PrismaService } from "../../../prisma/prisma.service.js";
 
-describe('AssistedOrderIdentityRetentionUseCase', () => {
+describe("AssistedOrderIdentityRetentionUseCase", () => {
   let useCase: AssistedOrderIdentityRetentionUseCase;
   let prisma: {
     order: { findMany: Mock; updateMany: Mock; count: Mock };
@@ -34,63 +34,63 @@ describe('AssistedOrderIdentityRetentionUseCase', () => {
     );
   });
 
-  it('erases closed claimed assisted orders on request and defers active orders', async () => {
+  it("erases closed claimed assisted orders on request and defers active orders", async () => {
     prisma.customer.findUnique
       .mockResolvedValueOnce({
-        id: 'customer-1',
-        storeId: 'store-1',
-        phone: '+51987654321',
+        id: "customer-1",
+        storeId: "store-1",
+        phone: "+51987654321",
         identityErasedAt: null,
       })
       .mockResolvedValueOnce({
-        id: 'customer-1',
-        storeId: 'store-1',
-        phone: '+51987654321',
+        id: "customer-1",
+        storeId: "store-1",
+        phone: "+51987654321",
         identityErasedAt: null,
       });
     prisma.order.findMany.mockResolvedValueOnce([
       {
-        id: 'claimed-order',
-        storeId: 'store-1',
-        customerId: 'customer-1',
-        customerPhone: '+51987654321',
-        customerPhoneNormalized: '+51987654321',
-        buyerAccountId: 'buyer-1',
-        claimedAt: new Date('2026-10-01T00:00:00.000Z'),
-        status: 'ACTIVE',
-        fulfillmentStatus: 'COMPLETED',
+        id: "claimed-order",
+        storeId: "store-1",
+        customerId: "customer-1",
+        customerPhone: "+51987654321",
+        customerPhoneNormalized: "+51987654321",
+        buyerAccountId: "buyer-1",
+        claimedAt: new Date("2026-10-01T00:00:00.000Z"),
+        status: "ACTIVE",
+        fulfillmentStatus: "COMPLETED",
         accessTokenRevokedAt: null,
       },
       {
-        id: 'active-order',
-        storeId: 'store-1',
+        id: "active-order",
+        storeId: "store-1",
         customerId: null,
-        customerPhone: '+51987654321',
-        customerPhoneNormalized: '+51987654321',
+        customerPhone: "+51987654321",
+        customerPhoneNormalized: "+51987654321",
         buyerAccountId: null,
         claimedAt: null,
-        status: 'ACTIVE',
-        fulfillmentStatus: 'IN_TRANSIT',
+        status: "ACTIVE",
+        fulfillmentStatus: "IN_TRANSIT",
         accessTokenRevokedAt: null,
       },
     ]);
 
     const result = await useCase.eraseOnBuyerRequest(
-      'store-1',
-      '+51987654321',
-      'operator-1',
-      'PRIV-460',
+      "store-1",
+      "+51987654321",
+      "operator-1",
+      "PRIV-460",
     );
 
     expect(result).toEqual({ anonymized: 1, deferred: 1 });
     expect(prisma.order.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          storeId: 'store-1',
-          source: 'VENDOR_ASSISTED',
+          storeId: "store-1",
+          source: "VENDOR_ASSISTED",
           buyerIdentityErasedAt: null,
           OR: [
-            { customerPhoneNormalized: '+51987654321' },
+            { customerPhoneNormalized: "+51987654321" },
             { customerPhoneNormalized: null },
           ],
         },
@@ -98,9 +98,9 @@ describe('AssistedOrderIdentityRetentionUseCase', () => {
     );
     expect(prisma.order.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ id: 'claimed-order' }),
+        where: expect.objectContaining({ id: "claimed-order" }),
         data: expect.objectContaining({
-          customerPhone: '',
+          customerPhone: "",
           customerPhoneNormalized: null,
           customerName: null,
           buyerAccountId: null,
@@ -114,13 +114,13 @@ describe('AssistedOrderIdentityRetentionUseCase', () => {
     expect(prisma.customer.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          id: 'customer-1',
-          storeId: 'store-1',
-          phone: '+51987654321',
+          id: "customer-1",
+          storeId: "store-1",
+          phone: "+51987654321",
           identityErasedAt: null,
         },
         data: expect.objectContaining({
-          phone: 'erased:customer-1',
+          phone: "erased:customer-1",
           name: null,
           email: null,
           passwordHash: null,
@@ -131,43 +131,43 @@ describe('AssistedOrderIdentityRetentionUseCase', () => {
     expect(prisma.auditLog.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          action: 'order.assisted_identity_erased',
-          entityId: 'claimed-order',
-          metadata: expect.objectContaining({ cause: 'BUYER_REQUEST' }),
+          action: "order.assisted_identity_erased",
+          entityId: "claimed-order",
+          metadata: expect.objectContaining({ cause: "BUYER_REQUEST" }),
         }),
       }),
     );
     expect(JSON.stringify(prisma.auditLog.create.mock.calls)).not.toContain(
-      '+51987654321',
+      "+51987654321",
     );
   });
 
-  it('limits the scheduled cleanup to 90-day-old unclaimed assisted orders', async () => {
-    const now = new Date('2026-10-29T12:00:00.000Z');
+  it("limits the scheduled cleanup to 90-day-old unclaimed assisted orders", async () => {
+    const now = new Date("2026-10-29T12:00:00.000Z");
     prisma.order.findMany.mockResolvedValue([
       {
-        id: 'old-order',
-        storeId: 'store-1',
+        id: "old-order",
+        storeId: "store-1",
         customerId: null,
-        status: 'CANCELLED',
-        fulfillmentStatus: 'ORDERING',
+        status: "CANCELLED",
+        fulfillmentStatus: "ORDERING",
         accessTokenRevokedAt: null,
       },
     ]);
 
     const result = await useCase.eraseExpiredUnclaimedIdentities(now);
 
-    const cutoff = new Date('2026-07-31T12:00:00.000Z');
+    const cutoff = new Date("2026-07-31T12:00:00.000Z");
     expect(result).toEqual({ anonymized: 1 });
     expect(prisma.order.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          source: 'VENDOR_ASSISTED',
+          source: "VENDOR_ASSISTED",
           claimedAt: null,
           buyerAccountId: null,
           buyerIdentityErasedAt: null,
           closedAt: { lte: cutoff },
-          OR: [{ status: 'CANCELLED' }, { fulfillmentStatus: 'COMPLETED' }],
+          OR: [{ status: "CANCELLED" }, { fulfillmentStatus: "COMPLETED" }],
         }),
         take: 500,
       }),
@@ -175,7 +175,7 @@ describe('AssistedOrderIdentityRetentionUseCase', () => {
     expect(prisma.order.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          id: 'old-order',
+          id: "old-order",
           claimedAt: null,
           buyerAccountId: null,
           closedAt: { lte: cutoff },
@@ -184,101 +184,101 @@ describe('AssistedOrderIdentityRetentionUseCase', () => {
     );
   });
 
-  it('continues the retention sweep after an order transaction fails', async () => {
+  it("continues the retention sweep after an order transaction fails", async () => {
     prisma.order.findMany.mockResolvedValue([
       {
-        id: 'failed-order',
-        storeId: 'store-1',
+        id: "failed-order",
+        storeId: "store-1",
         customerId: null,
-        customerPhone: '+51987654321',
-        customerPhoneNormalized: '+51987654321',
+        customerPhone: "+51987654321",
+        customerPhoneNormalized: "+51987654321",
         buyerAccountId: null,
         claimedAt: null,
-        status: 'CANCELLED',
-        fulfillmentStatus: 'ORDERING',
+        status: "CANCELLED",
+        fulfillmentStatus: "ORDERING",
         accessTokenRevokedAt: null,
       },
       {
-        id: 'next-order',
-        storeId: 'store-1',
+        id: "next-order",
+        storeId: "store-1",
         customerId: null,
-        customerPhone: '+51987654322',
-        customerPhoneNormalized: '+51987654322',
+        customerPhone: "+51987654322",
+        customerPhoneNormalized: "+51987654322",
         buyerAccountId: null,
         claimedAt: null,
-        status: 'CANCELLED',
-        fulfillmentStatus: 'ORDERING',
+        status: "CANCELLED",
+        fulfillmentStatus: "ORDERING",
         accessTokenRevokedAt: null,
       },
     ]);
     prisma.order.updateMany
-      .mockRejectedValueOnce(new Error('temporary database failure'))
+      .mockRejectedValueOnce(new Error("temporary database failure"))
       .mockResolvedValueOnce({ count: 1 });
 
     const result = await useCase.eraseExpiredUnclaimedIdentities(
-      new Date('2026-10-29T12:00:00.000Z'),
+      new Date("2026-10-29T12:00:00.000Z"),
     );
 
     expect(result).toEqual({ anonymized: 1 });
     expect(prisma.order.updateMany).toHaveBeenCalledTimes(2);
   });
-  it('does not count an order twice when a concurrent erasure already won', async () => {
+  it("does not count an order twice when a concurrent erasure already won", async () => {
     prisma.order.findMany.mockResolvedValue([
       {
-        id: 'already-erased',
-        storeId: 'store-1',
+        id: "already-erased",
+        storeId: "store-1",
         customerId: null,
-        customerPhone: '+51987654321',
-        customerPhoneNormalized: '+51987654321',
+        customerPhone: "+51987654321",
+        customerPhoneNormalized: "+51987654321",
         buyerAccountId: null,
         claimedAt: null,
-        status: 'CANCELLED',
-        fulfillmentStatus: 'ORDERING',
+        status: "CANCELLED",
+        fulfillmentStatus: "ORDERING",
         accessTokenRevokedAt: null,
       },
     ]);
     prisma.order.updateMany.mockResolvedValue({ count: 0 });
 
     const result = await useCase.eraseOnBuyerRequest(
-      'store-1',
-      '+51987654321',
-      'operator-1',
-      'PRIV-460',
+      "store-1",
+      "+51987654321",
+      "operator-1",
+      "PRIV-460",
     );
 
     expect(result).toEqual({ anonymized: 0, deferred: 0 });
     expect(prisma.auditLog.create).not.toHaveBeenCalled();
   });
 
-  it('is idempotent when the same verified request is submitted twice', async () => {
+  it("is idempotent when the same verified request is submitted twice", async () => {
     prisma.order.findMany
       .mockResolvedValueOnce([
         {
-          id: 'order-1',
-          storeId: 'store-1',
+          id: "order-1",
+          storeId: "store-1",
           customerId: null,
-          customerPhone: '+51987654321',
-          customerPhoneNormalized: '+51987654321',
+          customerPhone: "+51987654321",
+          customerPhoneNormalized: "+51987654321",
           buyerAccountId: null,
           claimedAt: null,
-          status: 'CANCELLED',
-          fulfillmentStatus: 'ORDERING',
+          status: "CANCELLED",
+          fulfillmentStatus: "ORDERING",
           accessTokenRevokedAt: null,
         },
       ])
       .mockResolvedValueOnce([]);
 
     const first = await useCase.eraseOnBuyerRequest(
-      'store-1',
-      '+51987654321',
-      'operator-1',
-      'PRIV-460',
+      "store-1",
+      "+51987654321",
+      "operator-1",
+      "PRIV-460",
     );
     const repeated = await useCase.eraseOnBuyerRequest(
-      'store-1',
-      '+51987654321',
-      'operator-1',
-      'PRIV-460',
+      "store-1",
+      "+51987654321",
+      "operator-1",
+      "PRIV-460",
     );
 
     expect(first).toEqual({ anonymized: 1, deferred: 0 });
@@ -287,75 +287,75 @@ describe('AssistedOrderIdentityRetentionUseCase', () => {
     expect(prisma.auditLog.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          actorId: 'operator-1',
-          metadata: expect.objectContaining({ requestReference: 'PRIV-460' }),
+          actorId: "operator-1",
+          metadata: expect.objectContaining({ requestReference: "PRIV-460" }),
         }),
       }),
     );
   });
 
-  it('keeps a shared Customer while another order remains', async () => {
+  it("keeps a shared Customer while another order remains", async () => {
     prisma.order.findMany.mockResolvedValue([
       {
-        id: 'closed-assisted-order',
-        storeId: 'store-1',
-        customerId: 'customer-1',
-        customerPhone: '+51987654321',
-        customerPhoneNormalized: '+51987654321',
+        id: "closed-assisted-order",
+        storeId: "store-1",
+        customerId: "customer-1",
+        customerPhone: "+51987654321",
+        customerPhoneNormalized: "+51987654321",
         buyerAccountId: null,
         claimedAt: null,
-        status: 'CANCELLED',
-        fulfillmentStatus: 'ORDERING',
+        status: "CANCELLED",
+        fulfillmentStatus: "ORDERING",
         accessTokenRevokedAt: null,
       },
     ]);
     prisma.order.count.mockResolvedValue(1);
 
     const result = await useCase.eraseOnBuyerRequest(
-      'store-1',
-      '+51987654321',
-      'operator-1',
-      'PRIV-460',
+      "store-1",
+      "+51987654321",
+      "operator-1",
+      "PRIV-460",
     );
 
     expect(result).toEqual({ anonymized: 1, deferred: 0 });
     expect(prisma.customer.updateMany).not.toHaveBeenCalled();
   });
-  it('keeps the Customer when an unlinked normalized order still uses the phone', async () => {
+  it("keeps the Customer when an unlinked normalized order still uses the phone", async () => {
     prisma.order.findMany.mockResolvedValueOnce([
       {
-        id: 'closed-assisted-order',
-        storeId: 'store-1',
-        customerId: 'customer-1',
-        customerPhone: '+51987654321',
-        customerPhoneNormalized: '+51987654321',
+        id: "closed-assisted-order",
+        storeId: "store-1",
+        customerId: "customer-1",
+        customerPhone: "+51987654321",
+        customerPhoneNormalized: "+51987654321",
         buyerAccountId: null,
         claimedAt: null,
-        status: 'CANCELLED',
-        fulfillmentStatus: 'ORDERING',
+        status: "CANCELLED",
+        fulfillmentStatus: "ORDERING",
         accessTokenRevokedAt: null,
       },
     ]);
     prisma.customer.findUnique
       .mockResolvedValueOnce({
-        id: 'customer-1',
-        storeId: 'store-1',
-        phone: '+51987654321',
+        id: "customer-1",
+        storeId: "store-1",
+        phone: "+51987654321",
         identityErasedAt: null,
       })
       .mockResolvedValueOnce({
-        id: 'customer-1',
-        storeId: 'store-1',
-        phone: '+51987654321',
+        id: "customer-1",
+        storeId: "store-1",
+        phone: "+51987654321",
         identityErasedAt: null,
       });
     prisma.order.count.mockResolvedValueOnce(0).mockResolvedValueOnce(1);
 
     await useCase.eraseOnBuyerRequest(
-      'store-1',
-      '+51987654321',
-      'operator-1',
-      'PRIV-460',
+      "store-1",
+      "+51987654321",
+      "operator-1",
+      "PRIV-460",
     );
 
     expect(prisma.customer.updateMany).not.toHaveBeenCalled();

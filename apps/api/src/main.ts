@@ -1,15 +1,15 @@
-import 'dotenv/config';
+import "dotenv/config";
 
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module.js';
-import { RequestMethod, ValidationPipe } from '@nestjs/common';
-import helmet from 'helmet';
-import { AllExceptionsFilter } from './common/filters/all-exceptions.filter.js';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { buildCorsOptions } from './common/cors-options.js';
-import { initErrorTracking } from './common/error-tracking.js';
-import { validateEnv } from './config/env.validation.js';
-import metadata from './metadata.js';
+import { NestFactory } from "@nestjs/core";
+import { AppModule } from "./app.module.js";
+import { RequestMethod, ValidationPipe } from "@nestjs/common";
+import helmet from "helmet";
+import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter.js";
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { buildCorsOptions } from "./common/cors-options.js";
+import { initErrorTracking } from "./common/error-tracking.js";
+import { validateEnv } from "./config/env.validation.js";
+import metadata from "./metadata.js";
 
 async function bootstrap() {
   // Refuse to boot before the server starts listening if a required env var
@@ -27,7 +27,7 @@ async function bootstrap() {
   // forwarding headers with the visitor IP (see infra/vps/Caddyfile). One hop.
   // `true` would take the leftmost X-Forwarded-For entry, which the visitor
   // can set. Docs: docs/core/security-payments.md §7.4.
-  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+  app.getHttpAdapter().getInstance().set("trust proxy", 1);
 
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
@@ -41,7 +41,7 @@ async function bootstrap() {
   // real Content-Security-Policy.
   const helmetMiddleware = helmet();
   app.use((req, res, next) => {
-    if (req.path.startsWith('/api/docs')) return next();
+    if (req.path.startsWith("/api/docs")) return next();
     helmetMiddleware(req, res, next);
   });
 
@@ -49,8 +49,8 @@ async function bootstrap() {
   // stays off the "api" prefix entirely — kept as its own top-level path so
   // Caddy can block the whole prefix in one rule instead of enumerating
   // individual excluded routes under /api/*, see infra/vps/Caddyfile.
-  app.setGlobalPrefix('api', {
-    exclude: [{ path: 'internal/*splat', method: RequestMethod.ALL }],
+  app.setGlobalPrefix("api", {
+    exclude: [{ path: "internal/*splat", method: RequestMethod.ALL }],
   });
 
   app.enableCors(buildCorsOptions());
@@ -63,12 +63,12 @@ async function bootstrap() {
   const swaggerDocument = SwaggerModule.createDocument(
     app,
     new DocumentBuilder()
-      .setTitle('Bias Market API')
-      .setDescription('Bias Market — niche-first store builder API')
-      .setVersion('1.0')
+      .setTitle("Bias Market API")
+      .setDescription("Bias Market — niche-first store builder API")
+      .setVersion("1.0")
       .addBearerAuth(
-        { type: 'http', scheme: 'bearer', bearerFormat: undefined },
-        'bearer',
+        { type: "http", scheme: "bearer", bearerFormat: undefined },
+        "bearer",
       )
       .build(),
   );
@@ -76,10 +76,10 @@ async function bootstrap() {
   // Swagger UI exposes route/model shape (recon surface), so keep it enabled
   // by default outside production and opt-in only in production.
   const swaggerEnabled = process.env.SWAGGER_ENABLED
-    ? process.env.SWAGGER_ENABLED === 'true'
-    : process.env.NODE_ENV !== 'production';
+    ? process.env.SWAGGER_ENABLED === "true"
+    : process.env.NODE_ENV !== "production";
   if (swaggerEnabled) {
-    SwaggerModule.setup('api/docs', app, swaggerDocument);
+    SwaggerModule.setup("api/docs", app, swaggerDocument);
   }
 
   await app.listen(process.env.PORT ?? 3000);

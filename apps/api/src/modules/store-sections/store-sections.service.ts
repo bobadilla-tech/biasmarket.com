@@ -3,15 +3,15 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
-import type { Prisma } from '@biasmarket/db';
-import { PrismaService } from '../../prisma/prisma.service.js';
+} from "@nestjs/common";
+import type { Prisma } from "@biasmarket/db";
+import { PrismaService } from "../../prisma/prisma.service.js";
 import {
   type CreateStoreSectionDto,
   StoreSectionTypeDto,
-} from './dto/create-store-section.dto.js';
-import type { UpdateStoreSectionDto } from './dto/update-store-section.dto.js';
-import type { ReorderStoreSectionsDto } from './dto/reorder-store-sections.dto.js';
+} from "./dto/create-store-section.dto.js";
+import type { UpdateStoreSectionDto } from "./dto/update-store-section.dto.js";
+import type { ReorderStoreSectionsDto } from "./dto/reorder-store-sections.dto.js";
 
 @Injectable()
 export class StoreSectionsService {
@@ -22,9 +22,9 @@ export class StoreSectionsService {
       where: { id: storeId },
     });
 
-    if (!store) throw new NotFoundException('Store no encontrada');
+    if (!store) throw new NotFoundException("Store no encontrada");
     if (store.ownerId !== userId) {
-      throw new ForbiddenException('No sos dueño de esta store');
+      throw new ForbiddenException("No sos dueño de esta store");
     }
 
     return store;
@@ -40,7 +40,7 @@ export class StoreSectionsService {
       where: { id: sectionId },
     });
     if (!section || section.storeId !== storeId) {
-      throw new NotFoundException('Sección no encontrada');
+      throw new NotFoundException("Sección no encontrada");
     }
     return section;
   }
@@ -64,7 +64,7 @@ export class StoreSectionsService {
       where: { id: collectionId },
     });
     if (!collection || collection.storeId !== storeId) {
-      throw new BadRequestException('Colección inválida');
+      throw new BadRequestException("Colección inválida");
     }
   }
 
@@ -73,7 +73,7 @@ export class StoreSectionsService {
     if (dto.type === StoreSectionTypeDto.COLLECTION) {
       if (!dto.collectionId) {
         throw new BadRequestException(
-          'collectionId es requerido para secciones de tipo COLLECTION',
+          "collectionId es requerido para secciones de tipo COLLECTION",
         );
       }
       await this.assertCollectionInStore(dto.collectionId, storeId);
@@ -100,7 +100,7 @@ export class StoreSectionsService {
     await this.assertOwnership(storeId, userId);
     return this.prisma.storeSection.findMany({
       where: { storeId },
-      orderBy: { position: 'asc' },
+      orderBy: { position: "asc" },
     });
   }
 
@@ -116,7 +116,7 @@ export class StoreSectionsService {
       const nextCollectionId = dto.collectionId ?? existing.collectionId;
       if (!nextCollectionId) {
         throw new BadRequestException(
-          'collectionId es requerido para secciones de tipo COLLECTION',
+          "collectionId es requerido para secciones de tipo COLLECTION",
         );
       }
       await this.assertCollectionInStore(nextCollectionId, storeId);
@@ -158,7 +158,7 @@ export class StoreSectionsService {
 
     if (owned.length !== dto.sectionIds.length) {
       throw new BadRequestException(
-        'Una o más secciones no pertenecen a esta store',
+        "Una o más secciones no pertenecen a esta store",
       );
     }
 
@@ -170,14 +170,14 @@ export class StoreSectionsService {
         });
         if (result.count !== 1) {
           throw new BadRequestException(
-            'Una o más secciones no pertenecen a esta store',
+            "Una o más secciones no pertenecen a esta store",
           );
         }
       }
 
       return tx.storeSection.findMany({
         where: { id: { in: dto.sectionIds }, storeId },
-        orderBy: { position: 'asc' },
+        orderBy: { position: "asc" },
       });
     });
     await this.markStoreContentStale(storeId);

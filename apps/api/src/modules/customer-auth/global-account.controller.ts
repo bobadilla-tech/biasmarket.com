@@ -7,28 +7,28 @@ import {
   Post,
   Res,
   UseGuards,
-} from '@nestjs/common';
-import { ApiBearerAuth } from '@nestjs/swagger';
-import { Public } from '@thallesp/nestjs-better-auth';
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
-import type { Response } from 'express';
-import { CustomerAuthService } from './customer-auth.service.js';
-import { CustomerSessionGuard } from './customer-session.guard.js';
-import { CustomerSession } from './customer-session.decorator.js';
-import { AllowNoOrigin, OriginGuard } from './origin.guard.js';
-import { LoginCustomerDto } from './dto/login-customer.dto.js';
-import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
-import { RegisterCustomerDto } from './dto/register-customer.dto.js';
-import { OkResponseDto } from './dto/customer-auth-response.dto.js';
+} from "@nestjs/common";
+import { ApiBearerAuth } from "@nestjs/swagger";
+import { Public } from "@thallesp/nestjs-better-auth";
+import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
+import type { Response } from "express";
+import { CustomerAuthService } from "./customer-auth.service.js";
+import { CustomerSessionGuard } from "./customer-session.guard.js";
+import { CustomerSession } from "./customer-session.decorator.js";
+import { AllowNoOrigin, OriginGuard } from "./origin.guard.js";
+import { LoginCustomerDto } from "./dto/login-customer.dto.js";
+import { ForgotPasswordDto } from "./dto/forgot-password.dto.js";
+import { RegisterCustomerDto } from "./dto/register-customer.dto.js";
+import { OkResponseDto } from "./dto/customer-auth-response.dto.js";
 import {
   CUSTOMER_SESSION_COOKIE,
   CUSTOMER_SESSION_TTL_MS,
-} from './customer-session.constants.js';
+} from "./customer-session.constants.js";
 import {
   GlobalAccountOrderDetailResponseDto,
   GlobalAccountOrderResponseDto,
   GlobalAccountProfileResponseDto,
-} from './dto/global-account-response.dto.js';
+} from "./dto/global-account-response.dto.js";
 
 // Slug-independent — the buyer identity is global, so these routes don't
 // live under `stores/:slug/account` like the rest of the module. See
@@ -36,14 +36,14 @@ import {
 // endpoints". Not wired into the storefront frontend yet (no global
 // nav-bar "logged in as X" indicator in this pass — that's a follow-up),
 // but the API surface is real and covered by the e2e cross-store test.
-@Controller('account')
+@Controller("account")
 export class GlobalAccountController {
   constructor(private customerAuth: CustomerAuthService) {}
 
   @Public()
-  @ApiBearerAuth('bearer')
+  @ApiBearerAuth("bearer")
   @UseGuards(CustomerSessionGuard)
-  @Get('me')
+  @Get("me")
   me(
     @CustomerSession() session: { buyerAccountId: string },
   ): Promise<GlobalAccountProfileResponseDto> {
@@ -51,9 +51,9 @@ export class GlobalAccountController {
   }
 
   @Public()
-  @ApiBearerAuth('bearer')
+  @ApiBearerAuth("bearer")
   @UseGuards(CustomerSessionGuard)
-  @Get('orders')
+  @Get("orders")
   async orders(
     @CustomerSession() session: { buyerAccountId: string },
   ): Promise<GlobalAccountOrderResponseDto[]> {
@@ -61,11 +61,11 @@ export class GlobalAccountController {
   }
 
   @Public()
-  @ApiBearerAuth('bearer')
+  @ApiBearerAuth("bearer")
   @UseGuards(CustomerSessionGuard)
-  @Get('orders/:orderId')
+  @Get("orders/:orderId")
   orderDetail(
-    @Param('orderId') orderId: string,
+    @Param("orderId") orderId: string,
     @CustomerSession() session: { buyerAccountId: string },
   ): Promise<GlobalAccountOrderDetailResponseDto> {
     return this.customerAuth.getGlobalOrderDetail(
@@ -80,30 +80,30 @@ export class GlobalAccountController {
   @AllowNoOrigin()
   @UseGuards(OriginGuard, ThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 5 } })
-  @Post('login')
+  @Post("login")
   async login(
     @Body() dto: LoginCustomerDto,
-    @Headers('x-client') client: string | undefined,
+    @Headers("x-client") client: string | undefined,
     @Res({ passthrough: true }) res: Response,
   ): Promise<OkResponseDto> {
     const token = await this.customerAuth.loginGlobal(dto.phone, dto.password);
     res.cookie(CUSTOMER_SESSION_COOKIE, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: CUSTOMER_SESSION_TTL_MS,
-      path: '/',
+      path: "/",
     });
-    return client === 'mobile'
+    return client === "mobile"
       ? { ok: true, sessionToken: token }
       : { ok: true };
   }
 
   // Same reasoning as the per-store logout: clearing a cookie needs no guard.
   @Public()
-  @Post('logout')
+  @Post("logout")
   logout(@Res({ passthrough: true }) res: Response): OkResponseDto {
-    res.clearCookie(CUSTOMER_SESSION_COOKIE, { path: '/' });
+    res.clearCookie(CUSTOMER_SESSION_COOKIE, { path: "/" });
     return { ok: true };
   }
 
@@ -111,7 +111,7 @@ export class GlobalAccountController {
   @AllowNoOrigin()
   @UseGuards(OriginGuard, ThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 5 } })
-  @Post('forgot-password')
+  @Post("forgot-password")
   async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<OkResponseDto> {
     await this.customerAuth.forgotPasswordGlobal(dto.phone);
     return { ok: true };
@@ -122,7 +122,7 @@ export class GlobalAccountController {
   @AllowNoOrigin()
   @UseGuards(OriginGuard, ThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 5 } })
-  @Post('reset-password')
+  @Post("reset-password")
   resetPassword(@Body() dto: RegisterCustomerDto): Promise<OkResponseDto> {
     return this.customerAuth.resetPasswordGlobal(dto.token, dto.password);
   }

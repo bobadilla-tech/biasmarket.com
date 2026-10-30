@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { Injectable } from "@nestjs/common";
+import { ThrottlerGuard } from "@nestjs/throttler";
 
 // Seller routes are throttled per signed-in user rather than per IP, so
 // sellers who share an IP (an office, a mobile carrier) do not share a bucket.
@@ -10,6 +10,6 @@ import { ThrottlerGuard } from '@nestjs/throttler';
 export class SellerThrottlerGuard extends ThrottlerGuard {
   protected override getTracker(req: Record<string, any>): Promise<string> {
     const userId: unknown = req.session?.user?.id;
-    return Promise.resolve(typeof userId === 'string' ? userId : req.ip);
+    return Promise.resolve(typeof userId === "string" ? userId : req.ip);
   }
 }
