@@ -525,6 +525,24 @@ describe("storefront empty states", () => {
   it("loads the next product page without replacing the current grid", () => {
     navigation.url = "/es/store/tienda?tab=productos&page=1";
     navigation.push.mockClear();
+    const observerCallbacks: IntersectionObserverCallback[] = [];
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        constructor(callback: IntersectionObserverCallback) {
+          observerCallbacks.push(callback);
+        }
+        observe() {}
+        disconnect() {}
+        unobserve() {}
+        takeRecords() {
+          return [];
+        }
+        root = null;
+        rootMargin = "";
+        thresholds = [];
+      },
+    );
     withMessages(
       <StoreSectionRenderer
         slug="tienda"
@@ -535,13 +553,18 @@ describe("storefront empty states", () => {
       />,
     );
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Cargar más productos" }),
-    );
+    expect(observerCallbacks.length).toBeGreaterThan(0);
+    act(() => {
+      observerCallbacks.at(-1)?.(
+        [{ isIntersecting: true } as IntersectionObserverEntry],
+        {} as IntersectionObserver,
+      );
+    });
     expect(navigation.push).toHaveBeenCalledWith(
       "/es/store/tienda?tab=productos&page=2",
       { scroll: false },
     );
+    vi.unstubAllGlobals();
   });
 
   it("keeps legacy text blocks in the accessible About tab", () => {
