@@ -63,6 +63,10 @@ export function generateMobileAssociations({
               components: [
                 { "/": "/store/*/product/*" },
                 { "/": "/store/*/account/orders/*" },
+                { "/": "/es/store/*/product/*" },
+                { "/": "/es/store/*/account/orders/*" },
+                { "/": "/en/store/*/product/*" },
+                { "/": "/en/store/*/account/orders/*" },
               ],
             },
           ],

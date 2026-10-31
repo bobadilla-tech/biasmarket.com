@@ -28,6 +28,17 @@ export function redirectSystemPath({ path }: NativeIntentOptions): string {
     ) {
       return `/store/${encodeURIComponent(segments[1])}/product/${encodeURIComponent(segments[3])}`;
     }
+
+    if (
+      segments.length === 5 &&
+      segments[0] === "store" &&
+      SAFE_SEGMENT.test(segments[1]) &&
+      segments[2] === "account" &&
+      segments[3] === "orders" &&
+      SAFE_SEGMENT.test(segments[4])
+    ) {
+      return `/orders/${encodeURIComponent(segments[4])}?storeSlug=${encodeURIComponent(segments[1])}`;
+    }
   } catch {
     // Malformed or encoded path segments should never reach generated routes.
   }

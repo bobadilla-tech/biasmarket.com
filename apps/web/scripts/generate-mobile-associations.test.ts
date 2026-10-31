@@ -72,7 +72,7 @@ describe("static mobile app association files", () => {
     expect(apple.applinks.details[0].appIDs).toEqual([
       "ABCDE12345.com.biasmarket.mobile",
     ]);
-    expect(apple.applinks.details[0].components).toHaveLength(2);
+    expect(apple.applinks.details[0].components).toHaveLength(6);
     expect(android[0].target.package_name).toBe("com.biasmarket.mobile");
     expect(android[0].target.sha256_cert_fingerprints).toHaveLength(1);
   });

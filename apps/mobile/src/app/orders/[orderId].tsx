@@ -22,12 +22,19 @@ export default function OrderDetailScreen() {
   }>();
   const router = useRouter();
   const { status, storeSlug: sessionStoreSlug } = useBuyerSession();
-  const storeSlug = routeStoreSlug ?? sessionStoreSlug;
+  const storeSlug = [routeStoreSlug, sessionStoreSlug].find(
+    (candidate): candidate is string =>
+      typeof candidate === "string" && /^[a-z0-9-]+$/i.test(candidate),
+  );
+  const safeOrderId =
+    typeof orderId === "string" && /^[a-z0-9]+$/i.test(orderId)
+      ? orderId
+      : undefined;
   const { locale, t } = useMobileI18n();
   const orderQuery = useQuery({
-    queryKey: ["buyer-order", storeSlug, orderId],
-    queryFn: () => customerAuth.orderDetail(storeSlug!, orderId),
-    enabled: status === "authenticated" && Boolean(storeSlug && orderId),
+    queryKey: ["buyer-order", storeSlug, safeOrderId],
+    queryFn: () => customerAuth.orderDetail(storeSlug!, safeOrderId!),
+    enabled: status === "authenticated" && Boolean(storeSlug && safeOrderId),
   });
 
   if (

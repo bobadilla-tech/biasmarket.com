@@ -1,8 +1,11 @@
 # Mobile deep links
 
-The Expo app claims `https://biasmarket.com/store/*` on iOS and Android. Product
-URLs open the product screen, store URLs open that store's catalog, and buyer
-order URLs open the order screen. The web app remains the browser fallback.
+The Android intent filter claims all `https://biasmarket.com/store/*` URLs;
+iOS claims store product and buyer order URLs, including the `/es` and `/en`
+locale prefixes. The mobile router opens supported store catalog, product, and
+buyer order routes. Other paths fall back to the app root on Android, so avoid
+using `/store/*` for web-only flows that must remain in the browser. The web app
+remains the browser fallback when the app is not installed.
 
 The static association documents are generated into `apps/web/public/.well-known`
 during the web image build when both signing identifiers are configured. They
