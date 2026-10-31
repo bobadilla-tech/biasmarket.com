@@ -153,72 +153,85 @@ export class CustomerOrderPaymentsController {
       file.detectedMimeType,
     );
 
-    const payment = await this.prisma.$transaction(async (tx) => {
-      // Row-lock the order so two concurrent submissions serialize instead of
-      // both passing the re-check below on the same pre-commit snapshot.
-      // Without the lock, both transactions' `findMany` can run before either
-      // commits (READ COMMITTED doesn't see uncommitted rows), each computes
-      // the full balance as available, and both insert — over-submitting the
-      // order. The second transaction blocks here until the first commits,
-      // then its re-read sees the first's committed PENDING_REVIEW row and
-      // the reserve is respected. Same pattern as create-order.usecase.ts's
-      // stock-hold lock.
-      const [locked] = await tx.$queryRaw<
-        Array<{ id: string }>
-      >`SELECT id FROM "Order" WHERE id = ${orderId} FOR UPDATE`;
-      if (!locked) {
-        throw new NotFoundException('Orden no encontrada');
-      }
+    const { payment, paymentProofNotificationCreated } =
+      await this.prisma.$transaction(async (tx) => {
+        // Row-lock the order so two concurrent submissions serialize instead of
+        // both passing the re-check below on the same pre-commit snapshot.
+        // Without the lock, both transactions' `findMany` can run before either
+        // commits (READ COMMITTED doesn't see uncommitted rows), each computes
+        // the full balance as available, and both insert — over-submitting the
+        // order. The second transaction blocks here until the first commits,
+        // then its re-read sees the first's committed PENDING_REVIEW row and
+        // the reserve is respected. Same pattern as create-order.usecase.ts's
+        // stock-hold lock.
+        const [locked] = await tx.$queryRaw<
+          Array<{ id: string }>
+        >`SELECT id FROM "Order" WHERE id = ${orderId} FOR UPDATE`;
+        if (!locked) {
+          throw new NotFoundException('Orden no encontrada');
+        }
 
-      // Re-check the balance inside the transaction. Under the lock this read
-      // is guaranteed to see any earlier submission's committed PENDING_REVIEW
-      // row, so the available balance (credited + reserved) is authoritative.
-      const payments = await tx.orderPayment.findMany({
-        where: { orderId },
-        select: { amount: true, source: true, reviewStatus: true },
-      });
-      const creditedCents = payments
-        .filter(countsTowardPaid)
-        .reduce((sum, p) => sum + toCents(Number(p.amount)), 0);
-      const reservedCents = payments
-        .filter((p) => p.reviewStatus === 'PENDING_REVIEW')
-        .reduce((sum, p) => sum + toCents(Number(p.amount)), 0);
-      const availableCents =
-        toCents(Number(order.requiredAmount)) - creditedCents - reservedCents;
-      if (toCents(numericAmount) > availableCents) {
-        throw new BadRequestException('El monto excede el saldo pendiente');
-      }
+        // Re-check the balance inside the transaction. Under the lock this read
+        // is guaranteed to see any earlier submission's committed PENDING_REVIEW
+        // row, so the available balance (credited + reserved) is authoritative.
+        const payments = await tx.orderPayment.findMany({
+          where: { orderId },
+          select: { amount: true, source: true, reviewStatus: true },
+        });
+        const creditedCents = payments
+          .filter(countsTowardPaid)
+          .reduce((sum, p) => sum + toCents(Number(p.amount)), 0);
+        const reservedCents = payments
+          .filter((p) => p.reviewStatus === 'PENDING_REVIEW')
+          .reduce((sum, p) => sum + toCents(Number(p.amount)), 0);
+        const availableCents =
+          toCents(Number(order.requiredAmount)) - creditedCents - reservedCents;
+        if (toCents(numericAmount) > availableCents) {
+          throw new BadRequestException('El monto excede el saldo pendiente');
+        }
 
-      const created = await tx.orderPayment.create({
-        data: {
-          orderId,
-          storeId: store.id,
-          amount: numericAmount,
-          currency: order.currency,
-          method: method as PaymentMethodType,
-          note,
-          imageUrl,
-          source: 'BUYER_SUBMITTED',
-          reviewStatus: 'PENDING_REVIEW',
-        },
+        const created = await tx.orderPayment.create({
+          data: {
+            orderId,
+            storeId: store.id,
+            amount: numericAmount,
+            currency: order.currency,
+            method: method as PaymentMethodType,
+            note,
+            imageUrl,
+            source: 'BUYER_SUBMITTED',
+            reviewStatus: 'PENDING_REVIEW',
+          },
+        });
+        // Dedups against an already-open notification for this order (see
+        // NotificationsService.createIfNotOpen) — a buyer re-submitting a
+        // second proof before the seller reviews the first one doesn't spam a
+        // second notification, same semantics stock alerts already rely on.
+        const notification = await this.notifications.createIfNotOpen(
+          {
+            storeId: store.id,
+            type: 'PAYMENT_PROOF_SUBMITTED',
+            entityType: 'Order',
+            entityId: orderId,
+            title: 'Comprobante de pago recibido',
+            body: `El comprador envió un comprobante de ${order.currency} ${numericAmount} para revisar.`,
+          },
+          tx,
+        );
+        return {
+          payment: created,
+          paymentProofNotificationCreated: Boolean(notification),
+        };
       });
-      // Dedups against an already-open notification for this order (see
-      // NotificationsService.createIfNotOpen) — a buyer re-submitting a
-      // second proof before the seller reviews the first one doesn't spam a
-      // second notification, same semantics stock alerts already rely on.
-      await this.notifications.createIfNotOpen(
-        {
-          storeId: store.id,
-          type: 'PAYMENT_PROOF_SUBMITTED',
-          entityType: 'Order',
-          entityId: orderId,
-          title: 'Comprobante de pago recibido',
-          body: `El comprador envió un comprobante de ${order.currency} ${numericAmount} para revisar.`,
-        },
-        tx,
-      );
-      return created;
-    });
+
+    if (paymentProofNotificationCreated) {
+      await this.notifications.pushToStoreOwner({
+        storeId: store.id,
+        title: 'Comprobante de pago recibido',
+        body: `El comprador envió un comprobante de ${order.currency} ${numericAmount} para revisar.`,
+        data: { type: 'PAYMENT_PROOF_SUBMITTED', entityId: orderId },
+      });
+    }
 
     return toOrderPaymentDto(payment);
   }

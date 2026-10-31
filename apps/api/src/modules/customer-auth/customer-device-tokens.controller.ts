@@ -6,17 +6,19 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { Public } from '@thallesp/nestjs-better-auth';
 import { CustomerSession } from './customer-session.decorator.js';
 import { CustomerSessionGuard } from './customer-session.guard.js';
+import { OriginGuard } from './origin.guard.js';
 import { DeviceTokenDto } from '../device-tokens/device-token.dto.js';
 import { DeviceTokensService } from '../device-tokens/device-tokens.service.js';
 
 @Controller('stores/:slug/account/devices')
 @Public()
 @ApiBearerAuth('bearer')
-@UseGuards(CustomerSessionGuard)
+@ApiParam({ name: 'slug', type: String })
+@UseGuards(CustomerSessionGuard, OriginGuard)
 export class CustomerDeviceTokensController {
   constructor(private readonly tokens: DeviceTokensService) {}
 

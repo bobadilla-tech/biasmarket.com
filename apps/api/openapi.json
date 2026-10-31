@@ -3730,7 +3730,16 @@
     "/stores/{slug}/account/devices": {
       "post": {
         "operationId": "CustomerDeviceTokensController_register",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -3755,7 +3764,16 @@
       },
       "delete": {
         "operationId": "CustomerDeviceTokensController_unregister",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {

@@ -68,6 +68,32 @@ export class NotificationsService {
     }
   }
 
+  async pushToStoreOwner(params: {
+    storeId: string;
+    title: string;
+    body: string;
+    data: Record<string, unknown>;
+  }) {
+    try {
+      const store = await this.prisma.store.findUnique({
+        where: { id: params.storeId },
+        select: { ownerId: true },
+      });
+      if (!store) return;
+      const tokens = await this.prisma.deviceToken.findMany({
+        where: { userId: store.ownerId },
+        select: { expoPushToken: true },
+      });
+      await Promise.all(
+        tokens.map(({ expoPushToken }) =>
+          this.enqueuePush({ ...params, to: expoPushToken }),
+        ),
+      );
+    } catch (error) {
+      this.logger.warn(`Could not load store push tokens: ${String(error)}`);
+    }
+  }
+
   private async assertOwnership(storeId: string, userId: string) {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
@@ -172,34 +198,6 @@ export class NotificationsService {
         metadata: (params.metadata ?? {}) as Prisma.InputJsonValue,
       },
     });
-    if (notification && params.type === 'PAYMENT_PROOF_SUBMITTED') {
-      try {
-        const store = await this.prisma.store.findUnique({
-          where: { id: params.storeId },
-          select: { ownerId: true },
-        });
-        if (store) {
-          const tokens = await this.prisma.deviceToken.findMany({
-            where: { userId: store.ownerId },
-            select: { expoPushToken: true },
-          });
-          await Promise.all(
-            tokens.map(({ expoPushToken }) =>
-              this.enqueuePush({
-                to: expoPushToken,
-                title: params.title,
-                body: params.body ?? '',
-                data: { type: params.type, entityId: params.entityId },
-              }),
-            ),
-          );
-        }
-      } catch (error) {
-        this.logger.warn(
-          `Could not notify store about payment proof: ${String(error)}`,
-        );
-      }
-    }
     return notification;
   }
 

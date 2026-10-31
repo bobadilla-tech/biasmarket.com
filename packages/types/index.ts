@@ -34,6 +34,8 @@ export * as myStores from "./generated/my-stores/my-stores.js";
 export * as orders from "./generated/order/order.js";
 export * as checkout from "./generated/checkout/checkout.js";
 export * as customerAuth from "./generated/customer-auth/customer-auth.js";
+export * as customerDeviceTokens from "./generated/customer-device-tokens/customer-device-tokens.js";
+export * as globalAccount from "./generated/global-account/global-account.js";
 export * as customerAccount from "./generated/customer-account/customer-account.js";
 export * as customers from "./generated/customers/customers.js";
 export * as productSearch from "./generated/product-search/product-search.js";
