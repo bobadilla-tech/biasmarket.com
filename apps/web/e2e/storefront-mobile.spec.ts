@@ -8,12 +8,11 @@ test("mobile catalog fits supported widths and supports search, filtering, and c
   test.skip(testInfo.project.name !== "desktop", "run one responsive pass");
   for (const width of [360, 390, 430, 768, 1024]) {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto(`${STORE_URL}?tab=productos`, {
-      waitUntil: "networkidle",
-    });
+    await page.goto(`${STORE_URL}?tab=productos`);
     await expect(
       page.getByRole("heading", { level: 1, name: "K-Pop Corner" }),
     ).toBeVisible();
+    await page.waitForTimeout(500);
 
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth > window.innerWidth + 1,
@@ -31,9 +30,8 @@ test("mobile catalog fits supported widths and supports search, filtering, and c
   }
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(`${STORE_URL}?tab=productos`, {
-    waitUntil: "networkidle",
-  });
+  await page.goto(`${STORE_URL}?tab=productos`);
+  await page.waitForTimeout(500);
   const compactHeader = page.getByTestId("storefront-compact-header");
   await expect(compactHeader).toHaveAttribute("aria-hidden", "true");
   await page.evaluate(() => window.scrollTo(0, 700));
@@ -41,9 +39,8 @@ test("mobile catalog fits supported widths and supports search, filtering, and c
   await page.evaluate(() => window.scrollTo(0, 0));
   await expect(compactHeader).toHaveAttribute("aria-hidden", "true");
 
-  await page.goto(`${STORE_URL}?tab=categorias`, {
-    waitUntil: "networkidle",
-  });
+  await page.goto(`${STORE_URL}?tab=categorias`);
+  await page.waitForTimeout(500);
   await page.getByRole("link", { name: "Posters" }).click();
   await expect(page).toHaveURL(/tab=productos.*categoria=posters/);
   await expect(

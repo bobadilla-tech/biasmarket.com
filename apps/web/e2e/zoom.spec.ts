@@ -102,7 +102,8 @@ test("landing controls survive 200% text-only zoom", async ({ page }) => {
 });
 
 test("checkout controls survive 200% text-only zoom", async ({ page }) => {
-  await page.goto(`/es/store/${storeSlug}`, { waitUntil: "networkidle" });
+  await page.goto(`/es/store/${storeSlug}`);
+  await page.waitForTimeout(500);
   await page
     .locator("button:not(:disabled)")
     .filter({ hasText: /agregar al carrito|add to cart/i })
