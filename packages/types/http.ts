@@ -72,6 +72,60 @@ export async function customFetch<T>(
   url: string,
   options: RequestOptions = {},
 ): Promise<T> {
+  const { res, fallbackErrorMessage } = await request(url, options);
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  let data: unknown;
+  let parseError = false;
+  if (body) {
+    try {
+      data = JSON.parse(body);
+    } catch {
+      parseError = true;
+    }
+  }
+
+  if (!res.ok) {
+    throw new ApiError(
+      errorMessage(
+        parseError ? undefined : data,
+        fallbackErrorMessage,
+        res.status,
+      ),
+      res.status,
+    );
+  }
+  if (parseError) {
+    throw new Error(fallbackErrorMessage ?? "Received invalid JSON response");
+  }
+
+  return data as T;
+}
+
+export async function customFetchBlob(
+  url: string,
+  options: RequestOptions = {},
+): Promise<Blob> {
+  const { res, fallbackErrorMessage } = await request(url, options);
+  if (!res.ok) {
+    const body = await res.text();
+    let data: unknown;
+    try {
+      data = body ? JSON.parse(body) : undefined;
+    } catch {
+      data = undefined;
+    }
+    throw new ApiError(
+      errorMessage(data, fallbackErrorMessage, res.status),
+      res.status,
+    );
+  }
+  return res.blob();
+}
+
+async function request(
+  url: string,
+  options: RequestOptions,
+): Promise<{ res: Response; fallbackErrorMessage?: string }> {
   if (!config) {
     throw new Error(
       "configureApiClient() must be called before making API requests",
@@ -112,30 +166,5 @@ export async function customFetch<T>(
     }
   }
 
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  let data: unknown;
-  let parseError = false;
-  if (body) {
-    try {
-      data = JSON.parse(body);
-    } catch {
-      parseError = true;
-    }
-  }
-
-  if (!res.ok) {
-    throw new ApiError(
-      errorMessage(
-        parseError ? undefined : data,
-        fallbackErrorMessage,
-        res.status,
-      ),
-      res.status,
-    );
-  }
-  if (parseError) {
-    throw new Error(fallbackErrorMessage ?? "Received invalid JSON response");
-  }
-
-  return data as T;
+  return { res, fallbackErrorMessage };
 }

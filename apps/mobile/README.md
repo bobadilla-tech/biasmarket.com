@@ -44,6 +44,11 @@ cart key, matching the web storefront's per-store cart behavior. Quantity and
 currency calculations live in `@biasmarket/utils/cart`, shared with the web cart
 so the two clients use the same rules.
 
+Authenticated buyers can view their order history and order details from the
+account screen. Private payment proof images are fetched through the buyer
+session API and rendered from memory; the public image URL is never sent to the
+image cache. Signing out clears cached buyer and proof data.
+
 Buyer authentication uses Expo SecureStore. Login and invitation-based account
 setup support English and Spanish using the shared `packages/i18n` catalogs; the
 account screen includes the language selector.

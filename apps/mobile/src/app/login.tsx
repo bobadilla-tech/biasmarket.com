@@ -13,7 +13,14 @@ import { useMobileI18n } from "../i18n/mobile-i18n";
 
 export default function LoginScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ slug?: string; notice?: string }>();
+  const params = useLocalSearchParams<{
+    slug?: string;
+    notice?: string;
+    returnTo?: string;
+    orderId?: string;
+    storeSlug?: string;
+  }>();
+  const { returnTo, orderId } = params;
   const initialSlug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
   const notice = Array.isArray(params.notice)
     ? params.notice[0]
@@ -29,14 +36,30 @@ export default function LoginScreen() {
     resolver: zodResolver(
       customerLoginSchema.extend({ storeSlug: z.string().min(1) }),
     ),
-    defaultValues: { storeSlug: initialSlug ?? "", phone: "", password: "" },
+    defaultValues: {
+      storeSlug:
+        (typeof params.storeSlug === "string" ? params.storeSlug : null) ??
+        initialSlug ??
+        "",
+      phone: "",
+      password: "",
+    },
   });
 
   const submit = handleSubmit(async ({ storeSlug, phone, password }) => {
     setError(null);
     try {
       await signIn(storeSlug.trim(), phone.trim(), password);
-      router.replace("/");
+      if (returnTo === "order-detail" && orderId) {
+        router.replace({
+          pathname: "/orders/[orderId]",
+          params: { orderId, storeSlug: storeSlug.trim() },
+        });
+      } else if (returnTo === "orders") {
+        router.replace("/orders");
+      } else {
+        router.replace("/");
+      }
     } catch {
       setError(t("auth.loginFailed"));
     }
