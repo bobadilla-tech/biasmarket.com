@@ -1,10 +1,12 @@
 "use client";
 
 import Image from "next/image";
+import { MoreHorizontal } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Menu, MenuContent, MenuItem, MenuTrigger } from "@/components/ui/menu";
 import { cn } from "@/lib/utils";
 import type { ProductDetailResponseDto } from "@biasmarket/types";
 import { getProductAvailabilityState } from "../lib/availability-state";
@@ -40,128 +42,190 @@ export function ProductTile({
 }) {
   const t = useTranslations("dashboard");
   const image = product.images?.[0];
-  const statusBadge =
-    product.status === "PUBLISHED" ? (
-      <Badge className="store-theme-soft-badge rounded-full px-3 py-1 text-[11px] font-semibold">
-        {statusPublishedLabel}
-      </Badge>
-    ) : (
-      <Badge
-        variant="outline"
-        className="rounded-full border-[#eadcf7] px-3 py-1 text-[11px] font-semibold text-[#8f7da8]"
-      >
-        {statusDraftLabel}
-      </Badge>
-    );
   const availabilityState = getProductAvailabilityState({
     discontinued: product.discontinued,
     soldOut: product.soldOut || (product.availableStock ?? 0) <= 0,
     availableStock: product.availableStock,
   });
-  const availabilityBadge =
-    availabilityState === "AVAILABLE" ? (
-      <Badge className="rounded-full bg-[#e8fff2] px-3 py-1 text-[11px] font-semibold text-[#159a63]">
-        {t("products.details.available")}
-      </Badge>
-    ) : availabilityState === "OUT_OF_STOCK" ? (
-      <Badge className="rounded-full bg-[#fff6e8] px-3 py-1 text-[11px] font-semibold text-[#d97706]">
-        {t("products.details.soldOut")}
-      </Badge>
-    ) : (
-      <Badge className="rounded-full bg-[#f1f5f9] px-3 py-1 text-[11px] font-semibold text-[#475569]">
-        {t("products.details.discontinued")}
-      </Badge>
-    );
+  const availabilityLabel =
+    availabilityState === "AVAILABLE"
+      ? t("products.details.available")
+      : availabilityState === "OUT_OF_STOCK"
+        ? t("products.details.soldOut")
+        : t("products.details.discontinued");
+  const actionLabel = t("products.actions.forProduct", { name: product.name });
+  const readableStockClassName =
+    stockClassName === "text-[#d97706]"
+      ? "text-[#8a4b00]"
+      : stockClassName === "text-[#159a63]"
+        ? "text-[#176b45]"
+        : stockClassName;
+
   return (
-    <Card className="rounded-4xl border-[#eadcf8] bg-white py-0 shadow-sm transition hover:shadow-md">
-      <CardContent className="px-0 pb-0">
-        <div className="rounded-t-4xl bg-[#fff2f7] p-6">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge className="store-theme-soft-badge rounded-full px-3 py-1 text-[11px] font-semibold">
-                {category}
-              </Badge>
-              {statusBadge}
-              {availabilityBadge}
-            </div>
-            <div className="flex gap-2">
-              {product.status === "DRAFT" ? (
-                <Button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onPublish();
-                  }}
-                  className="store-theme-primary-button h-8 rounded-full px-3 text-xs font-semibold hover:opacity-100"
-                >
-                  {publishLabel}
-                </Button>
-              ) : null}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onEdit();
-                }}
-                className="h-8 rounded-full border-white/60 bg-white/60 px-3 text-xs text-[var(--store-primary)] shadow-none hover:bg-white"
-              >
-                {editLabel}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onDelete();
-                }}
-                className="h-8 rounded-full border-white/60 bg-white/60 px-3 text-xs text-[#d11d52] shadow-none hover:bg-white"
-              >
-                {deleteLabel}
-              </Button>
-            </div>
-          </div>
+    <Card className="min-w-0 overflow-hidden rounded-3xl border-[#eadcf8] bg-white py-0 shadow-sm transition hover:shadow-md">
+      <CardContent className="min-w-0 px-0 pb-0">
+        <div className="relative bg-[#fff2f7] md:px-6 md:pt-6">
           <button
             type="button"
             onClick={onOpen}
-            className="mt-6 flex w-full items-center justify-center rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] focus-visible:ring-offset-2"
+            className="relative flex h-[150px] w-full items-center justify-center overflow-hidden bg-[#fff2f7] text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--focus-ring)] md:mx-auto md:mt-0 md:h-20 md:w-20 md:rounded-3xl md:shadow-sm"
             aria-label={product.name}
           >
             {image ? (
               <Image
                 src={image}
                 alt=""
-                width={80}
-                height={80}
-                className="size-20 rounded-3xl object-cover shadow-sm"
+                fill
+                sizes="(max-width: 767px) 50vw, 80px"
+                className="object-cover md:rounded-3xl"
               />
             ) : (
-              <div
+              <span
                 aria-hidden="true"
-                className="flex size-20 items-center justify-center rounded-3xl bg-white/70 text-sm font-semibold text-[#2d1649]"
+                className="flex size-full items-center justify-center bg-[#f8eafa] text-2xl font-semibold text-[#492b65] md:rounded-3xl md:bg-white/70 md:text-sm"
               >
                 {product.name.slice(0, 1).toUpperCase()}
-              </div>
+              </span>
             )}
           </button>
+
+          <Badge className="absolute left-2 top-2 max-w-[calc(100%-3.5rem)] truncate rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold text-[#39204f] shadow-sm md:left-6 md:top-6 md:max-w-[45%] md:bg-white/95 md:text-[11px]">
+            {category}
+          </Badge>
+
+          <Badge
+            className={cn(
+              "absolute bottom-2 left-2 rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold shadow-sm md:bottom-6 md:left-6 md:text-[11px]",
+              availabilityState === "AVAILABLE" && "text-[#176b45]",
+              availabilityState === "OUT_OF_STOCK" && "text-[#8a4b00]",
+              availabilityState === "DISCONTINUED" && "text-[#475569]",
+            )}
+          >
+            {availabilityLabel}
+          </Badge>
+
+          <div className="absolute right-2 top-2 md:hidden">
+            <Menu>
+              <MenuTrigger
+                className="flex size-11 items-center justify-center rounded-full border border-white/80 bg-white text-[#39204f] shadow-sm outline-none transition hover:bg-[#fff9fc] focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+                aria-label={actionLabel}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <MoreHorizontal aria-hidden="true" className="size-5" />
+              </MenuTrigger>
+              <MenuContent align="end" className="min-w-40">
+                <MenuItem
+                  className="min-h-11 cursor-pointer"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onEdit();
+                  }}
+                >
+                  {editLabel}
+                </MenuItem>
+                <MenuItem
+                  className="min-h-11 cursor-pointer text-[#b4234d] data-highlighted:text-[#b4234d]"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onDelete();
+                  }}
+                >
+                  {deleteLabel}
+                </MenuItem>
+              </MenuContent>
+            </Menu>
+          </div>
+
+          <div className="absolute right-6 top-6 hidden items-center gap-2 md:flex">
+            {product.status === "DRAFT" ? (
+              <Button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onPublish();
+                }}
+                className="store-theme-primary-button h-8 rounded-full px-3 text-xs font-semibold hover:opacity-100"
+              >
+                {publishLabel}
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={(event) => {
+                event.stopPropagation();
+                onEdit();
+              }}
+              className="h-8 rounded-full border-white/60 bg-white/90 px-3 text-xs text-[var(--store-primary)] shadow-none hover:bg-white"
+            >
+              {editLabel}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={(event) => {
+                event.stopPropagation();
+                onDelete();
+              }}
+              className="h-8 rounded-full border-white/60 bg-white/90 px-3 text-xs text-[#b4234d] shadow-none hover:bg-white"
+            >
+              {deleteLabel}
+            </Button>
+          </div>
         </div>
-        <div className="space-y-3 px-6 py-5">
-          <div>
-            <p className="text-sm font-semibold text-[#2d1649]">
+
+        <div className="min-w-0 space-y-2 px-3 py-3 md:space-y-3 md:px-6 md:py-5">
+          <div className="min-w-0">
+            <p className="line-clamp-2 text-xs font-semibold leading-5 text-[#2d1649] md:text-sm">
               {product.name}
             </p>
-            <p className="mt-1 text-xs text-[#8f7da8]">
+            <p className="mt-1 line-clamp-2 break-words text-[11px] leading-4 text-[#665776] md:text-xs md:leading-5">
               {product.description || "—"}
             </p>
           </div>
 
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-[#d11d52]">
+          <div className="flex min-w-0 items-start justify-between gap-1.5">
+            <p className="min-w-0 break-words text-xs font-bold leading-4 text-[#b4234d] md:text-sm">
               {product.currency} {product.price}
             </p>
-            <p className={cn("text-xs font-semibold", stockClassName)}>
+            <p
+              className={cn(
+                "max-w-[58%] shrink-0 break-words text-right text-[10px] font-semibold leading-4 md:text-xs",
+                readableStockClassName,
+              )}
+            >
               {stockLabel}
             </p>
+          </div>
+
+          <div className="flex min-h-5 items-center gap-1.5 text-[10px] font-semibold md:text-xs">
+            {product.status === "PUBLISHED" ? (
+              <>
+                <span
+                  aria-hidden="true"
+                  className="size-2 rounded-full bg-[#16834c]"
+                />
+                <span className="text-[#176b45]">{statusPublishedLabel}</span>
+              </>
+            ) : (
+              <>
+                <span
+                  aria-hidden="true"
+                  className="size-2 rounded-full bg-[#725e86]"
+                />
+                <span className="text-[#554362]">{statusDraftLabel}</span>
+                <Button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onPublish();
+                  }}
+                  className="store-theme-primary-button ml-auto min-h-11 rounded-full px-3 text-[10px] font-semibold hover:opacity-100 md:hidden"
+                >
+                  {publishLabel}
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </CardContent>

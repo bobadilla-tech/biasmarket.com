@@ -25,6 +25,7 @@ import {
   useProduct,
   usePublishProduct,
 } from "@/features/products";
+import { getDescriptionItems } from "@/features/products/lib/description-items";
 
 export function ProductDetailsPageClient() {
   const t = useTranslations("dashboard");
@@ -36,6 +37,9 @@ export function ProductDetailsPageClient() {
   const productQuery = useProduct(storeId, productId, tCommon("networkError"));
   const product = productQuery.data ?? null;
   const variants = product?.variants ?? [];
+  const descriptionItems = product?.description
+    ? getDescriptionItems(product.description)
+    : null;
   const error =
     productQuery.error instanceof Error ? productQuery.error.message : null;
 
@@ -312,9 +316,17 @@ export function ProductDetailsPageClient() {
                     {product.currency} {product.price}
                   </p>
                 </div>
-                <p className="text-sm text-[#8f7da8]">
-                  {product.description || t("products.details.noDescription")}
-                </p>
+                {descriptionItems ? (
+                  <ul className="list-disc space-y-1 pl-5 text-sm text-[#665776] marker:text-[#9b6abd]">
+                    {descriptionItems.map((item, index) => (
+                      <li key={`${index}-${item}`}>{item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-[#665776]">
+                    {product.description || t("products.details.noDescription")}
+                  </p>
+                )}
                 <div className="grid gap-2 text-xs text-[#8f7da8]">
                   <div className="flex items-center justify-between">
                     <span className="inline-flex items-center gap-2">
