@@ -1,11 +1,11 @@
 # Mobile deep links
 
-The Android intent filter claims all `https://biasmarket.com/store/*` URLs;
-iOS claims store product and buyer order URLs, including the `/es` and `/en`
-locale prefixes. The mobile router opens supported store catalog, product, and
-buyer order routes. Other paths fall back to the app root on Android, so avoid
-using `/store/*` for web-only flows that must remain in the browser. The web app
-remains the browser fallback when the app is not installed.
+Both platforms claim store catalog, product, and buyer order URLs, with or
+without the `/es` or `/en` locale prefix. Android intent filters are limited
+to those route patterns, so web-only confirmation, checkout, cart, and login
+URLs remain in the browser. The mobile router opens catalog URLs in search,
+product URLs on the product screen, and buyer order URLs on the order screen.
+The web app remains the browser fallback when the app is not installed.
 
 The static association documents are generated into `apps/web/public/.well-known`
 during the web image build when both signing identifiers are configured. They

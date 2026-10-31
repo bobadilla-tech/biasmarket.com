@@ -16,7 +16,7 @@ export function redirectSystemPath({ path }: NativeIntentOptions): string {
       segments[0] === "store" &&
       SAFE_SEGMENT.test(segments[1])
     ) {
-      return `/store/${encodeURIComponent(segments[1])}`;
+      return `/search?storeSlug=${encodeURIComponent(segments[1])}`;
     }
 
     if (
@@ -26,7 +26,7 @@ export function redirectSystemPath({ path }: NativeIntentOptions): string {
       segments[2] === "product" &&
       SAFE_SEGMENT.test(segments[3])
     ) {
-      return `/store/${encodeURIComponent(segments[1])}/product/${encodeURIComponent(segments[3])}`;
+      return `/product/${encodeURIComponent(segments[1])}/${encodeURIComponent(segments[3])}`;
     }
 
     if (
