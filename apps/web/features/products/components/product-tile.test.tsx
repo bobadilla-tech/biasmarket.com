@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { expect, test, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "@biasmarket/i18n";
@@ -69,20 +69,29 @@ test("mobile actions are accessible and do not open the product detail", async (
 
   expect(trigger.className).toContain("size-11");
   await user.click(trigger);
-  await user.click(screen.getByRole("menuitem", { name: "Editar" }));
+  await user.keyboard("{ArrowDown}");
+  expect(trigger.getAttribute("aria-expanded")).toBe("true");
+  const menu = document.querySelector('[data-slot="menu-content"]');
+  expect(menu).not.toBeNull();
+  await user.click(within(menu as HTMLElement).getByText("Editar"));
   expect(onEdit).toHaveBeenCalledOnce();
   expect(onOpen).not.toHaveBeenCalled();
 
   await user.click(
     screen.getByRole("button", { name: "Acciones de Photocard set" }),
   );
-  await user.click(screen.getByRole("menuitem", { name: "Eliminar" }));
+  await user.keyboard("{ArrowDown}");
+  const reopenedMenu = document.querySelector('[data-slot="menu-content"]');
+  expect(reopenedMenu).not.toBeNull();
+  await user.click(within(reopenedMenu as HTMLElement).getByText("Eliminar"));
   expect(onDelete).toHaveBeenCalledOnce();
   expect(onOpen).not.toHaveBeenCalled();
 });
 
 test("draft products keep the publish action", () => {
   const { onPublish } = renderTile({ status: "DRAFT" });
-  expect(screen.getByRole("button", { name: "Publicar" })).toBeDefined();
+  expect(
+    screen.getAllByRole("button", { name: "Publicar" }).length,
+  ).toBeGreaterThan(0);
   expect(onPublish).not.toHaveBeenCalled();
 });

@@ -109,7 +109,6 @@ export function ProductTile({
               <MenuTrigger
                 className="flex size-11 items-center justify-center rounded-full border border-white/80 bg-white text-[#39204f] shadow-sm outline-none transition hover:bg-[#fff9fc] focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
                 aria-label={actionLabel}
-                onClick={(event) => event.stopPropagation()}
               >
                 <MoreHorizontal aria-hidden="true" className="size-5" />
               </MenuTrigger>
