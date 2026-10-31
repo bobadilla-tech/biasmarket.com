@@ -192,7 +192,10 @@ describe("storefront empty states", () => {
 
   it("renders an accessible placeholder when an image is missing", () => {
     withMessages(<ImagePlaceholder alt="Categoría Álbumes" />);
-    expect(screen.getByRole("img", { name: "Categoría Álbumes" })).toBeTruthy();
+    const placeholder = screen.getByRole("img", {
+      name: "Categoría Álbumes",
+    });
+    expect(placeholder.querySelector("svg")).toBeTruthy();
   });
 
   it("renders mobile category chips that select a single category", () => {
@@ -659,11 +662,21 @@ describe("storefront tabs", () => {
         .getAttribute("aria-selected"),
     ).toBe("true");
     expect(screen.getByRole("tab", { name: "Categorías" }).className).toContain(
-      "text-white",
+      "text-(--store-on-active)",
+    );
+    expect(screen.getByRole("tab", { name: "Categorías" }).className).toContain(
+      "bg-(--store-tab-active)",
     );
     expect(screen.getByRole("tab", { name: "Productos" }).className).toContain(
       "text-(--store-muted)",
     );
+    expect(
+      screen.getByRole("tab", { name: "Categorías" }).parentElement
+        ?.parentElement?.className,
+    ).toContain("overflow-x-auto");
+    expect(
+      screen.getByRole("tab", { name: "Referencias" }).className,
+    ).toContain("shrink-0");
 
     navigation.url = "/es/store/tienda?tab=referencias";
     view.rerender(
