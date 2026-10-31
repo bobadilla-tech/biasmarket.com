@@ -1,12 +1,12 @@
 import {
   createContext,
+  type PropsWithChildren,
   useCallback,
   useContext,
   useEffect,
   useMemo,
   useRef,
   useState,
-  type PropsWithChildren,
 } from "react";
 import { customerAuth } from "@biasmarket/types";
 import { useQueryClient } from "@tanstack/react-query";
@@ -14,12 +14,13 @@ import {
   deleteBuyerSession,
   readBuyerSession,
   writeBuyerSession,
-} from "./session-storage.js";
+} from "./session-storage";
 import {
   isCurrentMobileAuthorization,
   setMobileBearerToken,
+  setSessionRefreshHandler,
   setUnauthorizedHandler,
-} from "./api-client.js";
+} from "./api-client";
 
 type SessionStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -89,10 +90,38 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
     [queryClient, runStorageOperation],
   );
 
+  const refreshSessionToken = useCallback(
+    async (authorization: string, token: string) => {
+      if (!isCurrentMobileAuthorization(authorization)) return;
+      const generation = sessionGeneration.current;
+      const refreshed = await runStorageOperation(async () => {
+        if (
+          generation !== sessionGeneration.current ||
+          !isCurrentMobileAuthorization(authorization)
+        ) {
+          return false;
+        }
+        const session = await readBuyerSession();
+        if (!session) return false;
+        await writeBuyerSession({ ...session, token });
+        return true;
+      });
+      if (
+        refreshed &&
+        generation === sessionGeneration.current &&
+        isCurrentMobileAuthorization(authorization)
+      ) {
+        setMobileBearerToken(token);
+      }
+    },
+    [runStorageOperation],
+  );
+
   useEffect(() => {
     const generation = ++sessionGeneration.current;
     let active = true;
     setUnauthorizedHandler((authorization) => clearLocalSession(authorization));
+    setSessionRefreshHandler(refreshSessionToken);
     void runStorageOperation(readBuyerSession)
       .then((session) => {
         if (!active || generation !== sessionGeneration.current) return;
@@ -107,13 +136,15 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
       .catch(() => {
         if (!active || generation !== sessionGeneration.current) return;
         setError("auth.sessionReadFailed");
+        setStatus("unauthenticated");
       });
 
     return () => {
       active = false;
       setUnauthorizedHandler(undefined);
+      setSessionRefreshHandler(undefined);
     };
-  }, [clearLocalSession, runStorageOperation]);
+  }, [clearLocalSession, refreshSessionToken, runStorageOperation]);
 
   const signIn = useCallback(
     async (slug: string, phone: string, password: string) => {
@@ -159,7 +190,11 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
       }
       // The current registration endpoint sets the password but doesn't issue
       // a session token, so log in immediately to establish the mobile session.
-      await signIn(slug, phone, password);
+      try {
+        await signIn(slug, phone, password);
+      } catch (cause) {
+        throw new Error("auth.registrationCompleteSignInFailed", { cause });
+      }
     },
     [signIn],
   );

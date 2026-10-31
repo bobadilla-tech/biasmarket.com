@@ -7,7 +7,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "node ../../scripts/lint-changed-files.mjs packages/queue && eslint . --max-warnings 0"
   },
   "dependencies": {
     "bullmq": "^6.3.4",

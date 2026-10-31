@@ -76,3 +76,21 @@ export const remove = async (
     method: "DELETE",
   });
 };
+
+export const getUploadImageUrl = (storeId: string, categoryId: string) => {
+  return `/stores/${storeId}/categories/${categoryId}/image`;
+};
+
+export const uploadImage = async (
+  storeId: string,
+  categoryId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<CategoryResponseDto> => {
+  return customFetch<CategoryResponseDto>(
+    getUploadImageUrl(storeId, categoryId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};

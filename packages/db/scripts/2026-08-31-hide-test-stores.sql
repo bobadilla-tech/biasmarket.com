@@ -16,7 +16,7 @@
 --   3. Put those ids in the REMEDIATION UPDATE and run it inside a
 --      transaction. Re-run the audit to confirm.
 --   4. Record the confirmed ids in
---      docs/plans/2026-08-31-homepage-issues-167-166-165-plan.md.
+--      .artifacts/2026/08/20260831--homepage-issues-167-166-165/plan.md.
 
 -- ── AUDIT ────────────────────────────────────────────────────────────────
 SELECT s.id,

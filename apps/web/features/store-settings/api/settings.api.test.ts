@@ -8,15 +8,18 @@ const pickupPointsMock = {
   remove: vi.fn(),
 };
 const paymentConfigMock = { findAll: vi.fn(), upsert: vi.fn() };
+const whatsappTemplatesMock = { findOne: vi.fn(), upsert: vi.fn() };
 vi.mock("@/lib/api-client", () => ({
   apiClient: {
     deliveryConfig: deliveryConfigMock,
     pickupPoints: pickupPointsMock,
     paymentConfig: paymentConfigMock,
+    whatsappTemplates: whatsappTemplatesMock,
   },
 }));
 
 const { settingsApi } = await import("./settings.api");
+const { ApiError } = await import("@biasmarket/types");
 
 afterEach(() => {
   deliveryConfigMock.findAll.mockReset();
@@ -27,6 +30,8 @@ afterEach(() => {
   pickupPointsMock.remove.mockReset();
   paymentConfigMock.findAll.mockReset();
   paymentConfigMock.upsert.mockReset();
+  whatsappTemplatesMock.findOne.mockReset();
+  whatsappTemplatesMock.upsert.mockReset();
 });
 
 test("saveDeliverySettings creates new points, updates existing ones, and deletes removed ones", async () => {
@@ -131,4 +136,87 @@ test("getEnabledPaymentMethods hits the enabled=1 filter and returns a plain met
     { fallbackErrorMessage: undefined },
   );
   expect(result).toEqual(["YAPE", "CASH"]);
+});
+
+test("getWhatsAppTemplates keeps existing templates when the optional assisted-order type is unsupported", async () => {
+  whatsappTemplatesMock.findOne.mockImplementation(
+    (_storeId: string, type: string) => {
+      if (type === "ASSISTED_ORDER_LINK") {
+        return Promise.reject(new ApiError("unsupported message type", 400));
+      }
+      return Promise.resolve({ type });
+    },
+  );
+
+  await expect(settingsApi.getWhatsAppTemplates("store-1")).resolves.toEqual({
+    newOrder: { type: "NEW_ORDER" },
+    paymentReminder: { type: "PAYMENT_REMINDER" },
+    assistedOrderLink: null,
+    paymentValidated: { type: "ASSISTED_PAYMENT_VALIDATED" },
+    inTransit: { type: "ASSISTED_IN_TRANSIT" },
+    ready: { type: "ASSISTED_READY" },
+    delivered: { type: "ASSISTED_DELIVERED" },
+  });
+});
+
+test("getWhatsAppTemplates degrades each buyer-notice type to null on a 400 from an older API", async () => {
+  whatsappTemplatesMock.findOne.mockImplementation(
+    (_storeId: string, type: string) =>
+      type.startsWith("ASSISTED_") && type !== "ASSISTED_ORDER_LINK"
+        ? Promise.reject(new ApiError("unsupported message type", 400))
+        : Promise.resolve({ type }),
+  );
+
+  await expect(settingsApi.getWhatsAppTemplates("store-1")).resolves.toEqual({
+    newOrder: { type: "NEW_ORDER" },
+    paymentReminder: { type: "PAYMENT_REMINDER" },
+    assistedOrderLink: { type: "ASSISTED_ORDER_LINK" },
+    paymentValidated: null,
+    inTransit: null,
+    ready: null,
+    delivered: null,
+  });
+});
+
+test("getWhatsAppTemplates still fails when an existing template request fails", async () => {
+  whatsappTemplatesMock.findOne.mockImplementation(
+    (_storeId: string, type: string) => {
+      if (type === "NEW_ORDER") {
+        return Promise.reject(new Error("existing template unavailable"));
+      }
+      return Promise.resolve(null);
+    },
+  );
+
+  await expect(settingsApi.getWhatsAppTemplates("store-1")).rejects.toThrow(
+    "existing template unavailable",
+  );
+});
+
+test("getWhatsAppTemplates surfaces a non-400 failure of the assisted-order template", async () => {
+  whatsappTemplatesMock.findOne.mockImplementation(
+    (_storeId: string, type: string) => {
+      if (type === "ASSISTED_ORDER_LINK") {
+        return Promise.reject(new ApiError("boom", 500));
+      }
+      return Promise.resolve(null);
+    },
+  );
+
+  await expect(settingsApi.getWhatsAppTemplates("store-1")).rejects.toThrow(
+    "boom",
+  );
+});
+
+test("getWhatsAppTemplates surfaces a network failure of the assisted-order template", async () => {
+  whatsappTemplatesMock.findOne.mockImplementation(
+    (_storeId: string, type: string) =>
+      type === "ASSISTED_ORDER_LINK"
+        ? Promise.reject(new TypeError("fetch failed"))
+        : Promise.resolve(null),
+  );
+
+  await expect(settingsApi.getWhatsAppTemplates("store-1")).rejects.toThrow(
+    "fetch failed",
+  );
 });

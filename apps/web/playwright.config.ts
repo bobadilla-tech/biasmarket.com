@@ -13,12 +13,19 @@ import { defineConfig, devices } from "@playwright/test";
  * separately). All routes are locale-prefixed (`/es/...`) — there is no
  * `middleware.ts`.
  *
- * Caps (audit Phase 0): ≤6 routes × ≤3 viewports (375 / 768 / desktop).
- * `workers: 1` — better-auth rate-limits sign-ins and specs share one seller
- * `storageState`.
+ * Caps (audit Phase 0): ≤6 routes × ≤3 viewports (375 / 768 / desktop) for the
+ * a11y projects. `workers: 1` — better-auth rate-limits sign-ins, the API
+ * throttles per IP and every context shares 127.0.0.1.
+ *
+ * Journeys (#277) live in `e2e/flows/*.spec.ts`, run by the `flows` project at
+ * 375×812 in Spanish after the `setup` project logs the seeded seller in once
+ * (`e2e/.auth/seller.json`, gitignored). They never depend on the a11y
+ * projects (each owns its state), and the a11y projects ignore `flows/`, so
+ * `--project=mobile-375` alone keeps running exactly the original specs.
  */
 
 const baseURL = process.env.WEB_E2E_BASE_URL ?? "http://localhost:3001";
+const a11yIgnore = [/flows\//];
 
 export default defineConfig({
   testDir: "./e2e",
@@ -30,6 +37,9 @@ export default defineConfig({
   reporter: process.env.CI
     ? [["github"], ["html", { open: "never" }], ["list"]]
     : [["html", { open: "never" }], ["list"]],
+  // A slow run should fail with a report instead of being cancelled by the
+  // job timeout (scripts/ci/web-e2e.sh's job has 35 min; see docs/core/ci.md).
+  globalTimeout: 20 * 60_000,
   timeout: 30_000,
   expect: { timeout: 10_000 },
   use: {
@@ -41,6 +51,7 @@ export default defineConfig({
   projects: [
     {
       name: "mobile-375",
+      testIgnore: a11yIgnore,
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 375, height: 812 },
@@ -48,6 +59,7 @@ export default defineConfig({
     },
     {
       name: "tablet-768",
+      testIgnore: a11yIgnore,
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 768, height: 1024 },
@@ -55,9 +67,32 @@ export default defineConfig({
     },
     {
       name: "desktop",
+      testIgnore: a11yIgnore,
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1280, height: 800 },
+      },
+    },
+    {
+      name: "setup",
+      testMatch: /auth\.setup\.ts/,
+      retries: 1,
+    },
+    {
+      name: "flows",
+      dependencies: ["setup"],
+      testMatch: /flows\/.*\.spec\.ts/,
+      // Flows create non-idempotent data (orders, claims): never retry.
+      retries: 0,
+      timeout: 120_000,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 375, height: 812 },
+        storageState: "e2e/.auth/seller.json",
+        reducedMotion: "reduce",
+        // Traces can hold cookies, private links and the seed password; they
+        // are CI artifacts only because every datum here is disposable.
+        trace: "retain-on-failure",
       },
     },
   ],

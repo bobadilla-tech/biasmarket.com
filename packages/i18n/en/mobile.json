@@ -61,7 +61,9 @@
     "sessionReadFailed": "Could not read the secure session from this device.",
     "missingSessionToken": "The server did not return a mobile session token.",
     "sessionChanged": "The session changed before sign-in completed.",
-    "registrationSessionChanged": "The session changed before registration completed."
+    "registrationSessionChanged": "The session changed before registration completed.",
+    "registrationComplete": "Your password was saved, but sign-in did not finish. Sign in with your store, phone, and new password.",
+    "accountAlreadyRegistered": "This account already has a password. Sign in instead."
   },
   "catalog": {
     "featuredStores": "Featured stores",
@@ -148,6 +150,7 @@
     "proofLoadFailed": "Could not load the payment receipt.",
     "storeInvalid": "The store is invalid.",
     "submitFailed": "Could not complete your purchase.",
+    "connectionFailed": "Check your internet connection and try again.",
     "proofCompressFailed": "Could not compress the payment receipt below 5 MB.",
     "confirmOrder": "Place order",
     "submitting": "Submitting order…",

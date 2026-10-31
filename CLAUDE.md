@@ -4,17 +4,20 @@ Niche-first store builder for creator-led commerce (K-pop/artist merch stores
 first). Manual payment-first (bank transfer, Wise, PayPal) with built-in
 proof-of-payment review, no Stripe required.
 
-Turborepo monorepo: `apps/api` (NestJS), `apps/web` (Next.js), `packages/*`
-(shared db/types/design-tokens/i18n/queue/utils). pnpm workspaces.
+Turborepo monorepo: `apps/api` (NestJS), `apps/web` (Next.js), `apps/workers`
+(BullMQ), `apps/mobile` (Expo), `apps/sanity` (Sanity Studio), `packages/*`
+(shared db/types/validation/design-tokens/i18n/query/queue/utils). pnpm
+workspaces.
 
 ## Hard rules
 
 - **pnpm only.** Never `npm`/`yarn`. `packageManager` is pinned in root
   `package.json`, don't touch that pin without being asked.
 - **Latest TypeScript, ESM only** across the repo (`"type": "module"` in every
-  package). No CommonJS, no `require`. Relative imports in `apps/api` use
-  explicit `.js` extensions (NodeNext resolution) even though the source is
-  `.ts` — follow this pattern for new files there.
+  package except `apps/web`, which is a Next.js app with no `type` field; its
+  source is still ESM). No CommonJS, no `require`. Relative imports in
+  `apps/api` use explicit `.js` extensions (NodeNext resolution) even though the
+  source is `.ts` — follow this pattern for new files there.
 - **web never imports `packages/db` or talks to Postgres directly.** All data
   access from the frontend goes through `api` over HTTP. This is the #1 rule
   keeping multi-tenant isolation enforceable in one place. Don't import
@@ -58,7 +61,10 @@ build-generated — deliberately, to keep `web`'s build/typecheck independent of
 `apps/api` (no turbo cross-package dependency, no live app boot needed in CI).
 Regenerate both by hand after changing a migrated module's response DTOs:
 `pnpm --filter api generate:openapi && pnpm --filter @biasmarket/types generate`,
-then commit the diff.
+then commit the diff. `orval` is pinned to an exact version in `packages/types`
+(a different version renames generated operations); CI's
+`check-types-sdk-drift.sh` fails when the committed SDK differs from a fresh
+`generate`.
 
 Inside `apps/api`:
 
@@ -93,8 +99,10 @@ Production is deployed only by the blue/green CI/CD flow described in
 deployment or recovery.
 
 CI (`.github/workflows/ci.yml`) path-filters per package and runs the applicable
-lint/typecheck/build/test tasks independently for `api`, `web`, `workers`, `db`,
-`design-tokens`, `i18n`, `queue`, `types`, and `utils` — only changed packages
+lint/typecheck/build/test tasks independently for `api`, `web`, `mobile`,
+`workers`, `db`, `i18n`, `queue`, `types`, `design-tokens`, `utils`,
+`validation`, `query`, and `sanity`, plus `migration-safety`, `hygiene`, `e2e`
+and `web-e2e`, with `ci-success` as the required check — only changed packages
 (and their dependents per the filter rules) run.
 
 ## Architecture
@@ -103,16 +111,20 @@ lint/typecheck/build/test tasks independently for `api`, `web`, `workers`, `db`,
 
 ```
 apps/
-  api/    NestJS backend — sole owner of the database
-  web/    Next.js frontend (storefront + dashboard), calls api over HTTP only
+  api/      NestJS backend — sole owner of the database
+  web/      Next.js frontend (storefront + dashboard), calls api over HTTP only
+  workers/  BullMQ worker (expiry sweep, mailer, premium jobs)
+  mobile/   Expo / React Native app
+  sanity/   Sanity Studio for editorial content
 packages/
-  db/     Prisma schema + generated client (packages/db/generated/prisma)
-  types/  Shared DTOs/interfaces between api and web
-  design-tokens/ Portable store palette values/resolution used by web and ready
-                 for mobile
-  i18n/   ES/EN translation dictionaries used by web
-  queue/  Shared BullMQ queue names and payload contracts used by api + workers
-  utils/  Shared pure functions
+  db/       Prisma schema + generated client (packages/db/generated/prisma)
+  types/    Shared DTOs/interfaces and the Orval-generated API client
+  validation/ Shared zod schemas (checkout, payments, auth, coupons)
+  design-tokens/ Portable store palette values/resolution used by web and mobile
+  i18n/     ES/EN translation dictionaries
+  query/    Shared React Query client defaults for web and mobile
+  queue/    Shared BullMQ queue names and payload contracts used by api + workers
+  utils/    Shared pure functions
 ```
 
 `packages/db` re-exports the Prisma v7 generated client from
@@ -128,12 +140,12 @@ Flat NestJS `controller/service/dto` per module for most of
 `products`, `restock`, `stats`, `store-sections`, `stores`, `users`, and
 `whatsapp-templates`). The buyer-facing `global-account.controller.ts` lives
 inside `customer-auth`: it handles global buyer identity, while the neighboring
-customer-auth controller handles per-store buyer sessions.
-`orders` is the one module using the DDD-lite layering
-(`domain/application/infrastructure`) described in `docs/core/architecture.md` —
-it owns the payment/fulfillment state machine, which warranted the extra
-structure. Don't apply that layering to CRUD-style modules, and don't retrofit
-it onto existing flat modules unless asked.
+customer-auth controller handles per-store buyer sessions. `orders` is the one
+module using the DDD-lite layering (`domain/application/infrastructure`)
+described in `docs/core/architecture.md` — it owns the payment/fulfillment state
+machine, which warranted the extra structure. Don't apply that layering to
+CRUD-style modules, and don't retrofit it onto existing flat modules unless
+asked.
 
 - `main.ts`: global
   `ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })`, global
@@ -169,9 +181,12 @@ features.
 
 Core models: `User`, `Store`, `Product`, `ProductVariant`, `Category`,
 `Collection`, `StoreSection`, `Order`, `OrderItem`, `OrderPayment`,
-`PaymentMethodConfig`, `DeliveryMethodConfig`, `PickupPoint`,
-`Customer`, `ContactInquiry`, `Notification`, `AuditLog`, plus better-auth's
-`Session`/`Account`/`Verification`. Money fields are `Decimal`, never `Float`.
+`PaymentMethodConfig`, `DeliveryMethodConfig`, `PickupPoint`, `Customer`,
+`ContactInquiry`, `Notification`, `AuditLog`, `OrderEvent` (order timeline),
+`BuyerAccount` (global buyer identity) with `CustomerStoreLink` (links it to a
+per-store `Customer`), and `Coupon`/`CouponRedemption`, plus better-auth's
+`Session`/`Account`/`Verification`. Buyers can sign in with Google and claim
+assisted orders into their account. Money fields are `Decimal`, never `Float`.
 
 `Order` implements the state machine from `docs/core/security-payments.md` §9:
 `paymentStatus`
@@ -196,9 +211,9 @@ checks against `Store.ownerId`), not global middleware. Slug strategy is
 ### Deployment
 
 Single Contabo Cloud VPS (x86_64, provisioned with Terraform from
-`infra/terraform/`), blue/green containers for `api`, `web`, and `workers`,
-plus shared `db`, `redis`, `minio`, `uptime-kuma`, and `caddy` (S3-compatible
-object storage — product/logo/payment-proof images, see
+`infra/terraform/`), blue/green containers for `api`, `web`, and `workers`, plus
+shared `db`, `redis`, `minio`, `uptime-kuma`, and `caddy` (S3-compatible object
+storage — product/logo/payment-proof images, see
 `apps/api/src/storage/storage.service.ts`). Production definitions live in
 `infra/vps/docker-compose.yml`; Caddy does TLS termination for `biasmarket.com`,
 `api.biasmarket.com`, `cdn.biasmarket.com`, and `status.biasmarket.com`.
@@ -207,13 +222,20 @@ automatically on container boot. Full runbook: `docs/core/deploy.md`.
 
 ## Docs worth reading before large changes
 
+Start at `docs/readme.md`; `docs/core/readme.md` lists every technical doc with
+a "read this when ..." line. Before large changes:
+
 - `docs/core/architecture.md` — monorepo layout, DDD-lite plan, multi-tenant
   design, theming system, deployment/scaling path
 - `docs/core/security-payments.md` — validation rules, REST-over-tRPC rationale,
   manual payment flow state machine (implemented — see the Database section
   above for where)
-- `docs/core/product.md`, `docs/core/roadmap.md`, `docs/core/i18n.md`
-- `docs/plans/` — dated implementation-plan records as work lands
+- `docs/core/ci.md` - what CI guarantees per workspace (lint, tests, coverage
+  floors), the guard script, and the 7-place wiring list for new path-filtered
+  jobs
+- `.artifacts/` — historical plans, audits, handoff prompts, implementation
+  logs, and other work records; read `.artifacts/README.md` and
+  `.artifacts/AGENTS.md`
 - `apps/web/AGENTS.md` — flags that the installed Next.js version has breaking
   changes vs. training data; check `node_modules/next/dist/docs/` before writing
   Next.js code

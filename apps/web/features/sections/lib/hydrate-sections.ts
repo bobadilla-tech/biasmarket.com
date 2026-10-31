@@ -9,7 +9,7 @@ import type { RenderableSection } from "@/components/storefront/section-renderer
 // `collectionId` — no product data. The preview pane needs real product grids,
 // so this joins in `collections.findAll`'s already-hydrated
 // (products + variants) response by `collectionId`. See
-// docs/plans/2026-08-08-storefront-section-drag-drop-preview.md's "data
+// .artifacts/2026/08/20260808--storefront-section-drag-drop-preview/plan.md's "data
 // hydration" gap for why this join can't be skipped.
 export function hydrateSections(
   sections: StoreSectionResponseDto[],

@@ -6,10 +6,21 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "build": "tsc && tsc -p tsconfig.mobile.json",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.mobile.json --noEmit",
+    "lint": "node ../../scripts/lint-changed-files.mjs packages/i18n && eslint . --max-warnings 0"
   },
   "devDependencies": {
     "typescript": "^7.0.2"
+  },
+  "exports": {
+    "./mobile": {
+      "types": "./dist/mobile.d.ts",
+      "default": "./dist/mobile.js"
+    },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   }
 }

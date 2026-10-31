@@ -1,14 +1,14 @@
 import { apiClient } from "@/lib/api-client";
+import { ApiError, customFetch } from "@biasmarket/types";
+import type { WhatsAppMessageType } from "@biasmarket/utils/whatsapp";
 import type { ProfileFormInput } from "../schemas/profile.schema";
 import { isNewPickupPoint, type PickupPoint } from "../schemas/delivery.schema";
 import type { StoreThemeConfig } from "@/lib/store-theme";
 
 const PAYMENT_METHOD_TYPES = ["YAPE", "PLIN", "TRANSFER", "CASH"] as const;
 
-// Multipart carve-out (see apps/web/AGENTS.md): the aboutMarkdown editor's
-// image button uploads through here, then splices the returned CDN URL into
-// the markdown. A file body doesn't fit the generated JSON client, so this
-// stays on raw fetch + FormData like `products`' image uploads.
+// Multipart carve-out (see apps/web/AGENTS.md): file bodies use FormData with
+// the shared configured fetch client instead of the generated JSON methods.
 function apiUrl() {
   return process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
 }
@@ -41,6 +41,28 @@ export const settingsApi = {
       throw new Error(data?.message ?? fallbackErrorMessage ?? "Network error");
     }
     return { url: data.url };
+  },
+
+  async uploadHeaderImage(
+    storeId: string,
+    kind: "banner" | "public-owner-avatar",
+    file: File,
+    fallbackErrorMessage?: string,
+  ): Promise<{ bannerUrl?: string; publicOwnerAvatarUrl?: string }> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const data = await customFetch<{
+      bannerUrl?: string | null;
+      publicOwnerAvatarUrl?: string | null;
+    }>(`/stores/${storeId}/${kind}`, {
+      method: "POST",
+      body: formData,
+      fallbackErrorMessage,
+    });
+    return {
+      bannerUrl: data.bannerUrl ?? undefined,
+      publicOwnerAvatarUrl: data.publicOwnerAvatarUrl ?? undefined,
+    };
   },
 
   updateAppearance: (storeId: string, themeConfig: StoreThemeConfig) =>
@@ -150,16 +172,48 @@ export const settingsApi = {
   // A type with no override row resolves to null — callers fall back to the
   // hardcoded default template.
   async getWhatsAppTemplates(storeId: string) {
-    const [newOrder, paymentReminder] = await Promise.all([
+    // Mixed-version rollout: a previous API rejects an unknown enum with a
+    // 400. Only that case degrades to "no override"; any other failure
+    // must surface so a seller never edits the default over a custom
+    // template they could not load.
+    const optional = (type: WhatsAppMessageType) =>
+      apiClient.whatsappTemplates
+        .findOne(storeId, type)
+        .catch((error: unknown) => {
+          if (error instanceof ApiError && error.status === 400) return null;
+          throw error;
+        });
+    const [
+      newOrder,
+      paymentReminder,
+      assistedOrderLink,
+      paymentValidated,
+      inTransit,
+      ready,
+      delivered,
+    ] = await Promise.all([
       apiClient.whatsappTemplates.findOne(storeId, "NEW_ORDER"),
       apiClient.whatsappTemplates.findOne(storeId, "PAYMENT_REMINDER"),
+      optional("ASSISTED_ORDER_LINK"),
+      optional("ASSISTED_PAYMENT_VALIDATED"),
+      optional("ASSISTED_IN_TRANSIT"),
+      optional("ASSISTED_READY"),
+      optional("ASSISTED_DELIVERED"),
     ]);
-    return { newOrder, paymentReminder };
+    return {
+      newOrder,
+      paymentReminder,
+      assistedOrderLink,
+      paymentValidated,
+      inTransit,
+      ready,
+      delivered,
+    };
   },
 
   saveWhatsAppTemplate: (
     storeId: string,
-    type: "NEW_ORDER" | "PAYMENT_REMINDER",
+    type: WhatsAppMessageType,
     template: string,
   ) => apiClient.whatsappTemplates.upsert(storeId, type, { template }),
 };

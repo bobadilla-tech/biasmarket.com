@@ -1,11 +1,12 @@
-import { getMessages, type Locale } from "@biasmarket/i18n";
+import { type Locale } from "@biasmarket/i18n";
+import { getMobileMessages } from "@biasmarket/i18n/mobile";
 import {
   createContext,
+  type PropsWithChildren,
   useCallback,
   useContext,
   useMemo,
   useState,
-  type PropsWithChildren,
 } from "react";
 
 const MobileI18nContext = createContext<{
@@ -48,7 +49,7 @@ export function useMobileI18n() {
             current && typeof current === "object"
               ? (current as Record<string, unknown>)[part]
               : undefined,
-          getMessages(context.locale).mobile,
+          getMobileMessages(context.locale),
         );
       if (typeof message !== "string") return key;
       return message.replace(/\{(\w+)\}/g, (match, name: string) =>

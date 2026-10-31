@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { statsKeys } from "@/features/stats";
 import { ordersApi } from "../api/orders.api";
+import { useBuyerNoticeOffer } from "@/features/assisted-orders/mutations/use-buyer-notice";
 import { ordersKeys } from "../queries/use-orders";
 
 export function useReviewPayment(
@@ -10,6 +11,7 @@ export function useReviewPayment(
   fallbackErrorMessage?: string,
 ) {
   const queryClient = useQueryClient();
+  const { offer } = useBuyerNoticeOffer(storeId);
 
   return useMutation({
     mutationFn: ({
@@ -28,9 +30,14 @@ export function useReviewPayment(
         reason,
         fallbackErrorMessage,
       ),
-    onSuccess: () => {
+    onSuccess: (_data, vars) => {
       if (!storeId) return;
-      queryClient.invalidateQueries({ queryKey: ordersKeys.byStore(storeId) });
+      const refetched = queryClient.invalidateQueries({
+        queryKey: ordersKeys.byStore(storeId),
+      });
+      if (vars.decision === "approve") {
+        void offer(refetched, vars.orderId, "ASSISTED_PAYMENT_VALIDATED");
+      }
       void queryClient.invalidateQueries({
         queryKey: statsKeys.overview(storeId),
       });

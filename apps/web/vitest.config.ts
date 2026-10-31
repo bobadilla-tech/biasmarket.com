@@ -30,6 +30,11 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
+      // Count source files no test loads (without `include` v8 only reports
+      // loaded files, which inflates the numbers).
+      include: ["{app,components,features,hooks,lib}/**/*.{ts,tsx}"],
+      exclude: ["**/*.test.*", "**/*.spec.*", "**/*.d.ts"],
+      thresholds: { statements: 48, branches: 46, functions: 43, lines: 48 },
     },
   },
 });

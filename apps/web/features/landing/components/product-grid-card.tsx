@@ -22,16 +22,14 @@ export function ProductGridCard({
     <Link
       href={`/store/${product.store.slug}/product/${product.id}`}
       className={cn(
-        "group flex flex-col overflow-hidden rounded-lg bg-white transition hover:shadow-md",
-        isRow
-          ? "w-[174px] shrink-0 border border-transparent p-[9.5px]"
-          : "border border-landing-graphite",
+        "group flex flex-col overflow-hidden rounded-[1.2rem] border border-landing-graphite bg-card shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-1 hover:border-landing-title/25 hover:shadow-[var(--shadow-pop)]",
+        isRow && "w-[174px] shrink-0 p-[9.5px]",
         className,
       )}
     >
       <div
         className={cn(
-          "relative aspect-square w-full overflow-hidden rounded-lg bg-white",
+          "photocard-frame relative aspect-square w-full overflow-hidden rounded-lg bg-white",
           !isRow && "aspect-[3/4] rounded-none",
         )}
       >
@@ -41,7 +39,7 @@ export function ProductGridCard({
             alt={product.name}
             fill
             sizes={isRow ? "174px" : "(min-width: 768px) 200px, 160px"}
-            className="object-cover"
+            className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
           />
         ) : (
           <div className="size-full bg-muted" />
@@ -57,14 +55,14 @@ export function ProductGridCard({
       >
         <p
           className={cn(
-            "truncate font-semibold text-black",
+            "truncate font-semibold text-landing-ink",
             isRow ? "text-[15px] leading-[18px]" : "text-xs sm:text-sm",
           )}
         >
           {product.name}
         </p>
         {isRow ? (
-          <p className="truncate text-3xs font-medium text-[#696969]">
+          <p className="truncate text-3xs font-medium text-muted-foreground">
             @{product.store.slug}
           </p>
         ) : null}
@@ -72,7 +70,7 @@ export function ProductGridCard({
           className={cn(
             "font-bold",
             isRow
-              ? "text-[19px] leading-[23px] text-[#b0006d]"
+              ? "text-[19px] leading-[23px] text-landing-title"
               : "text-landing-title text-xs sm:text-sm",
           )}
         >

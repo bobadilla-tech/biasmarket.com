@@ -3,21 +3,22 @@ import {
   ConflictException,
   Injectable,
   Logger,
-} from '@nestjs/common';
-import { escapeHtml } from '@biasmarket/utils/strings';
-import { PrismaService } from '../../../prisma/prisma.service.js';
-import { OrderRepository } from '../infrastructure/order.repository.js';
-import { Order } from '../domain/order.entity.js';
-import { NotificationsService } from '../../notifications/notifications.service.js';
-import { MailerService } from '../../../mailer/mailer.service.js';
+} from "@nestjs/common";
+import { escapeHtml } from "@biasmarket/utils/strings";
+import { PrismaService } from "../../../prisma/prisma.service.js";
+import { OrderRepository } from "../infrastructure/order.repository.js";
+import { Order } from "../domain/order.entity.js";
+import { NotificationsService } from "../../notifications/notifications.service.js";
+import { MailerService } from "../../../mailer/mailer.service.js";
+import { OrderEventsService } from "./order-events.service.js";
 
 function buildPaymentStatusEmailHtml(
-  decision: 'approve' | 'reject',
+  decision: "approve" | "reject",
   storeName: string,
   reason?: string | null,
 ): string {
   const safeStoreName = escapeHtml(storeName);
-  if (decision === 'approve') {
+  if (decision === "approve") {
     return `
       <p>Tu pago para el pedido en ${safeStoreName} fue aprobado. ¡Gracias por tu compra!</p>
       <hr />
@@ -27,10 +28,10 @@ function buildPaymentStatusEmailHtml(
   const safeReason = reason ? escapeHtml(reason) : null;
   return `
       <p>Tu pago para el pedido en ${safeStoreName} fue rechazado. Contacta a la tienda para más información.</p>
-      ${safeReason ? `<p><strong>Motivo:</strong> ${safeReason}</p>` : ''}
+      ${safeReason ? `<p><strong>Motivo:</strong> ${safeReason}</p>` : ""}
       <hr />
       <p>Your payment for the order at ${safeStoreName} was rejected. Contact the store for more details.</p>
-      ${safeReason ? `<p><strong>Reason:</strong> ${safeReason}</p>` : ''}
+      ${safeReason ? `<p><strong>Reason:</strong> ${safeReason}</p>` : ""}
     `;
 }
 
@@ -43,14 +44,16 @@ export class ReviewPaymentUseCase {
     private orders: OrderRepository,
     private notifications: NotificationsService,
     private mailer: MailerService,
+    private events: OrderEventsService,
   ) {}
 
   async execute(
     orderId: string,
     storeId: string,
     userId: string,
-    decision: 'approve' | 'reject',
+    decision: "approve" | "reject",
     reason?: string,
+    options: { recordEvent?: boolean } = {},
   ) {
     await this.orders.assertOwnership(storeId, userId);
 
@@ -62,7 +65,7 @@ export class ReviewPaymentUseCase {
       row.fulfillmentStatus,
     );
 
-    if (decision === 'approve') {
+    if (decision === "approve") {
       entity.approvePayment();
       // Placed after the transition check so a terminal-state order (e.g.
       // already VERIFIED) still fails with InvalidOrderTransitionError, not
@@ -71,18 +74,18 @@ export class ReviewPaymentUseCase {
       // doesn't gate VERIFIED on paidAmount reaching requiredAmount).
       if (row.paidAmount <= 0) {
         throw new BadRequestException(
-          'No se puede aprobar un pedido sin ningún pago registrado.',
+          "No se puede aprobar un pedido sin ningún pago registrado.",
         );
       }
     } else {
       entity.rejectPayment();
     }
 
-    let storeName = '';
+    let storeName = "";
 
     const updated = await this.prisma.$transaction(async (tx) => {
       const store = await tx.store.findUnique({ where: { id: storeId } });
-      storeName = store?.name ?? '';
+      storeName = store?.name ?? "";
 
       // Guard against two concurrent reviews of the same order (double
       // click, retry): only proceed if the row is still at the status
@@ -94,12 +97,12 @@ export class ReviewPaymentUseCase {
         data: {
           paymentStatus: entity.currentPaymentStatus,
           paymentRejectionReason:
-            decision === 'reject' ? (reason ?? null) : null,
+            decision === "reject" ? (reason ?? null) : null,
         },
       });
       if (guard.count === 0) {
         throw new ConflictException(
-          'Este pedido ya fue revisado por otra solicitud.',
+          "Este pedido ya fue revisado por otra solicitud.",
         );
       }
 
@@ -113,7 +116,7 @@ export class ReviewPaymentUseCase {
         const updatedVariant = await tx.productVariant.update({
           where: { id: item.variantId },
           data:
-            decision === 'approve'
+            decision === "approve"
               ? {
                   reserved: { decrement: item.quantity },
                   stock: { decrement: item.quantity },
@@ -145,12 +148,27 @@ export class ReviewPaymentUseCase {
           actorId: userId,
           storeId,
           action:
-            decision === 'approve' ? 'payment.approved' : 'payment.rejected',
-          entityType: 'Order',
+            decision === "approve" ? "payment.approved" : "payment.rejected",
+          entityType: "Order",
           entityId: orderId,
           metadata: {},
         },
       });
+      // Order-level approvals stand in for the payment decision itself
+      // (`PATCH :orderId/review`), so they always record it. Callers that
+      // already recorded the same seller action — `reviewPaymentProof`
+      // approves one proof row and then settles the balance — pass
+      // `recordEvent: false` so the buyer timeline shows it once, with the
+      // proof's `paymentId`.
+      if (options.recordEvent !== false) {
+        await this.events.record(tx, {
+          orderId,
+          storeId,
+          type:
+            decision === "approve" ? "PAYMENT_VALIDATED" : "PAYMENT_REJECTED",
+          actor: "SELLER",
+        });
+      }
 
       return updated;
     });
@@ -160,9 +178,9 @@ export class ReviewPaymentUseCase {
         await this.mailer.send({
           to: row.customerEmail,
           subject:
-            decision === 'approve'
-              ? 'Pago aprobado — Bias Market / Payment approved'
-              : 'Pago rechazado — Bias Market / Payment rejected',
+            decision === "approve"
+              ? "Pago aprobado — Bias Market / Payment approved"
+              : "Pago rechazado — Bias Market / Payment rejected",
           html: buildPaymentStatusEmailHtml(decision, storeName, reason),
         });
       } catch (err) {

@@ -1,40 +1,51 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable } from "@nestjs/common";
 import {
   DeleteObjectCommand,
   GetObjectCommand,
   PutObjectCommand,
   S3Client,
-} from '@aws-sdk/client-s3';
-import { randomUUID } from 'node:crypto';
-import type { Readable } from 'node:stream';
-import { requiredEnv } from '../config/env.validation.js';
+} from "@aws-sdk/client-s3";
+import { randomUUID } from "node:crypto";
+import type { Readable } from "node:stream";
+import { requiredEnv } from "../config/env.validation.js";
 
 @Injectable()
 export class StorageService {
-  private readonly bucket = requiredEnv('S3_BUCKET');
-  private readonly logoBucket = requiredEnv('S3_LOGO_BUCKET');
+  private readonly bucket = requiredEnv("S3_BUCKET");
+  private readonly logoBucket = requiredEnv("S3_LOGO_BUCKET");
   // Kept private (no anonymous-read policy — see infra/docker/docker-compose*
   // minio-init) — the authenticated streaming endpoint in order.controller.ts
   // is the only intended way to read a payment image.
-  private readonly paymentBucket = requiredEnv('S3_PAYMENT_BUCKET');
-  private readonly publicUrl = requiredEnv('S3_PUBLIC_URL');
+  private readonly paymentBucket = requiredEnv("S3_PAYMENT_BUCKET");
+  private readonly publicUrl = requiredEnv("S3_PUBLIC_URL");
 
   private client = new S3Client({
-    region: 'us-east-1',
-    endpoint: requiredEnv('S3_ENDPOINT'),
+    region: "us-east-1",
+    endpoint: requiredEnv("S3_ENDPOINT"),
     forcePathStyle: true, // requerido por MinIO
     credentials: {
-      accessKeyId: requiredEnv('S3_ACCESS_KEY'),
-      secretAccessKey: requiredEnv('S3_SECRET_KEY'),
+      accessKeyId: requiredEnv("S3_ACCESS_KEY"),
+      secretAccessKey: requiredEnv("S3_SECRET_KEY"),
     },
   });
 
   async uploadImage(buffer: Buffer, mimeType: string): Promise<string> {
-    return this.upload(this.bucket, 'products', buffer, mimeType);
+    return this.upload(this.bucket, "products", buffer, mimeType);
   }
 
   async uploadLogo(buffer: Buffer, mimeType: string): Promise<string> {
-    return this.upload(this.logoBucket, 'logos', buffer, mimeType);
+    return this.upload(this.logoBucket, "logos", buffer, mimeType);
+  }
+
+  async uploadStoreBanner(buffer: Buffer, mimeType: string): Promise<string> {
+    return this.upload(this.bucket, "store-banners", buffer, mimeType);
+  }
+
+  async uploadStoreOwnerAvatar(
+    buffer: Buffer,
+    mimeType: string,
+  ): Promise<string> {
+    return this.upload(this.bucket, "store-owner-avatars", buffer, mimeType);
   }
 
   // Inline images embedded in a seller's `Store.aboutMarkdown` copy. Same
@@ -44,11 +55,25 @@ export class StorageService {
     buffer: Buffer,
     mimeType: string,
   ): Promise<string> {
-    return this.upload(this.bucket, 'store-content', buffer, mimeType);
+    return this.upload(this.bucket, "store-content", buffer, mimeType);
+  }
+
+  async uploadStoreCategoryImage(
+    buffer: Buffer,
+    mimeType: string,
+  ): Promise<string> {
+    return this.upload(this.bucket, "store-categories", buffer, mimeType);
+  }
+
+  async uploadStoreReferenceImage(
+    buffer: Buffer,
+    mimeType: string,
+  ): Promise<string> {
+    return this.upload(this.bucket, "store-references", buffer, mimeType);
   }
 
   async uploadPaymentImage(buffer: Buffer, mimeType: string): Promise<string> {
-    return this.upload(this.paymentBucket, 'payments', buffer, mimeType);
+    return this.upload(this.paymentBucket, "payments", buffer, mimeType);
   }
 
   // Yape/Plin QR codes are meant to be shown to any buyer at checkout, so
@@ -59,7 +84,7 @@ export class StorageService {
     buffer: Buffer,
     mimeType: string,
   ): Promise<string> {
-    return this.upload(this.bucket, 'payment-qr', buffer, mimeType);
+    return this.upload(this.bucket, "payment-qr", buffer, mimeType);
   }
 
   // Inverse of `upload`'s `${publicUrl}/${bucket}/${key}` URL shape.
@@ -72,7 +97,7 @@ export class StorageService {
 
   // Streams a payment image for the authenticated GET endpoint in
   // order.controller.ts — never redirects to a presigned URL (see
-  // docs/plans/2026-08-08-payment-proof-image-access-control-plan.md's
+  // .artifacts/2026/08/20260808--payment-proof-image-access-control/plan.md's
   // feasibility analysis: S3_ENDPOINT is the internal `minio:9000` Docker
   // hostname in prod, so a presigned URL signed against the existing client
   // would point somewhere the browser can't reach). Parses bucket + key from
@@ -82,8 +107,8 @@ export class StorageService {
     url: string,
   ): Promise<{ body: Readable; contentType: string }> {
     const path = new URL(url).pathname;
-    const [, bucket, ...keyParts] = path.split('/');
-    const key = keyParts.join('/');
+    const [, bucket, ...keyParts] = path.split("/");
+    const key = keyParts.join("/");
 
     const result = await this.client.send(
       new GetObjectCommand({ Bucket: bucket, Key: key }),
@@ -91,7 +116,7 @@ export class StorageService {
 
     return {
       body: result.Body as Readable,
-      contentType: result.ContentType ?? 'application/octet-stream',
+      contentType: result.ContentType ?? "application/octet-stream",
     };
   }
 
@@ -102,11 +127,11 @@ export class StorageService {
     mimeType: string,
   ): Promise<string> {
     const ext =
-      mimeType === 'image/png'
-        ? 'png'
-        : mimeType === 'application/pdf'
-          ? 'pdf'
-          : 'jpg';
+      mimeType === "image/png"
+        ? "png"
+        : mimeType === "application/pdf"
+          ? "pdf"
+          : "jpg";
     const key = `${prefix}/${randomUUID()}.${ext}`;
 
     await this.client.send(

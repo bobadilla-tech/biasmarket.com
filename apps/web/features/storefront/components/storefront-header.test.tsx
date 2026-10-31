@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { renderWithProviders } from "../../../test-utils/render-with-providers";
 
 vi.mock("next/navigation", () => ({
@@ -9,8 +9,6 @@ vi.mock("next/navigation", () => ({
   permanentRedirect: vi.fn(),
 }));
 
-// AccountNavLink (composed by the header) is driven by the buyer session
-// query — stub it logged-out so the header renders deterministically.
 const useCustomerProfile = vi.fn();
 vi.mock("@/features/customer-auth/queries/use-customer-profile", () => ({
   useCustomerProfile: (...args: unknown[]) => useCustomerProfile(...args),
@@ -25,88 +23,45 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-const baseProps = {
-  slug: "my-store",
-  name: "Demo Store",
-  logoUrl: null as string | null,
-  instagramUrl: null as string | null,
-  facebookUrl: null as string | null,
-  tiktokUrl: null as string | null,
-  twitterUrl: null as string | null,
-};
-
-function render(props: Partial<typeof baseProps> = {}) {
+test("renders the Bias Market brand, cart, and account link", () => {
   useCustomerProfile.mockReturnValue({ data: undefined, isPending: false });
-  return renderWithProviders(<StorefrontHeader {...baseProps} {...props} />);
-}
+  renderWithProviders(<StorefrontHeader slug="my-store" />);
 
-test("the logo / name link points at the store home", () => {
-  render();
-
-  const link = screen.getByRole("link", {
-    name: "Ir a la página principal de Demo Store",
-  });
-  expect(link.getAttribute("href")).toBe("/es/store/my-store");
-  expect(within(link).getByText("Demo Store")).toBeDefined();
-});
-
-test("with no logoUrl the home link falls back to initials, no <img>", () => {
-  render();
-  expect(document.querySelector("img")).toBeNull();
-  const link = screen.getByRole("link", {
-    name: "Ir a la página principal de Demo Store",
-  });
-  expect(link.textContent).toContain("DE");
-});
-
-test("with a logoUrl the home link renders a real <img> alt'd with the store name", () => {
-  render({ logoUrl: "https://cdn.biasmarket.com/logo.png" });
-  const img = document.querySelector("img") as HTMLImageElement;
-  expect(img).not.toBeNull();
-  expect(img.getAttribute("alt")).toBe("Demo Store");
-});
-
-test("one labelled, new-tab anchor per configured social URL", () => {
-  render({
-    instagramUrl: "https://instagram.com/demo",
-    tiktokUrl: "https://tiktok.com/@demo",
-  });
-
-  const ig = screen.getByRole("link", {
-    name: "Instagram (se abre en una pestaña nueva)",
-  });
-  const tt = screen.getByRole("link", {
-    name: "TikTok (se abre en una pestaña nueva)",
-  });
-  for (const a of [ig, tt]) {
-    expect(a.getAttribute("target")).toBe("_blank");
-    expect(a.getAttribute("rel")).toBe("noopener noreferrer");
-  }
-  expect(ig.getAttribute("href")).toBe("https://instagram.com/demo");
-  expect(tt.getAttribute("href")).toBe("https://tiktok.com/@demo");
-
-  // Not configured -> not rendered.
+  expect(screen.getByText("Bias Market")).toBeTruthy();
   expect(
-    screen.queryByRole("link", {
-      name: /Facebook|^X \(/,
-    }),
-  ).toBeNull();
-});
-
-test("no social anchors when no social URLs are set", () => {
-  render();
+    screen.getByRole("link", { name: "Ir al inicio de Bias Market" }).className,
+  ).toContain("hidden");
   expect(
-    screen.queryByRole("link", { name: /se abre en una pestaña nueva/ }),
-  ).toBeNull();
-});
-
-test("renders the cart link and the account link", () => {
-  render();
-
+    screen
+      .getByRole("link", { name: "Ir al inicio de Bias Market" })
+      .getAttribute("href"),
+  ).toBe("/es");
   expect(
     screen.getByRole("link", { name: "Carrito" }).getAttribute("href"),
   ).toBe("/es/store/my-store/cart");
   expect(
     screen.getByRole("link", { name: "Ingresar" }).getAttribute("href"),
   ).toBe("/es/store/my-store/account/login");
+});
+
+test("shows the store social links in the mobile utility bar", () => {
+  useCustomerProfile.mockReturnValue({ data: undefined, isPending: false });
+  renderWithProviders(
+    <StorefrontHeader
+      slug="my-store"
+      storeName="My Store"
+      socialLinks={[
+        { platform: "instagram", url: "https://instagram.com/my-store" },
+        { platform: "tiktok", url: "https://tiktok.com/@my-store" },
+      ]}
+    />,
+  );
+
+  const links = screen.getByRole("group", {
+    name: "Redes sociales de la tienda",
+  });
+  expect(links.querySelectorAll("a")).toHaveLength(2);
+  expect(
+    screen.getByRole("link", { name: /Instagram/ }).getAttribute("href"),
+  ).toBe("https://instagram.com/my-store");
 });

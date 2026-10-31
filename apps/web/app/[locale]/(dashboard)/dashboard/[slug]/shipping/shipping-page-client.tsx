@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/shared/loading-state";
 import { ErrorState } from "@/components/shared/error-state";
+import { BuyerNoticePrompt } from "@/features/assisted-orders";
 import { useDashboardStore } from "@/features/stores";
 import type { OrderResponseDto } from "@biasmarket/types";
 import {
@@ -41,7 +42,7 @@ export function ShippingPageClient() {
   const tOrders = useTranslations("dashboard.orders");
   const tCommon = useTranslations("common");
   const { locale } = useParams<{ locale: string }>();
-  const { storeId, loading: storeLoading } = useDashboardStore();
+  const { store, storeId, loading: storeLoading } = useDashboardStore();
   const {
     data: orders,
     isPending: ordersLoading,
@@ -266,6 +267,8 @@ export function ShippingPageClient() {
         onCancel={() => setConfirmTarget(null)}
         onConfirm={handleConfirm}
       />
+
+      <BuyerNoticePrompt storeId={storeId} storeName={store?.name ?? ""} />
     </div>
   );
 }

@@ -1,10 +1,15 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { isStorefrontRedesignEnabled } from "@/lib/storefront-redesign";
 
-export function DashboardNav(
-  { slug, active }: { slug: string; active: string },
-) {
+export function DashboardNav({
+  slug,
+  active,
+}: {
+  slug: string;
+  active: string;
+}) {
   const t = useTranslations("dashboard.nav");
   const links = [
     {
@@ -17,22 +22,42 @@ export function DashboardNav(
       label: t("collections"),
       href: `/dashboard/${slug}/collections`,
     },
-    {
-      key: "sections",
-      label: t("sections"),
-      href: `/dashboard/${slug}/sections`,
-    },
+    ...(!isStorefrontRedesignEnabled(slug)
+      ? [
+          {
+            key: "sections",
+            label: t("sections"),
+            href: `/dashboard/${slug}/sections`,
+          },
+        ]
+      : []),
+    ...(isStorefrontRedesignEnabled(slug)
+      ? [
+          {
+            key: "categories",
+            label: t("categories"),
+            href: `/dashboard/${slug}/categories`,
+          },
+          {
+            key: "references",
+            label: t("references"),
+            href: `/dashboard/${slug}/references`,
+          },
+        ]
+      : []),
   ];
 
   return (
-    <nav className="flex gap-4 text-sm">
+    <nav className="flex flex-wrap gap-4 text-sm">
       {links.map((link) => (
         <a
           key={link.key}
           href={link.href}
-          className={active === link.key
-            ? "store-theme-active-text font-semibold"
-            : "text-gray-500 hover:text-gray-900"}
+          className={
+            active === link.key
+              ? "store-theme-active-text font-semibold"
+              : "text-gray-500 hover:text-gray-900"
+          }
         >
           {link.label}
         </a>

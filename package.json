@@ -19,11 +19,16 @@
     "admin:create:dev": "docker compose -f infra/docker/docker-compose.dev.yml exec api pnpm --filter api run admin:create",
     "admin:promote:dev": "docker compose -f infra/docker/docker-compose.dev.yml exec api pnpm --filter api run admin:promote",
     "seed:base:dev": "docker compose -f infra/docker/docker-compose.dev.yml exec api pnpm --filter api run seed:base",
-    "seed:append:dev": "docker compose -f infra/docker/docker-compose.dev.yml exec api pnpm --filter api run seed:append"
+    "seed:append:dev": "docker compose -f infra/docker/docker-compose.dev.yml exec api pnpm --filter api run seed:append",
+    "check:workspaces": "node scripts/ci/check-workspace-scripts.mjs"
   },
   "devDependencies": {
+    "@babel/eslint-parser": "^7.29.9",
+    "@eslint/js": "^9.39.5",
     "@types/node": "^24.0.0",
     "concurrently": "^10.0.5",
+    "eslint": "^9.39.5",
+    "globals": "^17.13.0",
     "nodemon": "^3.1.10",
     "prettier": "^3.4.2",
     "socket.io-client": "^4.8.3",

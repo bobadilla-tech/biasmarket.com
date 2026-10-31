@@ -21,6 +21,7 @@ import {
   getShippingAddress,
 } from "@/features/orders/lib/order-format";
 import { paymentMethodLabels } from "@/features/orders/lib/payment-method-labels";
+import { OriginLabel } from "@/features/buyer-purchases";
 import { ContactSellerButton } from "./contact-seller-button";
 import { orderPaymentsApi } from "../api/order-payments.api";
 import { useSubmitPaymentProof } from "../mutations/use-submit-payment-proof";
@@ -129,11 +130,20 @@ export function AccountOrderDetail({
       </div>
 
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-gray-900">
+        <h1 className="flex flex-wrap items-center gap-2 text-xl font-bold text-gray-900">
           {t("details.title", { number: getOrderNumber(order.id) })}
+          <OriginLabel source={order.source} />
         </h1>
         <OrderStatusBadge order={order} />
       </div>
+      {order.claimedAt && (
+        <Link
+          href={`/my-purchases/orders/${order.id}`}
+          className="text-sm font-medium text-emerald-700 hover:underline"
+        >
+          {tAccount("orderDetail.fullHistory")}
+        </Link>
+      )}
 
       <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
         <h2 className="mb-3 text-sm font-semibold text-gray-900">

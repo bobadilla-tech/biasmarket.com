@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
 const storeSlug = process.env.WEB_E2E_STORE_SLUG ?? "demo-tienda-de-camila";
 const sellerEmail =
@@ -103,8 +103,10 @@ test("landing controls survive 200% text-only zoom", async ({ page }) => {
 
 test("checkout controls survive 200% text-only zoom", async ({ page }) => {
   await page.goto(`/es/store/${storeSlug}`);
+  await page.waitForTimeout(500);
   await page
-    .getByRole("button", { name: /agregar al carrito|add to cart/i })
+    .locator("button:not(:disabled)")
+    .filter({ hasText: /agregar al carrito|add to cart/i })
     .first()
     .click();
   await page.goto(`/es/store/${storeSlug}/checkout`);

@@ -2,9 +2,9 @@ import {
   Injectable,
   type OnModuleDestroy,
   type OnModuleInit,
-} from '@nestjs/common';
-import { PrismaClient } from '@biasmarket/db';
-import { PrismaPg } from '@prisma/adapter-pg';
+} from "@nestjs/common";
+import { PrismaClient } from "@biasmarket/db";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 const DB_TIMEOUT = 5000;
 

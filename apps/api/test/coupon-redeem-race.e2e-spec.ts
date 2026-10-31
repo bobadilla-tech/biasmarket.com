@@ -1,12 +1,12 @@
-import { Test, type TestingModule } from '@nestjs/testing';
-import type { INestApplication } from '@nestjs/common';
-import { PrismaService } from '../src/prisma/prisma.service.js';
-import request from 'supertest';
-import { readdirSync, readFileSync } from 'node:fs';
-import { AppModule } from './../src/app.module.js';
-import { mailerDevDir, waitForNewMailerFile } from './schema-assert.js';
+import { Test, type TestingModule } from "@nestjs/testing";
+import type { INestApplication } from "@nestjs/common";
+import { PrismaService } from "../src/prisma/prisma.service.js";
+import request from "supertest";
+import { readdirSync, readFileSync } from "node:fs";
+import { AppModule } from "./../src/app.module.js";
+import { mailerDevDir, waitForNewMailerFile } from "./schema-assert.js";
 
-// Regression coverage for H2/M1 (docs/plans/2026-08-15-premium-coupon-system-audit.md):
+// Regression coverage for H2/M1 (.artifacts/2026/08/20260815--premium-coupon-system/plan.md):
 // redeemCoupon's maxUses/duplicate check ran inside a $transaction, but under
 // Postgres' default READ COMMITTED isolation that alone doesn't serialize two
 // concurrent transactions — two different users could both count() before
@@ -14,7 +14,7 @@ import { mailerDevDir, waitForNewMailerFile } from './schema-assert.js';
 // letting a maxUses=1 coupon be redeemed twice. The fix row-locks the coupon
 // (`SELECT ... FOR UPDATE`) before the count, so the second transaction
 // blocks until the first commits and its re-read reflects reality.
-describe('coupon redemption race (e2e)', () => {
+describe("coupon redemption race (e2e)", () => {
   let app: INestApplication;
   let prisma: PrismaService;
   let couponId: string | undefined;
@@ -25,7 +25,7 @@ describe('coupon redemption race (e2e)', () => {
 
   const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const couponCode = `RACE${runId.slice(-4).toUpperCase()}`;
-  const password = 'correcthorsebatterystaple';
+  const password = "correcthorsebatterystaple";
 
   async function signUpAndSignIn(email: string): Promise<{
     userId: string;
@@ -34,15 +34,15 @@ describe('coupon redemption race (e2e)', () => {
     const existingMailerFiles = new Set(readdirSync(mailerDevDir));
 
     const signUpRes = await request(app.getHttpServer())
-      .post('/api/auth/sign-up/email')
-      .send({ email, password, name: 'E2E Coupon User' })
+      .post("/api/auth/sign-up/email")
+      .send({ email, password, name: "E2E Coupon User" })
       .expect(200);
     const userId = signUpRes.body.user.id as string;
 
     const mailerFile = await waitForNewMailerFile(existingMailerFiles, email);
-    const html = readFileSync(mailerFile, 'utf-8');
+    const html = readFileSync(mailerFile, "utf-8");
     const tokenMatch = html.match(/verify-email\?token=([^&"]+)/);
-    if (!tokenMatch) throw new Error('verification link not found in email');
+    if (!tokenMatch) throw new Error("verification link not found in email");
     await request(app.getHttpServer())
       .get(`/api/auth/verify-email?token=${tokenMatch[1]}`)
       .expect((res) => {
@@ -52,14 +52,14 @@ describe('coupon redemption race (e2e)', () => {
       });
 
     const signInRes = await request(app.getHttpServer())
-      .post('/api/auth/sign-in/email')
+      .post("/api/auth/sign-in/email")
       .send({ email, password })
       .expect(200);
-    const setCookie = signInRes.headers['set-cookie'] as unknown as string[];
-    const raw = setCookie?.find((c) => c.includes('session_token'));
-    if (!raw) throw new Error('sign-in did not return a session cookie');
+    const setCookie = signInRes.headers["set-cookie"] as unknown as string[];
+    const raw = setCookie?.find((c) => c.includes("session_token"));
+    if (!raw) throw new Error("sign-in did not return a session cookie");
 
-    return { userId, cookie: raw.split(';')[0]! };
+    return { userId, cookie: raw.split(";")[0]! };
   }
 
   beforeAll(async () => {
@@ -83,7 +83,7 @@ describe('coupon redemption race (e2e)', () => {
     const coupon = await prisma.coupon.create({
       data: {
         code: couponCode,
-        name: 'Race test coupon',
+        name: "Race test coupon",
         maxUses: 1,
         durationDays: 30,
         isActive: true,
@@ -102,13 +102,13 @@ describe('coupon redemption race (e2e)', () => {
     await app.close();
   });
 
-  it('two different users redeeming the same maxUses=1 coupon concurrently: exactly one succeeds', async () => {
+  it("two different users redeeming the same maxUses=1 coupon concurrently: exactly one succeeds", async () => {
     const server = app.getHttpServer();
 
     const redeem = (cookie: string) =>
       request(server)
-        .post('/coupons/redeem')
-        .set('Cookie', cookie)
+        .post("/coupons/redeem")
+        .set("Cookie", cookie)
         .send({ code: couponCode });
 
     const [resA, resB] = await Promise.all([redeem(cookieA), redeem(cookieB)]);
@@ -117,7 +117,7 @@ describe('coupon redemption race (e2e)', () => {
     expect(statuses).toEqual([201, 400]);
 
     const failed = resA.status === 400 ? resA : resB;
-    expect(failed.body.message).toBe('Coupon has reached its maximum uses');
+    expect(failed.body.message).toBe("Coupon has reached its maximum uses");
 
     // Exactly one redemption row must exist — the row lock prevents the
     // maxUses=1 coupon from being over-redeemed.

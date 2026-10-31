@@ -4,11 +4,11 @@ import {
   Injectable,
   Logger,
   UnauthorizedException,
-} from '@nestjs/common';
-import { createHash, timingSafeEqual } from 'node:crypto';
-import type { Request } from 'express';
-import { INTERNAL_JOBS_SECRET_HEADER } from '@biasmarket/queue';
-import { requiredEnv } from '../../../config/env.validation.js';
+} from "@nestjs/common";
+import { createHash, timingSafeEqual } from "node:crypto";
+import type { Request } from "express";
+import { INTERNAL_JOBS_SECRET_HEADER } from "@biasmarket/queue";
+import { requiredEnv } from "../../../config/env.validation.js";
 
 // Last line of defense for /internal/* routes (see the migration plan's
 // "three layers" note) — Caddy blocks this path from the public internet
@@ -22,9 +22,9 @@ export class InternalJobsSecretGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request>();
     const provided = request.headers[INTERNAL_JOBS_SECRET_HEADER];
-    const secret = requiredEnv('INTERNAL_JOBS_SECRET');
+    const secret = requiredEnv("INTERNAL_JOBS_SECRET");
 
-    if (typeof provided !== 'string' || !constantTimeEquals(provided, secret)) {
+    if (typeof provided !== "string" || !constantTimeEquals(provided, secret)) {
       // An auth failure here is a more interesting signal than a routine
       // 401 — something reached an internal endpoint it shouldn't have.
       // Worth its own log line, not lumped in with normal auth noise.
@@ -34,7 +34,7 @@ export class InternalJobsSecretGuard implements CanActivate {
       throw new UnauthorizedException();
     }
 
-    this.logger.log('Authenticated an /internal request');
+    this.logger.log("Authenticated an /internal request");
     return true;
   }
 }
@@ -42,7 +42,7 @@ export class InternalJobsSecretGuard implements CanActivate {
 // Compare fixed-length hashes rather than raw secret bytes so the timing
 // profile does not reveal the length of the configured secret.
 function constantTimeEquals(a: string, b: string): boolean {
-  const hashA = createHash('sha256').update(a).digest();
-  const hashB = createHash('sha256').update(b).digest();
+  const hashA = createHash("sha256").update(a).digest();
+  const hashB = createHash("sha256").update(b).digest();
   return timingSafeEqual(hashA, hashB);
 }

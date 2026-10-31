@@ -54,8 +54,7 @@ smoke_web_direct() {
 
 # smoke_public_domain — post-switch check against the real public domains
 # (after a Caddy canary/full switch), run from the VPS itself over curl.
-# Requires curl on the VPS host (see docs/core/blue-green-migrations.md
-# provisioning notes).
+# Requires curl on the VPS host (see docs/core/provisioning.md).
 smoke_public_domain() {
   local api_status web_status
   api_status="$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "https://api.biasmarket.com/api/stores/directory" || echo "000")"

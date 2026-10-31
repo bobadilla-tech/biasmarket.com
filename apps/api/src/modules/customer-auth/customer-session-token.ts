@@ -1,6 +1,6 @@
-import type { Request } from 'express';
-import { verifyCustomerSessionToken } from '@biasmarket/utils/customer-account-token';
-import { CUSTOMER_SESSION_COOKIE } from './customer-session.constants.js';
+import type { Request } from "express";
+import { verifyCustomerSessionToken } from "@biasmarket/utils/customer-account-token";
+import { CUSTOMER_SESSION_COOKIE } from "./customer-session.constants.js";
 
 // No cookie-parser middleware is installed in this app (see main.ts) — the
 // session token's own characters (base64url + ".") never need escaping, so
@@ -8,8 +8,8 @@ import { CUSTOMER_SESSION_COOKIE } from './customer-session.constants.js';
 function parseCookies(header: string | undefined): Record<string, string> {
   const cookies: Record<string, string> = {};
   if (!header) return cookies;
-  for (const part of header.split(';')) {
-    const separator = part.indexOf('=');
+  for (const part of header.split(";")) {
+    const separator = part.indexOf("=");
     if (separator === -1) continue;
     const key = part.slice(0, separator).trim();
     if (key) cookies[key] = part.slice(separator + 1).trim();

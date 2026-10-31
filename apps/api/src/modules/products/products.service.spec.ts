@@ -1,15 +1,15 @@
-import { Test, type TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from "@nestjs/testing";
 import {
   BadRequestException,
   ForbiddenException,
   NotFoundException,
-} from '@nestjs/common';
-import { type Mock, vi } from 'vitest';
-import { ProductsService } from './products.service.js';
-import { PrismaService } from '../../prisma/prisma.service.js';
-import { NotificationsService } from '../notifications/notifications.service.js';
+} from "@nestjs/common";
+import { type Mock, vi } from "vitest";
+import { ProductsService } from "./products.service.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
+import { NotificationsService } from "../notifications/notifications.service.js";
 
-describe('ProductsService', () => {
+describe("ProductsService", () => {
   let service: ProductsService;
   let prisma: {
     store: { findUnique: Mock; update: Mock };
@@ -34,9 +34,9 @@ describe('ProductsService', () => {
     $transaction: Mock;
   };
 
-  const ownerId = 'user-1';
-  const storeId = 'store-1';
-  const productId = 'product-1';
+  const ownerId = "user-1";
+  const storeId = "store-1";
+  const productId = "product-1";
 
   beforeEach(async () => {
     prisma = {
@@ -76,8 +76,8 @@ describe('ProductsService', () => {
     service = module.get<ProductsService>(ProductsService);
   });
 
-  describe('ownership checks', () => {
-    it('throws NotFoundException when the store does not exist', async () => {
+  describe("ownership checks", () => {
+    it("throws NotFoundException when the store does not exist", async () => {
       prisma.store.findUnique.mockResolvedValue(null);
 
       await expect(service.findAllForStore(storeId, ownerId)).rejects.toThrow(
@@ -85,10 +85,10 @@ describe('ProductsService', () => {
       );
     });
 
-    it('throws ForbiddenException when the user does not own the store', async () => {
+    it("throws ForbiddenException when the user does not own the store", async () => {
       prisma.store.findUnique.mockResolvedValue({
         id: storeId,
-        ownerId: 'someone-else',
+        ownerId: "someone-else",
       });
 
       await expect(service.findAllForStore(storeId, ownerId)).rejects.toThrow(
@@ -97,12 +97,12 @@ describe('ProductsService', () => {
     });
   });
 
-  describe('findOwnedProduct (via update)', () => {
+  describe("findOwnedProduct (via update)", () => {
     beforeEach(() => {
       prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
     });
 
-    it('throws NotFoundException when the product does not exist', async () => {
+    it("throws NotFoundException when the product does not exist", async () => {
       prisma.product.findUnique.mockResolvedValue(null);
 
       await expect(
@@ -110,10 +110,10 @@ describe('ProductsService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('throws NotFoundException when the product belongs to a different store', async () => {
+    it("throws NotFoundException when the product belongs to a different store", async () => {
       prisma.product.findUnique.mockResolvedValue({
         id: productId,
-        storeId: 'other-store',
+        storeId: "other-store",
       });
 
       await expect(
@@ -122,62 +122,62 @@ describe('ProductsService', () => {
     });
   });
 
-  it('create() creates the product scoped to the store after ownership passes', async () => {
+  it("create() creates the product scoped to the store after ownership passes", async () => {
     prisma.store.findUnique.mockResolvedValue({
       id: storeId,
       ownerId,
-      defaultCurrency: 'PEN',
+      defaultCurrency: "PEN",
     });
     prisma.product.create.mockResolvedValue({ id: productId });
-    const dto = { name: 'Widget', price: 10 };
+    const dto = { name: "Widget", price: 10 };
 
     await service.create(storeId, ownerId, dto);
 
     expect(prisma.product.create).toHaveBeenCalledWith({
-      data: { ...dto, storeId, currency: 'PEN' },
+      data: { ...dto, storeId, currency: "PEN" },
     });
   });
 
-  it('create() creates a default variant when stock is provided', async () => {
+  it("create() creates a default variant when stock is provided", async () => {
     prisma.store.findUnique.mockResolvedValue({
       id: storeId,
       ownerId,
-      defaultCurrency: 'PEN',
+      defaultCurrency: "PEN",
     });
     prisma.product.create.mockResolvedValue({ id: productId });
-    const dto = { name: 'Widget', price: 10, stock: 12 };
+    const dto = { name: "Widget", price: 10, stock: 12 };
 
     await service.create(storeId, ownerId, dto);
 
     expect(prisma.product.create).toHaveBeenCalledWith({
-      data: { name: 'Widget', price: 10, storeId, currency: 'PEN' },
+      data: { name: "Widget", price: 10, storeId, currency: "PEN" },
     });
     expect(prisma.productVariant.create).toHaveBeenCalledWith({
       data: {
         productId,
         storeId,
-        name: 'Default',
+        name: "Default",
         stock: 12,
       },
     });
   });
 
-  it('create() creates multiple variants when variants are provided', async () => {
+  it("create() creates multiple variants when variants are provided", async () => {
     prisma.store.findUnique.mockResolvedValue({
       id: storeId,
       ownerId,
-      defaultCurrency: 'PEN',
+      defaultCurrency: "PEN",
     });
     prisma.product.create.mockResolvedValue({ id: productId });
     const dto = {
-      name: 'Widget',
+      name: "Widget",
       price: 10,
       variants: [
-        { name: 'Red / S', stock: 3, attributes: { Color: 'Red', Size: 'S' } },
+        { name: "Red / S", stock: 3, attributes: { Color: "Red", Size: "S" } },
         {
-          name: 'Blue / M',
+          name: "Blue / M",
           stock: 2,
-          attributes: { Color: 'Blue', Size: 'M' },
+          attributes: { Color: "Blue", Size: "M" },
         },
       ],
     };
@@ -187,18 +187,18 @@ describe('ProductsService', () => {
     expect(prisma.productVariant.create).toHaveBeenCalledTimes(2);
     expect(prisma.productVariant.create).toHaveBeenNthCalledWith(1, {
       data: {
-        name: 'Red / S',
+        name: "Red / S",
         stock: 3,
-        attributes: { Color: 'Red', Size: 'S' },
+        attributes: { Color: "Red", Size: "S" },
         productId,
         storeId,
       },
     });
     expect(prisma.productVariant.create).toHaveBeenNthCalledWith(2, {
       data: {
-        name: 'Blue / M',
+        name: "Blue / M",
         stock: 2,
-        attributes: { Color: 'Blue', Size: 'M' },
+        attributes: { Color: "Blue", Size: "M" },
         productId,
         storeId,
       },
@@ -209,38 +209,38 @@ describe('ProductsService', () => {
     prisma.store.findUnique.mockResolvedValue({
       id: storeId,
       ownerId,
-      defaultCurrency: 'PEN',
+      defaultCurrency: "PEN",
     });
     prisma.product.create.mockResolvedValue({ id: productId });
-    const dto = { name: 'Widget', price: 10, currency: 'USD' };
+    const dto = { name: "Widget", price: 10, currency: "USD" };
 
     await service.create(storeId, ownerId, dto);
 
     expect(prisma.product.create).toHaveBeenCalledWith({
-      data: { ...dto, storeId, currency: 'USD' },
+      data: { ...dto, storeId, currency: "USD" },
     });
   });
 
-  it('create() returns the product with its created variants included', async () => {
+  it("create() returns the product with its created variants included", async () => {
     prisma.store.findUnique.mockResolvedValue({
       id: storeId,
       ownerId,
-      defaultCurrency: 'PEN',
+      defaultCurrency: "PEN",
     });
     prisma.product.create.mockResolvedValue({ id: productId });
     const created = {
       id: productId,
-      variants: [{ id: 'v1', name: 'Red / S' }],
+      variants: [{ id: "v1", name: "Red / S" }],
     };
     prisma.product.findUniqueOrThrow.mockResolvedValue(created);
     const dto = {
-      name: 'Widget',
+      name: "Widget",
       price: 10,
       variants: [
         {
-          name: 'Red / S',
+          name: "Red / S",
           stock: 3,
-          attributes: { Color: 'Red', Size: 'S' },
+          attributes: { Color: "Red", Size: "S" },
         },
       ],
     };
@@ -254,7 +254,7 @@ describe('ProductsService', () => {
     expect(result).toBe(created);
   });
 
-  it('findAllForStore() filters out soft-deleted products and includes variants', async () => {
+  it("findAllForStore() filters out soft-deleted products and includes variants", async () => {
     prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
     prisma.product.findMany.mockResolvedValue([]);
     prisma.orderItem.groupBy.mockResolvedValue([]);
@@ -267,12 +267,12 @@ describe('ProductsService', () => {
     });
   });
 
-  it('findAllForStore() returns soldUnits and availableStock', async () => {
+  it("findAllForStore() returns soldUnits and availableStock", async () => {
     prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
     prisma.product.findMany.mockResolvedValue([
       {
         id: productId,
-        variants: [{ id: 'v1', stock: 12, reserved: 2 }],
+        variants: [{ id: "v1", stock: 12, reserved: 2 }],
         categories: [],
       },
     ]);
@@ -285,7 +285,7 @@ describe('ProductsService', () => {
     expect(result).toEqual([
       {
         id: productId,
-        variants: [{ id: 'v1', stock: 12, reserved: 2 }],
+        variants: [{ id: "v1", stock: 12, reserved: 2 }],
         categories: [],
         soldUnits: 4,
         availableStock: 10,
@@ -293,13 +293,13 @@ describe('ProductsService', () => {
     ]);
   });
 
-  it('findOne() returns product details with soldUnits and availableStock', async () => {
+  it("findOne() returns product details with soldUnits and availableStock", async () => {
     prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
     prisma.product.findUnique.mockResolvedValue({
       id: productId,
       storeId,
       deletedAt: null,
-      variants: [{ id: 'v1', stock: 12, reserved: 2 }],
+      variants: [{ id: "v1", stock: 12, reserved: 2 }],
       categories: [],
     });
     prisma.orderItem.aggregate.mockResolvedValue({ _sum: { quantity: 4 } });
@@ -314,14 +314,14 @@ describe('ProductsService', () => {
       id: productId,
       storeId,
       deletedAt: null,
-      variants: [{ id: 'v1', stock: 12, reserved: 2 }],
+      variants: [{ id: "v1", stock: 12, reserved: 2 }],
       categories: [],
       soldUnits: 4,
       availableStock: 10,
     });
   });
 
-  it('publish() sets the product status to PUBLISHED', async () => {
+  it("publish() sets the product status to PUBLISHED", async () => {
     prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
     prisma.product.findUnique.mockResolvedValue({ id: productId, storeId });
     prisma.product.update.mockResolvedValue({});
@@ -330,11 +330,11 @@ describe('ProductsService', () => {
 
     expect(prisma.product.update).toHaveBeenCalledWith({
       where: { id: productId },
-      data: { status: 'PUBLISHED' },
+      data: { status: "PUBLISHED" },
     });
   });
 
-  it('softDelete() sets deletedAt and forces status back to DRAFT', async () => {
+  it("softDelete() sets deletedAt and forces status back to DRAFT", async () => {
     prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
     prisma.product.findUnique.mockResolvedValue({ id: productId, storeId });
     prisma.product.update.mockResolvedValue({});
@@ -346,9 +346,8 @@ describe('ProductsService', () => {
       status: string;
       discontinued: boolean;
     } = {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any() is untyped in Jest's matcher API
       deletedAt: expect.any(Date),
-      status: 'DRAFT',
+      status: "DRAFT",
       discontinued: false,
     };
     expect(prisma.product.update).toHaveBeenCalledWith({
@@ -357,7 +356,7 @@ describe('ProductsService', () => {
     });
   });
 
-  describe('publishedProductCount maintenance', () => {
+  describe("publishedProductCount maintenance", () => {
     beforeEach(() => {
       prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
       prisma.product.findUnique.mockResolvedValue({ id: productId, storeId });
@@ -366,12 +365,12 @@ describe('ProductsService', () => {
 
     const RECOUNT_WHERE = {
       storeId,
-      status: 'PUBLISHED',
+      status: "PUBLISHED",
       discontinued: false,
       deletedAt: null,
     };
 
-    it('recounts published products across publish -> discontinue -> delete', async () => {
+    it("recounts published products across publish -> discontinue -> delete", async () => {
       // publish(): one product now counts
       prisma.product.count.mockResolvedValueOnce(1);
       await service.publish(productId, storeId, ownerId);
@@ -382,7 +381,6 @@ describe('ProductsService', () => {
         where: { id: storeId },
         data: {
           publishedProductCount: 1,
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any() is untyped
           contentStaleAt: expect.any(Date),
         },
       });
@@ -394,7 +392,6 @@ describe('ProductsService', () => {
         where: { id: storeId },
         data: {
           publishedProductCount: 0,
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any() is untyped
           contentStaleAt: expect.any(Date),
         },
       });
@@ -406,24 +403,23 @@ describe('ProductsService', () => {
         where: { id: storeId },
         data: {
           publishedProductCount: 0,
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any() is untyped
           contentStaleAt: expect.any(Date),
         },
       });
     });
 
-    it('does not recount on an update that leaves product status untouched', async () => {
+    it("does not recount on an update that leaves product status untouched", async () => {
       await service.update(productId, storeId, ownerId, { price: 42 });
       expect(prisma.product.count).not.toHaveBeenCalled();
       expect(prisma.store.update).not.toHaveBeenCalled();
     });
   });
 
-  it('addVariant() creates a variant scoped to the owned product', async () => {
+  it("addVariant() creates a variant scoped to the owned product", async () => {
     prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
     prisma.product.findUnique.mockResolvedValue({ id: productId, storeId });
     prisma.productVariant.create.mockResolvedValue({});
-    const dto = { name: 'Large' };
+    const dto = { name: "Large" };
 
     await service.addVariant(productId, storeId, ownerId, dto);
 
@@ -432,7 +428,7 @@ describe('ProductsService', () => {
     });
   });
 
-  it('listVariants() lists variants for the owned product', async () => {
+  it("listVariants() lists variants for the owned product", async () => {
     prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
     prisma.product.findUnique.mockResolvedValue({ id: productId, storeId });
     prisma.productVariant.findMany.mockResolvedValue([]);
@@ -443,118 +439,118 @@ describe('ProductsService', () => {
       where: { productId },
     });
   });
-  it('updateVariant() updates a variant scoped to the owned product', async () => {
+  it("updateVariant() updates a variant scoped to the owned product", async () => {
     prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
     prisma.product.findUnique.mockResolvedValue({ id: productId, storeId });
     prisma.productVariant.findUnique.mockResolvedValue({
-      id: 'v1',
+      id: "v1",
       productId,
       storeId,
     });
     prisma.productVariant.update.mockResolvedValue({});
 
-    await service.updateVariant(productId, 'v1', storeId, ownerId, {
+    await service.updateVariant(productId, "v1", storeId, ownerId, {
       stock: 5,
     });
 
     expect(prisma.productVariant.update).toHaveBeenCalledWith({
-      where: { id: 'v1' },
+      where: { id: "v1" },
       data: { stock: 5 },
     });
   });
 
-  it('deleteVariant() throws when variant has order items', async () => {
+  it("deleteVariant() throws when variant has order items", async () => {
     prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
     prisma.product.findUnique.mockResolvedValue({ id: productId, storeId });
     prisma.productVariant.findUnique.mockResolvedValue({
-      id: 'v1',
+      id: "v1",
       productId,
       storeId,
     });
     prisma.orderItem.count.mockResolvedValue(1);
 
     await expect(
-      service.deleteVariant(productId, 'v1', storeId, ownerId),
+      service.deleteVariant(productId, "v1", storeId, ownerId),
     ).rejects.toThrow(BadRequestException);
   });
 
-  describe('addImage', () => {
+  describe("addImage", () => {
     beforeEach(() => {
       prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
     });
 
-    it('appends a new image to the array', async () => {
+    it("appends a new image to the array", async () => {
       prisma.product.findUnique.mockResolvedValue({
         id: productId,
         storeId,
-        images: ['a.png'],
+        images: ["a.png"],
       });
       prisma.product.update.mockResolvedValue({});
 
-      await service.addImage(productId, storeId, ownerId, 'b.png');
+      await service.addImage(productId, storeId, ownerId, "b.png");
 
       expect(prisma.product.update).toHaveBeenCalledWith({
         where: { id: productId },
-        data: { images: ['a.png', 'b.png'] },
+        data: { images: ["a.png", "b.png"] },
       });
     });
 
-    it('replaces the first image when replace is true', async () => {
+    it("replaces the first image when replace is true", async () => {
       prisma.product.findUnique.mockResolvedValue({
         id: productId,
         storeId,
-        images: ['old.png', '2.png'],
+        images: ["old.png", "2.png"],
       });
       prisma.product.update.mockResolvedValue({});
 
-      await service.addImage(productId, storeId, ownerId, 'new.png', true);
+      await service.addImage(productId, storeId, ownerId, "new.png", true);
 
       expect(prisma.product.update).toHaveBeenCalledWith({
         where: { id: productId },
-        data: { images: ['new.png', '2.png'] },
+        data: { images: ["new.png", "2.png"] },
       });
     });
 
-    it('throws BadRequestException when max images reached without replace', async () => {
+    it("throws BadRequestException when max images reached without replace", async () => {
       prisma.product.findUnique.mockResolvedValue({
         id: productId,
         storeId,
-        images: ['1.png', '2.png', '3.png', '4.png', '5.png', '6.png'],
+        images: ["1.png", "2.png", "3.png", "4.png", "5.png", "6.png"],
       });
 
       await expect(
-        service.addImage(productId, storeId, ownerId, '7.png'),
+        service.addImage(productId, storeId, ownerId, "7.png"),
       ).rejects.toThrow(BadRequestException);
     });
   });
 
-  describe('removeImage', () => {
+  describe("removeImage", () => {
     beforeEach(() => {
       prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
     });
 
-    it('removes the image at the given index and returns the removed URL', async () => {
+    it("removes the image at the given index and returns the removed URL", async () => {
       prisma.product.findUnique.mockResolvedValue({
         id: productId,
         storeId,
-        images: ['a.png', 'b.png', 'c.png'],
+        images: ["a.png", "b.png", "c.png"],
       });
       prisma.product.update.mockResolvedValue({});
 
       const result = await service.removeImage(productId, storeId, ownerId, 1);
 
-      expect(result).toEqual({ removed: 'b.png' });
+      expect(result).toEqual({ removed: "b.png" });
       expect(prisma.product.update).toHaveBeenCalledWith({
         where: { id: productId },
-        data: { images: ['a.png', 'c.png'] },
+        data: { images: ["a.png", "c.png"] },
       });
     });
 
-    it('throws BadRequestException for out-of-range index', async () => {
+    it("throws BadRequestException for out-of-range index", async () => {
       prisma.product.findUnique.mockResolvedValue({
         id: productId,
         storeId,
-        images: ['a.png'],
+        images: ["a.png"],
       });
 
       await expect(
@@ -562,11 +558,11 @@ describe('ProductsService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('throws BadRequestException for negative index', async () => {
+    it("throws BadRequestException for negative index", async () => {
       prisma.product.findUnique.mockResolvedValue({
         id: productId,
         storeId,
-        images: ['a.png'],
+        images: ["a.png"],
       });
 
       await expect(
@@ -575,94 +571,94 @@ describe('ProductsService', () => {
     });
   });
 
-  describe('reorderImages', () => {
+  describe("reorderImages", () => {
     beforeEach(() => {
       prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
     });
 
-    it('replaces the images array with the new order', async () => {
+    it("replaces the images array with the new order", async () => {
       prisma.product.findUnique.mockResolvedValue({
         id: productId,
         storeId,
-        images: ['a.png', 'b.png', 'c.png'],
+        images: ["a.png", "b.png", "c.png"],
       });
       prisma.product.update.mockResolvedValue({});
 
       await service.reorderImages(productId, storeId, ownerId, [
-        'c.png',
-        'a.png',
-        'b.png',
+        "c.png",
+        "a.png",
+        "b.png",
       ]);
 
       expect(prisma.product.update).toHaveBeenCalledWith({
         where: { id: productId },
-        data: { images: ['c.png', 'a.png', 'b.png'] },
+        data: { images: ["c.png", "a.png", "b.png"] },
       });
     });
 
-    it('throws BadRequestException when URLs are not in the current set', async () => {
+    it("throws BadRequestException when URLs are not in the current set", async () => {
       prisma.product.findUnique.mockResolvedValue({
         id: productId,
         storeId,
-        images: ['a.png', 'b.png'],
+        images: ["a.png", "b.png"],
       });
 
       await expect(
         service.reorderImages(productId, storeId, ownerId, [
-          'a.png',
-          'foreign.png',
+          "a.png",
+          "foreign.png",
         ]),
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('throws BadRequestException when submitted list has a different length', async () => {
+    it("throws BadRequestException when submitted list has a different length", async () => {
       prisma.product.findUnique.mockResolvedValue({
         id: productId,
         storeId,
-        images: ['a.png', 'b.png'],
+        images: ["a.png", "b.png"],
       });
 
       await expect(
-        service.reorderImages(productId, storeId, ownerId, ['a.png']),
+        service.reorderImages(productId, storeId, ownerId, ["a.png"]),
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('throws BadRequestException when submitted list has duplicates', async () => {
+    it("throws BadRequestException when submitted list has duplicates", async () => {
       prisma.product.findUnique.mockResolvedValue({
         id: productId,
         storeId,
-        images: ['a.png', 'b.png'],
+        images: ["a.png", "b.png"],
       });
 
       await expect(
-        service.reorderImages(productId, storeId, ownerId, ['a.png', 'a.png']),
+        service.reorderImages(productId, storeId, ownerId, ["a.png", "a.png"]),
       ).rejects.toThrow(BadRequestException);
     });
   });
 
-  describe('clearImages', () => {
+  describe("clearImages", () => {
     beforeEach(() => {
       prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
     });
 
-    it('empties the images array and returns removed URLs', async () => {
+    it("empties the images array and returns removed URLs", async () => {
       prisma.product.findUnique.mockResolvedValue({
         id: productId,
         storeId,
-        images: ['a.png', 'b.png'],
+        images: ["a.png", "b.png"],
       });
       prisma.product.update.mockResolvedValue({});
 
       const result = await service.clearImages(productId, storeId, ownerId);
 
-      expect(result).toEqual({ removed: ['a.png', 'b.png'] });
+      expect(result).toEqual({ removed: ["a.png", "b.png"] });
       expect(prisma.product.update).toHaveBeenCalledWith({
         where: { id: productId },
         data: { images: [] },
       });
     });
 
-    it('returns empty removed array when product has no images', async () => {
+    it("returns empty removed array when product has no images", async () => {
       prisma.product.findUnique.mockResolvedValue({
         id: productId,
         storeId,
@@ -676,51 +672,51 @@ describe('ProductsService', () => {
     });
   });
 
-  describe('addVariantImage', () => {
+  describe("addVariantImage", () => {
     beforeEach(() => {
       prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
       prisma.product.findUnique.mockResolvedValue({ id: productId, storeId });
     });
 
-    it('sets imageOverride on the owned variant', async () => {
+    it("sets imageOverride on the owned variant", async () => {
       prisma.productVariant.findUnique.mockResolvedValue({
-        id: 'v1',
+        id: "v1",
         productId,
         storeId,
       });
       prisma.productVariant.update.mockResolvedValue({});
 
       await service.addVariantImage(
-        'v1',
+        "v1",
         productId,
         storeId,
         ownerId,
-        'photo.png',
+        "photo.png",
       );
 
       expect(prisma.productVariant.update).toHaveBeenCalledWith({
-        where: { id: 'v1' },
-        data: { imageOverride: 'photo.png' },
+        where: { id: "v1" },
+        data: { imageOverride: "photo.png" },
       });
     });
 
-    it('throws NotFoundException when the variant does not exist', async () => {
+    it("throws NotFoundException when the variant does not exist", async () => {
       prisma.productVariant.findUnique.mockResolvedValue(null);
 
       await expect(
-        service.addVariantImage('v1', productId, storeId, ownerId, 'photo.png'),
+        service.addVariantImage("v1", productId, storeId, ownerId, "photo.png"),
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('throws NotFoundException when the variant belongs to a different product', async () => {
+    it("throws NotFoundException when the variant belongs to a different product", async () => {
       prisma.productVariant.findUnique.mockResolvedValue({
-        id: 'v1',
-        productId: 'other-product',
+        id: "v1",
+        productId: "other-product",
         storeId,
       });
 
       await expect(
-        service.addVariantImage('v1', productId, storeId, ownerId, 'photo.png'),
+        service.addVariantImage("v1", productId, storeId, ownerId, "photo.png"),
       ).rejects.toThrow(NotFoundException);
     });
   });

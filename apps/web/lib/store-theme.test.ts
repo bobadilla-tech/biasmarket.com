@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  contrastRatio,
   DEFAULT_STORE_PALETTE,
+  ensureContrast,
   getStoreThemeStyle,
   resolveStorePalette,
+  STORE_PALETTES,
 } from "./store-theme";
 
 describe("store theme", () => {
@@ -33,5 +36,35 @@ describe("store theme", () => {
       "--store-primary": "#0f766e",
       "--store-accent": "#22c55e",
     });
+  });
+
+  it("meets AA contrast for price, active tabs, and button gradient across all presets", () => {
+    for (const palette of STORE_PALETTES) {
+      const style = getStoreThemeStyle({
+        paletteId: palette.id,
+      }) as unknown as Record<string, string>;
+      expect(
+        contrastRatio(style["--store-price"], "#ffffff"),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(style["--store-tab-active"], "#ffffff"),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(style["--store-tab-active"], palette.colors.surface),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(style["--store-placeholder"]).toBe(style["--store-tab-active"]);
+      expect(
+        contrastRatio(style["--store-gradient-start"], "#ffffff"),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(style["--store-gradient-end"], "#ffffff"),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(style["--store-placeholder"], palette.colors.surface),
+      ).toBeGreaterThanOrEqual(4.5);
+    }
+    expect(
+      contrastRatio(ensureContrast("rgb(244, 114, 182)", "#fff", 4.5), "#fff"),
+    ).toBeGreaterThanOrEqual(4.5);
   });
 });

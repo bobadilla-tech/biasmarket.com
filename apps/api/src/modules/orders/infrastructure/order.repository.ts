@@ -2,11 +2,18 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
-import type { FulfillmentStatus, PaymentStatus, Prisma } from '@biasmarket/db';
-import { PrismaService } from '../../../prisma/prisma.service.js';
-import { Order } from '../domain/order.entity.js';
-import { withPaymentSummary } from '../../../common/payment-summary.js';
+} from "@nestjs/common";
+import type { FulfillmentStatus, PaymentStatus, Prisma } from "@biasmarket/db";
+import { PrismaService } from "../../../prisma/prisma.service.js";
+import { Order } from "../domain/order.entity.js";
+import { normalizePhone } from "@biasmarket/utils/phone-country";
+import { orderRef } from "@biasmarket/utils/order-ref";
+import { withPaymentSummary } from "../../../common/payment-summary.js";
+import type { RelatedOrdersResponseDto } from "../dto/related-orders-response.dto.js";
+
+const RELATED_ORDERS_LIMIT = 10;
+// Main had no cap on the legacy scan; documented as a lower bound beyond it.
+const LEGACY_SCAN_CAP = 500;
 
 @Injectable()
 export class OrderRepository {
@@ -16,9 +23,9 @@ export class OrderRepository {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException('Store no encontrada');
+    if (!store) throw new NotFoundException("Store no encontrada");
     if (store.ownerId !== userId) {
-      throw new ForbiddenException('No sos dueño de esta store');
+      throw new ForbiddenException("No sos dueño de esta store");
     }
     return store;
   }
@@ -26,11 +33,13 @@ export class OrderRepository {
   async findRowByIdForStore(orderId: string, storeId: string) {
     const includeWithPayments = {
       items: { include: { product: true, variant: true } },
-      payments: { orderBy: { createdAt: 'desc' } },
+      createdBy: { select: { name: true } },
+      payments: { orderBy: { createdAt: "desc" } },
     } as const;
 
     const includeWithoutPayments = {
       items: { include: { product: true, variant: true } },
+      createdBy: { select: { name: true } },
     } as const;
 
     let order: any;
@@ -49,7 +58,7 @@ export class OrderRepository {
       }
     }
     if (!order || order.storeId !== storeId) {
-      throw new NotFoundException('Orden no encontrada');
+      throw new NotFoundException("Orden no encontrada");
     }
     return withPaymentSummary(order);
   }
@@ -63,16 +72,93 @@ export class OrderRepository {
       where: { id: paymentId, orderId, storeId },
     });
     if (!payment) {
-      throw new NotFoundException('Pago no encontrado');
+      throw new NotFoundException("Pago no encontrado");
     }
     return payment;
+  }
+
+  // Other orders of the same buyer phone in the same store (never across
+  // stores: every query carries `storeId`). Indexed rows come from
+  // `(storeId, customerPhoneNormalized, createdAt)`; rows written before that
+  // column existed are normalised in memory, bounded by LEGACY_SCAN_CAP, so for
+  // legacy rows both `items` and `total` are best-effort. The items query and
+  // the count are separate statements without a shared snapshot, so a
+  // concurrent insert can make them differ by one.
+  async findRelatedForStore(
+    storeId: string,
+    order: {
+      id: string;
+      customerPhone: string;
+      customerPhoneNormalized: string | null;
+    },
+    limit = RELATED_ORDERS_LIMIT,
+  ): Promise<RelatedOrdersResponseDto> {
+    const phone =
+      order.customerPhoneNormalized ?? normalizePhone(order.customerPhone);
+    const where = {
+      storeId,
+      customerPhoneNormalized: phone,
+      id: { not: order.id },
+    };
+    const select = {
+      id: true,
+      createdAt: true,
+      status: true,
+      paymentStatus: true,
+      fulfillmentStatus: true,
+      totalAmount: true,
+      currency: true,
+      source: true,
+    } as const;
+
+    const [indexed, indexedCount, legacy] = await Promise.all([
+      this.prisma.order.findMany({
+        where,
+        select,
+        orderBy: { createdAt: "desc" },
+        take: limit,
+      }),
+      this.prisma.order.count({ where }),
+      this.prisma.order.findMany({
+        where: {
+          storeId,
+          customerPhoneNormalized: null,
+          id: { not: order.id },
+        },
+        select: { ...select, customerPhone: true },
+        orderBy: { createdAt: "desc" },
+        take: LEGACY_SCAN_CAP,
+      }),
+    ]);
+    const legacyMatches = legacy.filter(
+      (row) =>
+        row.customerPhone.trim() !== "" &&
+        normalizePhone(row.customerPhone) === phone,
+    );
+
+    const items = [...indexed, ...legacyMatches]
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, limit)
+      .map((row) => ({
+        id: row.id,
+        orderNumber: orderRef(row.id),
+        createdAt: row.createdAt.toISOString(),
+        status: row.status,
+        paymentStatus: row.paymentStatus,
+        fulfillmentStatus: row.fulfillmentStatus,
+        totalAmount: row.totalAmount.toString(),
+        currency: row.currency,
+        source: row.source,
+      }));
+
+    return { items, total: indexedCount + legacyMatches.length };
   }
 
   // Buyer-facing equivalent of `findRowByIdForStore` — same store-scoped 404,
   // plus a `buyerAccountId` check so a buyer can only ever reach their own
   // orders. Guest orders (`buyerAccountId === null`) can never match a real
   // session's `buyerAccountId`, so they 404 here too — expected, per
-  // docs/plans/2026-08-08-buyer-proof-of-payment-upload-plan.md's stated
+  // .artifacts/2026/08/20260808--buyer-proof-of-payment-upload/plan.md's stated
   // non-goal (guest orders don't have a buyer session to authenticate this
   // endpoint with in the first place).
   async findOrderForBuyer(
@@ -85,7 +171,7 @@ export class OrderRepository {
       (order as { buyerAccountId: string | null }).buyerAccountId !==
       buyerAccountId
     ) {
-      throw new NotFoundException('Orden no encontrada');
+      throw new NotFoundException("Orden no encontrada");
     }
     return order;
   }
@@ -104,7 +190,7 @@ export class OrderRepository {
       where: { id: paymentId, orderId, order: { buyerAccountId } },
     });
     if (!payment) {
-      throw new NotFoundException('Pago no encontrado');
+      throw new NotFoundException("Pago no encontrado");
     }
     return payment;
   }
@@ -126,25 +212,27 @@ export class OrderRepository {
 
     const includeWithPayments = {
       items: { include: { product: true, variant: true } },
-      payments: { orderBy: { createdAt: 'desc' } },
+      createdBy: { select: { name: true } },
+      payments: { orderBy: { createdAt: "desc" } },
     } as const;
 
     const includeWithoutPayments = {
       items: { include: { product: true, variant: true } },
+      createdBy: { select: { name: true } },
     } as const;
 
     try {
       const orders = await this.prisma.order.findMany({
         where,
         include: includeWithPayments,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       });
       return orders.map((order) => withPaymentSummary(order));
     } catch {
       const orders = await this.prisma.order.findMany({
         where,
         include: includeWithoutPayments,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       });
       return orders.map((order) =>
         withPaymentSummary({ ...order, payments: [] }),
@@ -171,6 +259,7 @@ export class OrderRepository {
     data: {
       paymentStatus?: PaymentStatus;
       fulfillmentStatus?: FulfillmentStatus;
+      closedAt?: Date;
     },
     tx: Prisma.TransactionClient | PrismaService = this.prisma,
   ) {

@@ -63,6 +63,8 @@ ARG NEXT_PUBLIC_SANITY_PROJECT_ID
 ENV NEXT_PUBLIC_SANITY_PROJECT_ID=$NEXT_PUBLIC_SANITY_PROJECT_ID
 ARG NEXT_PUBLIC_SANITY_DATASET
 ENV NEXT_PUBLIC_SANITY_DATASET=$NEXT_PUBLIC_SANITY_DATASET
+ARG NEXT_PUBLIC_STOREFRONT_REDESIGN_STORE_SLUGS=korealexa
+ENV NEXT_PUBLIC_STOREFRONT_REDESIGN_STORE_SLUGS=$NEXT_PUBLIC_STOREFRONT_REDESIGN_STORE_SLUGS
 # Turbo's own cache (task hashes/outputs) is BuildKit-cache-mounted the same
 # way the pnpm store is above — without it, every build recompiles every
 # workspace package from scratch even when only one file changed, since

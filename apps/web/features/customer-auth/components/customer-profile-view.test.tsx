@@ -48,6 +48,8 @@ const profile = {
       paidAmount: 100,
       pendingAmount: 0,
       paidPercentage: 100,
+      source: "MARKETPLACE" as const,
+      claimedAt: null,
     },
   ],
 };

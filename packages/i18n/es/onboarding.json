@@ -9,7 +9,47 @@
     "invalidEmail": "Ingresá un email válido",
     "passwordRequired": "Ingresá tu contraseña",
     "noAccount": "¿No tienes cuenta?",
-    "signUpLink": "Regístrate"
+    "google": "Continuar con Google",
+    "googleError": "No se pudo iniciar sesión con Google",
+    "signUpLink": "Regístrate",
+    "welcomeEyebrow": "TU COLECCIÓN TE ESPERA",
+    "welcomeTitle": "Qué bueno verte de nuevo",
+    "welcomeSubtitle": "Inicia sesión para continuar en BiasMarket",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña",
+    "or": "o",
+    "marketplaceTagline": "MERCADO DE PRODUCTOS DE K-POP",
+    "navigationLabel": "Navegación principal",
+    "navShop": "Tienda",
+    "navPhotocards": "Photocards",
+    "navMerch": "Merch",
+    "navContact": "Contacto",
+    "mottoCollect": "COLECCIONA",
+    "mottoConnect": "CONECTA",
+    "mottoBelong": "PERTENECE",
+    "heroEyebrow": "UN POCO DE MAGIA EN CADA HALLAZGO",
+    "heroTitleFirst": "Encuentra tu",
+    "heroTitleSecond": "próximo favorito",
+    "heroDescription": "Descubre, colecciona e intercambia tus favoritos del K-pop con fans de todo el mundo.",
+    "categoryPhotocards": "PHOTOCARDS",
+    "categoryAlbums": "ÁLBUMES",
+    "categoryApparel": "ROPA",
+    "categoryCollectibles": "COLECCIONABLES",
+    "categoryAndMore": "Y MUCHO MÁS",
+    "photocardImageAlt": "Photocard ilustrada de colección",
+    "albumImageAlt": "Ilustración de un álbum en tonos pastel",
+    "starImageAlt": "Estrella iridiscente de colección",
+    "collectMoments": "COLECCIONA MOMENTOS",
+    "signInRegionLabel": "Inicia sesión en BiasMarket",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "footerCurated": "SELECCIÓN",
+    "footerCollectibles": "COLECCIONABLES",
+    "footerFanToFan": "ENTRE FANS",
+    "footerCommunity": "COMUNIDAD",
+    "footerThoughtful": "COMPRA",
+    "footerShopping": "CON INTENCIÓN",
+    "footerGlobal": "UNA COMUNIDAD",
+    "footerFanCommunity": "GLOBAL DE FANS"
   },
   "signup": {
     "progressLabel": "Progreso del registro",
@@ -25,7 +65,9 @@
     "hasAccount": "¿Ya tienes cuenta?",
     "loginLink": "Iniciar sesión",
     "checkEmailTitle": "Revisa tu correo",
-    "checkEmailBody": "Te enviamos un enlace para verificar tu cuenta. Ábrelo para poder iniciar sesión."
+    "checkEmailBody": "Te enviamos un enlace para verificar tu cuenta. Ábrelo para poder iniciar sesión.",
+    "google": "Registrarme con Google",
+    "googleError": "No se pudo registrar con Google"
   },
   "verifyEmail": {
     "successTitle": "Cuenta verificada",
@@ -76,5 +118,54 @@
     "deleteError": "Error al eliminar la tienda",
     "networkDeleteError": "Error de red al eliminar",
     "confirmDelete": "¿Seguro que quieres eliminar esta tienda?"
+  },
+  "authError": {
+    "pageTitle": "Problema al iniciar sesión",
+    "nextSteps": "Qué puedes hacer",
+    "retryGoogle": "Intentar de nuevo con Google",
+    "loginWithEmail": "Ingresar con correo y contraseña",
+    "contact": "Contáctanos",
+    "existingAccount": {
+      "title": "Este correo ya tiene una cuenta",
+      "body": "Ya creaste una cuenta con este correo usando una contraseña, y no pudimos conectar Google a ella automáticamente.",
+      "steps": [
+        "Ingresa con tu correo y contraseña.",
+        "¿Olvidaste la contraseña? Contáctanos y te ayudamos a recuperar el acceso.",
+        "Al ingresar sigues usando la misma cuenta."
+      ]
+    },
+    "cancelled": {
+      "title": "Cancelaste el inicio de sesión con Google",
+      "body": "No se cambió nada ni se creó ninguna cuenta. Puedes intentarlo de nuevo cuando quieras.",
+      "steps": [
+        "Intenta de nuevo con Google y acepta los permisos que muestra Google.",
+        "O ingresa con tu correo y contraseña."
+      ]
+    },
+    "expired": {
+      "title": "La sesión de inicio expiró",
+      "body": "El inicio con Google tardó demasiado, se abrió en otro navegador o pestaña, o se interrumpió a la mitad.",
+      "steps": [
+        "Empieza de nuevo desde este mismo navegador.",
+        "Verifica que las cookies estén activadas y evita cambiar de pestaña o navegador a medias."
+      ]
+    },
+    "googleProblem": {
+      "title": "No pudimos usar tu cuenta de Google",
+      "body": "Google no nos dio un correo verificado, o no se pudo conectar la cuenta.",
+      "steps": [
+        "Intenta de nuevo con una cuenta de Google que tenga el correo verificado.",
+        "O regístrate con correo y contraseña.",
+        "Si sigue pasando, contáctanos."
+      ]
+    },
+    "generic": {
+      "title": "Algo salió mal",
+      "body": "No pudimos completar tu inicio de sesión por un problema de nuestra parte. Tu cuenta no fue modificada.",
+      "steps": [
+        "Intenta de nuevo en unos minutos.",
+        "Si sigue pasando, contáctanos e indícanos a qué hora ocurrió."
+      ]
+    }
   }
 }

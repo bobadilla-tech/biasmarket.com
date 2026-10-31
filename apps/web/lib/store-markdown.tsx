@@ -8,7 +8,7 @@ import { CDN_URL } from "@/lib/site-config";
 // This module is the XSS boundary for seller-authored store content
 // (`Store.aboutMarkdown`). It is multi-tenant, untrusted input. The allowlist
 // below — not any single library — is the contract; see
-// docs/plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md
+// .artifacts/2026/09/20260907--store-rich-content-and-thin/plan.md
 // Part 6.1. Any change here needs a security review (`/security-review`).
 //
 // Guarantees:
@@ -89,8 +89,9 @@ export function isAllowedStoreImageSrc(
   if (url.protocol === "https:" && url.host === CDN_HOST) return true;
   // Also accept the hard-coded production host even if CDN_URL is overridden,
   // so committed seller content keeps resolving across env changes.
-  if (url.protocol === "https:" && url.host === "cdn.biasmarket.com")
+  if (url.protocol === "https:" && url.host === "cdn.biasmarket.com") {
     return true;
+  }
   if (
     process.env.NODE_ENV !== "production" &&
     (url.protocol === "http:" || url.protocol === "https:") &&

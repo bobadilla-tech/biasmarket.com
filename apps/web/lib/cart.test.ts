@@ -3,9 +3,7 @@ import { addToCart, type CartItem, getCart, removeItem } from "./cart";
 
 const slug = "test-store";
 
-function makeItem(
-  overrides: Partial<CartItem> = {},
-): CartItem {
+function makeItem(overrides: Partial<CartItem> = {}): CartItem {
   return {
     productId: "p1",
     variantId: "v1",

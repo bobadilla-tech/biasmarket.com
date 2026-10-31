@@ -55,7 +55,7 @@ test("clicking a thumbnail makes it the active image", async () => {
 
   expect(
     (screen.getByAltText(/Tee,/) as HTMLImageElement).getAttribute("src"),
-  ).toContain(encodeURIComponent(IMAGES[2]));
+  ).toBe(IMAGES[2]);
 });
 
 test("exactly one thumb is aria-current, and it carries the theme-var border", async () => {

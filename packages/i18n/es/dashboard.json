@@ -103,6 +103,7 @@
   "nav": {
     "products": "Productos",
     "categories": "Categorías",
+    "references": "Referencias",
     "collections": "Colecciones",
     "sections": "Secciones"
   },
@@ -129,6 +130,20 @@
   },
   "categories": {
     "title": "Categorías",
+    "description": "Administra los nombres, enlaces e imágenes de tus categorías.",
+    "name": "Nombre",
+    "nameRequired": "Escribe el nombre de la categoría.",
+    "slug": "Slug del enlace",
+    "invalidSlug": "Usa minúsculas, números y guiones simples.",
+    "products": "{count, plural, one {# producto asociado} other {# productos asociados}}",
+    "uploadImage": "Subir imagen",
+    "removeImage": "Quitar imagen",
+    "imageAlt": "Imagen de {name}",
+    "noImage": "{name} no tiene imagen configurada",
+    "noImageShort": "Sin imagen",
+    "hasProducts": "No se puede eliminar una categoría con productos asociados.",
+    "hasChildren": "No se puede eliminar una categoría con subcategorías.",
+    "confirmDelete": "¿Eliminar la categoría {name}?",
     "subtitle": "Organiza tus productos",
     "searchPlaceholder": "Buscar categorías...",
     "listTitle": "Categorías",
@@ -144,9 +159,34 @@
     "sheetDescription": "Crea y administra tus categorías.",
     "save": "Guardar",
     "saving": "Guardando...",
-    "confirmDelete": "¿Eliminar esta categoría?",
     "tag": "Categoría",
     "delete": "Eliminar"
+  },
+  "references": {
+    "title": "Referencias",
+    "description": "Comparte opiniones y evidencias de entrega de tu tienda.",
+    "images": "Imágenes",
+    "selectedCount": "{count, plural, one {# imagen seleccionada} other {# imágenes seleccionadas}}",
+    "date": "Fecha de la entrega",
+    "caption": "Texto opcional",
+    "privacyNotice": "Confirmo que oculté nombres, teléfonos y otros datos personales de compradores antes de publicar estas imágenes.",
+    "upload": "Subir referencias",
+    "uploading": "Subiendo…",
+    "listTitle": "Referencias ({count})",
+    "sortLabel": "Ordenar por",
+    "newest": "Más recientes",
+    "oldest": "Más antiguas",
+    "day": "Día: {date}",
+    "uploadedByStore": "Subida por la tienda",
+    "uploadedByBuyer": "Subida por el comprador",
+    "referenceAlt": "Referencia del {date}. {caption}",
+    "openImage": "Ampliar referencia del {date}",
+    "deleteImage": "Eliminar referencia",
+    "confirmDelete": "¿Eliminar esta referencia?",
+    "empty": "Esta tienda aún no tiene referencias.",
+    "closeViewer": "Cerrar visor",
+    "previousImage": "Referencia anterior",
+    "nextImage": "Siguiente referencia"
   },
   "collections": {
     "title": "Colecciones",
@@ -248,6 +288,19 @@
       "description": "Actualiza lo esencial de tu marca y cómo te contactan los compradores.",
       "upload": "Editar logo",
       "uploading": "Subiendo...",
+      "bannerLabel": "Banner de la tienda",
+      "bannerPreviewAlt": "Vista previa del banner de la tienda",
+      "bannerEmpty": "Aún no hay un banner",
+      "bannerHelp": "Recomendado: imagen horizontal 3:1, hasta 5 MB. JPG o PNG.",
+      "bannerUpload": "Subir banner",
+      "ownerAvatarUpload": "Subir avatar público del dueño",
+      "ownerAvatarPreviewAlt": "Vista previa del avatar público del dueño",
+      "ownerAvatarPlaceholder": "Avatar público del dueño no configurado",
+      "publicOwnerProfileTitle": "Perfil público",
+      "publicOwnerProfileHelp": "El nombre y la foto son opcionales. La foto aparece en el encabezado solo cuando defines un nombre público. Tu perfil personal permanece privado.",
+      "locationLabel": "Ubicación pública",
+      "publicOwnerNameLabel": "Nombre público del dueño",
+      "publicOwnerHelp": "Este nombre aparece en tu tienda y no cambia tu nombre de cuenta.",
       "nameLabel": "Nombre de la tienda",
       "urlLabel": "URL de la tienda",
       "whatsappLabel": "WhatsApp de contacto",
@@ -449,6 +502,28 @@
       "paymentReminder": {
         "title": "Mensaje de recordatorio de pago",
         "description": "Se usa cuando contactas a un comprador por un saldo pendiente. Variables requeridas: la referencia del pedido y el monto pendiente."
+      },
+      "assistedOrderLink": {
+        "title": "Mensaje de enlace de pedido asistido",
+        "description": "Se usa cuando creas un pedido por un comprador y le envías su enlace privado. Variable requerida: '{{link}}'."
+      },
+      "buyerNotices": {
+        "paymentValidated": {
+          "title": "Aviso al comprador: pago validado",
+          "description": "Se usa cuando validas el pago de un pedido asistido y avisas al comprador. No lleva enlace: el comprador ya tiene el suyo. '{{saveInvite}}' agrega la invitación a guardar el pedido y queda vacío si ya lo guardó."
+        },
+        "inTransit": {
+          "title": "Aviso al comprador: pedido en camino",
+          "description": "Se usa cuando el pedido pasa a en camino. '{{trackingNumber}}' es el código de seguimiento, si lo registraste."
+        },
+        "ready": {
+          "title": "Aviso al comprador: pedido listo",
+          "description": "Se usa cuando el pedido queda listo para recoger."
+        },
+        "delivered": {
+          "title": "Aviso al comprador: pedido entregado",
+          "description": "Se usa cuando marcas el pedido como entregado. '{{saveInvite}}' agrega la invitación a guardar el pedido y queda vacío si ya lo guardó."
+        }
       }
     }
   },
@@ -466,7 +541,9 @@
     "types": {
       "LOW_STOCK": "Stock bajo",
       "OUT_OF_STOCK": "Sin stock",
-      "PAYMENT_PROOF_SUBMITTED": "Comprobante de pago enviado"
+      "PAYMENT_PROOF_SUBMITTED": "Comprobante de pago enviado",
+      "RECEIPT_CONFIRMED": "Recepción confirmada",
+      "GENERIC": "Notificación"
     }
   },
   "preferences": {
@@ -566,7 +643,6 @@
     "subtitle": "Gestión de pedidos",
     "titleWithCount": "Todos los pedidos ({count})",
     "newOrder": "Nuevo pedido",
-    "newOrderSoon": "Pronto",
     "view": "Ver",
     "empty": "Todavía no hay pedidos.",
     "unknownProduct": "Producto",
@@ -616,6 +692,17 @@
       "delivery": "Entrega",
       "date": "Fecha",
       "shippingAddress": "Dirección de envío",
+      "shippingTitle": "Seguimiento y paquete",
+      "trackingNumber": "Número de seguimiento",
+      "trackingUrl": "Enlace de seguimiento",
+      "saveShipping": "Guardar datos de envío",
+      "savingShipping": "Guardando…",
+      "shippingError": "No se pudieron guardar los datos de envío.",
+      "packedPhoto": "Foto del paquete",
+      "packedPhotoAlt": "Paquete preparado para el envío",
+      "uploadPackedPhoto": "Subir foto",
+      "replacePackedPhoto": "Cambiar foto",
+      "uploadingPackedPhoto": "Subiendo…",
       "items": "Productos",
       "quantity": "{count} unidades",
       "addPayment": "Registrar pago",
@@ -632,7 +719,30 @@
       "imagePreview": "Vista previa",
       "imageSize": "{size} KB",
       "removeImage": "Eliminar imagen",
-      "paymentProofDialogTitle": "Vista previa del comprobante de pago"
+      "paymentProofDialogTitle": "Vista previa del comprobante de pago",
+      "paidAt": "Fecha del pago",
+      "operationCode": "Número de operación (opcional)",
+      "operationCodeLine": "Operación {code}",
+      "pendingProofHint": "Hay un comprobante del comprador por revisar. Valídalo en vez de crear otro pago.",
+      "captureOptionalForCash": "En efectivo la captura es opcional",
+      "errors": {
+        "amountInvalid": "Escribe un monto válido, por ejemplo 40.50.",
+        "amountTooHigh": "El monto es mayor a lo que se puede registrar (el saldo menos los comprobantes por revisar).",
+        "methodRequired": "Elige un método de pago.",
+        "codeInvalid": "El número de operación no es válido.",
+        "dateInvalid": "Elige la fecha del pago.",
+        "dateFuture": "La fecha no puede ser futura.",
+        "fileRequired": "Adjunta la captura del pago (solo el efectivo no la necesita).",
+        "fileTooLarge": "La imagen pesa más de 5 MB.",
+        "fileType": "Usa una imagen JPG o PNG."
+      },
+      "duplicate": {
+        "title": "Este número de operación ya existe",
+        "body": "Ya registraste este número de operación en otro pago de tu tienda. Puede ser un pago repetido. ¿Quieres registrarlo igual?",
+        "viewOrder": "Ver el otro pedido",
+        "cancel": "Cancelar",
+        "confirm": "Registrar igual"
+      }
     },
     "approve": "Aprobar",
     "approveDisabledNoPayment": "No se puede aprobar sin ningún pago registrado.",
@@ -688,7 +798,17 @@
     "amountToRetain": "Monto a retener",
     "remaining": "Restante",
     "refund": "Reembolso",
-    "retentionBalance": "Saldo"
+    "retentionBalance": "Saldo",
+    "void": {
+      "button": "Anular pago",
+      "title": "Anular pago",
+      "description": "El pago de {amount} dejará de contar y el saldo del pedido se actualizará. El historial se conserva.",
+      "reasonLabel": "Motivo (obligatorio)",
+      "cancel": "Cancelar",
+      "confirm": "Anular pago",
+      "error": "No se pudo anular el pago.",
+      "voidedLine": "Anulado el {date}. Motivo: {reason}"
+    }
   },
   "overview": {
     "title": "Resumen",
@@ -750,5 +870,191 @@
     "sortCount": "Más solicitados",
     "countLabel": "{count} interesados",
     "contact": "WhatsApp"
+  },
+  "assistedOrder": {
+    "title": "Nuevo pedido",
+    "subtitle": "Crea un pedido para un comprador que te escribió por WhatsApp y envíale su enlace.",
+    "back": "Volver a pedidos",
+    "loading": "Cargando la tienda…",
+    "phone": {
+      "label": "WhatsApp del comprador",
+      "description": "El número con el que te escribió.",
+      "review": "Se enviará a {phone}",
+      "country": "Código de país"
+    },
+    "lookup": {
+      "returning": "Este número ya tiene {count} pedidos en tu tienda.",
+      "first": "Es el primer pedido de este número."
+    },
+    "alias": {
+      "label": "Nombre o apodo (opcional)",
+      "description": "Solo sirve para saludar al comprador en el mensaje. Si lo dejas vacío, el saludo será genérico."
+    },
+    "items": {
+      "title": "Productos",
+      "add": "Agregar producto",
+      "remove": "Quitar producto",
+      "product": "Producto",
+      "selectProduct": "Elige un producto",
+      "variant": "Variante",
+      "selectVariant": "Elige una variante",
+      "quantity": "Cantidad",
+      "increase": "Aumentar cantidad",
+      "decrease": "Disminuir cantidad",
+      "noProducts": "No tienes productos publicados para vender.",
+      "lineTotal": "Subtotal: {amount}",
+      "stockLeft": "Quedan {count}",
+      "detailsLoading": "Cargando detalles del producto…",
+      "detailsFailed": "No se pudieron cargar el precio y las variantes.",
+      "retry": "Reintentar"
+    },
+    "delivery": {
+      "title": "Entrega",
+      "method": "Método de entrega",
+      "pickup": "Retiro presencial",
+      "courier": "Envío a domicilio",
+      "pickupPoint": "Punto de recojo",
+      "selectPickupPoint": "Elige un punto",
+      "pickupDate": "Fecha de recojo",
+      "pickupDateInvalidWeekday": "El punto no abre ese día.",
+      "courierName": "Courier",
+      "selectCourier": "Elige un courier",
+      "courierModality": "Modalidad",
+      "selectModality": "Elige una modalidad",
+      "AGENCY": "Agencia",
+      "HOME": "Domicilio",
+      "recipientName": "Nombre de quien recibe",
+      "recipientPhone": "Teléfono de quien recibe",
+      "agencyName": "Agencia de destino",
+      "line1": "Dirección",
+      "city": "Ciudad",
+      "district": "Distrito",
+      "reference": "Referencia (opcional)",
+      "noMethods": "Esta tienda no tiene métodos de entrega activos.",
+      "loading": "Cargando opciones de entrega y pago…",
+      "loadFailed": "No pudimos cargar las opciones de entrega y pago de la tienda.",
+      "retry": "Reintentar"
+    },
+    "payment": {
+      "title": "Pago",
+      "method": "Método de pago",
+      "selectMethod": "Elige un método",
+      "type": "Tipo de pago",
+      "full": "Pago completo",
+      "partial": "Adelanto de {percent}%",
+      "noMethods": "Esta tienda no tiene métodos de pago configurados: el comprador no verá cómo pagar. Configúralos en Pagos.",
+      "labels": {
+        "YAPE": "Yape",
+        "PLIN": "Plin",
+        "TRANSFER": "Transferencia bancaria",
+        "CASH": "Efectivo"
+      }
+    },
+    "summary": {
+      "subtotal": "Productos",
+      "delivery": "Envío",
+      "total": "Total del pedido",
+      "toPayNow": "A pagar ahora",
+      "totalZero": "El total debe ser mayor a 0 para crear el pedido."
+    },
+    "submit": "Crear pedido",
+    "submitting": "Creando pedido…",
+    "errors": {
+      "alreadyCreated": "Ya creaste este pedido.",
+      "viewExistingOrder": "Ver el pedido",
+      "phoneRequired": "Ingresa el WhatsApp del comprador.",
+      "phoneInvalid": "El número no es válido.",
+      "aliasTooLong": "Máximo 60 caracteres.",
+      "aliasInvalid": "El nombre tiene caracteres no permitidos.",
+      "itemsRequired": "Agrega al menos un producto.",
+      "productRequired": "Elige un producto.",
+      "variantRequired": "Elige una variante.",
+      "quantityInvalid": "La cantidad debe ser 1 o más.",
+      "deliveryRequired": "Elige un método de entrega.",
+      "pickupPointRequired": "Elige un punto de recojo.",
+      "pickupDateRequired": "Elige una fecha de recojo.",
+      "paymentMethodRequired": "Elige un método de pago.",
+      "courierNameRequired": "Elige un courier.",
+      "courierModalityRequired": "Elige una modalidad.",
+      "recipientRequired": "Ingresa quién recibe.",
+      "shippingPhoneRequired": "Ingresa el teléfono de quien recibe.",
+      "addressRequired": "Ingresa la dirección.",
+      "cityRequired": "Ingresa la ciudad.",
+      "agencyRequired": "Ingresa la agencia.",
+      "generic": "No se pudo crear el pedido. Intenta de nuevo.",
+      "mixedCurrencies": "No se pueden combinar productos con distinta moneda en un mismo pedido."
+    },
+    "created": {
+      "title": "Pedido creado",
+      "linkLabel": "Enlace privado del comprador",
+      "linkNotice": "Este enlace solo se muestra aquí: cópialo antes de salir. Después podrás generar uno nuevo desde el pedido.",
+      "summary": "Pedido {ref} · {total}",
+      "messageLabel": "Mensaje para el comprador",
+      "messageDescription": "Incluye su enlace privado. Puedes copiarlo o abrirlo directo en WhatsApp. No abras el enlace tú: al abrirlo ya no podrás corregir el número.",
+      "openWhatsapp": "Abrir WhatsApp",
+      "copyMessage": "Copiar mensaje",
+      "copied": "Mensaje copiado",
+      "copyFailed": "No se pudo copiar. Selecciona el mensaje de arriba y cópialo a mano.",
+      "confirmTitle": "Confirma el número",
+      "confirmBody": "Se enviará a {phone}. ¿Es correcto?",
+      "confirmYes": "Sí, abrir WhatsApp",
+      "fixNumber": "Corregir número",
+      "newOrder": "Crear otro pedido",
+      "templateLoading": "Preparando el mensaje…"
+    },
+    "detail": {
+      "badge": "Pedido asistido",
+      "createdBy": "Creado por {name}",
+      "buyerNumber": "WhatsApp del comprador",
+      "customers": "Ver historial del cliente",
+      "linkTitle": "Enlace del comprador",
+      "sendLink": "Enviar o copiar enlace",
+      "sendLinkWarning": "Genera un enlace nuevo: el anterior deja de funcionar.",
+      "regenerate": "Regenerar enlace",
+      "regenerateTitle": "¿Regenerar el enlace?",
+      "regenerateBody": "El enlace anterior dejará de funcionar. Si ya se lo enviaste al comprador, tendrás que enviarle el nuevo.",
+      "regenerateConfirm": "Sí, regenerar",
+      "cancel": "Cancelar",
+      "working": "Generando…",
+      "linkReady": "Enlace nuevo listo",
+      "correctNumber": "Corregir número",
+      "correctDisabledOpened": "El comprador ya abrió el enlace: ya no se puede corregir el número.",
+      "correctDisabledClaimed": "El comprador ya reclamó el pedido: ya no se puede corregir el número.",
+      "correctDisabledClosed": "El pedido está cancelado o venció: ya no se puede corregir el número.",
+      "closed": "El pedido está cancelado o venció: ya no se puede enviar un enlace.",
+      "correctTitle": "Corregir el número",
+      "correctBody": "Ingresa el WhatsApp correcto. Se genera un enlace nuevo y el anterior deja de funcionar.",
+      "correctSubmit": "Guardar número",
+      "related": {
+        "title": "Otros pedidos de este número",
+        "loading": "Cargando…",
+        "empty": "No hay otros pedidos de este número.",
+        "count": "{total, plural, one {# otro pedido} other {# otros pedidos}} de este número",
+        "more": "Mostrando {shown} de {total}",
+        "cancelled": "Cancelado",
+        "payment": {
+          "PENDING_PAYMENT": "Pendiente de pago",
+          "PARTIALLY_PAID": "Pago parcial",
+          "PAYMENT_SUBMITTED": "Pago por revisar",
+          "VERIFIED": "Pagado",
+          "REJECTED": "Pago rechazado",
+          "CANCELLED": "Cancelado"
+        }
+      },
+      "receiptConfirmed": "El comprador confirmó la recepción el {date}",
+      "claimedBadge": "Reclamado"
+    },
+    "buyerNotice": {
+      "title": "Avisar al comprador",
+      "notNow": "Ahora no",
+      "dismiss": "Cerrar",
+      "templateError": "No pudimos cargar tu mensaje guardado, así que este es el texto por defecto.",
+      "reason": {
+        "ASSISTED_PAYMENT_VALIDATED": "Validaste su pago. Avísale por WhatsApp si quieres.",
+        "ASSISTED_IN_TRANSIT": "El pedido va en camino. Avísale por WhatsApp si quieres.",
+        "ASSISTED_READY": "El pedido está listo. Avísale por WhatsApp si quieres.",
+        "ASSISTED_DELIVERED": "Marcaste el pedido como entregado. Avísale por WhatsApp si quieres."
+      }
+    }
   }
 }

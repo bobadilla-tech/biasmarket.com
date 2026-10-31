@@ -103,6 +103,7 @@
   "nav": {
     "products": "Products",
     "categories": "Categories",
+    "references": "References",
     "collections": "Collections",
     "sections": "Sections"
   },
@@ -129,6 +130,20 @@
   },
   "categories": {
     "title": "Categories",
+    "description": "Manage the names, links, and images for your categories.",
+    "name": "Name",
+    "nameRequired": "Enter a category name.",
+    "slug": "Link slug",
+    "invalidSlug": "Use lowercase letters, numbers, and single hyphens.",
+    "products": "{count, plural, one {# linked product} other {# linked products}}",
+    "uploadImage": "Upload image",
+    "removeImage": "Remove image",
+    "imageAlt": "Image for {name}",
+    "noImage": "{name} has no image set",
+    "noImageShort": "No image",
+    "hasProducts": "A category with linked products cannot be deleted.",
+    "hasChildren": "A category with subcategories cannot be deleted.",
+    "confirmDelete": "Delete the {name} category?",
     "subtitle": "Organize your products",
     "searchPlaceholder": "Search categories...",
     "listTitle": "Categories",
@@ -144,9 +159,34 @@
     "sheetDescription": "Create and manage your categories.",
     "save": "Save",
     "saving": "Saving...",
-    "confirmDelete": "Delete this category?",
     "tag": "Category",
     "delete": "Delete"
+  },
+  "references": {
+    "title": "References",
+    "description": "Share customer reviews and delivery evidence from your store.",
+    "images": "Images",
+    "selectedCount": "{count, plural, one {# image selected} other {# images selected}}",
+    "date": "Delivery date",
+    "caption": "Optional text",
+    "privacyNotice": "I confirm that I hid buyers’ names, phone numbers, and other personal information before publishing these images.",
+    "upload": "Upload references",
+    "uploading": "Uploading…",
+    "listTitle": "References ({count})",
+    "sortLabel": "Sort by",
+    "newest": "Newest first",
+    "oldest": "Oldest first",
+    "day": "Day: {date}",
+    "uploadedByStore": "Uploaded by the store",
+    "uploadedByBuyer": "Uploaded by the buyer",
+    "referenceAlt": "Reference from {date}. {caption}",
+    "openImage": "Enlarge reference from {date}",
+    "deleteImage": "Delete reference",
+    "confirmDelete": "Delete this reference?",
+    "empty": "This store has no references yet.",
+    "closeViewer": "Close viewer",
+    "previousImage": "Previous reference",
+    "nextImage": "Next reference"
   },
   "collections": {
     "title": "Collections",
@@ -248,6 +288,19 @@
       "description": "Update the essentials that define your brand and how buyers contact you.",
       "upload": "Edit logo",
       "uploading": "Uploading...",
+      "bannerLabel": "Store banner",
+      "bannerPreviewAlt": "Store banner preview",
+      "bannerEmpty": "No banner yet",
+      "bannerHelp": "Recommended: 3:1 landscape image, up to 5 MB. JPG or PNG.",
+      "bannerUpload": "Upload banner",
+      "ownerAvatarUpload": "Upload public owner avatar",
+      "ownerAvatarPreviewAlt": "Public owner avatar preview",
+      "ownerAvatarPlaceholder": "Public owner avatar not configured",
+      "publicOwnerProfileTitle": "Public profile",
+      "publicOwnerProfileHelp": "The name and photo are optional. The photo appears in the store header only when you set a public name. Your personal account profile stays private.",
+      "locationLabel": "Public location",
+      "publicOwnerNameLabel": "Public owner name",
+      "publicOwnerHelp": "This name appears in your store and does not change your account name.",
       "nameLabel": "Store name",
       "urlLabel": "Store URL",
       "whatsappLabel": "Contact WhatsApp",
@@ -449,6 +502,28 @@
       "paymentReminder": {
         "title": "Payment reminder message",
         "description": "Used when you contact a buyer about a pending balance. Required variables: the order reference and the pending amount."
+      },
+      "assistedOrderLink": {
+        "title": "Assisted order link message",
+        "description": "Used when you create an order for a buyer and send them their private link. Required variable: '{{link}}'."
+      },
+      "buyerNotices": {
+        "paymentValidated": {
+          "title": "Buyer notice: payment validated",
+          "description": "Used when you validate the payment of an assisted order and tell the buyer. It carries no link: the buyer already has theirs. '{{saveInvite}}' adds the invitation to save the order and is empty once they have saved it."
+        },
+        "inTransit": {
+          "title": "Buyer notice: order on its way",
+          "description": "Used when the order moves to in transit. '{{trackingNumber}}' is the tracking code, if you entered one."
+        },
+        "ready": {
+          "title": "Buyer notice: order ready",
+          "description": "Used when the order is ready for pickup."
+        },
+        "delivered": {
+          "title": "Buyer notice: order delivered",
+          "description": "Used when you mark the order as delivered. '{{saveInvite}}' adds the invitation to save the order and is empty once they have saved it."
+        }
       }
     }
   },
@@ -466,7 +541,9 @@
     "types": {
       "LOW_STOCK": "Low stock",
       "OUT_OF_STOCK": "Out of stock",
-      "PAYMENT_PROOF_SUBMITTED": "Payment proof submitted"
+      "PAYMENT_PROOF_SUBMITTED": "Payment proof submitted",
+      "RECEIPT_CONFIRMED": "Receipt confirmed",
+      "GENERIC": "Notification"
     }
   },
   "preferences": {
@@ -566,7 +643,6 @@
     "subtitle": "Order management",
     "titleWithCount": "All orders ({count})",
     "newOrder": "New order",
-    "newOrderSoon": "Coming soon",
     "view": "View",
     "empty": "No orders yet.",
     "unknownProduct": "Product",
@@ -616,6 +692,17 @@
       "delivery": "Delivery",
       "date": "Date",
       "shippingAddress": "Shipping address",
+      "shippingTitle": "Tracking and package",
+      "trackingNumber": "Tracking number",
+      "trackingUrl": "Tracking link",
+      "saveShipping": "Save shipping details",
+      "savingShipping": "Saving…",
+      "shippingError": "Could not save shipping details.",
+      "packedPhoto": "Package photo",
+      "packedPhotoAlt": "Package prepared for shipping",
+      "uploadPackedPhoto": "Upload photo",
+      "replacePackedPhoto": "Replace photo",
+      "uploadingPackedPhoto": "Uploading…",
       "items": "Items",
       "quantity": "{count} units",
       "addPayment": "Register payment",
@@ -632,7 +719,30 @@
       "imagePreview": "Preview",
       "imageSize": "{size} KB",
       "removeImage": "Remove image",
-      "paymentProofDialogTitle": "Payment proof preview"
+      "paymentProofDialogTitle": "Payment proof preview",
+      "paidAt": "Payment date",
+      "operationCode": "Operation number (optional)",
+      "operationCodeLine": "Operation {code}",
+      "pendingProofHint": "There is a buyer proof waiting for review. Validate it instead of creating another payment.",
+      "captureOptionalForCash": "The capture is optional for cash",
+      "errors": {
+        "amountInvalid": "Enter a valid amount, for example 40.50.",
+        "amountTooHigh": "The amount is more than can be recorded (the balance minus proofs under review).",
+        "methodRequired": "Choose a payment method.",
+        "codeInvalid": "The operation number is not valid.",
+        "dateInvalid": "Pick the payment date.",
+        "dateFuture": "The date cannot be in the future.",
+        "fileRequired": "Attach the payment capture (only cash does not need it).",
+        "fileTooLarge": "The image is larger than 5 MB.",
+        "fileType": "Use a JPG or PNG image."
+      },
+      "duplicate": {
+        "title": "This operation number already exists",
+        "body": "You already recorded this operation number on another payment in your store. It may be a repeated payment. Record it anyway?",
+        "viewOrder": "View the other order",
+        "cancel": "Cancel",
+        "confirm": "Record anyway"
+      }
     },
     "approve": "Approve",
     "approveDisabledNoPayment": "Can't approve with no payment registered.",
@@ -688,7 +798,17 @@
     "amountToRetain": "Amount to retain",
     "remaining": "Remaining",
     "refund": "Refund",
-    "retentionBalance": "Balance"
+    "retentionBalance": "Balance",
+    "void": {
+      "button": "Void payment",
+      "title": "Void payment",
+      "description": "The {amount} payment will stop counting and the order balance will update. The history is kept.",
+      "reasonLabel": "Reason (required)",
+      "cancel": "Cancel",
+      "confirm": "Void payment",
+      "error": "The payment could not be voided.",
+      "voidedLine": "Voided on {date}. Reason: {reason}"
+    }
   },
   "overview": {
     "title": "Overview",
@@ -750,5 +870,191 @@
     "sortCount": "Most requested",
     "countLabel": "{count} interested",
     "contact": "WhatsApp"
+  },
+  "assistedOrder": {
+    "title": "New order",
+    "subtitle": "Create an order for a buyer who messaged you on WhatsApp and send them their link.",
+    "back": "Back to orders",
+    "loading": "Loading the store…",
+    "phone": {
+      "label": "Buyer's WhatsApp",
+      "description": "The number they wrote to you from.",
+      "review": "It will be sent to {phone}",
+      "country": "Country code"
+    },
+    "lookup": {
+      "returning": "This number already has {count} orders in your store.",
+      "first": "This is the first order for this number."
+    },
+    "alias": {
+      "label": "Name or nickname (optional)",
+      "description": "Only used to greet the buyer in the message. If you leave it empty, the greeting will be generic."
+    },
+    "items": {
+      "title": "Products",
+      "add": "Add product",
+      "remove": "Remove product",
+      "product": "Product",
+      "selectProduct": "Choose a product",
+      "variant": "Variant",
+      "selectVariant": "Choose a variant",
+      "quantity": "Quantity",
+      "increase": "Increase quantity",
+      "decrease": "Decrease quantity",
+      "noProducts": "You have no published products to sell.",
+      "lineTotal": "Subtotal: {amount}",
+      "stockLeft": "{count} left",
+      "detailsLoading": "Loading product details…",
+      "detailsFailed": "Could not load price and variants.",
+      "retry": "Retry"
+    },
+    "delivery": {
+      "title": "Delivery",
+      "method": "Delivery method",
+      "pickup": "In-person pickup",
+      "courier": "Home delivery",
+      "pickupPoint": "Pickup point",
+      "selectPickupPoint": "Choose a point",
+      "pickupDate": "Pickup date",
+      "pickupDateInvalidWeekday": "The point is closed that day.",
+      "courierName": "Courier",
+      "selectCourier": "Choose a courier",
+      "courierModality": "Modality",
+      "selectModality": "Choose a modality",
+      "AGENCY": "Agency",
+      "HOME": "Home",
+      "recipientName": "Recipient's name",
+      "recipientPhone": "Recipient's phone",
+      "agencyName": "Destination agency",
+      "line1": "Address",
+      "city": "City",
+      "district": "District",
+      "reference": "Reference (optional)",
+      "noMethods": "This store has no active delivery methods.",
+      "loading": "Loading delivery and payment options…",
+      "loadFailed": "We could not load the store's delivery and payment options.",
+      "retry": "Retry"
+    },
+    "payment": {
+      "title": "Payment",
+      "method": "Payment method",
+      "selectMethod": "Choose a method",
+      "type": "Payment type",
+      "full": "Full payment",
+      "partial": "{percent}% deposit",
+      "noMethods": "This store has no payment methods set up: the buyer won't see how to pay. Set them up in Payments.",
+      "labels": {
+        "YAPE": "Yape",
+        "PLIN": "Plin",
+        "TRANSFER": "Bank transfer",
+        "CASH": "Cash"
+      }
+    },
+    "summary": {
+      "subtotal": "Products",
+      "delivery": "Shipping",
+      "total": "Order total",
+      "toPayNow": "To pay now",
+      "totalZero": "The total must be greater than 0 to create the order."
+    },
+    "submit": "Create order",
+    "submitting": "Creating order…",
+    "errors": {
+      "alreadyCreated": "You already created this order.",
+      "viewExistingOrder": "View the order",
+      "phoneRequired": "Enter the buyer's WhatsApp.",
+      "phoneInvalid": "The number is not valid.",
+      "aliasTooLong": "Maximum 60 characters.",
+      "aliasInvalid": "The name has characters that are not allowed.",
+      "itemsRequired": "Add at least one product.",
+      "productRequired": "Choose a product.",
+      "variantRequired": "Choose a variant.",
+      "quantityInvalid": "Quantity must be 1 or more.",
+      "deliveryRequired": "Choose a delivery method.",
+      "pickupPointRequired": "Choose a pickup point.",
+      "pickupDateRequired": "Choose a pickup date.",
+      "paymentMethodRequired": "Choose a payment method.",
+      "courierNameRequired": "Choose a courier.",
+      "courierModalityRequired": "Choose a modality.",
+      "recipientRequired": "Enter who receives it.",
+      "shippingPhoneRequired": "Enter the recipient's phone.",
+      "addressRequired": "Enter the address.",
+      "cityRequired": "Enter the city.",
+      "agencyRequired": "Enter the agency.",
+      "generic": "The order could not be created. Try again.",
+      "mixedCurrencies": "Products with different currencies can't be combined in one order."
+    },
+    "created": {
+      "title": "Order created",
+      "linkLabel": "Buyer's private link",
+      "linkNotice": "This link is only shown here: copy it before you leave. You can generate a new one from the order later.",
+      "summary": "Order {ref} · {total}",
+      "messageLabel": "Message for the buyer",
+      "messageDescription": "It includes their private link. You can copy it or open it straight in WhatsApp. Don't open the link yourself: once it's opened you can no longer fix the number.",
+      "openWhatsapp": "Open WhatsApp",
+      "copyMessage": "Copy message",
+      "copied": "Message copied",
+      "copyFailed": "Couldn't copy. Select the message above and copy it by hand.",
+      "confirmTitle": "Confirm the number",
+      "confirmBody": "It will be sent to {phone}. Is that right?",
+      "confirmYes": "Yes, open WhatsApp",
+      "fixNumber": "Fix number",
+      "newOrder": "Create another order",
+      "templateLoading": "Preparing the message…"
+    },
+    "detail": {
+      "badge": "Assisted order",
+      "createdBy": "Created by {name}",
+      "buyerNumber": "Buyer's WhatsApp",
+      "customers": "View customer history",
+      "linkTitle": "Buyer's link",
+      "sendLink": "Send or copy link",
+      "sendLinkWarning": "Creates a new link: the previous one stops working.",
+      "regenerate": "Regenerate link",
+      "regenerateTitle": "Regenerate the link?",
+      "regenerateBody": "The previous link will stop working. If you already sent it to the buyer, you'll need to send them the new one.",
+      "regenerateConfirm": "Yes, regenerate",
+      "cancel": "Cancel",
+      "working": "Generating…",
+      "linkReady": "New link ready",
+      "correctNumber": "Fix number",
+      "correctDisabledOpened": "The buyer already opened the link: the number can no longer be corrected.",
+      "correctDisabledClaimed": "The buyer already claimed the order: the number can no longer be corrected.",
+      "correctDisabledClosed": "The order is cancelled or expired: the number can no longer be corrected.",
+      "closed": "The order is cancelled or expired: a link can no longer be sent.",
+      "correctTitle": "Fix the number",
+      "correctBody": "Enter the right WhatsApp. A new link is created and the previous one stops working.",
+      "correctSubmit": "Save number",
+      "related": {
+        "title": "Other orders from this number",
+        "loading": "Loading…",
+        "empty": "No other orders from this number.",
+        "count": "{total, plural, one {# other order} other {# other orders}} from this number",
+        "more": "Showing {shown} of {total}",
+        "cancelled": "Cancelled",
+        "payment": {
+          "PENDING_PAYMENT": "Awaiting payment",
+          "PARTIALLY_PAID": "Partially paid",
+          "PAYMENT_SUBMITTED": "Payment to review",
+          "VERIFIED": "Paid",
+          "REJECTED": "Payment rejected",
+          "CANCELLED": "Cancelled"
+        }
+      },
+      "receiptConfirmed": "The buyer confirmed receipt on {date}",
+      "claimedBadge": "Claimed"
+    },
+    "buyerNotice": {
+      "title": "Notify the buyer",
+      "notNow": "Not now",
+      "dismiss": "Close",
+      "templateError": "We couldn't load your saved message, so this is the default text.",
+      "reason": {
+        "ASSISTED_PAYMENT_VALIDATED": "You validated their payment. Tell them on WhatsApp if you like.",
+        "ASSISTED_IN_TRANSIT": "The order is on its way. Tell them on WhatsApp if you like.",
+        "ASSISTED_READY": "The order is ready. Tell them on WhatsApp if you like.",
+        "ASSISTED_DELIVERED": "You marked the order as delivered. Tell them on WhatsApp if you like."
+      }
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { Processor } from "@nestjs/bullmq";
 import { Logger } from "@nestjs/common";
 import type { Job } from "bullmq";
 import {
@@ -6,6 +6,7 @@ import {
   pingJobPayloadSchema,
   QUEUE_NAMES,
 } from "@biasmarket/queue";
+import { ObservedProcessor } from "../../common/observed-processor.js";
 
 // The one proof-of-pipeline job this plan ships — confirms a job enqueued by
 // apps/api is picked up and completed by apps/workers, with retry/backoff
@@ -13,7 +14,7 @@ import {
 // jobs (mailer, order-expiration sweep) land with the companion migration
 // plan.
 @Processor(QUEUE_NAMES.PING)
-export class PingProcessor extends WorkerHost {
+export class PingProcessor extends ObservedProcessor {
   private readonly logger = new Logger(PingProcessor.name);
 
   async process(
