@@ -33,6 +33,12 @@ The API base defaults to `https://api.biasmarket.com/api`. Set
 `EXPO_PUBLIC_API_URL` to a complete API base URL (including `/api`) when using a
 development server.
 
+Buyer sessions are stored in Expo SecureStore. Login uses a store slug, phone,
+and password. Account setup uses the confirmation token from the buyer's
+invitation, then signs in with the phone and password to establish the native
+session. A successful login survives app restarts; logout removes the stored
+bearer token and store context.
+
 The buyer cart is stored locally with AsyncStorage. Each store has a separate
 cart key, matching the web storefront's per-store cart behavior. Quantity and
 currency calculations live in `@biasmarket/utils/cart`, shared with the web cart
