@@ -34,10 +34,12 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
       - uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 10.11.0
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
       - name: Start Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
