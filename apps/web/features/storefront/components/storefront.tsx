@@ -394,7 +394,7 @@ export function StoreTabs({ showAbout = false }: { showAbout?: boolean }) {
               onKeyDown={(event) => handleKeyDown(event, index)}
               className={`min-h-11 shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition-[background-color,color,box-shadow] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) motion-reduce:transition-none ${
                 active === tab
-                  ? "bg-(--store-primary) text-white shadow-sm"
+                  ? "bg-(--store-tab-active) text-(--store-on-active) shadow-sm"
                   : "text-(--store-muted) hover:bg-(--store-surface) hover:text-(--store-text)"
               }`}
             >

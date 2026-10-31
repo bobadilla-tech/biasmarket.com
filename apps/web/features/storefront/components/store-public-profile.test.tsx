@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import { expect, test, vi } from "vitest";
 import { getMessages } from "@biasmarket/i18n";
@@ -49,6 +49,17 @@ test("contains configured store logos on a clean white background", () => {
   const logo = screen.getByRole("img", { name: "Logo de Luna Shop" });
   expect(logo.className).toContain("object-contain");
   expect(logo.className).toContain("bg-white");
+});
+
+test("keeps a long fallback banner title inside the text area", () => {
+  const storeName = "KOREALEXA OFFICIAL PHOTO CARD COLLECTOR SHOP";
+  renderProfile({ storeName });
+  const banner = screen.getByRole("img", {
+    name: `Banner de la tienda ${storeName}`,
+  });
+  const title = within(banner).getByText(storeName);
+  expect(title.parentElement?.className).toContain("max-w-[72%]");
+  expect(title.className).toContain("line-clamp-2");
 });
 
 test("shows only configured public links and labels them for assistive technology", () => {
