@@ -253,7 +253,7 @@ export function ProductsPageClient() {
         ) : null}
 
         {viewMode === "grid" ? (
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <div className="-mx-1 grid grid-cols-2 gap-3 md:mx-0 md:gap-5 xl:grid-cols-3">
             {filteredProducts.map((product) => {
               const category = getCategoryLabel(product);
               const availableStock = product.availableStock;

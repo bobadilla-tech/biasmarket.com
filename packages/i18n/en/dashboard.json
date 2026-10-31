@@ -22,14 +22,15 @@
     "actions": {
       "edit": "Edit",
       "delete": "Delete",
-      "publish": "Publish"
+      "publish": "Publish",
+      "forProduct": "Actions for {name}"
     },
     "createTitle": "Add product",
     "createDescription": "Create a product and set its initial stock.",
     "editTitle": "Edit product",
     "editDescription": "Update the selected product.",
     "stockUnlimited": "∞",
-    "stockUnits": "{count} units",
+    "stockUnits": "{count, plural, one {# unit} other {# units}}",
     "form": {
       "nameLabel": "Name",
       "descriptionLabel": "Description",
