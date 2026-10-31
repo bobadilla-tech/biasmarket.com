@@ -3733,8 +3733,8 @@
         "parameters": [
           {
             "name": "slug",
-            "in": "path",
             "required": true,
+            "in": "path",
             "schema": {
               "type": "string"
             }
@@ -3767,8 +3767,8 @@
         "parameters": [
           {
             "name": "slug",
-            "in": "path",
             "required": true,
+            "in": "path",
             "schema": {
               "type": "string"
             }
