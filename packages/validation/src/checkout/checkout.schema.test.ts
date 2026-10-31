@@ -165,6 +165,26 @@ test("requires valid courier recipient, document, and cascading address fields",
   expect(result.success).toBe(false);
 });
 
+test.each([
+  ["RUC", "20123456789", true],
+  ["RUC", "1234", false],
+  ["CE", "A1234567", true],
+  ["CE", "A1", false],
+  ["PASSPORT", "AB-123456", true],
+  ["PASSPORT", "!", false],
+  ["", "12345678", false],
+])(
+  "validates courier document type %s",
+  (shippingDocumentType, shippingDocumentNumber, valid) => {
+    const result = buildCheckoutFormSchema(false, false).safeParse({
+      ...validValues,
+      shippingDocumentType,
+      shippingDocumentNumber,
+    });
+    expect(result.success).toBe(valid);
+  },
+);
+
 test("does not require a shipping address when PICKUP is selected", () => {
   const schema = buildCheckoutFormSchema(false, false);
   const result = schema.safeParse({

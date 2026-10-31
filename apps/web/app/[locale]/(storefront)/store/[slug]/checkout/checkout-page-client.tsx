@@ -183,16 +183,18 @@ export function CheckoutPageClient() {
         )}
 
         {confirmationOpen && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-gray-950/55 p-3 backdrop-blur-sm sm:p-6"
-            onClick={() => setConfirmationOpen(false)}
-          >
+          <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-gray-950/55 p-3 backdrop-blur-sm sm:p-6">
+            <button
+              type="button"
+              aria-label={t("close")}
+              className="absolute inset-0 h-full w-full cursor-default"
+              onClick={() => setConfirmationOpen(false)}
+            />
             <section
               role="dialog"
               aria-modal="true"
               aria-labelledby="checkout-order-created-title"
-              className="relative my-auto w-full max-w-4xl overflow-hidden rounded-[1.75rem] bg-white shadow-2xl"
-              onClick={(event) => event.stopPropagation()}
+              className="relative z-10 my-auto w-full max-w-4xl overflow-hidden rounded-[1.75rem] bg-white shadow-2xl"
               onKeyDown={(event) => {
                 if (event.key === "Escape") setConfirmationOpen(false);
               }}
