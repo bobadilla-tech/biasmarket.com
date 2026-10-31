@@ -43,13 +43,21 @@ const StorefrontCompactHeaderContext = createContext<{
 
 export function StorefrontCompactHeaderProvider({
   children,
+  enabled = true,
 }: {
   children: ReactNode;
+  enabled?: boolean;
 }) {
   const [compactHeaderVisible, setCompactHeaderVisible] = useState(false);
+  const value = enabled
+    ? { compactHeaderVisible, setCompactHeaderVisible }
+    : {
+        compactHeaderVisible: false,
+        setCompactHeaderVisible: () => undefined,
+      };
   return (
     <StorefrontCompactHeaderContext.Provider
-      value={{ compactHeaderVisible, setCompactHeaderVisible }}
+      value={value}
     >
       {children}
     </StorefrontCompactHeaderContext.Provider>

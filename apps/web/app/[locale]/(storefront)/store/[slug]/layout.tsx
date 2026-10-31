@@ -2,6 +2,7 @@ import { getStoreThemeStyle } from "@/lib/store-theme";
 import { StorefrontHeader } from "@/features/storefront/components/storefront-header";
 import { StorefrontCompactHeaderProvider } from "@/features/storefront/components/storefront";
 import { StorefrontThemeVars } from "@/components/storefront/storefront-theme-vars";
+import { isStorefrontRedesignEnabled } from "@/lib/storefront-redesign";
 
 // One public-store fetch for the whole storefront subtree. Same URL + options
 // as page.tsx's getStore() / the product page's store read, so Next dedupes
@@ -35,6 +36,7 @@ export default async function StoreLayout({
 }) {
   const { slug } = await params;
   const store = await getStorePublic(slug);
+  const compactHeaderEnabled = isStorefrontRedesignEnabled(slug);
   const themeStyle = getStoreThemeStyle(store?.themeConfig);
   const socialLinks = [
     { platform: "instagram" as const, url: store?.instagramUrl },
@@ -56,7 +58,7 @@ export default async function StoreLayout({
   return (
     <div className="storefront-theme" style={themeStyle}>
       <StorefrontThemeVars style={themeStyle} />
-      <StorefrontCompactHeaderProvider>
+      <StorefrontCompactHeaderProvider enabled={compactHeaderEnabled}>
         {store && (
           <StorefrontHeader
             slug={slug}

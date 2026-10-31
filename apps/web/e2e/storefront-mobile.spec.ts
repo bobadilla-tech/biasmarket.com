@@ -9,7 +9,7 @@ test("mobile catalog fits supported widths and supports search, filtering, and c
   for (const width of [360, 390, 430, 768, 1024]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto(`${STORE_URL}?tab=productos`, {
-      waitUntil: "domcontentloaded",
+      waitUntil: "networkidle",
     });
     await expect(
       page.getByRole("heading", { level: 1, name: "K-Pop Corner" }),
@@ -32,7 +32,7 @@ test("mobile catalog fits supported widths and supports search, filtering, and c
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${STORE_URL}?tab=productos`, {
-    waitUntil: "domcontentloaded",
+    waitUntil: "networkidle",
   });
   const compactHeader = page.getByTestId("storefront-compact-header");
   await expect(compactHeader).toHaveAttribute("aria-hidden", "true");
@@ -42,7 +42,7 @@ test("mobile catalog fits supported widths and supports search, filtering, and c
   await expect(compactHeader).toHaveAttribute("aria-hidden", "true");
 
   await page.goto(`${STORE_URL}?tab=categorias`, {
-    waitUntil: "domcontentloaded",
+    waitUntil: "networkidle",
   });
   await page.getByRole("link", { name: "Posters" }).click();
   await expect(page).toHaveURL(/tab=productos.*categoria=posters/);
