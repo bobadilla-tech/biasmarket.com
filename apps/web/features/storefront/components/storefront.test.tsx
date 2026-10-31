@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 import { getMessages } from "@biasmarket/i18n";
 import { StoreSectionRenderer } from "@/components/storefront/section-renderer";
-import { ImagePlaceholder, StoreTabs } from "./storefront";
+import { CategoryFilter, ImagePlaceholder, StoreTabs } from "./storefront";
 
 const navigation = vi.hoisted(() => ({
   url: "/es/store/tienda",
@@ -220,7 +220,7 @@ describe("storefront empty states", () => {
     );
   });
 
-  it("keeps mobile category chips single-select when switching categories", () => {
+  it("keeps mobile category chips aligned with the desktop multi-select filter", () => {
     navigation.url = "/es/store/tienda?tab=productos&categoria=albumes";
     navigation.push.mockClear();
     withMessages(
@@ -242,7 +242,7 @@ describe("storefront empty states", () => {
       ),
     );
     expect(navigation.push).toHaveBeenLastCalledWith(
-      "/es/store/tienda?tab=productos&categoria=photocards",
+      "/es/store/tienda?tab=productos&categoria=albumes%2Cphotocards",
       { scroll: false },
     );
   });
@@ -316,7 +316,7 @@ describe("storefront empty states", () => {
     );
   });
 
-  it("keeps mobile category chips single-select after opening a multi-filter URL", () => {
+  it("lets a visitor remove one mobile chip from a multi-filter URL", () => {
     navigation.url =
       "/es/store/tienda?tab=productos&categoria=albumes%2Cphotocards";
     navigation.push.mockClear();
@@ -348,7 +348,7 @@ describe("storefront empty states", () => {
 
     fireEvent.click(categoryChips.getByRole("button", { name: "Álbumes" }));
     expect(navigation.push).toHaveBeenLastCalledWith(
-      "/es/store/tienda?tab=productos&categoria=albumes",
+      "/es/store/tienda?tab=productos&categoria=photocards",
       { scroll: false },
     );
     view.unmount();
@@ -711,5 +711,37 @@ describe("storefront tabs", () => {
       expect(button?.getAttribute("aria-controls")).toBe(`store-panel-${tab}`);
       expect(document.getElementById(`store-panel-${tab}`)).not.toBeNull();
     }
+  });
+});
+
+describe("mobile category chips", () => {
+  it("supports the same multi-select rule as the desktop category filter", () => {
+    const onChange = vi.fn();
+    withMessages(
+      <CategoryFilter
+        categories={[
+          { id: "bts", slug: "bts", name: "BTS" },
+          { id: "twice", slug: "twice", name: "Twice" },
+        ]}
+        selected={["bts"]}
+        onChange={onChange}
+      />,
+    );
+
+    const group = screen.getByRole("group", { name: "Categorías" });
+    expect(group.className).toContain("no-scrollbar");
+    expect(
+      within(group)
+        .getByRole("button", { name: "BTS" })
+        .getAttribute("aria-pressed"),
+    ).toBe("true");
+    expect(
+      within(group).getByRole("button", { name: "Todas" }).className,
+    ).toContain("min-h-11");
+
+    fireEvent.click(within(group).getByRole("button", { name: "Twice" }));
+    expect(onChange).toHaveBeenCalledWith(["bts", "twice"]);
+    fireEvent.click(within(group).getByRole("button", { name: "BTS" }));
+    expect(onChange).toHaveBeenLastCalledWith([]);
   });
 });

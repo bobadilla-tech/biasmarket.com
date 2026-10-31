@@ -29,6 +29,9 @@ test("renders the Bias Market brand, cart, and account link", () => {
 
   expect(screen.getByText("Bias Market")).toBeTruthy();
   expect(
+    screen.getByRole("link", { name: "Ir al inicio de Bias Market" }).className,
+  ).toContain("hidden");
+  expect(
     screen
       .getByRole("link", { name: "Ir al inicio de Bias Market" })
       .getAttribute("href"),

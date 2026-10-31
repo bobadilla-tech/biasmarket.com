@@ -473,7 +473,7 @@ export default async function StorePage({
       <main
         id="main-content"
         tabIndex={-1}
-        className="mx-auto max-w-7xl space-y-6 px-4 pt-24 pb-8 sm:pt-24"
+        className="mx-auto max-w-7xl space-y-6 px-4 pt-16 pb-8 sm:pt-24"
       >
         <StorePublicProfile
           storeName={store.name}

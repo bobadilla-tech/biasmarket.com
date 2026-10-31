@@ -1,9 +1,20 @@
 "use client";
 
-import { type KeyboardEvent as ReactKeyboardEvent, useState } from "react";
+import {
+  createContext,
+  type Dispatch,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+  type SetStateAction,
+  useEffect,
+  useContext,
+  useRef,
+  useState,
+} from "react";
 import { useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
+  Check,
   MapPin,
   MessageCircle,
   Minus,
@@ -21,6 +32,33 @@ export type StorefrontCategory = {
   productCount?: number;
   imageUrl?: string | null;
 };
+
+const StorefrontCompactHeaderContext = createContext<{
+  compactHeaderVisible: boolean;
+  setCompactHeaderVisible: Dispatch<SetStateAction<boolean>>;
+}>({
+  compactHeaderVisible: false,
+  setCompactHeaderVisible: () => undefined,
+});
+
+export function StorefrontCompactHeaderProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const [compactHeaderVisible, setCompactHeaderVisible] = useState(false);
+  return (
+    <StorefrontCompactHeaderContext.Provider
+      value={{ compactHeaderVisible, setCompactHeaderVisible }}
+    >
+      {children}
+    </StorefrontCompactHeaderContext.Provider>
+  );
+}
+
+export function useStorefrontCompactHeader() {
+  return useContext(StorefrontCompactHeaderContext);
+}
 
 /** Renders the public store identity shared by its catalog tabs. */
 export function StorePublicProfile({
@@ -58,6 +96,8 @@ export function StorePublicProfile({
   const logo = logoUrl?.trim();
   const publicOwner = publicOwnerName?.trim();
   const hasPublicOwner = Boolean(publicOwner);
+  const profileEndRef = useRef<HTMLDivElement>(null);
+  const { setCompactHeaderVisible } = useStorefrontCompactHeader();
   const configuredSocials: {
     platform: keyof typeof socialLabels;
     url: string | null | undefined;
@@ -78,46 +118,51 @@ export function StorePublicProfile({
       item.url?.trim() ? [{ ...item, url: item.url.trim() }] : [],
   );
 
+  useEffect(() => {
+    const sentinel = profileEndRef.current;
+    if (!sentinel || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setCompactHeaderVisible(!entry.isIntersecting),
+      { rootMargin: "-3rem 0px 0px 0px", threshold: 0 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [setCompactHeaderVisible]);
+
   return (
     <header className="space-y-5" aria-label={t("publicStoreProfile")}>
       {banner ? (
         <img
           src={banner}
           alt={t("bannerImageAlt", { storeName })}
-          className="h-52 w-full rounded-2xl object-cover sm:h-[300px]"
+          className="h-24 w-full rounded-2xl object-cover sm:h-[300px]"
         />
       ) : (
         <div
           role="img"
           aria-label={t("bannerImageAlt", { storeName })}
-          className="relative flex h-52 w-full items-center overflow-hidden rounded-2xl border border-(--store-border) px-8 text-white sm:h-[300px] sm:px-12"
-          style={{
-            backgroundImage:
-              "radial-gradient(rgba(255,255,255,.68) 1px, transparent 1.35px), linear-gradient(108deg, var(--store-sidebar-end) 0%, var(--store-primary) 54%, var(--store-accent) 100%)",
-            backgroundSize: "26px 26px, auto",
-            backgroundBlendMode: "screen, normal",
-          }}
+          className="relative flex h-24 w-full items-center overflow-hidden rounded-2xl border border-(--store-border) bg-gray-100 px-5 text-(--store-text) sm:h-[300px] sm:px-12"
         >
-          <div className="relative z-10 max-w-[62%] space-y-3 sm:max-w-[58%]">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/80 sm:text-xs">
+          <div className="relative z-10 max-w-[72%] space-y-2 sm:max-w-[58%] sm:space-y-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-(--store-muted) sm:text-xs">
               {t("publicStoreEyebrow")}
             </p>
-            <p className="line-clamp-2 text-3xl font-extrabold uppercase leading-tight tracking-tight sm:text-5xl">
+            <p className="line-clamp-2 text-2xl font-extrabold uppercase leading-tight tracking-tight sm:text-5xl">
               {storeName}
             </p>
             {bio ? (
-              <p className="line-clamp-2 max-w-xl text-sm font-medium text-white/90 sm:text-base">
+              <p className="line-clamp-2 max-w-xl text-xs font-medium text-(--store-muted) sm:text-base">
                 {bio}
               </p>
             ) : null}
           </div>
           <div
             aria-hidden="true"
-            className="absolute right-[10%] top-1/2 flex size-36 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 sm:size-56"
+            className="absolute right-[10%] top-1/2 hidden size-36 -translate-y-1/2 items-center justify-center rounded-full border border-(--store-border) sm:flex sm:size-56"
           >
-            <div className="flex size-[82%] items-center justify-center rounded-full border border-white/70">
+            <div className="flex size-[82%] items-center justify-center rounded-full border border-(--store-border)">
               <Sparkles
-                className="size-12 fill-white/70 text-white/80 sm:size-20"
+                className="size-12 text-(--store-primary) sm:size-20"
                 strokeWidth={1.2}
               />
             </div>
@@ -130,25 +175,25 @@ export function StorePublicProfile({
             <img
               src={logo}
               alt={t("storeLogoAlt", { storeName })}
-              className="size-16 shrink-0 rounded-2xl object-cover sm:size-20"
+              className="size-14 shrink-0 rounded-2xl object-cover sm:size-20"
             />
           ) : (
             <div
               role="img"
               aria-label={t("storeLogoPlaceholder", { storeName })}
-              className="flex size-16 shrink-0 items-center justify-center rounded-[1.1rem] bg-(--store-primary) text-2xl font-bold text-white shadow-sm sm:size-20 sm:text-3xl"
+              className="flex size-14 shrink-0 items-center justify-center rounded-[1.1rem] bg-gray-200 text-2xl font-bold text-gray-600 shadow-sm sm:size-20 sm:bg-(--store-primary) sm:text-3xl sm:text-white"
             >
               {storeName.trim().slice(0, 2).toLocaleUpperCase()}
             </div>
           )}
           <div className="min-w-0 space-y-1">
-            <h1 className="truncate text-xl font-extrabold uppercase tracking-tight text-(--store-text) sm:text-3xl">
+            <h1 className="line-clamp-2 text-lg font-extrabold uppercase leading-tight tracking-tight text-(--store-text) sm:text-3xl">
               {storeName}
             </h1>
             {location ? (
-              <p className="flex items-center gap-1.5 text-sm text-(--store-muted)">
+              <p className="flex min-w-0 items-start gap-1.5 text-xs text-(--store-muted) sm:text-sm">
                 <MapPin aria-hidden="true" className="size-4 shrink-0" />
-                <span>{location}</span>
+                <span className="line-clamp-2">{location}</span>
               </p>
             ) : null}
           </div>
@@ -156,7 +201,7 @@ export function StorePublicProfile({
         {publicOwner ? (
           <aside
             aria-label={t("publicOwner.title")}
-            className="col-start-2 row-start-1 flex max-w-[10rem] flex-col items-end gap-2 text-right sm:row-span-2 sm:max-w-none"
+            className="col-start-2 row-start-1 flex w-[9.25rem] max-w-[9.25rem] flex-col items-end gap-1.5 text-right sm:row-span-2 sm:w-auto sm:max-w-none sm:gap-2"
           >
             <h2 className="text-[10px] font-semibold leading-tight text-(--store-muted) sm:text-xs">
               {t("publicOwner.title")}
@@ -190,7 +235,7 @@ export function StorePublicProfile({
                 storeName: storeName.trim(),
               })}
               icon="mail"
-              className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-(--store-primary) px-3 py-2 text-xs font-semibold text-(--store-primary-text) transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2"
+              className="inline-flex min-h-11 min-w-[8.75rem] items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-(--store-primary) px-3 py-2 text-xs font-semibold text-(--store-primary-text) transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2"
             />
           </aside>
         ) : null}
@@ -199,8 +244,8 @@ export function StorePublicProfile({
             aria-label={t("social.storeLinks")}
             className={
               hasPublicOwner
-                ? "col-span-2 row-start-2 flex items-center gap-2 sm:col-span-1 sm:col-start-1 sm:row-start-2"
-                : "col-span-2 row-start-2 flex items-center gap-2 sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:justify-self-end"
+                ? "col-span-2 row-start-2 flex min-w-0 items-center gap-2 overflow-x-auto no-scrollbar sm:col-span-1 sm:col-start-1 sm:row-start-2"
+                : "col-span-2 row-start-2 flex min-w-0 items-center gap-2 overflow-x-auto no-scrollbar sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:justify-self-end"
             }
           >
             {socials.map(({ platform, url }) => (
@@ -227,6 +272,7 @@ export function StorePublicProfile({
       {bio && banner ? (
         <p className="max-w-2xl text-(--store-muted)">{bio}</p>
       ) : null}
+      <div ref={profileEndRef} aria-hidden="true" className="h-px" />
     </header>
   );
 }
@@ -362,7 +408,7 @@ export function StoreSearchBar({
 }) {
   const t = useTranslations("storefront");
   return (
-    <div className="flex flex-col gap-2 sm:flex-row">
+    <div className="flex min-w-0 flex-row gap-2">
       <label className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-(--store-border) bg-(--store-card) px-3 focus-within:border-(--store-primary) focus-within:ring-2 focus-within:ring-(--store-ring)">
         <Search aria-hidden="true" className="size-4 text-(--store-muted)" />
         <span className="sr-only">{t("searchLabel")}</span>
@@ -370,12 +416,12 @@ export function StoreSearchBar({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder={t("searchStorePlaceholder")}
-          className="h-11 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-(--store-placeholder)"
+          className="h-11 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-(--store-placeholder) sm:text-sm"
         />
       </label>
       {sort !== undefined && onSortChange && (
-        <label className="flex min-h-11 items-center gap-2 rounded-xl border border-(--store-border) bg-(--store-card) px-3 text-sm text-(--store-muted) focus-within:border-(--store-primary) focus-within:ring-2 focus-within:ring-(--store-ring)">
-          <span className="shrink-0">{t("sortBy")}</span>
+        <label className="flex min-h-11 w-[8.75rem] shrink-0 items-center gap-1 rounded-xl border border-(--store-border) bg-(--store-card) px-2 text-xs text-(--store-muted) focus-within:border-(--store-primary) focus-within:ring-2 focus-within:ring-(--store-ring) sm:w-auto sm:gap-2 sm:px-3 sm:text-sm">
+          <span className="shrink-0">{t("sortByShort")}</span>
           <select
             aria-label={t("sortBy")}
             value={sort}
@@ -409,18 +455,21 @@ export function CategoryFilter({
     <div
       role="group"
       aria-label={t("categories")}
-      className="flex gap-2 overflow-x-auto py-1"
+      className="no-scrollbar flex gap-2 overflow-x-auto py-1"
     >
       <button
         type="button"
         aria-pressed={selected.length === 0}
         onClick={() => onChange([])}
-        className={`min-h-10 shrink-0 rounded-full border px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) ${
+        className={`min-h-11 shrink-0 rounded-full border px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) ${
           selected.length === 0
-            ? "border-transparent bg-(--store-tab-active) text-(--store-on-active)"
+            ? "border-2 border-(--store-primary) bg-(--store-surface) text-(--store-primary-text)"
             : "border-(--store-border) bg-(--store-card) text-(--store-muted) hover:border-(--store-primary)"
         }`}
       >
+        {selected.length === 0 ? (
+          <Check aria-hidden="true" className="mr-1 inline size-4" />
+        ) : null}
         {t("allCategories")}
       </button>
       {categories.map((category) => {
@@ -432,14 +481,21 @@ export function CategoryFilter({
             type="button"
             aria-pressed={active}
             onClick={() =>
-              onChange(active && selected.length === 1 ? [] : [id])
+              onChange(
+                active
+                  ? selected.filter((selectedId) => selectedId !== id)
+                  : [...selected, id],
+              )
             }
-            className={`min-h-10 shrink-0 rounded-full border px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) ${
+            className={`min-h-11 shrink-0 rounded-full border px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) ${
               active
-                ? "border-transparent bg-(--store-tab-active) text-(--store-on-active)"
+                ? "border-2 border-(--store-primary) bg-(--store-surface) text-(--store-primary-text)"
                 : "border-(--store-border) bg-(--store-card) text-(--store-muted) hover:border-(--store-primary)"
             }`}
           >
+            {active ? (
+              <Check aria-hidden="true" className="mr-1 inline size-4" />
+            ) : null}
             {category.name}
           </button>
         );

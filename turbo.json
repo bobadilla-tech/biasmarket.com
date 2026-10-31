@@ -3,7 +3,8 @@
   "globalEnv": [
     "DATABASE_URL",
     "NEXT_PUBLIC_SANITY_PROJECT_ID",
-    "NEXT_PUBLIC_SANITY_DATASET"
+    "NEXT_PUBLIC_SANITY_DATASET",
+    "NEXT_PUBLIC_STOREFRONT_REDESIGN_STORE_SLUGS"
   ],
   "globalPassThroughEnv": ["BASE_REF"],
   "tasks": {

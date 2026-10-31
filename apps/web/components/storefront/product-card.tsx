@@ -139,7 +139,7 @@ export function ProductCard({
             />
           );
         })()}
-        <h3 className="text-sm font-bold uppercase text-(--store-text)">
+        <h3 className="line-clamp-2 min-h-10 text-sm font-bold uppercase leading-5 text-(--store-text)">
           {product.name}
         </h3>
         <p className="store-theme-active-text font-bold text-sm">
