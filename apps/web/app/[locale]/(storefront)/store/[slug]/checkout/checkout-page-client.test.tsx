@@ -116,14 +116,18 @@ test("clears the cart from localStorage once the order is created", async () => 
   renderWithProviders(<CheckoutPageClient />);
 
   await user.type(
-    await screen.findByPlaceholderText("Teléfono (WhatsApp)"),
+    await screen.findByPlaceholderText("Ej. Vale, Ana, etc."),
+    "Jane Doe",
+  );
+  await user.type(
+    await screen.findByPlaceholderText("Ej. 999 999 999"),
     "988888888",
   );
   await user.type(screen.getByPlaceholderText("Email"), "jane@example.com");
 
-  const confirmButton = screen.getByRole("button", {
+  const confirmButton = screen.getAllByRole("button", {
     name: /Confirmar pedido/i,
-  }) as HTMLButtonElement;
+  })[0] as HTMLButtonElement;
   // The button stays disabled until the delivery options resolve and the
   // auto-selected delivery method is set — clicking while disabled is a
   // no-op that would leave the cart untouched. Wait for it to enable so the
@@ -138,7 +142,17 @@ test("clears the cart from localStorage once the order is created", async () => 
         JSON.parse(globalThis.localStorage.getItem(CART_KEY) ?? "null"),
       ).toEqual([]);
       expect(screen.getByText(/pedido creado/i)).toBeTruthy();
+      expect(
+        screen.getByRole("dialog", { name: /pedido creado/i }),
+      ).toBeTruthy();
     },
     { timeout: 2000 },
   );
+
+  await user.click(screen.getByRole("button", { name: "Cerrar confirmación" }));
+  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(screen.getByText(/pedido creado/i)).toBeTruthy();
+  expect(
+    screen.queryByRole("button", { name: /confirmar pedido/i }),
+  ).toBeNull();
 });

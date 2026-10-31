@@ -1,5 +1,5 @@
-import { expect, test } from "vitest";
-import { screen } from "@testing-library/react";
+import { expect, test, vi } from "vitest";
+import { fireEvent, screen } from "@testing-library/react";
 import { renderWithProviders } from "../../../test-utils/render-with-providers";
 import type { CartItem } from "@/lib/cart";
 import { CheckoutSummary } from "./checkout-summary";
@@ -70,4 +70,26 @@ test("PARTIAL with no configured deposit percent (<100 gate) falls back to full"
 
   expect(screen.queryByText("Pagar ahora")).toBeNull();
   expect(rowText("Total")).toContain("10.00");
+});
+
+test("summary updates quantities and submits through the checkout form", () => {
+  const onQuantityChange = vi.fn();
+  renderWithProviders(
+    <CheckoutSummary
+      items={[item()]}
+      canSubmit
+      onQuantityChange={onQuantityChange}
+    />,
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", { name: "Aumentar cantidad de Photocard Set" }),
+  );
+  expect(onQuantityChange).toHaveBeenCalledWith(item(), 2);
+
+  const submitButton = screen.getByRole("button", {
+    name: /Confirmar pedido/i,
+  }) as HTMLButtonElement;
+  expect(submitButton.disabled).toBe(false);
+  expect(submitButton.getAttribute("form")).toBe("checkout-order-form");
 });
