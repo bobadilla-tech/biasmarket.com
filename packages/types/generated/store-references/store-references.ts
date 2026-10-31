@@ -10,7 +10,7 @@ import type {
   StoreReferenceResponseDto,
   StoreReferencesControllercreateBody,
   StoreReferencesControllerfindPublicParams,
-  UpdateStoreReferenceDto,
+  StoreReferencesControllerupdateBody,
 } from "../api.schemas.js";
 
 import { customFetch } from "../../http.js";
@@ -44,6 +44,12 @@ export const create = async (
   if (storeReferencesControllercreateBody.caption !== undefined) {
     formData.append(`caption`, storeReferencesControllercreateBody.caption);
   }
+  if (storeReferencesControllercreateBody.hidden !== undefined) {
+    formData.append(
+      `hidden`,
+      storeReferencesControllercreateBody.hidden.toString(),
+    );
+  }
   formData.append(
     `width`,
     storeReferencesControllercreateBody.width.toString(),
@@ -52,10 +58,12 @@ export const create = async (
     `height`,
     storeReferencesControllercreateBody.height.toString(),
   );
-  formData.append(
-    `privacyConfirmed`,
-    storeReferencesControllercreateBody.privacyConfirmed.toString(),
-  );
+  if (storeReferencesControllercreateBody.privacyConfirmed !== undefined) {
+    formData.append(
+      `privacyConfirmed`,
+      storeReferencesControllercreateBody.privacyConfirmed.toString(),
+    );
+  }
 
   return customFetch<StoreReferenceResponseDto>(getCreateUrl(storeId), {
     ...options,
@@ -71,16 +79,50 @@ export const getUpdateUrl = (storeId: string, referenceId: string) => {
 export const update = async (
   storeId: string,
   referenceId: string,
-  updateStoreReferenceDto: UpdateStoreReferenceDto,
+  storeReferencesControllerupdateBody: StoreReferencesControllerupdateBody,
   options?: Parameters<typeof customFetch>[1],
 ): Promise<StoreReferenceResponseDto> => {
+  const formData = new FormData();
+  if (storeReferencesControllerupdateBody.file !== undefined) {
+    formData.append(`file`, storeReferencesControllerupdateBody.file);
+  }
+  if (storeReferencesControllerupdateBody.takenAt !== undefined) {
+    formData.append(`takenAt`, storeReferencesControllerupdateBody.takenAt);
+  }
+  if (storeReferencesControllerupdateBody.caption !== undefined) {
+    formData.append(`caption`, storeReferencesControllerupdateBody.caption);
+  }
+  if (storeReferencesControllerupdateBody.hidden !== undefined) {
+    formData.append(
+      `hidden`,
+      storeReferencesControllerupdateBody.hidden.toString(),
+    );
+  }
+  if (storeReferencesControllerupdateBody.privacyConfirmed !== undefined) {
+    formData.append(
+      `privacyConfirmed`,
+      storeReferencesControllerupdateBody.privacyConfirmed.toString(),
+    );
+  }
+  if (storeReferencesControllerupdateBody.width !== undefined) {
+    formData.append(
+      `width`,
+      storeReferencesControllerupdateBody.width.toString(),
+    );
+  }
+  if (storeReferencesControllerupdateBody.height !== undefined) {
+    formData.append(
+      `height`,
+      storeReferencesControllerupdateBody.height.toString(),
+    );
+  }
+
   return customFetch<StoreReferenceResponseDto>(
     getUpdateUrl(storeId, referenceId),
     {
       ...options,
       method: "PATCH",
-      headers: { "Content-Type": "application/json", ...options?.headers },
-      body: JSON.stringify(updateStoreReferenceDto),
+      body: formData,
     },
   );
 };

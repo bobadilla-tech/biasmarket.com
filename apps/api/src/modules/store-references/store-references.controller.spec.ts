@@ -2,6 +2,7 @@ import {
   ForbiddenException,
   type INestApplication,
   UnauthorizedException,
+  ValidationPipe,
 } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import type { ExecutionContext } from "@nestjs/common";
@@ -22,6 +23,11 @@ describe("StoreReferencesController admin routes", () => {
   };
   const service = {
     setHidden: vi.fn().mockResolvedValue(reference),
+    findOwned: vi.fn().mockResolvedValue({
+      ...reference,
+      imageUrl: "https://cdn.test/old.jpg",
+    }),
+    update: vi.fn().mockResolvedValue(reference),
     findPublic: vi.fn().mockResolvedValue({
       items: [reference],
       total: 1,
@@ -59,6 +65,9 @@ describe("StoreReferencesController admin routes", () => {
       .compile();
 
     app = module.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({ transform: true, whitelist: true }),
+    );
     await app.init();
   });
 
@@ -94,6 +103,31 @@ describe("StoreReferencesController admin routes", () => {
       expect(service.setHidden).not.toHaveBeenCalled();
     },
   );
+
+  it("allows a seller to keep a new reference hidden without privacy confirmation", async () => {
+    await request(app.getHttpServer())
+      .patch("/stores/store-1/references/reference-1")
+      .set("x-test-role", "user")
+      .field("hidden", "true")
+      .expect(200);
+
+    expect(service.update).toHaveBeenCalledWith(
+      "reference-1",
+      "store-1",
+      "user-1",
+      expect.objectContaining({ hidden: true }),
+    );
+  });
+
+  it("requires privacy confirmation when a seller publishes a reference", async () => {
+    await request(app.getHttpServer())
+      .patch("/stores/store-1/references/reference-1")
+      .set("x-test-role", "user")
+      .field("hidden", "false")
+      .expect(400);
+
+    expect(service.update).not.toHaveBeenCalled();
+  });
 
   it.each(["202", "9007199254740992"])(
     "rejects unsafe or unreachable public reference page %s",

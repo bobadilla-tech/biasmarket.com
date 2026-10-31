@@ -3341,15 +3341,6 @@ export interface StoreReferenceResponseDto {
   createdAt: string;
 }
 
-export interface UpdateStoreReferenceDto {
-  takenAt?: string;
-  /**
-   * @maxLength 240
-   * @nullable
-   */
-  caption?: string | null;
-}
-
 export interface PublicStoreReferencesResponseDto {
   items: StoreReferenceResponseDto[];
   total: number;
@@ -3462,6 +3453,7 @@ export type StoreReferencesControllercreateBody = {
   takenAt: string;
   /** @maxLength 240 */
   caption?: string;
+  hidden?: boolean;
   /**
    * @minimum 1
    * @maximum 12000
@@ -3472,7 +3464,26 @@ export type StoreReferencesControllercreateBody = {
    * @maximum 12000
    */
   height: number;
-  privacyConfirmed: boolean;
+  privacyConfirmed?: boolean;
+};
+
+export type StoreReferencesControllerupdateBody = {
+  file?: Blob;
+  takenAt?: string;
+  /** @maxLength 240 */
+  caption?: string;
+  hidden?: boolean;
+  privacyConfirmed?: boolean;
+  /**
+   * @minimum 1
+   * @maximum 12000
+   */
+  width?: number;
+  /**
+   * @minimum 1
+   * @maximum 12000
+   */
+  height?: number;
 };
 
 export type StoreReferencesControllerfindPublicParams = {

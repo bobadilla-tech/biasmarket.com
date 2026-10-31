@@ -3165,7 +3165,8 @@ export default async () => {
           import('./modules/store-references/dto/create-store-reference.dto.js'),
           {
             CreateStoreReferenceDto: {
-              privacyConfirmed: { required: true, type: () => Boolean },
+              hidden: { required: false, type: () => Boolean },
+              privacyConfirmed: { required: false, type: () => Boolean },
               takenAt: { required: true, type: () => String },
               caption: { required: false, type: () => String, maxLength: 240 },
               width: {
@@ -3187,6 +3188,20 @@ export default async () => {
           import('./modules/store-references/dto/update-store-reference.dto.js'),
           {
             UpdateStoreReferenceDto: {
+              hidden: { required: false, type: () => Boolean },
+              privacyConfirmed: { required: false, type: () => Boolean },
+              width: {
+                required: false,
+                type: () => Number,
+                minimum: 1,
+                maximum: 12000,
+              },
+              height: {
+                required: false,
+                type: () => Number,
+                minimum: 1,
+                maximum: 12000,
+              },
               takenAt: { required: false, type: () => String },
               caption: {
                 required: false,
