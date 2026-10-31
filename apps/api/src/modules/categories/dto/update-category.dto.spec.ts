@@ -26,6 +26,17 @@ describe("UpdateCategoryDto imageUrl", () => {
     }
   });
 
+  it("matches the double-slash path produced by a trailing storage URL slash", async () => {
+    process.env.S3_PUBLIC_URL = "https://cdn.biasmarket.com/";
+    process.env.S3_BUCKET = "products";
+    const dto = Object.assign(new UpdateCategoryDto(), {
+      imageUrl:
+        "https://cdn.biasmarket.com//products/store-categories/category.png",
+    });
+
+    expect(await validate(dto)).toEqual([]);
+  });
+
   it("rejects URLs outside the configured category image storage path", async () => {
     process.env.S3_PUBLIC_URL = "https://cdn.biasmarket.com";
     process.env.S3_BUCKET = "products";

@@ -52,6 +52,10 @@ export const create = async (
     `height`,
     storeReferencesControllercreateBody.height.toString(),
   );
+  formData.append(
+    `privacyConfirmed`,
+    storeReferencesControllercreateBody.privacyConfirmed.toString(),
+  );
 
   return customFetch<StoreReferenceResponseDto>(getCreateUrl(storeId), {
     ...options,

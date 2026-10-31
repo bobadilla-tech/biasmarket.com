@@ -13,6 +13,7 @@ import {
   UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
 import {
   ApiBody,
   ApiConsumes,
@@ -48,8 +49,9 @@ const REFERENCE_IMAGE_PIPE = new UploadedFileValidationPipe({
 });
 
 function serializeReference(reference: any): StoreReferenceResponseDto {
+  const { privacyConfirmed: _privacyConfirmed, ...serialized } = reference;
   return {
-    ...reference,
+    ...serialized,
     takenAt: reference.takenAt.toISOString(),
     createdAt: reference.createdAt.toISOString(),
   };
@@ -81,13 +83,14 @@ export class StoreReferencesController {
   @ApiBody({
     schema: {
       type: "object",
-      required: ["file", "takenAt", "width", "height"],
+      required: ["file", "takenAt", "width", "height", "privacyConfirmed"],
       properties: {
         file: { type: "string", format: "binary" },
         takenAt: { type: "string", format: "date-time" },
         caption: { type: "string", maxLength: 240 },
         width: { type: "integer", minimum: 1, maximum: 12000 },
         height: { type: "integer", minimum: 1, maximum: 12000 },
+        privacyConfirmed: { type: "boolean" },
       },
     },
   })
@@ -109,6 +112,9 @@ export class StoreReferencesController {
         "Las dimensiones no coinciden con la imagen enviada",
       );
     }
+    if (!dto.privacyConfirmed) {
+      throw new BadRequestException("Se requiere confirmar la privacidad");
+    }
     const imageUrl = await this.storage.uploadStoreReferenceImage(
       file.buffer,
       file.detectedMimeType,
@@ -120,6 +126,7 @@ export class StoreReferencesController {
         caption: dto.caption?.trim() || undefined,
         width: dto.width,
         height: dto.height,
+        privacyConfirmed: true,
       });
       return serializeReference(reference);
     } catch (error) {
@@ -182,6 +189,8 @@ export class StoreReferencesController {
   }
 
   @Public()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 60 } })
   @Get("stores/:slug/references/public")
   @ApiQuery({ name: "orden", required: false, enum: ["recientes", "antiguas"] })
   @ApiQuery({ name: "page", required: false, type: Number })

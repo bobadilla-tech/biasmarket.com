@@ -7,7 +7,7 @@ import { StoreReferencesService } from "./store-references.service.js";
 describe("StoreReferencesService", () => {
   let service: StoreReferencesService;
   let prisma: {
-    store: { findUnique: Mock };
+    store: { findUnique: Mock; findFirst: Mock };
     storeReference: {
       count: Mock;
       create: Mock;
@@ -24,7 +24,7 @@ describe("StoreReferencesService", () => {
 
   beforeEach(async () => {
     prisma = {
-      store: { findUnique: vi.fn() },
+      store: { findUnique: vi.fn(), findFirst: vi.fn() },
       storeReference: {
         count: vi.fn(),
         create: vi.fn(),
@@ -60,6 +60,7 @@ describe("StoreReferencesService", () => {
         takenAt: new Date(),
         width: 800,
         height: 600,
+        privacyConfirmed: true,
       }),
     ).rejects.toThrow(ForbiddenException);
     expect(prisma.storeReference.create).not.toHaveBeenCalled();
@@ -78,12 +79,14 @@ describe("StoreReferencesService", () => {
       takenAt: new Date("2026-10-01T00:00:00.000Z"),
       width: 800,
       height: 600,
+      privacyConfirmed: true,
     });
 
     expect(prisma.storeReference.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         storeId: "store-a",
         imageUrl: "https://cdn.test/ref.jpg",
+        privacyConfirmed: true,
       }),
     });
     expect(prisma.$queryRaw).toHaveBeenCalled();
@@ -98,11 +101,16 @@ describe("StoreReferencesService", () => {
   });
 
   it("filters hidden references and sorts newest first on the public API", async () => {
-    prisma.store.findUnique.mockResolvedValue({ id: "store-a" });
+    prisma.store.findFirst.mockResolvedValue({ id: "store-a" });
     prisma.storeReference.findMany.mockResolvedValue([]);
     prisma.storeReference.count.mockResolvedValue(0);
 
     await service.findPublic("shop", "recientes", 2, 24);
+
+    expect(prisma.store.findFirst).toHaveBeenCalledWith({
+      where: { slug: "shop", isPublic: true, isDemo: false },
+      select: { id: true },
+    });
 
     expect(prisma.storeReference.findMany).toHaveBeenCalledWith({
       where: { storeId: "store-a", hidden: false },
@@ -116,7 +124,7 @@ describe("StoreReferencesService", () => {
   });
 
   it("does not return public data for an unknown store", async () => {
-    prisma.store.findUnique.mockResolvedValue(null);
+    prisma.store.findFirst.mockResolvedValue(null);
     await expect(
       service.findPublic("missing", "recientes", 1, 24),
     ).rejects.toThrow(NotFoundException);

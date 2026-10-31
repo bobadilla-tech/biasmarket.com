@@ -18,7 +18,8 @@ class AllowedCategoryImageUrl implements ValidatorConstraintInterface {
     try {
       const allowedBase = new URL(publicUrl);
       const imageUrl = new URL(value);
-      const basePath = allowedBase.pathname.replace(/\/$/, "");
+      const expectedPath = new URL(`${publicUrl}/${bucket}/store-categories/`)
+        .pathname;
       return (
         (allowedBase.protocol === "https:" ||
           allowedBase.protocol === "http:") &&
@@ -29,7 +30,7 @@ class AllowedCategoryImageUrl implements ValidatorConstraintInterface {
         !imageUrl.password &&
         !imageUrl.search &&
         !imageUrl.hash &&
-        imageUrl.pathname.startsWith(`${basePath}/${bucket}/store-categories/`)
+        imageUrl.pathname.startsWith(expectedPath)
       );
     } catch {
       return false;

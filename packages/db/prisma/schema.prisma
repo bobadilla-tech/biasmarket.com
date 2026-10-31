@@ -238,16 +238,17 @@ enum StoreReferenceSource {
 }
 
 model StoreReference {
-  id        String               @id @default(cuid())
-  storeId   String
-  imageUrl  String
-  width     Int
-  height    Int
-  takenAt   DateTime
-  source    StoreReferenceSource @default(STORE)
-  caption   String?
-  hidden    Boolean              @default(false)
-  createdAt DateTime             @default(now())
+  id               String               @id @default(cuid())
+  storeId          String
+  imageUrl         String
+  width            Int
+  height           Int
+  takenAt          DateTime
+  source           StoreReferenceSource @default(STORE)
+  caption          String?
+  hidden           Boolean              @default(false)
+  privacyConfirmed Boolean              @default(false)
+  createdAt        DateTime             @default(now())
 
   store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
 

@@ -3472,6 +3472,7 @@ export type StoreReferencesControllercreateBody = {
    * @maximum 12000
    */
   height: number;
+  privacyConfirmed: boolean;
 };
 
 export type StoreReferencesControllerfindPublicParams = {

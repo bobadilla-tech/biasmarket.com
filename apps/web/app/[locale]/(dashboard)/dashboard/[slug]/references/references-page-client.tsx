@@ -35,7 +35,7 @@ export function ReferencesPageClient() {
   const t = useTranslations("dashboard.references");
   const tc = useTranslations("common");
   const { locale } = useParams<{ locale: string }>();
-  const { storeId, loading } = useDashboardStore();
+  const { storeId, loading, error: storeError } = useDashboardStore();
   const client = useQueryClient();
   const query = useQuery({
     queryKey: queryKey(storeId ?? ""),
@@ -50,7 +50,7 @@ export function ReferencesPageClient() {
   const [takenAt, setTakenAt] = useState(localDateTimeValue);
   const [privacyConfirmed, setPrivacyConfirmed] = useState(false);
   const [sort, setSort] = useState<"recientes" | "antiguas">("recientes");
-  const [selected, setSelected] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(() => new Set());
@@ -67,22 +67,28 @@ export function ReferencesPageClient() {
       }),
     [query.data, sort],
   );
+  const selectedIndex = selectedId
+    ? items.findIndex((item) => item.id === selectedId)
+    : -1;
+  const selectedItem = selectedIndex >= 0 ? items[selectedIndex] : null;
 
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
-    if (selected !== null && !dialog.open) dialog.showModal();
-    if (selected === null && dialog.open) dialog.close();
-  }, [selected]);
+    if (selectedItem && !dialog.open) dialog.showModal();
+    if (!selectedItem && dialog.open) dialog.close();
+    if (selectedId && !selectedItem) setSelectedId(null);
+  }, [selectedId, selectedItem]);
 
   function moveSelection(offset: number) {
-    if (!items.length || selected === null) return;
-    setSelected((selected + offset + items.length) % items.length);
+    if (!items.length || selectedIndex < 0) return;
+    const nextIndex = (selectedIndex + offset + items.length) % items.length;
+    setSelectedId(items[nextIndex]!.id);
   }
 
   async function uploadFiles(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!storeId || !files.length || !privacyConfirmed) return;
+    if (busy || !storeId || !files.length || !privacyConfirmed) return;
     setBusy(true);
     setError(null);
     try {
@@ -96,6 +102,7 @@ export function ReferencesPageClient() {
           caption: caption.trim() || undefined,
           width,
           height,
+          privacyConfirmed: true,
         });
         setFiles((current) => current.filter((selected) => selected !== file));
       }
@@ -150,7 +157,11 @@ export function ReferencesPageClient() {
             type="file"
             accept="image/jpeg,image/png"
             multiple
-            onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
+            disabled={busy}
+            onChange={(event) => {
+              setFiles(Array.from(event.target.files ?? []));
+              event.currentTarget.value = "";
+            }}
           />
         </label>
         {files.length ? (
@@ -165,6 +176,7 @@ export function ReferencesPageClient() {
               type="datetime-local"
               required
               value={takenAt}
+              disabled={busy}
               onChange={(event) => setTakenAt(event.target.value)}
               className="h-10 rounded-md border bg-background px-3"
             />
@@ -174,6 +186,7 @@ export function ReferencesPageClient() {
             <input
               maxLength={240}
               value={caption}
+              disabled={busy}
               onChange={(event) => setCaption(event.target.value)}
               className="h-10 rounded-md border bg-background px-3"
             />
@@ -183,14 +196,16 @@ export function ReferencesPageClient() {
           <input
             type="checkbox"
             checked={privacyConfirmed}
+            disabled={busy}
             onChange={(event) => setPrivacyConfirmed(event.target.checked)}
             className="mt-1 size-4"
           />
           <span>{t("privacyNotice")}</span>
         </label>
-        {error || query.error ? (
+        {error || storeError || query.error ? (
           <p role="alert" className="text-sm text-destructive">
             {error ??
+              storeError ??
               (query.error instanceof Error
                 ? query.error.message
                 : tc("networkError"))}
@@ -222,14 +237,14 @@ export function ReferencesPageClient() {
       </div>
       {items.length ? (
         <ul className="columns-2 gap-3 md:columns-3 xl:columns-4">
-          {items.map((item, index) => (
+          {items.map((item) => (
             <li
               key={item.id}
               className="mb-3 break-inside-avoid overflow-hidden rounded-xl border bg-card"
             >
               <button
                 type="button"
-                onClick={() => setSelected(index)}
+                onClick={() => setSelectedId(item.id)}
                 aria-label={t("openImage", {
                   date: formatDate(item.takenAt, locale),
                 })}
@@ -281,16 +296,13 @@ export function ReferencesPageClient() {
       <dialog
         ref={dialogRef}
         aria-label={
-          selected === null
+          selectedItem === null
             ? t("title")
             : t("openImage", {
-                date: formatDate(
-                  items[selected]?.takenAt ?? new Date().toISOString(),
-                  locale,
-                ),
+                date: formatDate(selectedItem.takenAt, locale),
               })
         }
-        onCancel={() => setSelected(null)}
+        onCancel={() => setSelectedId(null)}
         onKeyDown={(event) => {
           if (event.key === "ArrowLeft") {
             event.preventDefault();
@@ -303,14 +315,14 @@ export function ReferencesPageClient() {
         }}
         className="max-h-[95dvh] max-w-[95vw] rounded-2xl border-0 bg-black/95 p-3 text-white backdrop:bg-black/80"
       >
-        {selected !== null && items[selected] ? (
+        {selectedItem ? (
           <div className="relative grid max-h-[90dvh] min-w-[min(90vw,64rem)] place-items-center">
             <Button
               type="button"
               variant="secondary"
               size="icon"
               aria-label={t("closeViewer")}
-              onClick={() => setSelected(null)}
+              onClick={() => setSelectedId(null)}
               className="absolute right-2 top-2 z-10"
             >
               <X className="size-5" />
@@ -326,13 +338,13 @@ export function ReferencesPageClient() {
               <ArrowLeft className="size-5" />
             </Button>
             <Image
-              src={items[selected].imageUrl}
+              src={selectedItem.imageUrl}
               alt={t("referenceAlt", {
-                date: formatDate(items[selected].takenAt, locale),
-                caption: items[selected].caption ?? "",
+                date: formatDate(selectedItem.takenAt, locale),
+                caption: selectedItem.caption ?? "",
               })}
-              width={items[selected].width}
-              height={items[selected].height}
+              width={selectedItem.width}
+              height={selectedItem.height}
               sizes="95vw"
               className="max-h-[85dvh] max-w-full object-contain"
             />

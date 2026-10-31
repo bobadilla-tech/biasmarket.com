@@ -524,18 +524,7 @@ export class StoresService {
     if (!store) throw new NotFoundException("Tienda no encontrada");
 
     const categorySlugs = query.categories.length
-      ? (
-          await this.prisma.category.findMany({
-            where: {
-              storeId: store.id,
-              OR: [
-                { slug: { in: query.categories } },
-                { parent: { slug: { in: query.categories } } },
-              ],
-            },
-            select: { slug: true },
-          })
-        ).map(({ slug }) => slug)
+      ? await this.findCategoryAndDescendantSlugs(store.id, query.categories)
       : [];
 
     const normalizedQuery = query.q
@@ -607,6 +596,39 @@ export class StoresService {
     };
   }
 
+  private async findCategoryAndDescendantSlugs(
+    storeId: string,
+    requestedSlugs: string[],
+  ) {
+    const categories = await this.prisma.category.findMany({
+      where: { storeId },
+      select: { id: true, slug: true, parentId: true },
+    });
+    const children = new Map<string, typeof categories>();
+    for (const category of categories) {
+      if (!category.parentId) continue;
+      const siblings = children.get(category.parentId) ?? [];
+      siblings.push(category);
+      children.set(category.parentId, siblings);
+    }
+    const bySlug = new Map(
+      categories.map((category) => [category.slug, category]),
+    );
+    const included = new Set<string>();
+    const visit = (categoryId: string) => {
+      if (included.has(categoryId)) return;
+      included.add(categoryId);
+      for (const child of children.get(categoryId) ?? []) visit(child.id);
+    };
+    for (const slug of requestedSlugs) {
+      const category = bySlug.get(slug);
+      if (category) visit(category.id);
+    }
+    return categories
+      .filter((category) => included.has(category.id))
+      .map(({ slug }) => slug);
+  }
+
   async findCategoriesPublic(slug: string) {
     const store = await this.prisma.store.findFirst({
       where: {
@@ -640,9 +662,16 @@ export class StoresService {
     return categories
       .filter((category) => category.parentId === null)
       .map((category) => {
-        const descendants = categories.filter(
-          (candidate) => candidate.parentId === category.id,
-        );
+        const descendants: typeof categories = [];
+        const visit = (parentId: string) => {
+          for (const child of categories.filter(
+            (item) => item.parentId === parentId,
+          )) {
+            descendants.push(child);
+            visit(child.id);
+          }
+        };
+        visit(category.id);
         const products = [category, ...descendants].flatMap(
           (entry) => entry.products,
         );
@@ -660,7 +689,8 @@ export class StoresService {
           imageUrl,
           productCount: productIds.size,
         };
-      });
+      })
+      .filter((category) => category.productCount > 0);
   }
 
   async findPublicProduct(slug: string, productId: string) {

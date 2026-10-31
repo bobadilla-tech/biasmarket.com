@@ -3165,6 +3165,7 @@ export default async () => {
           import('./modules/store-references/dto/create-store-reference.dto.js'),
           {
             CreateStoreReferenceDto: {
+              privacyConfirmed: { required: true, type: () => Boolean },
               takenAt: { required: true, type: () => String },
               caption: { required: false, type: () => String, maxLength: 240 },
               width: {

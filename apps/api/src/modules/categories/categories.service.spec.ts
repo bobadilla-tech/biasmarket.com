@@ -182,6 +182,10 @@ describe("CategoriesService", () => {
           include: { _count: { select: { products: true } } },
         }),
       );
+      expect(prisma.store.update).toHaveBeenCalledWith({
+        where: { id: storeId },
+        data: { contentStaleAt: expect.any(Date) },
+      });
 
       prisma.category.update.mockRejectedValue({ code: "P2002" });
       await expect(

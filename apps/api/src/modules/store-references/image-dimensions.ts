@@ -14,11 +14,17 @@ export function readImageDimensions(
   buffer: Buffer,
   mimeType: SupportedUploadMimeType,
 ): ImageDimensions {
-  if (mimeType === "image/png" && buffer.length >= 24) {
-    return {
-      width: buffer.readUInt32BE(16),
-      height: buffer.readUInt32BE(20),
-    };
+  if (mimeType === "image/png" && buffer.length >= 33) {
+    const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+    const hasPngHeader = buffer.subarray(0, 8).equals(signature);
+    const hasIhdrChunk =
+      buffer.readUInt32BE(8) === 13 &&
+      buffer.toString("ascii", 12, 16) === "IHDR";
+    if (hasPngHeader && hasIhdrChunk) {
+      const width = buffer.readUInt32BE(16);
+      const height = buffer.readUInt32BE(20);
+      if (width > 0 && height > 0) return { width, height };
+    }
   }
 
   if (

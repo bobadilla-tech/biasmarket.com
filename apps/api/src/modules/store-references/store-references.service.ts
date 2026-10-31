@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service.js";
 import type { UpdateStoreReferenceDto } from "./dto/update-store-reference.dto.js";
+import { PUBLIC_STORE_VISIBILITY } from "../../common/public-store-visibility.js";
 
 const MAX_REFERENCES_PER_STORE = 200;
 
@@ -39,6 +40,7 @@ export class StoreReferencesService {
       caption?: string;
       width: number;
       height: number;
+      privacyConfirmed: true;
     },
   ) {
     await this.assertOwnership(storeId, userId);
@@ -141,8 +143,8 @@ export class StoreReferencesService {
     page: number,
     limit: number,
   ) {
-    const store = await this.prisma.store.findUnique({
-      where: { slug },
+    const store = await this.prisma.store.findFirst({
+      where: { slug, ...PUBLIC_STORE_VISIBILITY },
       select: { id: true },
     });
     if (!store) throw new NotFoundException("Tienda no encontrada");

@@ -903,9 +903,11 @@ describe("StoresService", () => {
 
     beforeEach(() => {
       prisma.store.findFirst.mockResolvedValue({ id: "store-1" });
-      prisma.category.findMany.mockResolvedValue(
-        query.categories.map((slug) => ({ slug })),
-      );
+      prisma.category.findMany.mockResolvedValue([
+        { id: "category-1", slug: "photocards", parentId: null },
+        { id: "category-2", slug: "bts", parentId: "category-1" },
+        { id: "category-3", slug: "deep", parentId: "category-2" },
+      ]);
       prisma.$queryRaw
         .mockResolvedValueOnce([{ total: 1n }])
         .mockResolvedValueOnce([{ id: "product-1" }]);
@@ -927,15 +929,10 @@ describe("StoresService", () => {
       expect(idSql.values).toContain("%album%");
       expect(idSql.values).toContain("photocards");
       expect(idSql.values).toContain("bts");
+      expect(idSql.values).toContain("deep");
       expect(prisma.category.findMany).toHaveBeenCalledWith({
-        where: {
-          storeId: "store-1",
-          OR: [
-            { slug: { in: ["photocards", "bts"] } },
-            { parent: { slug: { in: ["photocards", "bts"] } } },
-          ],
-        },
-        select: { slug: true },
+        where: { storeId: "store-1" },
+        select: { id: true, slug: true, parentId: true },
       });
       expect(result).toEqual({
         items: [
@@ -1028,6 +1025,19 @@ describe("StoresService", () => {
           ],
         },
         {
+          id: "category-3",
+          name: "Nested subcategory",
+          slug: "nested-subcategory",
+          parentId: "category-2",
+          imageUrl: null,
+          products: [
+            {
+              productId: "p4",
+              product: { images: ["https://cdn.test/p4.jpg"] },
+            },
+          ],
+        },
+        {
           id: "empty",
           name: "Empty",
           slug: "empty",
@@ -1057,15 +1067,7 @@ describe("StoresService", () => {
           slug: "photocards",
           parentId: null,
           imageUrl: "https://cdn.test/p1.jpg",
-          productCount: 3,
-        },
-        {
-          id: "empty",
-          name: "Empty",
-          slug: "empty",
-          parentId: null,
-          imageUrl: null,
-          productCount: 0,
+          productCount: 4,
         },
       ]);
     });

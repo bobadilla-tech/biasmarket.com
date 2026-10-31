@@ -4,7 +4,10 @@ import { readImageDimensions } from "./image-dimensions.js";
 
 describe("readImageDimensions", () => {
   it("reads PNG dimensions from the IHDR header", () => {
-    const image = Buffer.alloc(24);
+    const image = Buffer.alloc(33);
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).copy(image, 0);
+    image.writeUInt32BE(13, 8);
+    image.write("IHDR", 12, "ascii");
     image.writeUInt32BE(1200, 16);
     image.writeUInt32BE(800, 20);
 
@@ -12,6 +15,19 @@ describe("readImageDimensions", () => {
       width: 1200,
       height: 800,
     });
+  });
+
+  it("rejects PNG data without a valid IHDR chunk", () => {
+    const image = Buffer.alloc(33);
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).copy(image, 0);
+    image.writeUInt32BE(13, 8);
+    image.write("IDAT", 12, "ascii");
+    image.writeUInt32BE(1200, 16);
+    image.writeUInt32BE(800, 20);
+
+    expect(() => readImageDimensions(image, "image/png")).toThrow(
+      BadRequestException,
+    );
   });
 
   it("reads JPEG dimensions from a start-of-frame segment", () => {
