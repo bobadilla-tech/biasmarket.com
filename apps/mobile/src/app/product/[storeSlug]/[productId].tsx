@@ -17,10 +17,19 @@ import { useStoreCart } from "../../../features/cart/use-store-cart";
 import { useMobileI18n } from "../../../i18n/mobile-i18n.js";
 
 export default function ProductDetailScreen() {
-  const { storeSlug, productId } = useLocalSearchParams<{
-    storeSlug: string;
-    productId: string;
-  }>();
+  const { storeSlug: routeStoreSlug, productId: routeProductId } =
+    useLocalSearchParams<{
+      storeSlug: string;
+      productId: string;
+    }>();
+  const storeSlug =
+    typeof routeStoreSlug === "string" && /^[a-z0-9-]+$/i.test(routeStoreSlug)
+      ? routeStoreSlug
+      : "";
+  const productId =
+    typeof routeProductId === "string" && /^[a-z0-9]+$/i.test(routeProductId)
+      ? routeProductId
+      : "";
   const router = useRouter();
   const cart = useStoreCart(storeSlug);
   const { locale, t } = useMobileI18n();
