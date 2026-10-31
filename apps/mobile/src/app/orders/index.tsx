@@ -5,12 +5,12 @@ import { useQuery } from "@tanstack/react-query";
 import { customerAuth } from "@biasmarket/types";
 import { useBuyerSession } from "../../features/auth/session-context";
 import { formatPrice } from "../../features/catalog/catalog-ui";
-import { useMobileI18n } from "../../i18n/mobile-i18n.js";
+import { useMobileI18n } from "../../i18n/mobile-i18n";
 
 export default function OrderHistoryScreen() {
+  const { locale, t } = useMobileI18n();
   const router = useRouter();
   const { status, storeSlug } = useBuyerSession();
-  const { locale, t } = useMobileI18n();
   const ordersQuery = useQuery({
     queryKey: ["buyer", storeSlug, "orders"],
     queryFn: async () => (await customerAuth.me(storeSlug!)).orders,
@@ -40,7 +40,7 @@ export default function OrderHistoryScreen() {
           onPress={() => router.push("/login")}
         >
           <Text className="font-semibold text-brand-ink">
-            {t("auth.signIn")}
+            {t("auth.loginTitle")}
           </Text>
         </Pressable>
       </View>
@@ -96,7 +96,7 @@ export default function OrderHistoryScreen() {
                 {t("orders.order", { id: item.id.slice(0, 8) })}
               </Text>
               <Text className="text-xs text-brand-pink">
-                {paymentStatusLabel(t, item.paymentStatus)}
+                {paymentStatusLabel(item.paymentStatus, t)}
               </Text>
             </View>
             <View className="flex-row items-center justify-between">
@@ -117,8 +117,8 @@ export default function OrderHistoryScreen() {
 }
 
 function paymentStatusLabel(
-  t: (key: string) => string,
   status: string,
+  t: (key: string) => string,
 ): string {
-  return t(`orders.paymentStatus.${status}`);
+  return t(`orders.paymentStatus.${status}`) || status;
 }

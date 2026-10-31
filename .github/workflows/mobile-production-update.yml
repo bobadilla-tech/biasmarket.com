@@ -1,0 +1,43 @@
+name: Mobile production OTA update
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: "Release note for this JavaScript-only update"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    name: Publish OTA update to production
+    runs-on: ubuntu-latest
+    environment: mobile-production
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
+      UPDATE_MESSAGE: ${{ inputs.message }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.11.0
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Publish JavaScript update
+        run: |
+          test -n "$EXPO_TOKEN" || (echo "EXPO_TOKEN is required in mobile-production" && exit 1)
+          test -n "$EAS_PROJECT_ID" || (echo "EAS_PROJECT_ID is required in mobile-production" && exit 1)
+          npm install --global eas-cli
+          cd apps/mobile
+          eas update --channel production --message "$UPDATE_MESSAGE" --non-interactive

@@ -1,20 +1,20 @@
 import { Pressable, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMobileI18n } from "../../../i18n/mobile-i18n.js";
+import { useMobileI18n } from "../../../i18n/mobile-i18n";
 
 export default function CheckoutSuccessScreen() {
+  const { t } = useMobileI18n();
   const { orderId, paymentStatus, proofSubmitted } = useLocalSearchParams<{
     orderId: string;
     paymentStatus: string;
     proofSubmitted: string;
   }>();
   const router = useRouter();
-  const { t } = useMobileI18n();
 
   return (
     <View className="flex-1 items-center justify-center gap-5 bg-brand-ink px-6">
       <Text className="text-center text-3xl font-bold text-brand-pink">
-        {t("checkout.orderSuccessTitle")}
+        {t("checkout.orderSent")}
       </Text>
       <Text className="text-center text-white/80">
         {proofSubmitted === "true"
@@ -34,7 +34,7 @@ export default function CheckoutSuccessScreen() {
         }
       >
         <Text className="font-semibold text-white">
-          {t("orders.viewOrder")}
+          {t("checkout.viewOrder")}
         </Text>
       </Pressable>
       <Pressable
@@ -43,7 +43,7 @@ export default function CheckoutSuccessScreen() {
         onPress={() => router.replace("/")}
       >
         <Text className="font-semibold text-brand-ink">
-          {t("checkout.backToDiscover")}
+          {t("common.backToDiscover")}
         </Text>
       </Pressable>
     </View>
