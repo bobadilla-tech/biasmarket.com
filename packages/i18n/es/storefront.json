@@ -1,6 +1,73 @@
 {
   "notFound": "Tienda no encontrada.",
+  "shopProductsAvailable": "Compra en {storeName} — {count, plural, one {# producto disponible} other {# productos disponibles}}.",
+  "breadcrumbHome": "Inicio",
+  "breadcrumbStores": "Tiendas",
   "noProducts": "Todavía no hay productos publicados.",
+  "noSearchResults": "No encontramos productos con esos filtros.",
+  "productsTab": "Productos",
+  "categoriesTab": "Categorías",
+  "referencesTab": "Referencias",
+  "aboutTab": "Acerca de la tienda",
+  "aboutEyebrow": "Nuestra historia",
+  "storeSectionsLabel": "Secciones de la tienda",
+  "categoriesTabSubtitle": "Explora más de tus artistas favoritos.",
+  "categoriesCount": "{count} {count, plural, one {categoría} other {categorías}}",
+  "categoriesEmpty": "Esta tienda todavía no tiene categorías.",
+  "referencesTitle": "Referencias de {storeName}",
+  "referencesSubtitle": "Opiniones y evidencias de entrega.",
+  "referencesEmptyTitle": "Esta tienda aún no tiene referencias",
+  "referencesEmpty": "Opiniones y evidencias de entrega.",
+  "referencesLoadError": "No se pudieron cargar las referencias. Inténtalo de nuevo.",
+  "referencesPageEmpty": "No hay referencias en esta página.",
+  "openReference": "Ampliar referencia del {date}",
+  "referenceImageAlt": "Referencia del {date}. {caption}",
+  "referenceDay": "Día: {date}",
+  "uploadedByStore": "Subida por la tienda",
+  "uploadedByBuyer": "Subida por el comprador",
+  "referencesPagination": "Páginas de referencias",
+  "closeViewer": "Cerrar visor",
+  "previousImage": "Referencia anterior",
+  "nextImage": "Siguiente referencia",
+  "searchLabel": "Buscar productos",
+  "searchPlaceholder": "Buscar productos...",
+  "searchStorePlaceholder": "Buscar en esta tienda",
+  "searchCategories": "Buscar categorías...",
+  "sortBy": "Ordenar por",
+  "sortByShort": "Ordenar",
+  "sortRecent": "Más recientes",
+  "sortOldest": "Más antiguas",
+  "sortPriceAsc": "Precio: menor a mayor",
+  "sortPriceDesc": "Precio: mayor a menor",
+  "sortNameAsc": "Nombre: A a Z",
+  "sortNameDesc": "Nombre: Z a A",
+  "clearFilters": "Limpiar filtros",
+  "catalogPagination": "Páginas de productos",
+  "previousPage": "Anterior",
+  "nextPage": "Siguiente",
+  "pageOf": "Página {page} de {pages}",
+  "filterByCategory": "Filtrar por categoría",
+  "selectedCategoryCount": "{count, plural, one {# categoría seleccionada} other {# categorías seleccionadas}}",
+  "loadMore": "Cargar más productos",
+  "loadingMore": "Cargando productos...",
+  "categories": "Categorías",
+  "allCategories": "Todas",
+  "categoryImageAlt": "Categoría {name}",
+  "productImageAlt": "Imagen de {name}",
+  "bannerImageAlt": "Banner de la tienda {storeName}",
+  "bannerImageGenericAlt": "Banner de tienda",
+  "publicStoreEyebrow": "SELECCIÓN CUIDADA · BIAS MARKET",
+  "publicStoreProfile": "Perfil público de la tienda",
+  "storeLogoAlt": "Logo de {storeName}",
+  "storeLogoPlaceholder": "Logo de {storeName} no configurado",
+  "publicOwnerAvatarAlt": "Foto de {name}",
+  "publicOwnerAvatarGenericAlt": "Foto del dueño de la tienda",
+  "publicOwner": {
+    "title": "Dueño de la tienda",
+    "contact": "Contactar",
+    "contactMessage": "Hola, tengo una consulta sobre la tienda {storeName}."
+  },
+  "storeOwner": "Sobre la tienda",
   "soldOut": "Agotado",
   "fromPrice": "Desde",
   "availableUntil": "Disponible hasta {date}",
@@ -8,15 +75,18 @@
   "addToCart": "Agregar al carrito",
   "addedToCart": "Agregado ✓",
   "selectVariant": "Selecciona una variante",
+  "chooseOption": "Elige una opción",
   "chooseVariant": "Elige una variante para {product}",
   "cart": "Carrito",
   "cartCount": "{count} productos en el carrito",
   "header": {
     "storeHome": "Ir a la página principal de {name}",
-    "navigation": "Navegación de la tienda"
+    "navigation": "Navegación de la tienda",
+    "biasMarketHome": "Ir al inicio de Bias Market"
   },
   "social": {
-    "linkLabel": "{platform} (se abre en una pestaña nueva)"
+    "linkLabel": "{platform} (se abre en una pestaña nueva)",
+    "storeLinks": "Redes sociales de la tienda"
   },
   "gallery": {
     "previousImage": "Imagen anterior",
@@ -193,7 +263,8 @@
       "passwordsDontMatch": "Las contraseñas no coinciden",
       "genericError": "Algo salió mal. Intenta de nuevo.",
       "goToLogin": "Ingresar"
-    }
+    },
+    "requestNewLink": "Pedir un nuevo enlace"
   },
   "loginPage": {
     "title": "Ingresar",
@@ -204,7 +275,13 @@
     "invalidCredentials": "Teléfono o contraseña inválidos",
     "submit": "Ingresar",
     "submitting": "Ingresando...",
-    "forgotPasswordLink": "¿Olvidaste tu contraseña?"
+    "forgotPasswordLink": "¿Olvidaste tu contraseña?",
+    "google": "Continuar con Google",
+    "googleHint": "Si compraste con tu teléfono, ingresa con tu teléfono para ver esos pedidos.",
+    "googleErrors": {
+      "unavailable": "El inicio de sesión con Google no está disponible ahora",
+      "failed": "No se pudo ingresar con Google. Inténtalo de nuevo."
+    }
   },
   "forgotPasswordPage": {
     "title": "Restablecer contraseña",
@@ -263,7 +340,8 @@
       "proofPending": "Pendiente de revisión",
       "proofApproved": "Aprobado",
       "proofRejected": "Rechazado",
-      "fulfillmentProgress": "Estado del pedido"
+      "fulfillmentProgress": "Estado del pedido",
+      "fullHistory": "Ver el historial completo en Mi cuenta"
     },
     "addresses": {
       "title": "Tus direcciones",
@@ -375,5 +453,224 @@
     "inTransit": "En camino",
     "ready": "Listo para recojo",
     "delivered": "Entregado"
+  },
+  "myPurchases": {
+    "title": "Mis compras",
+    "loggedOutTitle": "Ingresa para ver tus compras",
+    "loggedOutBody": "Ingresa con tu teléfono y contraseña, o continúa con Google. Si eres nuevo, Google crea tu cuenta de comprador en un clic.",
+    "empty": "Aún no tienes compras.",
+    "storeAccount": "Cuenta en la tienda",
+    "pendingBalance": "Pendiente: {currency} {amount}",
+    "signOut": "Cerrar sesión",
+    "claimErrors": {
+      "already_claimed": "Este pedido ya fue guardado en otra cuenta. Si crees que es un error, escríbele a la tienda.",
+      "not_claimable": "Este pedido todavía no se puede guardar. Vuelve a abrir tu enlace cuando el pago esté validado.",
+      "invalid": "El enlace para guardar venció o ya no es válido. Vuelve a abrir tu enlace del pedido e inténtalo de nuevo.",
+      "failed": "No pudimos guardar tu pedido. Vuelve a abrir tu enlace del pedido e inténtalo de nuevo.",
+      "unavailable": "Guardar con Google no está disponible por ahora. Tu enlace del pedido sigue funcionando.",
+      "fallback": "No pudimos guardar tu pedido. Vuelve a abrir tu enlace del pedido e inténtalo de nuevo."
+    },
+    "origin": {
+      "assisted": "Creado por la tienda"
+    },
+    "detail": {
+      "back": "Volver a mis compras",
+      "notFound": "No encontramos este pedido en tu cuenta.",
+      "loginRequired": "Ingresa para ver este pedido.",
+      "loginCta": "Ir a mis compras para ingresar",
+      "claimed": "¡Listo! Guardamos este pedido en tu cuenta. Tu enlace original sigue funcionando."
+    }
+  },
+  "publicOrder": {
+    "metaTitle": "Tu pedido",
+    "metaDescription": "Revisa el estado de tu pedido.",
+    "noscript": "Activa JavaScript para ver tu pedido, o escríbele a la tienda.",
+    "loading": "Cargando tu pedido",
+    "retry": "Reintentar",
+    "invalid": {
+      "title": "Este enlace no es válido",
+      "body": "Este enlace no es válido o fue reemplazado. Pídele a la tienda uno nuevo.",
+      "contact": "Escribir a la tienda"
+    },
+    "rateLimited": {
+      "title": "Demasiados intentos",
+      "body": "Hiciste muchas consultas seguidas. Espera un momento e inténtalo de nuevo."
+    },
+    "error": {
+      "title": "No pudimos cargar tu pedido",
+      "body": "Hubo un problema al cargar tu pedido. Inténtalo de nuevo."
+    },
+    "greeting": "Hola, {name}",
+    "greetingGeneric": "Hola",
+    "phonePrivacyNotice": "La tienda usará tu número de teléfono para enviarte actualizaciones sobre este pedido.",
+    "orderNumber": "Pedido #{number}",
+    "banner": {
+      "pendingPayment": "Tu pedido está esperando el pago. Abajo te mostramos cómo pagar.",
+      "partiallyPaid": "Recibimos parte de tu pago. Falta completar el adelanto.",
+      "paymentSubmitted": "Recibimos tu comprobante y está en revisión.",
+      "verified": "Tu pago está confirmado. Estamos preparando tu pedido.",
+      "rejected": "No pudimos confirmar tu pago. Escríbele a la tienda.",
+      "cancelled": "Este pedido fue cancelado.",
+      "ready": "Tu pedido está listo.",
+      "completed": "Tu pedido fue entregado.",
+      "inTransit": "Tu pedido está en camino.",
+      "expired": "El tiempo para pagar este pedido terminó y se canceló."
+    },
+    "progress": "Avance del pedido",
+    "items": "Tu pedido",
+    "total": "Total",
+    "deposit": "Adelanto",
+    "paid": "Pagado",
+    "pending": "Falta pagar",
+    "pendingDeposit": "Falta del adelanto",
+    "payments": {
+      "title": "Pagos",
+      "voided": "Anulado",
+      "pendingReview": "En revisión",
+      "rejected": "Rechazado",
+      "recorded": "Registrado",
+      "bySelf": "Enviado por ti",
+      "byStore": "Registrado por la tienda",
+      "rejectedNote": "Escríbele a la tienda para resolverlo.",
+      "closedPending": "Sin revisar (pedido cerrado)",
+      "balanceUpdated": "El saldo se actualizó.",
+      "viewProof": "Ver comprobante",
+      "proofAlt": "Tu comprobante de pago"
+    },
+    "howToPay": {
+      "title": "Cómo pagar",
+      "amountTotal": "Total a pagar: {total}",
+      "amountDeposit": "Adelanto: {deposit} (o el total: {total})",
+      "amountDue": "Falta pagar: {amount}",
+      "rejectedNote": "Tu último pago no fue aceptado. Escríbele a la tienda.",
+      "noMethods": "La tienda aún no configuró métodos de pago, escríbele.",
+      "paidButton": "Ya pagué, avisar a la tienda",
+      "paidMessage": "Hola, ya pagué el pedido #{number}"
+    },
+    "delivery": {
+      "title": "Entrega",
+      "pickup": "Recojo",
+      "courier": "Envío por courier",
+      "courierNamed": "Envío por {name}"
+    },
+    "phoneLine": "Pedido para {phone}",
+    "notYourNumber": {
+      "summary": "¿No es tu número? Avísale a la tienda",
+      "body": "Si este pedido no es para ti, avísale a la tienda para que lo corrija.",
+      "button": "Avisar a la tienda",
+      "message": "Hola, el pedido #{number} no es para mi número"
+    },
+    "date": {
+      "today": "Hoy {time}",
+      "yesterday": "Ayer {time}"
+    },
+    "receipt": {
+      "title": "¿Ya te llegó tu pedido?",
+      "confirm": "Ya lo recibí",
+      "problem": "Hay un problema",
+      "problemMessage": "Hola, tengo un problema con mi pedido #{number}",
+      "thanks": "¡Gracias por confirmar!",
+      "confirmedOn": "Confirmaste la recepción el {date}.",
+      "error": "No se pudo confirmar. Inténtalo de nuevo."
+    },
+    "timeline": {
+      "title": "Historial de tu pedido",
+      "lastUpdate": "Última actualización: {date}",
+      "teaser": "Guarda tu pedido para ver el historial completo con fechas.",
+      "types": {
+        "CREATED": "Pedido creado",
+        "PAYMENT_SUBMITTED": "Pago enviado",
+        "PAYMENT_VALIDATED": "Pago validado",
+        "PAYMENT_REJECTED": "Pago rechazado",
+        "PAYMENT_VOIDED": "Pago anulado",
+        "FULFILLMENT_ADVANCED": "Estado actualizado",
+        "PACKED_PHOTO_ADDED": "Foto del paquete agregada",
+        "TRACKING_ADDED": "Seguimiento agregado",
+        "RECEIPT_CONFIRMED": "Recepción confirmada",
+        "CLAIMED": "Pedido guardado",
+        "ORDER_CANCELLED": "Pedido cancelado"
+      },
+      "fulfillment": {
+        "ORDERING": "Pedido recibido",
+        "IN_TRANSIT": "Tu pedido va en camino",
+        "READY": "Tu pedido está listo",
+        "COMPLETED": "Pedido entregado"
+      }
+    },
+    "shipping": {
+      "title": "Envío",
+      "trackingNumber": "Código de seguimiento: {number}",
+      "trackLink": "Seguir mi envío",
+      "packedPhoto": "Foto de tu paquete",
+      "packedPhotoAlt": "Foto del paquete de tu pedido"
+    },
+    "claim": {
+      "explainer": "Al guardar con Google usamos tu correo y tu nombre de Google para crear tu cuenta y asociar este pedido. No pedimos contraseña ni vemos tus correos. Este enlace seguirá funcionando.",
+      "button": "Guardar con Google",
+      "working": "Abriendo Google…",
+      "inAppTitle": "Ábrelo en tu navegador",
+      "inAppBody": "Google no permite iniciar sesión dentro de esta app. Copia el enlace y ábrelo en Safari o Chrome para guardar tu pedido.",
+      "copyLink": "Copiar enlace",
+      "copied": "Enlace copiado",
+      "copyFailed": "No se pudo copiar. Copia la dirección desde la barra del navegador.",
+      "error": "No pudimos iniciar el guardado. Inténtalo de nuevo.",
+      "notYet": "Este pedido todavía no se puede guardar. Vuelve cuando el pago esté validado.",
+      "saved": "Pedido guardado en tu cuenta"
+    },
+    "invite": {
+      "notNow": "Ahora no",
+      "pago_validado": {
+        "title": "Tu pago está validado",
+        "body": "Guarda este pedido en tu cuenta de Google para verlo siempre completo, con fechas y seguimiento. Tu enlace actual seguirá funcionando."
+      },
+      "banner": {
+        "summary": "Guarda este pedido en tu cuenta"
+      },
+      "entrega": {
+        "title": "Guarda tu historial",
+        "body": "Tu pedido ya llegó. Guárdalo en tu cuenta para tener todo el historial a mano. Tu enlace actual seguirá funcionando."
+      }
+    },
+    "upload": {
+      "title": "Sube tu comprobante",
+      "description": "Paga con uno de los métodos de arriba y sube la captura aquí. La tienda la revisará.",
+      "amount": "Monto pagado",
+      "method": "Método de pago",
+      "selectMethod": "Elige un método",
+      "code": "Número de operación (opcional)",
+      "codeHint": "Ayuda a la tienda a encontrar tu pago más rápido.",
+      "chooseFile": "Elegir captura del pago",
+      "fileHint": "JPG o PNG, hasta 5 MB",
+      "preview": "Vista previa de tu comprobante",
+      "removeFile": "Quitar la imagen",
+      "submit": "Enviar comprobante",
+      "submitting": "Enviando...",
+      "success": "¡Listo! Recibimos tu comprobante. La tienda lo revisará pronto.",
+      "inReview": "Tienes {amount} en revisión.",
+      "waitReview": "Espera la revisión de tu tienda antes de enviar otro comprobante.",
+      "errors": {
+        "amountInvalid": "Escribe un monto válido, por ejemplo 40.50.",
+        "amountTooHigh": "El monto es mayor a lo que falta pagar.",
+        "methodRequired": "Elige un método de pago.",
+        "codeInvalid": "El número de operación no es válido.",
+        "fileRequired": "Adjunta la captura de tu pago.",
+        "fileTooLarge": "La imagen pesa más de 5 MB.",
+        "fileType": "Usa una imagen JPG o PNG.",
+        "tooLarge": "La imagen es demasiado grande.",
+        "invalid": "Este enlace ya no es válido. Pídele uno nuevo a la tienda.",
+        "rateLimited": "Hiciste muchos intentos. Espera un momento.",
+        "generic": "No pudimos enviar tu comprobante. Inténtalo de nuevo."
+      }
+    },
+    "closure": {
+      "title": "Qué pasó con tu pedido",
+      "reason": "Motivo: {reason}",
+      "cancelledNote": "Si tienes dudas o aún lo quieres, escríbele a la tienda.",
+      "expiredNote": "Si aún quieres tu pedido, escríbele a la tienda para ver si puede reservarlo de nuevo.",
+      "rejectedNote": "La tienda no pudo confirmar tu pago. Escríbele para resolverlo.",
+      "contact": "Escribir a la tienda",
+      "message": "Hola, quiero consultar por mi pedido #{number}"
+    },
+    "deadline": "Tienes hasta {date} para pagar."
   }
 }

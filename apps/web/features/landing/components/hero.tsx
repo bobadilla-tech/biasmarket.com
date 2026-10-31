@@ -2,100 +2,80 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { ArrowUpRight, Sparkles } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 
+// Colors come from the --hero-* tokens in app/globals.css (#243).
 export function Hero() {
   const t = useTranslations("landing.hero");
 
   return (
-    <>
-      {/* Mobile — compact hero */}
-      <div className="relative mx-auto h-[342px] w-full max-w-[358px] overflow-hidden rounded-lg bg-[#FEF3FF] sm:hidden">
-        <div className="absolute inset-x-0 top-[21px] z-10 flex flex-col items-center pr-[25px] pl-[28px] text-center">
-          <h1 className="-my-1.5 text-[clamp(20px,8.6vw,34px)] leading-[36px] font-bold tracking-tight whitespace-nowrap text-[#4C0566]">
-            {t("title1")}
-          </h1>
-          <p className="text-2xl font-medium text-[#b0006d]">{t("title2")}</p>
-        </div>
-        <Image
-          src="/landing/bm-props-sombra.png"
-          alt=""
-          width={1152}
-          height={923}
-          priority
-          className="pointer-events-none absolute bottom-[30px] left-1/2 z-0 h-auto w-[92%] max-w-none select-none"
-          style={{ transform: "translateX(-38%) rotate(-0.11deg)" }}
+    <section className="mx-auto w-full max-w-[1440px] px-4 pt-5 pb-8 sm:px-8 sm:pt-8 sm:pb-12 lg:px-10">
+      <div className="landing-hero-card relative isolate grid items-center gap-3 overflow-hidden rounded-[28px] px-6 pt-9 pb-2 sm:rounded-[36px] sm:px-10 sm:pt-12 lg:min-h-[550px] lg:grid-cols-[0.92fr_1.08fr] lg:gap-8 lg:px-16 lg:py-12">
+        <div
+          aria-hidden="true"
+          className="landing-hero-orbit landing-hero-orbit-one"
         />
         <div
           aria-hidden="true"
-          className="absolute inset-x-0 bottom-0 h-[39px] rounded-b-lg bg-gradient-to-b from-[#FEF3FF] to-[#FFC2F8]"
+          className="landing-hero-orbit landing-hero-orbit-two"
         />
-        <Link
-          href="/search"
-          className="absolute bottom-[24px] left-1/2 flex min-h-[26px] h-auto min-w-[128px] max-w-full -translate-x-1/2 items-center justify-center rounded-lg bg-[#b0006d] px-3 py-2 text-center text-3xs font-semibold text-white transition-colors hover:bg-[#8f0059]"
-        >
-          {t("cta")}
-        </Link>
-      </div>
-
-      {/* Desktop — Figma Frame 93 hero */}
-      <div className="mx-auto hidden max-w-[1346px] px-6 pt-[25px] pb-10 sm:block sm:px-10 sm:pt-[35px]">
-        <div className="relative min-h-[460px] rounded-lg bg-[#FEF3FF] sm:min-h-[525px]">
-          {/* Decorative art is clipped by its own wrapper, so the box can
-              grow (min-h) without the outer overflow-hidden that used to
-              crop the CTA/subtitle when the text ran tall (#165). */}
-          <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-lg">
-            <Image
-              src="/landing/bm-props-sombra.png"
-              alt=""
-              width={563}
-              height={522}
-              priority
-              className="absolute top-0 right-[-60px] h-full w-auto max-w-none select-none object-contain"
-              style={{ transform: "rotate(-0.11deg)" }}
-            />
-          </div>
-
-          <div className="relative z-10 flex min-h-[460px] w-[849px] max-w-full flex-col items-center justify-center gap-4 px-6 pb-[115px] text-center sm:min-h-[525px] sm:px-[70px]">
-            <h1
-              className="font-bold text-[#4C0566] xl:whitespace-nowrap"
-              style={{
-                fontSize: "clamp(38px, 4.8vw, 78px)",
-                lineHeight: "1.05",
-              }}
-            >
-              {t("title1")}
-            </h1>
-            <p
-              className="font-medium text-[#b0006d]"
-              style={{
-                fontSize: "clamp(24px, 3.6vw, 52px)",
-                lineHeight: "1.05",
-              }}
-            >
-              {t("title2")}
-            </p>
-            <p
-              style={{ fontWeight: 300, fontSize: 20, lineHeight: "23px" }}
-              className="max-w-[461px] text-center text-black"
-            >
-              {t("subtitle")}
-            </p>
-            <Link
-              href="/search"
-              className="flex min-h-[48px] h-auto min-w-[238px] max-w-full items-center justify-center rounded-[18.9px] bg-[#b0006d] px-6 py-3 text-center font-semibold text-white transition-colors hover:bg-[#8f0059]"
-              style={{ fontSize: 18.6, lineHeight: "22px" }}
-            >
-              {t("cta")}
-            </Link>
-          </div>
-
-          <div
+        <div className="landing-hero-copy relative z-10 flex min-w-0 flex-col items-center gap-3 text-center sm:gap-4 lg:items-start lg:text-left">
+          <span
             aria-hidden="true"
-            className="absolute inset-x-0 bottom-0 z-0 h-[99px] rounded-b-lg bg-gradient-to-b from-[#FEF3FF] to-[#FFC2F8]"
+            className="mb-1 inline-flex size-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-[#f7b6e2] shadow-[0_0_28px_rgba(255,95,190,.24)]"
+          >
+            <Sparkles className="size-5" />
+          </span>
+          <h1
+            className="max-w-[650px] font-extrabold tracking-[-0.055em] text-balance text-white drop-shadow-sm"
+            style={{ fontSize: "clamp(40px, 6vw, 82px)", lineHeight: "0.98" }}
+          >
+            {t("title1")}
+          </h1>
+          <p
+            className="font-hero-accent font-semibold tracking-[-0.035em] text-balance text-[#ffb5df]"
+            style={{ fontSize: "clamp(25px, 3.2vw, 43px)", lineHeight: "1.08" }}
+          >
+            {t("title2")}
+          </p>
+          <p className="max-w-[440px] text-base leading-relaxed font-light text-white/75 sm:text-lg lg:text-xl">
+            {t("subtitle")}
+          </p>
+          <Link
+            href="/search"
+            className="landing-hero-cta mt-3 inline-flex min-h-[54px] max-w-full items-center justify-center gap-2 rounded-full bg-[#ed4aa8] px-8 py-3 text-center text-base leading-tight font-bold text-white shadow-[0_12px_28px_rgba(237,74,168,.3)] transition-all hover:-translate-y-0.5 hover:bg-[#f15db2] hover:shadow-[0_16px_32px_rgba(237,74,168,.38)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white sm:px-9 sm:text-lg"
+          >
+            {t("cta")}
+            <ArrowUpRight aria-hidden="true" className="size-5" />
+          </Link>
+        </div>
+
+        <div className="landing-hero-art relative mx-auto flex min-w-0 w-full max-w-[570px] justify-center lg:justify-end">
+          <div aria-hidden="true" className="landing-hero-art-ring" />
+          <Image
+            src="/landing/bm-props-hero.webp"
+            alt=""
+            width={962}
+            height={741}
+            priority
+            sizes="(min-width: 1346px) 640px, (min-width: 1024px) 48vw, 90vw"
+            className="landing-hero-image pointer-events-none relative z-10 h-auto w-full max-w-[400px] select-none sm:max-w-[500px] lg:max-w-[590px]"
           />
+          <span
+            aria-hidden="true"
+            className="landing-hero-star landing-hero-star-one"
+          >
+            ✦
+          </span>
+          <span
+            aria-hidden="true"
+            className="landing-hero-star landing-hero-star-two"
+          >
+            ✧
+          </span>
         </div>
       </div>
-    </>
+    </section>
   );
 }

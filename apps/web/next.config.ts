@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { protocol: "http", hostname: "localhost", port: "9000" },
+      { protocol: "http", hostname: "127.0.0.1", port: "9000" },
       { protocol: "https", hostname: "cdn.biasmarket.com" },
       { protocol: "https", hostname: "placehold.co" },
       { protocol: "https", hostname: "cdn.sanity.io" },
@@ -26,6 +27,26 @@ const nextConfig: NextConfig = {
     // (which requires it) is disabled here; `pnpm typecheck` (tsc --noEmit)
     // is the source of truth instead.
     ignoreBuildErrors: true,
+  },
+  // The buyer's private order page carries its credential in the URL. Keep it
+  // out of Referer headers, caches and search indexes. Both forms: the
+  // unprefixed path is redirected to the locale-prefixed one by the intl proxy.
+  async headers() {
+    const privateOrderHeaders = [
+      { key: "Referrer-Policy", value: "no-referrer" },
+      { key: "Cache-Control", value: "no-store" },
+      { key: "X-Robots-Tag", value: "noindex, nofollow" },
+    ];
+    return [
+      {
+        source: "/:locale/store/:slug/pedido/:token",
+        headers: privateOrderHeaders,
+      },
+      {
+        source: "/store/:slug/pedido/:token",
+        headers: privateOrderHeaders,
+      },
+    ];
   },
   async rewrites() {
     return [

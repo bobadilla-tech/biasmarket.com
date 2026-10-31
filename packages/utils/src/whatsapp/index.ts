@@ -1,3 +1,5 @@
+import { orderRef } from "../order-ref/index.js";
+
 export interface WhatsAppOrderItem {
   name: string;
   quantity: number;
@@ -26,7 +28,44 @@ export interface WhatsAppPaymentReminderInput {
   customerName?: string | null;
 }
 
-export type WhatsAppMessageType = "NEW_ORDER" | "PAYMENT_REMINDER";
+export interface WhatsAppAssistedOrderLinkInput {
+  orderId: string;
+  storeName: string;
+  totalAmount: number;
+  currency: string;
+  // Callers pass "" (or null) when the seller gave no alias.
+  customerName?: string | null;
+  link: string;
+}
+
+// One notice per step the seller can tell an assisted-order buyer about. There
+// is no "packed" notice: no fulfillment status exists for it.
+export const WHATSAPP_BUYER_NOTICE_TYPES = [
+  "ASSISTED_PAYMENT_VALIDATED",
+  "ASSISTED_IN_TRANSIT",
+  "ASSISTED_READY",
+  "ASSISTED_DELIVERED",
+] as const;
+
+export type WhatsAppBuyerNoticeType =
+  (typeof WHATSAPP_BUYER_NOTICE_TYPES)[number];
+
+export type WhatsAppMessageType =
+  | "NEW_ORDER"
+  | "PAYMENT_REMINDER"
+  | "ASSISTED_ORDER_LINK"
+  | WhatsAppBuyerNoticeType;
+
+export interface WhatsAppBuyerNoticeInput {
+  orderId: string;
+  storeName: string;
+  // Callers pass "" (or null) when the seller gave no alias.
+  customerName?: string | null;
+  // Only used by the in-transit notice.
+  trackingNumber?: string | null;
+  // The order was already saved to a buyer account: no "save it" sentence.
+  claimed?: boolean;
+}
 
 // Single source of truth for the template token syntax — `{{token}}` with
 // optional surrounding whitespace inside the braces. Both token validation and
@@ -44,6 +83,11 @@ export const WHATSAPP_REQUIRED_TOKENS: Record<
 > = {
   NEW_ORDER: ["orderRef", "items"],
   PAYMENT_REMINDER: ["orderRef", "pendingAmount"],
+  ASSISTED_ORDER_LINK: ["link"],
+  ASSISTED_PAYMENT_VALIDATED: [],
+  ASSISTED_IN_TRANSIT: [],
+  ASSISTED_READY: [],
+  ASSISTED_DELIVERED: [],
 };
 
 // Every token available to a template of each type, for the settings UI's
@@ -72,6 +116,28 @@ export const WHATSAPP_MESSAGE_TOKENS: Record<
     "currency",
     "customerName",
   ],
+  ASSISTED_ORDER_LINK: [
+    "link",
+    "customerName",
+    "storeName",
+    "orderRef",
+    "totalAmount",
+    "currency",
+  ],
+  ASSISTED_PAYMENT_VALIDATED: [
+    "customerName",
+    "storeName",
+    "orderRef",
+    "saveInvite",
+  ],
+  ASSISTED_IN_TRANSIT: [
+    "customerName",
+    "storeName",
+    "orderRef",
+    "trackingNumber",
+  ],
+  ASSISTED_READY: ["customerName", "storeName", "orderRef"],
+  ASSISTED_DELIVERED: ["customerName", "storeName", "orderRef", "saveInvite"],
 };
 
 // The one tokenizer. Returns every distinct `{{token}}` name in a template,
@@ -123,9 +189,6 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   CASH: "Efectivo",
 };
 
-const shortOrderRef = (orderId: string): string =>
-  orderId.slice(-6).toUpperCase();
-
 // UTC getters deliberately, not local — the date is stored/parsed as a
 // UTC-anchored midnight (see CreateOrderUseCase), so reading it back with
 // local getters could shift the displayed day depending on server TZ.
@@ -141,24 +204,25 @@ const formatPickupDate = (date: Date): string => {
 const orderMessageVariables = (
   input: WhatsAppOrderInput,
 ): Record<string, string> => ({
-  orderRef: `#${shortOrderRef(input.orderId)}`,
+  orderRef: `#${orderRef(input.orderId)}`,
   storeName: input.storeName,
   items: input.items
     .map(
       (item) =>
-        `${item.quantity}x ${item.name} - ${
-          item.unitPrice.toFixed(2)
-        } ${input.currency} c/u`,
+        `${item.quantity}x ${item.name} - ${item.unitPrice.toFixed(
+          2,
+        )} ${input.currency} c/u`,
     )
     .join("\n"),
   totalAmount: input.totalAmount.toFixed(2),
   currency: input.currency,
-  deliveryMethod: DELIVERY_METHOD_LABELS[input.deliveryMethodType] ??
+  deliveryMethod:
+    DELIVERY_METHOD_LABELS[input.deliveryMethodType] ??
     input.deliveryMethodType,
   pickupPoint: input.pickupPointLabel ?? "",
   pickupDate: input.pickupDate ? formatPickupDate(input.pickupDate) : "",
   paymentMethod: input.paymentMethod
-    ? PAYMENT_METHOD_LABELS[input.paymentMethod] ?? input.paymentMethod
+    ? (PAYMENT_METHOD_LABELS[input.paymentMethod] ?? input.paymentMethod)
     : "",
   customerName: input.customerName ?? "",
   customerPhone: input.customerPhone,
@@ -167,32 +231,32 @@ const orderMessageVariables = (
 const buildDefaultOrderMessage = (input: WhatsAppOrderInput): string => {
   const lines = [
     `*Nuevo pedido en ${input.storeName}*`,
-    `Ref: #${shortOrderRef(input.orderId)}`,
+    `Ref: #${orderRef(input.orderId)}`,
     "",
     ...input.items.map(
       (item) =>
-        `${item.quantity}x ${item.name} - ${
-          item.unitPrice.toFixed(2)
-        } ${input.currency} c/u`,
+        `${item.quantity}x ${item.name} - ${item.unitPrice.toFixed(
+          2,
+        )} ${input.currency} c/u`,
     ),
     "",
     input.pickupPointLabel
       ? `Entrega: ${
-        DELIVERY_METHOD_LABELS[input.deliveryMethodType] ??
+          DELIVERY_METHOD_LABELS[input.deliveryMethodType] ??
           input.deliveryMethodType
-      } — ${input.pickupPointLabel}`
+        } — ${input.pickupPointLabel}`
       : `Entrega: ${
-        DELIVERY_METHOD_LABELS[input.deliveryMethodType] ??
+          DELIVERY_METHOD_LABELS[input.deliveryMethodType] ??
           input.deliveryMethodType
-      }`,
+        }`,
     input.pickupDate
       ? `Fecha de recojo: ${formatPickupDate(input.pickupDate)}`
       : null,
     `*Total: ${input.totalAmount.toFixed(2)} ${input.currency}*`,
     input.paymentMethod
       ? `Método de pago: ${
-        PAYMENT_METHOD_LABELS[input.paymentMethod] ?? input.paymentMethod
-      }`
+          PAYMENT_METHOD_LABELS[input.paymentMethod] ?? input.paymentMethod
+        }`
       : null,
     "",
     input.customerName
@@ -218,7 +282,7 @@ export const buildWhatsAppOrderMessage = (
 const paymentReminderVariables = (
   input: WhatsAppPaymentReminderInput,
 ): Record<string, string> => ({
-  orderRef: `#${shortOrderRef(input.orderId)}`,
+  orderRef: `#${orderRef(input.orderId)}`,
   storeName: input.storeName,
   pendingAmount: input.pendingAmount.toFixed(2),
   currency: input.currency,
@@ -231,10 +295,10 @@ const buildDefaultPaymentReminderMessage = (
   const greeting = input.customerName ? `Hola ${input.customerName},` : "Hola,";
   const lines = [
     greeting,
-    `Sobre tu pedido #${shortOrderRef(input.orderId)} en ${input.storeName}:`,
-    `Todavía tenés un saldo pendiente de ${
-      input.pendingAmount.toFixed(2)
-    } ${input.currency}.`,
+    `Sobre tu pedido #${orderRef(input.orderId)} en ${input.storeName}:`,
+    `Todavía tenés un saldo pendiente de ${input.pendingAmount.toFixed(
+      2,
+    )} ${input.currency}.`,
     "¿Podrías completar el pago para que podamos avanzar con tu pedido? ¡Gracias!",
   ];
   return lines.join("\n");
@@ -248,6 +312,108 @@ export const buildWhatsAppPaymentReminderMessage = (
     return renderWhatsAppTemplate(template, paymentReminderVariables(input));
   }
   return buildDefaultPaymentReminderMessage(input);
+};
+
+const assistedOrderLinkVariables = (
+  input: WhatsAppAssistedOrderLinkInput,
+): Record<string, string> => ({
+  link: input.link,
+  customerName: input.customerName ?? "",
+  storeName: input.storeName,
+  orderRef: `#${orderRef(input.orderId)}`,
+  totalAmount: input.totalAmount.toFixed(2),
+  currency: input.currency,
+});
+
+// The greeting is chosen here, in code, so an absent alias reads "¡Hola! 💜"
+// and never "¡Hola ! 💜". Custom templates render exactly as written.
+const buildDefaultAssistedOrderLinkMessage = (
+  input: WhatsAppAssistedOrderLinkInput,
+): string => {
+  const alias = input.customerName?.trim();
+  const lines = [
+    alias ? `¡Hola ${alias}! 💜` : "¡Hola! 💜",
+    `Preparé tu pedido #${orderRef(input.orderId)} en ${input.storeName} por ${input.totalAmount.toFixed(
+      2,
+    )} ${input.currency}.`,
+    "Aquí puedes ver el detalle y cómo pagar:",
+    input.link,
+  ];
+  return lines.join("\n");
+};
+
+export const buildWhatsAppAssistedOrderLinkMessage = (
+  input: WhatsAppAssistedOrderLinkInput,
+  template?: string | null,
+): string => {
+  if (template && template.trim().length > 0) {
+    return renderWhatsAppTemplate(template, assistedOrderLinkVariables(input));
+  }
+  return buildDefaultAssistedOrderLinkMessage(input);
+};
+
+// ---- Buyer notices (assisted orders) -------------------------------------
+// These messages carry no link: the buyer already has the private one, and a
+// new link would invalidate it. The "save your order" sentence points at that
+// same link and is dropped once the order is claimed.
+
+const BUYER_NOTICE_SAVE_INVITE =
+  "Si quieres, puedes guardar tu pedido con tu cuenta de Google desde el mismo enlace que te enviamos.";
+
+const buyerNoticeVariables = (
+  input: WhatsAppBuyerNoticeInput,
+): Record<string, string> => ({
+  customerName: input.customerName ?? "",
+  storeName: input.storeName,
+  orderRef: `#${orderRef(input.orderId)}`,
+  trackingNumber: input.trackingNumber?.trim() ?? "",
+  saveInvite: input.claimed ? "" : BUYER_NOTICE_SAVE_INVITE,
+});
+
+const buildDefaultBuyerNoticeMessage = (
+  type: WhatsAppBuyerNoticeType,
+  input: WhatsAppBuyerNoticeInput,
+): string => {
+  const alias = input.customerName?.trim();
+  const ref = `#${orderRef(input.orderId)}`;
+  const tracking = input.trackingNumber?.trim();
+  const save = input.claimed ? null : BUYER_NOTICE_SAVE_INVITE;
+  const lines: (string | null)[] = [alias ? `¡Hola ${alias}! 💜` : "¡Hola! 💜"];
+  switch (type) {
+    case "ASSISTED_PAYMENT_VALIDATED":
+      lines.push(
+        `Validamos tu pago del pedido ${ref} en ${input.storeName}. ✅`,
+        save,
+      );
+      break;
+    case "ASSISTED_IN_TRANSIT":
+      lines.push(
+        `Tu pedido ${ref} de ${input.storeName} ya va en camino. 🚚`,
+        tracking ? `Código de seguimiento: ${tracking}` : null,
+      );
+      break;
+    case "ASSISTED_READY":
+      lines.push(`Tu pedido ${ref} de ${input.storeName} ya está listo. 🎉`);
+      break;
+    case "ASSISTED_DELIVERED":
+      lines.push(
+        `Tu pedido ${ref} de ${input.storeName} figura como entregado. ¡Gracias por tu compra! 💜`,
+        save,
+      );
+      break;
+  }
+  return lines.filter((line): line is string => Boolean(line)).join("\n");
+};
+
+export const buildWhatsAppBuyerNoticeMessage = (
+  type: WhatsAppBuyerNoticeType,
+  input: WhatsAppBuyerNoticeInput,
+  template?: string | null,
+): string => {
+  if (template && template.trim().length > 0) {
+    return renderWhatsAppTemplate(template, buyerNoticeVariables(input));
+  }
+  return buildDefaultBuyerNoticeMessage(type, input);
 };
 
 export const buildWhatsAppUrl = (

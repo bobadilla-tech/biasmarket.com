@@ -6,10 +6,10 @@ Development commands use the local dev Compose stack.
 ## Production
 
 Use the wrapper that ships in `infra/vps/bin/` (CD syncs it to
-`/home/deploy/biasmarket/bin/` on every deploy). There is no source checkout on the VPS;
-the wrapper finds the live color and image tag for you and runs the API's own
-scripts inside the live API container. Run it as `root` (`ssh root@<vps>`) or the
-`deploy` user, from any directory:
+`/home/deploy/biasmarket/bin/` on every deploy). There is no source checkout on
+the VPS; the wrapper finds the live color and image tag for you and runs the
+API's own scripts inside the live API container. Run it as `root`
+(`ssh root@<vps>`) or the `deploy` user, from any directory:
 
 ```bash
 /home/deploy/biasmarket/bin/admin.sh create  you@example.com "Your Name"
@@ -28,10 +28,10 @@ IMAGE_TAG="$tag" docker compose --env-file env/shared.env exec -T "api-$color" \
 ```
 
 > **Do not put `--` before the arguments.** pnpm passes it through, the scripts
-> read `process.argv[2]` as the email, and `admin:create -- you@example.com` would
-> create an admin whose email is literally `--`. (The dev shortcuts,
-> `pnpm admin:create:dev <email>`, never had the `--`.) An earlier version of this
-> page had it.
+> read `process.argv[2]` as the email, and `admin:create -- you@example.com`
+> would create an admin whose email is literally `--`. (The dev shortcuts,
+> `pnpm admin:create:dev <email>`, never had the `--`.) An earlier version of
+> this page had it.
 
 `admin:create` refuses to overwrite an existing account and prints the generated
 password once. `admin:promote` changes an existing account's role. Both commands
@@ -46,8 +46,8 @@ yourself, copy the password it prints (it is not stored or shown again), then
 sign in at `https://biasmarket.com/es/login` (or `/en/login`) and open
 `https://biasmarket.com/es/admin`, which has users, stores, coupons and
 inquiries. Change the password after the first login, on the account page
-(`/es/account`, it has a change-password form). To make someone who
-already registered an admin, use `admin:promote` with their email instead.
+(`/es/account`, it has a change-password form). To make someone who already
+registered an admin, use `admin:promote` with their email instead.
 
 ## Development
 
@@ -58,10 +58,12 @@ pnpm admin:promote:dev you@example.com
 
 ## Seeding production data
 
-> **Do not run `seed:base` on a real production database.** It has no production
-> guard and creates `admin@biasmarket.dev` and `owner@biasmarket.dev` as
-> **admins** with the published dev password, plus demo sellers with
-> `seedpassword123`, which is a public backdoor. It is meant for development and
+> **Do not run the seed commands on a real production database.** They create
+> `admin@biasmarket.dev` and `owner@biasmarket.dev` as **admins** with the
+> published dev password, plus demo sellers with `seedpassword123`, which is a
+> public backdoor. `scripts/seed/run.ts` therefore refuses to run when
+> `NODE_ENV` is `production` (the production image sets it) unless
+> `--allow-production` is passed. The seed is meant for development and
 > throwaway environments. If it was ever run against production, revoke those
 > accounts (see "Revoking admin access" below) and delete them.
 
@@ -77,11 +79,19 @@ sudo -iu deploy bash -lc '
 '
 ```
 
+Inside the production container this stops with an error unless the command ends
+with `-- --allow-production` (for example
+`pnpm --filter api run seed:base -- --allow-production`). Only add it after
+reading the warning above.
+
 For an additive batch, replace the final command with:
 
 ```bash
-pnpm --filter api run seed:append -- --batch=<label>
+pnpm --filter api run seed:append -- --batch=<label> --allow-production
 ```
+
+The `--` here is harmless, unlike for `admin:create`: `scripts/seed/run.ts`
+finds `--batch=` by prefix among the arguments rather than by position.
 
 ## Revoking admin access
 
@@ -96,3 +106,9 @@ service, binding the email as a quoted parameter:
 ```sql
 update "user" set role = 'seller' where email = :'email' returning email, role;
 ```
+
+## Related
+
+- [admin.md](admin.md) — what the admin panel contains
+- [deploy.md](deploy.md) — blue/green deploy and live color
+- [infra.md](infra.md) — dev stack and seeding

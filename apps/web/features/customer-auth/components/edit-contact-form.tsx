@@ -6,9 +6,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { PhoneInput } from "@/components/ui/phone-input";
 import {
+  formErrorMessage,
   FormErrorSummary,
   FormField,
-  formErrorMessage,
 } from "@/components/shared/form-a11y";
 import { useCustomerUpdateProfile } from "../mutations/use-customer-update-profile";
 import {
@@ -43,7 +43,7 @@ export function EditContactForm({
     defaultValues: {
       name: profile.customer.name ?? "",
       email: profile.customer.email ?? "",
-      phone: profile.customer.phone,
+      phone: profile.customer.phone ?? "",
     },
   });
 

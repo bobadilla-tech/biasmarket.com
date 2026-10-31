@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// One-time backfill for docs/plans/2026-08-08-global-buyer-account-plan.md:
+// One-time backfill for .artifacts/2026/08/20260808--global-buyer-account/plan.md:
 // collapses existing per-store `Customer` rows into global `BuyerAccount`
 // rows, one per normalized phone number, with a `CustomerStoreLink` per
 // original `Customer` row and every linkable `Order.customerId` repointed to
@@ -76,7 +76,8 @@ async function migrateGroup(
       phone,
       status: "skipped-collision",
       customerCount: customers.length,
-      reason: "Multiple distinct non-null emails on file for this phone — " +
+      reason:
+        "Multiple distinct non-null emails on file for this phone — " +
         "left unmigrated for manual review. Customer ids: " +
         customers.map((c) => c.id).join(", "),
     };
@@ -162,8 +163,8 @@ async function main() {
   }
 
   const merged = results.filter((r) => r.status === "merged");
-  const alreadyMigrated = results.filter((r) =>
-    r.status === "already-migrated"
+  const alreadyMigrated = results.filter(
+    (r) => r.status === "already-migrated",
   );
   const skipped = results.filter((r) => r.status === "skipped-collision");
 

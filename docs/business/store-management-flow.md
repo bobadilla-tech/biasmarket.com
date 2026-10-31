@@ -5,16 +5,20 @@ Product/category/settings management from the seller dashboard. See
 for the full CRUD rules this follows (draft/publish gating, soft delete, variant
 stock).
 
-(Previous version listed a "Marca"/brand field, a banner image, a SKU field on
-variants, and "Redes sociales" in settings — none of those exist in the schema.
-Corrected below.)
+Not in the schema: a brand ("Marca") field and a SKU field on variants. The
+store does have a banner image (`Store.bannerUrl`), logo, and Instagram and
+TikTok links (`instagramUrl`, `tiktokUrl`), all edited in Configuración.
 
 ```
 Dashboard (/dashboard/:slug)
         │
-   ┌────┼────────────┬──────────────┐
-   ▼    ▼             ▼              ▼
-Productos  Categorías   Colecciones   Configuración
+   Menú lateral (cada entrada es /dashboard/:slug/<entrada>):
+   Resumen, Pedidos, Productos, Colecciones, Secciones, Envíos, Pagos
+   Clientes, Reposición, Analíticas, Notificaciones
+   Configuración, Preferencias
+        │
+        ▼
+   Productos
    │
    ▼
 Crear producto
@@ -65,8 +69,8 @@ pero desaparece del storefront y de la lista por defecto)
 
 Categorías / Colecciones
 ────────────────────────
-Dashboard → Categorías → Crear categoría → asignar productos
-                                          → visible en la tienda
+Categorías: no tienen página propia; se crean o reutilizan por nombre
+desde el formulario de producto y se asignan ahí
 Dashboard → Colecciones → Crear colección → asignar productos
                                            → usable en secciones
                                              del storefront
@@ -76,7 +80,7 @@ Configuración de la tienda
 ───────────────────────────
 Dashboard → Configuración → Editar
    • Nombre de la tienda
-   • Logo
+   • Logo, banner y enlaces de Instagram / TikTok
    • Idioma de la tienda (ES/EN)
    • Moneda por defecto
    • WhatsApp (número de contacto — el checkout arma el mensaje
@@ -88,7 +92,54 @@ Dashboard → Configuración → Editar
    • Ventana de expiración de orden sin pagar (horas)
    • Umbral y alertas de stock bajo
    • Visibilidad en directorio/búsqueda global (Store.isPublic)
+   • Mensajes de WhatsApp (plantillas configurables)
+   • Couriers de la tienda
    │
    ▼
 Guardar
 ```
+
+## Other dashboard pages
+
+- **Resumen** (`/dashboard/:slug`): overview stats for the store.
+- **Pedidos** (`/orders`, `/orders/new`): the order list and detail, and the
+  assisted-order form. Payment review and fulfillment are in
+  [seller-flow.md](seller-flow.md).
+- **Pagos** (`/payments`): orders that need payment attention, plus revenue by
+  payment method.
+- **Envíos** (`/shipping`): orders being fulfilled. Tracking details and the
+  packed photo that the buyer sees on the order page are recorded in the order
+  detail (shipping section). The courier list and the WhatsApp message templates
+  are configured in Configuración, not here.
+- **Secciones** (`/sections`): the storefront home blocks. A section is a
+  collection, a banner or a text block, and sections can be reordered.
+- **Clientes** (`/customers`): everyone who has bought from the store, with
+  order count, lifetime spend and order history.
+- **Reposición** (`/restock`): buyers who asked to be told when a sold-out item
+  returns, sortable by most recent or most requested, with a WhatsApp contact
+  action.
+- **Analíticas** (`/analytics`): revenue, orders, and new versus returning
+  customers over a selectable range.
+- **Notificaciones** (`/notifications`): in-panel notifications with read and
+  archive actions.
+- **Preferencias** (`/preferences`): suggestions based on the store's activity,
+  which the seller can dismiss.
+
+## Account, onboarding and coupons
+
+- **Login and signup** (`/login`, `/onboarding`): email and password, with
+  Google sign-in when the server has Google credentials configured. Email
+  verification is required (`/verify-email`).
+- **Create store** (`/onboarding/create-store`): first-time store creation.
+- **Account** (`/account`, linked from the sidebar): change password, the
+  seller's stores, and the coupon redeem form. A valid coupon code extends the
+  seller's premium period by the coupon's duration. How coupons and premium work
+  is summarized in [`../core/product.md`](../core/product.md).
+
+## Related
+
+- [seller-flow.md](seller-flow.md): order and payment handling.
+- [buyer-flow.md](buyer-flow.md): what the buyer sees of these settings.
+- [`../core/product.md`](../core/product.md) and
+  [`../core/roadmap.md`](../core/roadmap.md): product spec and what is planned.
+- [`../readme.md`](../readme.md): docs index.

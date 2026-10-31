@@ -267,7 +267,7 @@ cmd_deploy() {
 
   # Server-side 30-minute cleanup delay, replacing cd.yml's old `sleep
   # 1800` runner-side wait — see
-  # docs/plans/2026-08-10-server-side-cleanup-scheduling-plan.md decisions
+  # .artifacts/2026/08/20260810--server-side-cleanup-scheduling/plan.md decisions
   # 1, 3, 5. Both guarded: a failure here (e.g. disk full) must never turn
   # this already-successful cutover into a reported deploy failure — the
   # trailing `|| true` is required, not decorative (decision 5): without

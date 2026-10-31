@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Server-side scheduling of the 30-minute old-color cleanup delay, replacing
 # cd.yml's old `sleep 1800` runner-side wait. See
-# docs/plans/2026-08-10-server-side-cleanup-scheduling-plan.md for the full
+# .artifacts/2026/08/20260810--server-side-cleanup-scheduling/plan.md for the full
 # design (decisions 1-10) — in particular why this isn't `systemd-run`
 # (decision 3's polkit story, same one in ssh-deploy-dispatcher.sh's
 # launch()), why the fired cleanup re-reads state fresh instead of trusting

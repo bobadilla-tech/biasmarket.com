@@ -1,5 +1,6 @@
 import { afterEach, expect, test, vi } from "vitest";
 import { configureApiClient, customFetch } from "./http.js";
+import { claimTicket } from "./generated/public-order-events/public-order-events.js";
 
 const baseUrl = "https://api.example.com";
 
@@ -132,4 +133,23 @@ test("401 without a bearer token does not clear a session", async () => {
     },
   );
   expect(cleanup).not.toHaveBeenCalled();
+});
+
+// The claim ticket is an httpOnly cookie set by this very request on the API
+// host. If the generated call ever stopped sending credentials, the cookie
+// would never be stored and the OAuth redirect would find no ticket.
+test("the generated claimTicket call sends credentials and a JSON body, and the token is not in the body", async () => {
+  const fetchFn = setupFetch();
+  configureApiClient({ baseUrl });
+
+  await claimTicket("tok_secret", { moment: "banner" });
+
+  const [url, init] = fetchFn.mock.calls[0]!;
+  expect(String(url)).toBe(`${baseUrl}/public/orders/tok_secret/claim-ticket`);
+  expect(init?.credentials).toBe("include");
+  expect(init?.method).toBe("POST");
+  expect(new Headers(init?.headers).get("Content-Type")).toBe(
+    "application/json",
+  );
+  expect(init?.body).toBe(JSON.stringify({ moment: "banner" }));
 });

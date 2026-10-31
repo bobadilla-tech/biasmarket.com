@@ -36,7 +36,7 @@
 //
 // Does NOT configure a real-time Slack/Discord notification — deliberately
 // out of scope here per the plan's alerting split (see
-// docs/plans/2026-08-09-uptime-kuma-monitoring-plan.md and
+// .artifacts/2026/08/20260809--uptime-kuma-monitoring/plan.md and
 // docs/core/incident-response.md); add one by hand in the Kuma UI (Settings →
 // Notifications) and attach it to the monitors when you have a webhook URL
 // for it, or extend this script with another addNotification call using the
@@ -109,10 +109,10 @@ interface PortMonitorSpec {
 type MonitorSpec = HttpMonitorSpec | PortMonitorSpec;
 
 // Mirrors the monitor table in
-// docs/plans/2026-08-09-uptime-kuma-monitoring-plan.md (external/internal
+// .artifacts/2026/08/20260809--uptime-kuma-monitoring/plan.md (external/internal
 // pairs isolate the fault domain — Caddy/DNS/TLS vs. the app itself — on
 // the first alert instead of requiring a second manual check), updated per
-// docs/plans/2026-08-10-bluegreen-zero-downtime-deploy-plan.md T11: the two
+// .artifacts/2026/08/20260810--bluegreen-zero-downtime-deploy/plan.md T11: the two
 // bare-hostname internal monitors (`api`/`web` compose service names) are
 // gone post-cutover — only `api-blue`/`api-green`/`web-blue`/`web-green`
 // resolve — replaced by 4 static per-color monitors. Only the two

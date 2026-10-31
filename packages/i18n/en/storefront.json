@@ -1,6 +1,73 @@
 {
   "notFound": "Store not found.",
+  "shopProductsAvailable": "Shop {storeName} — {count, plural, one {# product available} other {# products available}}.",
+  "breadcrumbHome": "Home",
+  "breadcrumbStores": "Stores",
   "noProducts": "No products published yet.",
+  "noSearchResults": "No products match these filters.",
+  "productsTab": "Products",
+  "categoriesTab": "Categories",
+  "referencesTab": "References",
+  "aboutTab": "About",
+  "aboutEyebrow": "Our story",
+  "storeSectionsLabel": "Store sections",
+  "categoriesTabSubtitle": "Explore more of your favorite artists.",
+  "categoriesCount": "{count} {count, plural, one {category} other {categories}}",
+  "categoriesEmpty": "This store has no categories yet.",
+  "referencesTitle": "{storeName} references",
+  "referencesSubtitle": "Reviews and delivery evidence.",
+  "referencesEmptyTitle": "This store has no references yet",
+  "referencesEmpty": "Reviews and delivery evidence.",
+  "referencesLoadError": "References could not be loaded. Please try again.",
+  "referencesPageEmpty": "There are no references on this page.",
+  "openReference": "Enlarge reference from {date}",
+  "referenceImageAlt": "Reference from {date}. {caption}",
+  "referenceDay": "Day: {date}",
+  "uploadedByStore": "Uploaded by the store",
+  "uploadedByBuyer": "Uploaded by the buyer",
+  "referencesPagination": "Reference pages",
+  "closeViewer": "Close viewer",
+  "previousImage": "Previous reference",
+  "nextImage": "Next reference",
+  "searchLabel": "Search products",
+  "searchPlaceholder": "Search products...",
+  "searchStorePlaceholder": "Search in this store",
+  "searchCategories": "Search categories...",
+  "sortBy": "Sort by",
+  "sortByShort": "Sort",
+  "sortRecent": "Newest",
+  "sortOldest": "Oldest",
+  "sortPriceAsc": "Price: low to high",
+  "sortPriceDesc": "Price: high to low",
+  "sortNameAsc": "Name: A to Z",
+  "sortNameDesc": "Name: Z to A",
+  "clearFilters": "Clear filters",
+  "catalogPagination": "Product pages",
+  "previousPage": "Previous",
+  "nextPage": "Next",
+  "pageOf": "Page {page} of {pages}",
+  "filterByCategory": "Filter by category",
+  "selectedCategoryCount": "{count, plural, one {# category selected} other {# categories selected}}",
+  "loadMore": "Load more products",
+  "loadingMore": "Loading products...",
+  "categories": "Categories",
+  "allCategories": "All",
+  "categoryImageAlt": "{name} category",
+  "productImageAlt": "Image of {name}",
+  "bannerImageAlt": "{storeName} store banner",
+  "bannerImageGenericAlt": "Store banner",
+  "publicStoreEyebrow": "CURATED WITH CARE · BIAS MARKET",
+  "publicStoreProfile": "Public store profile",
+  "storeLogoAlt": "{storeName} logo",
+  "storeLogoPlaceholder": "{storeName} logo not configured",
+  "publicOwnerAvatarAlt": "Photo of {name}",
+  "publicOwnerAvatarGenericAlt": "Store owner photo",
+  "publicOwner": {
+    "title": "Store owner",
+    "contact": "Contact",
+    "contactMessage": "Hi, I have a question about {storeName}."
+  },
+  "storeOwner": "About the store",
   "soldOut": "Sold out",
   "comingSoonSection": {
     "title": "Coming soon",
@@ -12,15 +79,18 @@
   "addToCart": "Add to cart",
   "addedToCart": "Added ✓",
   "selectVariant": "Select a variant",
+  "chooseOption": "Choose an option",
   "chooseVariant": "Choose a variant for {product}",
   "cart": "Cart",
   "cartCount": "{count} items in cart",
   "header": {
     "storeHome": "Go to {name} home page",
-    "navigation": "Store navigation"
+    "navigation": "Store navigation",
+    "biasMarketHome": "Go to Bias Market home"
   },
   "social": {
-    "linkLabel": "{platform} (opens in a new tab)"
+    "linkLabel": "{platform} (opens in a new tab)",
+    "storeLinks": "Store social links"
   },
   "gallery": {
     "previousImage": "Previous image",
@@ -197,7 +267,8 @@
       "passwordsDontMatch": "Passwords don't match",
       "genericError": "Something went wrong. Try again.",
       "goToLogin": "Log in"
-    }
+    },
+    "requestNewLink": "Request a new link"
   },
   "loginPage": {
     "title": "Log in",
@@ -208,7 +279,13 @@
     "invalidCredentials": "Invalid phone or password",
     "submit": "Log in",
     "submitting": "Logging in...",
-    "forgotPasswordLink": "Forgot your password?"
+    "forgotPasswordLink": "Forgot your password?",
+    "google": "Continue with Google",
+    "googleHint": "If you bought with your phone, log in with your phone to see those orders.",
+    "googleErrors": {
+      "unavailable": "Google sign-in is not available right now",
+      "failed": "Could not log in with Google. Please try again."
+    }
   },
   "forgotPasswordPage": {
     "title": "Reset password",
@@ -267,7 +344,8 @@
       "proofPending": "Pending review",
       "proofApproved": "Approved",
       "proofRejected": "Rejected",
-      "fulfillmentProgress": "Order status"
+      "fulfillmentProgress": "Order status",
+      "fullHistory": "See the full history in My account"
     },
     "addresses": {
       "title": "Your addresses",
@@ -375,5 +453,224 @@
     "inTransit": "In transit",
     "ready": "Ready for pickup",
     "delivered": "Delivered"
+  },
+  "myPurchases": {
+    "title": "My purchases",
+    "loggedOutTitle": "Log in to see your purchases",
+    "loggedOutBody": "Log in with your phone and password, or continue with Google. If you are new, Google creates your buyer account in one click.",
+    "empty": "You have no purchases yet.",
+    "storeAccount": "Store account",
+    "pendingBalance": "Pending: {currency} {amount}",
+    "signOut": "Sign out",
+    "claimErrors": {
+      "already_claimed": "This order was already saved to another account. If you think this is a mistake, message the store.",
+      "not_claimable": "This order can't be saved yet. Open your order link again once the payment is validated.",
+      "invalid": "The save link expired or is no longer valid. Open your order link again and try once more.",
+      "failed": "We couldn't save your order. Open your order link again and try once more.",
+      "unavailable": "Saving with Google isn't available right now. Your order link still works.",
+      "fallback": "We couldn't save your order. Open your order link again and try once more."
+    },
+    "origin": {
+      "assisted": "Created by the store"
+    },
+    "detail": {
+      "back": "Back to my purchases",
+      "notFound": "We couldn't find this order in your account.",
+      "loginRequired": "Log in to see this order.",
+      "loginCta": "Go to my purchases to log in",
+      "claimed": "Done! We saved this order to your account. Your original link still works."
+    }
+  },
+  "publicOrder": {
+    "metaTitle": "Your order",
+    "metaDescription": "Check the status of your order.",
+    "noscript": "Turn on JavaScript to see your order, or message the store.",
+    "loading": "Loading your order",
+    "retry": "Try again",
+    "invalid": {
+      "title": "This link is not valid",
+      "body": "This link is not valid or was replaced. Ask the store for a new one.",
+      "contact": "Message the store"
+    },
+    "rateLimited": {
+      "title": "Too many attempts",
+      "body": "You made too many requests in a row. Wait a moment and try again."
+    },
+    "error": {
+      "title": "We couldn't load your order",
+      "body": "Something went wrong loading your order. Please try again."
+    },
+    "greeting": "Hi, {name}",
+    "greetingGeneric": "Hi",
+    "phonePrivacyNotice": "The store will use your phone number to send you updates about this order.",
+    "orderNumber": "Order #{number}",
+    "banner": {
+      "pendingPayment": "Your order is waiting for payment. See below how to pay.",
+      "partiallyPaid": "We received part of your payment. The deposit is not complete yet.",
+      "paymentSubmitted": "We received your proof and it is under review.",
+      "verified": "Your payment is confirmed. We are preparing your order.",
+      "rejected": "We could not confirm your payment. Message the store.",
+      "cancelled": "This order was cancelled.",
+      "ready": "Your order is ready.",
+      "completed": "Your order was delivered.",
+      "inTransit": "Your order is on its way.",
+      "expired": "The time to pay for this order ran out and it was cancelled."
+    },
+    "progress": "Order progress",
+    "items": "Your order",
+    "total": "Total",
+    "deposit": "Deposit",
+    "paid": "Paid",
+    "pending": "Left to pay",
+    "pendingDeposit": "Left on the deposit",
+    "payments": {
+      "title": "Payments",
+      "voided": "Voided",
+      "pendingReview": "Under review",
+      "rejected": "Rejected",
+      "recorded": "Recorded",
+      "bySelf": "Sent by you",
+      "byStore": "Recorded by the store",
+      "rejectedNote": "Message the store to sort it out.",
+      "closedPending": "Not reviewed (order closed)",
+      "balanceUpdated": "The balance was updated.",
+      "viewProof": "View proof",
+      "proofAlt": "Your payment proof"
+    },
+    "howToPay": {
+      "title": "How to pay",
+      "amountTotal": "Total to pay: {total}",
+      "amountDeposit": "Deposit: {deposit} (or the full total: {total})",
+      "amountDue": "Left to pay: {amount}",
+      "rejectedNote": "Your last payment was not accepted. Message the store.",
+      "noMethods": "The store has not set up payment methods yet, message them.",
+      "paidButton": "I already paid, tell the store",
+      "paidMessage": "Hi, I already paid order #{number}"
+    },
+    "delivery": {
+      "title": "Delivery",
+      "pickup": "Pickup",
+      "courier": "Courier shipping",
+      "courierNamed": "Shipping with {name}"
+    },
+    "phoneLine": "Order for {phone}",
+    "notYourNumber": {
+      "summary": "Not your number? Tell the store",
+      "body": "If this order is not for you, tell the store so they can fix it.",
+      "button": "Tell the store",
+      "message": "Hi, order #{number} is not for my number"
+    },
+    "date": {
+      "today": "Today {time}",
+      "yesterday": "Yesterday {time}"
+    },
+    "receipt": {
+      "title": "Has your order arrived?",
+      "confirm": "I received it",
+      "problem": "There is a problem",
+      "problemMessage": "Hi, I have a problem with my order #{number}",
+      "thanks": "Thanks for confirming!",
+      "confirmedOn": "You confirmed receipt on {date}.",
+      "error": "Could not confirm. Please try again."
+    },
+    "timeline": {
+      "title": "Your order history",
+      "lastUpdate": "Last update: {date}",
+      "teaser": "Save your order to see the full history with dates.",
+      "types": {
+        "CREATED": "Order created",
+        "PAYMENT_SUBMITTED": "Payment submitted",
+        "PAYMENT_VALIDATED": "Payment validated",
+        "PAYMENT_REJECTED": "Payment rejected",
+        "PAYMENT_VOIDED": "Payment voided",
+        "FULFILLMENT_ADVANCED": "Status updated",
+        "PACKED_PHOTO_ADDED": "Package photo added",
+        "TRACKING_ADDED": "Tracking added",
+        "RECEIPT_CONFIRMED": "Receipt confirmed",
+        "CLAIMED": "Order saved",
+        "ORDER_CANCELLED": "Order cancelled"
+      },
+      "fulfillment": {
+        "ORDERING": "Order received",
+        "IN_TRANSIT": "Your order is on its way",
+        "READY": "Your order is ready",
+        "COMPLETED": "Order delivered"
+      }
+    },
+    "shipping": {
+      "title": "Shipping",
+      "trackingNumber": "Tracking code: {number}",
+      "trackLink": "Track my shipment",
+      "packedPhoto": "Photo of your package",
+      "packedPhotoAlt": "Photo of your order's package"
+    },
+    "claim": {
+      "explainer": "When you save with Google we use your Google email and name to create your account and attach this order. We don't ask for a password or read your email. This link will keep working.",
+      "button": "Save with Google",
+      "working": "Opening Google…",
+      "inAppTitle": "Open it in your browser",
+      "inAppBody": "Google doesn't allow signing in inside this app. Copy the link and open it in Safari or Chrome to save your order.",
+      "copyLink": "Copy link",
+      "copied": "Link copied",
+      "copyFailed": "Couldn't copy. Copy the address from the browser's address bar.",
+      "error": "We couldn't start saving. Please try again.",
+      "notYet": "This order can't be saved yet. Come back once the payment is validated.",
+      "saved": "Order saved to your account"
+    },
+    "invite": {
+      "notNow": "Not now",
+      "pago_validado": {
+        "title": "Your payment is validated",
+        "body": "Save this order to your Google account to always see it in full, with dates and tracking. Your current link will keep working."
+      },
+      "banner": {
+        "summary": "Save this order to your account"
+      },
+      "entrega": {
+        "title": "Keep your history",
+        "body": "Your order has arrived. Save it to your account to keep the whole history at hand. Your current link will keep working."
+      }
+    },
+    "upload": {
+      "title": "Upload your proof",
+      "description": "Pay with one of the methods above and upload the screenshot here. The store will review it.",
+      "amount": "Amount paid",
+      "method": "Payment method",
+      "selectMethod": "Choose a method",
+      "code": "Operation number (optional)",
+      "codeHint": "Helps the store find your payment faster.",
+      "chooseFile": "Choose payment screenshot",
+      "fileHint": "JPG or PNG, up to 5 MB",
+      "preview": "Preview of your proof",
+      "removeFile": "Remove image",
+      "submit": "Send proof",
+      "submitting": "Sending...",
+      "success": "Done! We received your proof. The store will review it soon.",
+      "inReview": "You have {amount} under review.",
+      "waitReview": "Wait for the store to review before sending another proof.",
+      "errors": {
+        "amountInvalid": "Enter a valid amount, for example 40.50.",
+        "amountTooHigh": "The amount is higher than what is left to pay.",
+        "methodRequired": "Choose a payment method.",
+        "codeInvalid": "The operation number is not valid.",
+        "fileRequired": "Attach the screenshot of your payment.",
+        "fileTooLarge": "The image is larger than 5 MB.",
+        "fileType": "Use a JPG or PNG image.",
+        "tooLarge": "The image is too large.",
+        "invalid": "This link is no longer valid. Ask the store for a new one.",
+        "rateLimited": "Too many attempts. Wait a moment.",
+        "generic": "We could not send your proof. Please try again."
+      }
+    },
+    "closure": {
+      "title": "What happened to your order",
+      "reason": "Reason: {reason}",
+      "cancelledNote": "If you have questions or still want it, message the store.",
+      "expiredNote": "If you still want your order, message the store to see if it can hold it again.",
+      "rejectedNote": "The store could not confirm your payment. Message them to sort it out.",
+      "contact": "Message the store",
+      "message": "Hi, I want to ask about my order #{number}"
+    },
+    "deadline": "You have until {date} to pay."
   }
 }

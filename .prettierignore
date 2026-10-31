@@ -2,3 +2,4 @@
 # Regenerate by hand when the source changes (see CLAUDE.md).
 apps/api/openapi.json
 apps/api/src/metadata.ts
+packages/types/generated/

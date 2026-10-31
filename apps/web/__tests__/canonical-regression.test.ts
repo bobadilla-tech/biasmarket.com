@@ -4,7 +4,7 @@ import { describe, expect, test } from "vitest";
 import robots from "@/app/robots";
 
 // Guards against the exact class of bug this repo shipped once already (see
-// docs/plans/2026-08-20-seo-strategy-review-plan.md Phase 1/4): a new page
+// .artifacts/2026/08/20260820--seo-strategy-review/plan.md Phase 1/4): a new page
 // ships under app/[locale] with neither a self-referential canonical nor an
 // explicit noindex, and silently becomes a duplicate-content GSC issue.
 // Pages already covered by a blanket robots.txt disallow (derived from
@@ -88,7 +88,7 @@ describe("canonical regression", () => {
       ).toBe(true);
 
       // Second bug class this repo shipped once (see
-      // docs/plans/2026-09-07-gsc-indexing-audit-organic-growth-plan.md Phase
+      // .artifacts/2026/09/20260907--gsc-indexing-audit-organic-growth/plan.md Phase
       // B, GSC row 6): a page declares a self-referential canonical but no
       // per-page hreflang, so Google folds the translated pages into a
       // canonical we didn't choose. An indexable canonical page must also

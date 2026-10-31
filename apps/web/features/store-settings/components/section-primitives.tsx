@@ -1,4 +1,4 @@
-import { useEffect, isValidElement, cloneElement } from "react";
+import { cloneElement, isValidElement, useEffect } from "react";
 import type { ReactElement } from "react";
 import {
   Card,
@@ -65,9 +65,12 @@ export function Field({
 }) {
   const controlId =
     id ?? `settings-field-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
-  const control = isValidElement(children)
-    ? cloneElement(children as ReactElement<{ id?: string }>, { id: controlId })
-    : children;
+  const control =
+    isValidElement(children) && children.type !== "div"
+      ? cloneElement(children as ReactElement<{ id?: string }>, {
+          id: controlId,
+        })
+      : children;
 
   return (
     <A11yField.Root>

@@ -11,6 +11,6 @@ export function useSaveProfile(storeId: string | undefined, slug: string) {
   return useMutation({
     mutationFn: (values: ProfileFormInput) =>
       settingsApi.updateProfile(storeId as string, values),
-    onSuccess: (_data, values) => updateStoreCache(slug, values),
+    onSuccess: (data) => updateStoreCache(slug, data),
   });
 }

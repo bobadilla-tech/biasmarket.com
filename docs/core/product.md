@@ -41,11 +41,13 @@ deploy.
   - Buy via **group orders (GOs)**
   - Use **manual payments** (bank transfer, Wise, PayPal)
   - Submit **screenshots as proof**
+
 - High demand for:
 
   - Photocards (randomized SKUs)
   - Albums (versions, pre-orders)
   - Limited drops
+
 - Sellers often operate via:
 
   - Instagram DMs
@@ -68,64 +70,10 @@ delivered).
 
 ## 3. MVP Scope
 
-### 3.1 Onboarding Flow
-
-User answers:
-
-- Business name
-- Store handle (URL slug)
-- Business type (default: artist merch)
-- Store language (ES / EN — see [i18n.md](i18n.md))
-- Product categories (albums, photocards, bundles)
-- Payment methods:
-
-  - Bank transfer
-  - Wise
-  - PayPal (manual)
-
-Output: → Auto-generated store + theme
-
----
-
-### 3.2 Storefront Features
-
-- Product listing:
-
-  - Name
-  - Description
-  - Images
-  - Price
-  - Variants (album version, member, etc.)
-- Cart system
-- Checkout flow (no payment gateway)
-
-### Orders Management
-
-- Status:
-
-  - Pending Payment
-  - Payment Submitted
-  - Verified
-  - Rejected
-  - Fulfilled
-
-### Checkout Flow:
-
-1. User places order
-2. Receives:
-
-   - Order ID
-   - Delirvery Type
-   - Payment instructions
-3. Is handed off to WhatsApp to pay (payment coordinated with the seller — the
-   seller then records it; see 5.6 — no in-app proof upload in the MVP)
-
-### Delivery Status
-
-- Status:
-
-  - Pending
-  - Dropped off at courier
+The scope is defined once, in [section 5](#5-mvp-scope), grouped by the layer
+that owns each feature (section 4). Order, payment and delivery state names are
+the data-model enums, described in
+[5.7](#57-order-tracking-states-public-storefront--seller-panel).
 
 ---
 
@@ -136,14 +84,14 @@ to exactly one of them, so it's always clear who configures what.
 
 ### 4.1 Platform Layer (superadmin)
 
-- Manages all stores and their owners (accounts, plans, suspension)
+- Manages all stores and their owners (accounts, premium coupons, bans)
 - Not customer-facing; used only by the Bias Market operator
 - Out of scope for MVP beyond basic account/store listing (see
   [architecture.md](architecture.md#3-multi-tenant-design-critical))
-- What actually exists today: a `role: "admin"` gate + three screens — contact
-  inquiries from the public `/contact` form, stores (listing + impersonation),
-  and users (listing + ban) — see [admin.md](admin.md). Account/store management
-  beyond that is still unbuilt.
+- What exists: a `role: "admin"` gate and four screens — contact inquiries from
+  the public `/contact` form, stores (listing + impersonation), users (listing +
+  ban), and premium coupons (see [5.11](#511-plans-and-premium-coupons)) — see
+  [admin.md](admin.md). Account/store management beyond that is not built.
 
 ### 4.2 Seller Panel (per store)
 
@@ -161,6 +109,11 @@ to exactly one of them, so it's always clear who configures what.
 
 ## 5. MVP Scope
 
+Seller and buyer features that this section does not describe individually
+(collections, store sections, restock requests, WhatsApp templates, saved
+addresses, notifications, analytics, couriers, assisted orders) are listed with
+their modules in the [API module catalog](architecture.md#api-module-catalog).
+
 ### 5.1 Onboarding Flow (Seller Panel)
 
 Seller answers, at signup:
@@ -169,9 +122,10 @@ Seller answers, at signup:
 - Store handle (URL slug)
 - Business type (default: artist merch)
 - Product categories (albums, photocards, bundles, lightsticks)
-- Payment methods to enable (see 4.4 — not fixed to one country/method)
-- Delivery methods to enable (see 4.5) Output: an auto-generated store + default
-  theme, ready to publish.
+- Payment methods to enable (see 5.4 — not fixed to one country/method)
+- Delivery methods to enable (see 5.5)
+
+Output: an auto-generated store + default theme, ready to publish.
 
 ### 5.2 Product Management — CRUD (Seller Panel)
 
@@ -183,17 +137,23 @@ without it, and it's listed as an MVP deliverable in [roadmap.md](roadmap.md).
 - Required fields: name, description, price, category, at least 1 image
 - Optional: variants (see below)
 - Product is created in `DRAFT` until the seller explicitly publishes it, so
-  half-finished products don't show up on the live storefront **Read / List**
+  half-finished products don't show up on the live storefront
+
+**Read / List**
 
 - Seller sees all their store's products (scoped to `store_id`, see
   [security-payments.md §7.2](security-payments.md#72-input-validation))
 - Filterable by category and status (draft / published / sold out)
-- Buyer-facing listing only shows `PUBLISHED` products (see 4.3) **Update**
+- Buyer-facing listing only shows `PUBLISHED` products (see 5.3)
+
+**Update**
 
 - Any field editable after creation, including moving a product back to `DRAFT`
 - Toggle `sold out` manually, independent of variant-level stock (a seller may
   want to mark a whole product sold out even if one variant technically has
-  stock left, e.g. reserved for another channel) **Delete**
+  stock left, e.g. reserved for another channel)
+
+**Delete**
 
 - **Soft delete only.** A product referenced by an existing order (any status,
   including `CANCELLED`) cannot be hard-deleted — this would break the
@@ -201,26 +161,31 @@ without it, and it's listed as an MVP deliverable in [roadmap.md](roadmap.md).
   [security-payments.md §9](security-payments.md#9-payment-flow-design-manual)
   and make past orders unreadable in the seller's history
 - Soft-deleted products disappear from the storefront and from the default
-  product list, but remain resolvable from existing orders **Variants**
+  product list, but remain resolvable from existing orders
+
+**Variants**
 
 - A product can have one or more variants (e.g. album version, member, size)
 - Each variant has: its own stock count (or unlimited/N-A for made-to-order
   items), optional price override, optional image override
 - Stock decrement on `VERIFIED` (see
-  [security-payments.md §9.2](security-payments.md#92-flow)) happens at the
-  variant level if variants exist, otherwise at the product level **Images**
+  [security-payments.md §9.2](security-payments.md#92-flow-whats-actually-live))
+  happens at the variant level if variants exist, otherwise at the product level
+
+**Images**
 
 - Stored in object storage (public bucket — MinIO in the current deploy; see
   [security-payments.md §10](security-payments.md#10-storage-strategy))
-- MVP limit: up to 5 images per product, JPEG/PNG only, same size/type rules as
-  payment images (§7.3 of that file)
+- Limits: a per-product image cap (`MAX_PRODUCT_IMAGES` in
+  `apps/api/src/modules/products/product-images.constants.ts`), JPEG/PNG only,
+  same size/type rules as payment images (§7.3 of that file)
 
 ### 5.2.1 Seller-content conventions (SEO + accessibility)
 
 Applies to every field a seller writes that ends up on a public storefront page:
 `Store.bio`, `Store.aboutMarkdown`, `StoreSection` `TEXT_BLOCK` / `BANNER`
 content, and product name/description/images. Scoped by
-[the store rich-content + thin-content indexing plan](../plans/2026-09-07-store-rich-content-and-thin-content-indexing-plan.md);
+[the store rich-content + thin-content indexing plan](../../.artifacts/2026/09/20260907--store-rich-content-and-thin/plan.md);
 this also closes the GSC-audit doc's Phase D Tier 3 item 4 (alt-text
 convention). The forms and the markdown renderer **enforce** the
 machine-checkable parts (non-empty `alt`, on-CDN image `src`, the tag
@@ -267,11 +232,11 @@ images, and inline `![alt](url)` images in `aboutMarkdown`:
   - Name, description, images, price
   - Variants (album version, member, etc.)
   - Stock status (in stock / sold out)
-  - Only products in `PUBLISHED` status are shown (see 4.2)
+  - Only products in `PUBLISHED` status are shown (see 5.2)
 - Product detail page
 - Cart (drawer-style)
-- Checkout flow (see 4.6)
-- Buyer order tracking (see 4.7)
+- Checkout flow (see 5.6)
+- Buyer order tracking (see 5.7)
 
 ### 5.4 Payment Configuration (Seller Panel)
 
@@ -280,30 +245,44 @@ hardcoded store.
 
 Per store, the seller can:
 
-- Enable/disable payment methods individually:
-  - Yape
-  - Plin
-  - Bank transfer
-  - Wise (for cross-border sellers)
-  - PayPal (manual, screenshot-based — no live integration in MVP)
-- Set a **deposit rule**, as a percentage (e.g. 30%), instead of hardcoding full
-  payment
-- Make the deposit rule **conditional on delivery method** — e.g.:
-  - Pickup in person → deposit only (30%), balance paid on pickup
-  - Courier/shipping → full payment required upfront
+- Enable/disable payment methods individually. The method set is the
+  `PaymentMethodType` enum: `YAPE`, `PLIN`, `TRANSFER`, `CASH`. Wise and PayPal
+  are not integrations: a seller who uses them gives the transfer details as
+  free text under a method, and the buyer pays by manual transfer and screenshot
+- Set a **deposit percentage per method** (`PaymentMethodConfig.depositPercent`,
+  default 100, i.e. full payment). A buyer may choose a partial payment only on
+  an enabled, non-`CASH` method whose percentage is below 100
 - Provide payment account details per method (Yape number, bank account, etc.)
-  shown to the buyer at checkout Every one of these is a per-store setting, not
-  application code — a store can choose a fixed 30% deposit and Yape-only,
-  pickup-only, but that's a configuration choice, not a hardcoded assumption.
+  shown to the buyer at checkout
+
+Seller-assisted orders ([assisted-orders.md](assisted-orders.md)) use a fixed
+rule instead of the per-method percentage: a pickup order may take a deposit, a
+courier order must be paid in full
+(`packages/utils/src/assisted-order-payment`). Every setting above is per store,
+not application code.
 
 ### 5.5 Delivery Methods (Seller Panel)
 
-Per store, the seller configures one or both:
+Per store, the seller enables pickup, courier, or both (`DeliveryMethodType` is
+`PICKUP` or `COURIER`; `DeliveryMethodConfig`, one row per type with a free-form
+`details` object):
 
-- **Pickup point:** address, available days/hours
-- **Courier/shipping:** courier name(s), estimated cost, estimated delivery
-  window The delivery method a buyer selects at checkout determines which
-  payment rule applies (see 4.4).
+- **Pickup points** (`PickupPoint`): any number per store, each with a label, an
+  enabled flag, a sort order, the weekdays it is open (empty means every day),
+  and a manual "closed" override. If the store has enabled points, a pickup
+  order must name one and a pickup date that falls on an open day; the order
+  stores a label snapshot.
+- **Couriers** (`Courier`, `CourierConfig`): seller-named couriers, each with an
+  `AGENCY` (pick up at the courier's agency) and/or `HOME` (home delivery)
+  modality and a price per modality. A courier order must name a courier and a
+  modality, which are copied onto the order along with the price. A legacy
+  `estimatedCost` in the delivery `details` is used only when no courier
+  modality applies.
+
+Dashboard route: `/dashboard/[slug]/shipping`. Buyers read the enabled options
+from the `stores/:slug/public/*` endpoints. See the module catalog in
+[architecture.md](architecture.md#api-module-catalog). The delivery method also
+determines the deposit rule for seller-assisted orders (see 5.4).
 
 ### 5.6 Checkout & Order Creation Flow
 
@@ -330,22 +309,26 @@ Flow:
 5. **Buyer is handed off to WhatsApp to pay** — checkout builds a pre-filled
    `wa.me` message from the store's WhatsApp number (order id, items, total,
    delivery + payment method) and redirects; payment is coordinated with the
-   seller outside the app. There is **no in-app buyer proof upload** in the MVP
-   — the seller records what came in (step 6), see security-payments.md §9.2.
-6. **Seller records the payment** in the panel (`OrderPayment`: amount, method,
-   optional note, optional image) — the seller enters what was received over
-   WhatsApp, not the buyer. Recording enough to cover the required amount routes
-   straight through the approve path to `VERIFIED`; a partial amount leaves the
-   order in `PARTIALLY_PAID` (still on soft-hold) until the seller approves.
-   Approving directly always requires at least one recorded payment
-   (`paidAmount > 0`) — it can be done from `PENDING_PAYMENT` or
-   `PARTIALLY_PAID`, but never with no payment registered:
+   seller. The buyer can also upload a proof image in the app (at checkout, from
+   the account order page, or through an assisted order's private link). The
+   upload creates a pending `OrderPayment` for the seller to review and does not
+   change `paymentStatus` by itself; see
+   [security-payments.md §9.3.1](security-payments.md#931-buyer-proof-upload-by-private-link).
+6. **Seller records or reviews the payment** in the panel (`OrderPayment`:
+   amount, method, optional note, optional image) — either entering what was
+   received over WhatsApp or approving, rejecting or voiding a buyer-submitted
+   proof. Recording enough to cover the required amount routes straight through
+   the approve path to `VERIFIED`; a partial amount leaves the order in
+   `PARTIALLY_PAID` (still on soft-hold) until the seller approves. Approving
+   directly always requires at least one recorded payment (`paidAmount > 0`) —
+   it can be done from `PENDING_PAYMENT` or `PARTIALLY_PAID`, but never with no
+   payment registered:
    - Approve → `VERIFIED` (now counts as a confirmed order)
    - Reject → `REJECTED`
 7. From `VERIFIED`, the order proceeds into the fulfillment states in 5.7. Full
    validation rules, file upload limits, and the technical version of this flow
    are defined in
-   [security-payments.md](security-payments.md#9-payment-flow-design-manual) —
+   [security-payments.md](security-payments.md#92-flow-whats-actually-live) —
    this section is the product-level reason those rules exist the way they do,
    and that file should be read together with this one.
 
@@ -357,32 +340,39 @@ visibility into where their order actually is:
 1. `PENDING_PAYMENT` — order created, awaiting payment (5.6)
 2. `PARTIALLY_PAID` — seller has recorded a partial payment (deposit), still
    awaiting the rest
-3. `PAYMENT_SUBMITTED` — a legal state in the model, but no current flow
-   produces it: sellers approve/reject straight from `PENDING_PAYMENT` /
-   `PARTIALLY_PAID` based on the WhatsApp conversation (5.6)
+3. `PAYMENT_SUBMITTED` — set only when voiding a payment leaves an unreviewed
+   buyer proof and nothing paid; a pending buyer proof does not set it. Sellers
+   otherwise approve/reject from `PENDING_PAYMENT` / `PARTIALLY_PAID` (5.6; see
+   [security-payments.md §9.3](security-payments.md#93-state-summary))
 4. `VERIFIED` — payment confirmed (seller-approved), order is real
 5. `ORDERING` — seller has included it in a bulk purchase from origin country
    (Korea, etc.)
 6. `IN_TRANSIT` — shipped from origin, en route to seller
 7. `READY` — arrived, available for pickup or local shipping
 8. `COMPLETED` — delivered to buyer / picked up
-9. `REJECTED` / `CANCELLED` — terminal failure states Not every store will use
-   every state (a store with in-stock-only inventory can skip
-   `ORDERING`/`IN_TRANSIT`), so this list is configurable per store's business
-   type, but the states themselves are fixed vocabulary in the data model — see
-   [architecture.md](architecture.md).
+9. `REJECTED` / `CANCELLED` — terminal failure states
+
+Items 1-4 and 9 are `paymentStatus` values and items 5-8 are `fulfillmentStatus`
+values; cancellation is a third axis (`OrderStatus`). The states are fixed
+vocabulary in the data model — see
+[architecture.md](architecture.md#4-database-improvements). Whether a store
+skips `ORDERING`/`IN_TRANSIT` is a seller practice; the code does not vary the
+states per store.
 
 ### 5.8 Buyer Authentication (Public Storefront)
 
-- Phone number + password is the required identity (`Customer.phone` +
-  `passwordHash`, unique per store)
+- Buyers have a global account (`BuyerAccount`) across all stores. Phone number
+  plus password is the main identity (`phone` is unique); Google sign-in is
+  optional, and a Google-only account has no password.
 - Email is optional and, once added, goes through a verification flow
-  (`Customer.email`/`emailVerified`/`pendingEmail`) — same for phone number
-  changes (`pendingPhone`) — see
-  `apps/api/src/modules/orders/application/customer-account.service.ts`. No SMS
-  verification.
-- Buyer can view their own order history and current status per order
-- No social login in MVP
+  (`email`/`emailVerified`/`pendingEmail`); phone changes use `pendingPhone`. No
+  SMS verification.
+- A buyer can view their own order history and current status per order, on the
+  store's account page and on `/my-purchases`.
+- A buyer who received an assisted-order link can claim the order into an
+  account. Per-store customer records (`Customer`) are linked through
+  `CustomerStoreLink`. See
+  [security-payments.md §7.5](security-payments.md#75-seller-and-buyer-identity).
 
 ### 5.9 Seller Panel (management)
 
@@ -401,25 +391,57 @@ the seller panel includes:
 
 Shipped, not originally in this spec — the one deliberate expansion beyond
 "single-store builder." Bias Market is still not a marketplace (buyers still
-browse and check out on one store at a time, per-store, exactly as 4.3
+browse and check out on one store at a time, per-store, exactly as 5.3
 describes); this is an **acquisition layer on top of it**, so a seller isn't
 solely dependent on their own social following to get buyers. Three surfaces,
 all reading across every store, none of them transactional themselves:
 
-- **Featured stores** (`GET /stores/featured`, home-page section): stores with
-  ≥3 `VERIFIED` orders in the trailing 30 days, at least one published product,
-  and not banned — an activity signal, not a manually curated/paid placement.
+- **Featured stores** (`GET /stores/featured`, home-page section): public,
+  non-banned stores with at least one listable product and a minimum number of
+  `VERIFIED` orders in a trailing window (`MIN_ORDER_COUNT` and the window in
+  `StoresService.findFeatured`), ranked by revenue — an activity signal, not a
+  manually curated/paid placement.
 - **Store directory** (`/stores`): paginated, searchable list of every public
   store (name, slug, owner, logo).
 - **Global product search** (`/search`): searches products across all stores at
   once, not scoped to one storefront — the same product-listing rules apply
-  (4.3: only `PUBLISHED` products surface).
+  (5.3: only `PUBLISHED` products surface).
 
 A store can opt out entirely: `Store.isPublic` (default `true`) gates inclusion
 in featured/directory/search — toggled in store settings
 (`features/store-settings`). Clicking through from any of these still lands the
 buyer on that store's own `/store/[slug]` page — checkout, payment methods, and
-delivery options remain fully per-store (4.4–4.6), unchanged by this layer.
+delivery options remain fully per-store (5.4–5.6), unchanged by this layer.
+
+### 5.11 Plans and Premium Coupons
+
+The code implements a plan flag and coupon redemption; it implements no price,
+billing or paid checkout. Pricing, and what a premium plan will unlock, are not
+defined anywhere in the code or in these docs.
+
+- **State.** Each seller account (`User`, not a store) has `plan` (default
+  `basic`) and `premiumUntil`. Both are read-only to clients and are written
+  only by coupon redemption, unredeeming, and the expiry sweep.
+- **Coupons.** An admin creates coupons at `/admin/coupons`: a 4-8 character
+  alphanumeric code, name, `plan` (default `premium`), `durationDays` (default
+  `PREMIUM_DURATION_DAYS` in `coupons.service.ts`), `maxUses` (default 1), an
+  active flag and an optional start/end window. Admins can edit, toggle, delete,
+  list redemptions, and unredeem one.
+- **Redeeming.** A signed-in seller enters a code in the account page
+  (`features/coupons`, `POST /coupons/redeem`, throttled). A user can redeem a
+  given coupon once, and a coupon stops working at `maxUses`. Redeeming sets
+  `plan` to the coupon's plan and moves `premiumUntil` forward by
+  `durationDays`, starting from the current expiry when one is still in the
+  future, so durations stack. Unredeeming recomputes both fields from the
+  remaining redemptions, falling back to `basic`.
+- **Expiry.** The `premium` queue in `apps/workers` triggers an internal sweep
+  that resets `plan` to `basic` and clears `premiumUntil` once it has passed
+  (`expire-premium.usecase.ts`). The web client treats a plan as premium only
+  while `premiumUntil` is in the future
+  (`features/coupons/queries/use-my-plan.ts`).
+- **What a plan changes today.** The account page shows the premium status and
+  expiry. No API route or dashboard feature checks the plan, so a `basic` seller
+  has access to the same features as a premium one.
 
 ---
 
@@ -431,8 +453,9 @@ To keep scope honest:
   per [security-payments.md](security-payments.md)
 - No subdomain-per-store routing — all stores share one domain path scheme until
   justified (see [architecture.md](architecture.md))
-- No themes marketplace — one default theme, minor customization only
-- No group-order-specific tooling beyond the order states in 4.6 (no demand
+- No themes marketplace — built-in palettes and a custom primary color only (see
+  [architecture.md §5](architecture.md#5-theming))
+- No group-order-specific tooling beyond the order states in 5.7 (no demand
   aggregation UI, no bulk-buy calculators) — tracked for v2 in
   [roadmap.md](roadmap.md)
 
@@ -442,21 +465,26 @@ To keep scope honest:
 
 Still unresolved:
 
-- Should the MVP data model assume multi-store from day one (all tables scoped
-  to `store_id`), even though only one real store will use it at first? This
-  affects initial development effort — see
-  [architecture.md](architecture.md#3-multi-tenant-design-critical).
-- Exact deposit-expiration window for `PENDING_PAYMENT` orders (24h? 48h?) —
-  affects both product behavior and courier/import timelines.
-- Which courier(s) to list by default in the delivery configuration (4.5).
+- Pricing and plan limits (see 5.11): no price or plan-gated feature exists in
+  the code.
+- Which courier(s) to list by default in the delivery configuration (5.5).
 - Whether `ORDERING`/`IN_TRANSIT` states are visible to buyers by default or
   only shown for stores that opt in.
 
 ---
 
-## 13. Key Differentiator
+## 8. Key Differentiator
 
 Bias Market is not Shopify-lite.
 
 It is: → **Fan-commerce infrastructure** → Built for chaotic, manual workflows →
 Then gradually automates them
+
+---
+
+## Related
+
+- [architecture.md](architecture.md): modules, data model, queues.
+- [security-payments.md](security-payments.md): payment flow and identity.
+- [assisted-orders.md](assisted-orders.md): seller-created orders.
+- [roadmap.md](roadmap.md), [admin.md](admin.md), [i18n.md](i18n.md).

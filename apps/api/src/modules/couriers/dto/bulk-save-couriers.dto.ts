@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { ApiProperty } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 import {
   ArrayMinSize,
   IsArray,
@@ -12,11 +12,11 @@ import {
   IsString,
   Min,
   ValidateNested,
-} from 'class-validator';
+} from "class-validator";
 
 export class BulkSaveModalityDto {
-  @IsEnum(['AGENCY', 'HOME'] as const)
-  modality: 'AGENCY' | 'HOME';
+  @IsEnum(["AGENCY", "HOME"] as const)
+  modality: "AGENCY" | "HOME";
 
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)

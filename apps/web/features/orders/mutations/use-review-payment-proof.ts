@@ -14,17 +14,19 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 // vitest.config.ts; same fix, import the leaf module directly.
 import { statsKeys } from "@/features/stats/queries/use-stats-overview";
 import { apiClient } from "@/lib/api-client";
+import { useBuyerNoticeOffer } from "@/features/assisted-orders/mutations/use-buyer-notice";
 import { ordersKeys } from "../queries/use-orders";
 
 // Approve/reject a single buyer-submitted proof row (`OrderPayment.source ===
 // "BUYER_SUBMITTED"`) — distinct from `useReviewPayment`, which reviews the
 // order's overall paymentStatus. See
-// docs/plans/2026-08-08-buyer-proof-of-payment-upload-plan.md.
+// .artifacts/2026/08/20260808--buyer-proof-of-payment-upload/plan.md.
 export function useReviewPaymentProof(
   storeId: string | undefined,
   fallbackErrorMessage?: string,
 ) {
   const queryClient = useQueryClient();
+  const { offer } = useBuyerNoticeOffer(storeId);
 
   return useMutation({
     mutationFn: ({
@@ -49,9 +51,14 @@ export function useReviewPaymentProof(
         { fallbackErrorMessage },
       );
     },
-    onSuccess: () => {
+    onSuccess: (_data, vars) => {
       if (!storeId) return;
-      queryClient.invalidateQueries({ queryKey: ordersKeys.byStore(storeId) });
+      const refetched = queryClient.invalidateQueries({
+        queryKey: ordersKeys.byStore(storeId),
+      });
+      if (vars.decision === "approve") {
+        void offer(refetched, vars.orderId, "ASSISTED_PAYMENT_VALIDATED");
+      }
       void queryClient.invalidateQueries({
         queryKey: statsKeys.overview(storeId),
       });

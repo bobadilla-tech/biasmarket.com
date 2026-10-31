@@ -4,10 +4,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 // three purposes are more security-sensitive (account takeover / silent
 // contact-info swap) and get a much shorter TTL — see `ttlForPurpose`.
 export type CustomerAccountTokenPurpose =
-  | "confirm"
-  | "reset"
-  | "change-email"
-  | "change-phone";
+  "confirm" | "reset" | "change-email" | "change-phone";
 
 const CONFIRM_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const SENSITIVE_TOKEN_TTL_MS = 60 * 60 * 1000;
@@ -23,7 +20,7 @@ function sign(payload: string, secret: string): string {
 // `buyerAccountId` — these tokens (confirm/reset/change-email/change-phone)
 // identify a global `BuyerAccount`, not a per-store `Customer`, since buyer
 // auth moved onto the global identity model (see
-// docs/plans/2026-08-08-global-buyer-account-plan.md).
+// .artifacts/2026/08/20260808--global-buyer-account/plan.md).
 export function createCustomerAccountToken(
   buyerAccountId: string,
   secret: string,
@@ -63,7 +60,9 @@ export function verifyCustomerAccountToken(
   ];
   const purpose = validPurposes.find((p) => p === purposeRaw);
   if (
-    !buyerAccountId || !purpose || !Number.isFinite(expiresAt) ||
+    !buyerAccountId ||
+    !purpose ||
+    !Number.isFinite(expiresAt) ||
     Date.now() > expiresAt
   ) {
     return null;
@@ -115,9 +114,7 @@ export function verifyCustomerSessionToken(
     return null;
   }
 
-  const [buyerAccountId, passwordVersionRaw, expiresAtRaw] = payload.split(
-    ".",
-  );
+  const [buyerAccountId, passwordVersionRaw, expiresAtRaw] = payload.split(".");
   const expiresAt = Number(expiresAtRaw);
   const passwordVersion = Number(passwordVersionRaw);
   if (

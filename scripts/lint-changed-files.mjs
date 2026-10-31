@@ -61,7 +61,9 @@ for (const file of files) {
   const absolute = path.resolve(repoRoot, file);
   if (!existsSync(absolute)) continue;
 
-  const info = await prettier.getFileInfo(absolute);
+  const info = await prettier.getFileInfo(absolute, {
+    ignorePath: path.join(repoRoot, ".prettierignore"),
+  });
   if (info.ignored || !info.inferredParser) continue;
 
   const config = await prettier.resolveConfig(absolute);

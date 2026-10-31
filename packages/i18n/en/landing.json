@@ -1,5 +1,8 @@
 {
-  "languageToggle": { "en": "EN", "es": "ES" },
+  "languageToggle": {
+    "en": "EN",
+    "es": "ES"
+  },
   "hero": {
     "title1": "Your K-Pop world",
     "title2": "All in one place",
@@ -14,7 +17,9 @@
     "blogSubtitle": "News, guides and everything about the K-pop world",
     "blogCta": "Read blog"
   },
-  "products": { "viewStore": "View in {name}" },
+  "products": {
+    "viewStore": "View in {name}"
+  },
   "trends": {
     "title": "Trending",
     "latestTitle": "New Products",
@@ -33,10 +38,18 @@
     "title": "Biasmarket Blog",
     "cta": "See more",
     "items": [
-      { "title": "Do you know Biasmarket?" },
-      { "title": "What does Bias mean?" },
-      { "title": "Events of the month" },
-      { "title": "Most famous groups?" }
+      {
+        "title": "Do you know Biasmarket?"
+      },
+      {
+        "title": "What does Bias mean?"
+      },
+      {
+        "title": "Events of the month"
+      },
+      {
+        "title": "Most famous groups?"
+      }
     ]
   },
   "categories": {
@@ -46,19 +59,39 @@
     "subtitle": "Explore by category and discover your next favorite merch",
     "explore": "Explore all",
     "items": [
-      { "key": "photocards", "name": "Photocards" },
-      { "key": "albums", "name": "Albums" },
-      { "key": "lightsticks", "name": "Lightsticks" },
-      { "key": "concert", "name": "Concert" },
-      { "key": "magazine", "name": "Magazine" },
-      { "key": "otros", "name": "Others" }
+      {
+        "key": "photocards",
+        "name": "Photocards"
+      },
+      {
+        "key": "albums",
+        "name": "Albums"
+      },
+      {
+        "key": "lightsticks",
+        "name": "Lightsticks"
+      },
+      {
+        "key": "concert",
+        "name": "Concert"
+      },
+      {
+        "key": "magazine",
+        "name": "Magazine"
+      },
+      {
+        "key": "otros",
+        "name": "Others"
+      }
     ]
   },
   "discover": {
     "title": "More to discover",
     "cta": "View more products",
     "empty": "No products yet.",
-    "error": "Something went wrong. Try again."
+    "error": "Something went wrong. Try again.",
+    "loading": "Loading discovered products",
+    "retry": "Retry"
   },
   "about": {
     "title": "What is BIASMARKET?",
@@ -103,25 +136,110 @@
     "columns": [
       {
         "heading": "Buy",
-        "links": ["How to buy", "Explore products", "Categories", "Stores"]
+        "links": [
+          {
+            "label": "How to buy",
+            "href": "/how-to-buy"
+          },
+          {
+            "label": "Explore products",
+            "href": "/search"
+          },
+          {
+            "label": "Categories",
+            "href": "/search"
+          },
+          {
+            "label": "Stores",
+            "href": "/stores"
+          }
+        ]
       },
       {
         "heading": "Sell",
-        "links": ["Create store", "How to sell", "FAQ"]
+        "links": [
+          {
+            "label": "Create store",
+            "href": "/onboarding"
+          },
+          {
+            "label": "How to sell",
+            "href": "/for-sellers"
+          },
+          {
+            "label": "FAQ",
+            "href": "/faq"
+          }
+        ]
       },
       {
         "heading": "Biasmarket",
-        "links": ["About us", "How it works", "Blog"]
+        "links": [
+          {
+            "label": "About us",
+            "href": "/founder"
+          },
+          {
+            "label": "How it works",
+            "href": "/how-it-works"
+          },
+          {
+            "label": "Blog",
+            "href": "/blog"
+          }
+        ]
       },
       {
         "heading": "Help",
-        "links": ["Help center", "Contact", "Terms"]
+        "links": [
+          {
+            "label": "Help center",
+            "href": "/help"
+          },
+          {
+            "label": "Contact",
+            "href": "/contact"
+          }
+        ]
       }
     ],
     "socials": [
-      { "label": "Facebook", "image": "/landing/social-fb.png" },
-      { "label": "Instagram", "image": "/landing/social-ig.png" },
-      { "label": "X", "image": "/landing/social-x.png" }
-    ]
+      {
+        "label": "Facebook",
+        "image": "/landing/social-fb.png"
+      },
+      {
+        "label": "Instagram",
+        "image": "/landing/social-ig.png"
+      },
+      {
+        "label": "X",
+        "image": "/landing/social-x.png"
+      }
+    ],
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "description": "Bias Market is an online platform where creators and independent sellers of K-pop merchandise open their own stores and fans discover and order from them. Sellers can sign in with email or Google.",
+    "legalNav": "Legal"
+  },
+  "fanJourney": {
+    "eyebrow": "A fan-first way to shop",
+    "title": "From your next find to a collection you love.",
+    "subtitle": "Explore great finds, meet independent fan shops, and bring something special home.",
+    "step": "STEP {number}",
+    "steps": {
+      "discover": {
+        "title": "Find your next favorite",
+        "body": "Explore albums, photocards, lightsticks, and more."
+      },
+      "shops": {
+        "title": "Meet fan-run stores",
+        "body": "Discover the people and shops behind every find."
+      },
+      "collect": {
+        "title": "Build your collection",
+        "body": "Find something that feels made for your fandom."
+      }
+    }
   }
 }

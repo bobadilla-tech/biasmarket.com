@@ -1,7 +1,7 @@
 import globals from "globals";
 import jsxA11y from "eslint-plugin-jsx-a11y";
 import reactHooks from "eslint-plugin-react-hooks";
-import babelParser from "@babel/eslint-parser";
+import { baseRules, parserFor } from "../../eslint.config.mjs";
 
 /**
  * Flat ESLint config for `apps/web` — the a11y regression guard (audit Phase 0).
@@ -69,33 +69,16 @@ export default [
     linterOptions: {
       reportUnusedDisableDirectives: "off",
     },
-    languageOptions: {
-      ecmaVersion: "latest",
-      sourceType: "module",
-      parser: babelParser,
-      parserOptions: {
-        requireConfigFile: false,
-        babelOptions: {
-          babelrc: false,
-          configFile: false,
-          // Babel 8's `@babel/eslint-parser` does not pick up
-          // `@babel/preset-typescript`'s syntax plugins for parse-only use;
-          // enable the syntax plugins directly. `typescript` + `jsx` together
-          // is TSX parsing mode — fine for lint (no emit).
-          parserOpts: {
-            plugins: ["typescript", "jsx", "importAttributes"],
-          },
-        },
-      },
-      globals: {
-        ...globals.browser,
-        ...globals.node,
-        ...globals.es2025,
-        React: "readonly",
-        JSX: "readonly",
-        NodeJS: "readonly",
-      },
-    },
+    // Babel 8's `@babel/eslint-parser` does not pick up
+    // `@babel/preset-typescript`'s syntax plugins for parse-only use; the shared
+    // `parserFor` enables them directly. `typescript` + `jsx` together is TSX
+    // parsing mode, fine for lint (no emit).
+    languageOptions: parserFor(["typescript", "jsx", "importAttributes"], {
+      ...globals.browser,
+      React: "readonly",
+      JSX: "readonly",
+      NodeJS: "readonly",
+    }),
     plugins: {
       "jsx-a11y": jsxA11y,
       // Registered but with **no rules enabled** — several source files carry
@@ -127,6 +110,14 @@ export default [
         },
       },
     },
-    rules: a11yRules,
+    rules: {
+      // Shared recommended rules (no-undef etc. off: tsc is the authority).
+      ...baseRules,
+      ...a11yRules,
+      "react-hooks/rules-of-hooks": "error",
+      // Stays a warning: the existing findings are not fixed here, and the
+      // web lint script does not use --max-warnings 0.
+      "react-hooks/exhaustive-deps": "warn",
+    },
   },
 ];
