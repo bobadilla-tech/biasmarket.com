@@ -204,10 +204,14 @@ export function StoreSectionRenderer({
     parseCategorySlugs(searchParams?.get("categoria") ?? null),
   );
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const isLoadingMoreRef = useRef(false);
+  const catalogLoadSentinelRef = useRef<HTMLDivElement>(null);
   const catalogQueryKey = new URLSearchParams(searchString);
   catalogQueryKey.delete("page");
   const catalogKey = catalogQueryKey.toString();
   const currentPage = catalogPagination?.page ?? 1;
+  const catalogLimit = catalogPagination?.limit;
+  const catalogTotal = catalogPagination?.total;
   const [loadedCatalog, setLoadedCatalog] = useState({
     key: catalogKey,
     pages: catalogSectionsForPage(currentPage, sections),
@@ -232,6 +236,7 @@ export function StoreSectionRenderer({
 
   useEffect(() => {
     setIsLoadingMore(false);
+    isLoadingMoreRef.current = false;
     if (!serverSorted) {
       setLoadedCatalog({
         key: catalogKey,
@@ -252,6 +257,44 @@ export function StoreSectionRenderer({
       };
     });
   }, [catalogKey, currentPage, sections, serverSorted]);
+
+  useEffect(() => {
+    if (
+      !serverSorted ||
+      !catalogLimit ||
+      catalogTotal === undefined ||
+      currentPage * catalogLimit >= catalogTotal
+    ) {
+      return;
+    }
+
+    const sentinel = catalogLoadSentinelRef.current;
+    if (!sentinel || typeof IntersectionObserver === "undefined") return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting || isLoadingMoreRef.current) return;
+
+        isLoadingMoreRef.current = true;
+        setIsLoadingMore(true);
+        const params = new URLSearchParams(searchString);
+        params.set("page", String(currentPage + 1));
+        router.push(`${pathname}?${params.toString()}`, { scroll: false });
+      },
+      { rootMargin: "500px 0px", threshold: 0 },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [
+    catalogLimit,
+    catalogTotal,
+    currentPage,
+    pathname,
+    router,
+    searchString,
+    serverSorted,
+  ]);
 
   useEffect(() => {
     if (!catalogControls) return;
@@ -617,27 +660,26 @@ export function StoreSectionRenderer({
                         })}
                       </span>
                     )}
-                    {catalogPagination.page * catalogPagination.limit <
-                      catalogPagination.total && (
-                      <button
-                        type="button"
-                        disabled={isLoadingMore}
-                        onClick={() => {
-                          const params = new URLSearchParams(searchString);
-                          params.set(
-                            "page",
-                            String(catalogPagination.page + 1),
-                          );
-                          setIsLoadingMore(true);
-                          router.push(`${pathname}?${params.toString()}`, {
-                            scroll: false,
-                          });
-                        }}
-                        className="store-theme-primary-button min-h-11 rounded-full px-6 text-sm font-semibold disabled:cursor-wait disabled:opacity-60"
-                      >
-                        {isLoadingMore ? t("loadingMore") : t("loadMore")}
-                      </button>
-                    )}
+                    {serverSorted &&
+                      catalogPagination.page * catalogPagination.limit <
+                        catalogPagination.total && (
+                        <div
+                          ref={catalogLoadSentinelRef}
+                          role="status"
+                          aria-live="polite"
+                          className="flex min-h-10 items-center justify-center gap-2 text-sm text-(--store-muted)"
+                        >
+                          {isLoadingMore && (
+                            <>
+                              <span
+                                aria-hidden="true"
+                                className="size-4 animate-spin rounded-full border-2 border-current border-r-transparent"
+                              />
+                              <span>{t("loadingMore")}</span>
+                            </>
+                          )}
+                        </div>
+                      )}
                   </nav>
                 )}
               </div>
