@@ -216,6 +216,13 @@ export function StoreSectionRenderer({
     key: catalogKey,
     pages: catalogSectionsForPage(currentPage, sections),
   });
+  const loadedCatalogPages =
+    loadedCatalog.key === catalogKey
+      ? Array.from(loadedCatalog.pages.keys())
+      : [];
+  const loadedCatalogPage = loadedCatalogPages.length
+    ? Math.max(...loadedCatalogPages)
+    : currentPage;
   useEffect(() => {
     const dialog = referenceDialogRef.current;
     if (!dialog) return;
@@ -263,7 +270,7 @@ export function StoreSectionRenderer({
       !serverSorted ||
       !catalogLimit ||
       catalogTotal === undefined ||
-      currentPage * catalogLimit >= catalogTotal
+      loadedCatalogPage * catalogLimit >= catalogTotal
     ) {
       return;
     }
@@ -278,7 +285,7 @@ export function StoreSectionRenderer({
         isLoadingMoreRef.current = true;
         setIsLoadingMore(true);
         const params = new URLSearchParams(searchString);
-        params.set("page", String(currentPage + 1));
+        params.set("page", String(loadedCatalogPage + 1));
         router.push(`${pathname}?${params.toString()}`, { scroll: false });
       },
       { rootMargin: "500px 0px", threshold: 0 },
@@ -288,8 +295,11 @@ export function StoreSectionRenderer({
     return () => observer.disconnect();
   }, [
     catalogLimit,
+    catalogKey,
     catalogTotal,
     currentPage,
+    loadedCatalog,
+    loadedCatalogPage,
     pathname,
     router,
     searchString,
@@ -661,8 +671,25 @@ export function StoreSectionRenderer({
                       </span>
                     )}
                     {serverSorted &&
-                      catalogPagination.page * catalogPagination.limit <
-                        catalogPagination.total && (
+                      loadedCatalogPage * catalogPagination.limit <
+                        catalogPagination.total &&
+                      (typeof IntersectionObserver === "undefined" ? (
+                        <button
+                          type="button"
+                          disabled={isLoadingMore}
+                          onClick={() => {
+                            const params = new URLSearchParams(searchString);
+                            params.set("page", String(loadedCatalogPage + 1));
+                            setIsLoadingMore(true);
+                            router.push(`${pathname}?${params.toString()}`, {
+                              scroll: false,
+                            });
+                          }}
+                          className="min-h-11 rounded-full border border-(--store-border) px-5 text-sm font-semibold text-(--store-text) disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {t("nextPage")}
+                        </button>
+                      ) : (
                         <div
                           ref={catalogLoadSentinelRef}
                           role="status"
@@ -679,7 +706,7 @@ export function StoreSectionRenderer({
                             </>
                           )}
                         </div>
-                      )}
+                      ))}
                   </nav>
                 )}
               </div>
