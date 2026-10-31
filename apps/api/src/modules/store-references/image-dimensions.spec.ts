@@ -1,29 +1,55 @@
 import { BadRequestException } from "@nestjs/common";
+import { crc32 } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import { readImageDimensions } from "./image-dimensions.js";
 
 describe("readImageDimensions", () => {
-  it("reads PNG dimensions from the IHDR header", () => {
-    const image = Buffer.alloc(33);
-    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).copy(image, 0);
-    image.writeUInt32BE(13, 8);
-    image.write("IHDR", 12, "ascii");
-    image.writeUInt32BE(1200, 16);
-    image.writeUInt32BE(800, 20);
+  function pngChunk(type: string, data: Buffer) {
+    const chunk = Buffer.alloc(12 + data.length);
+    chunk.writeUInt32BE(data.length, 0);
+    chunk.write(type, 4, "ascii");
+    data.copy(chunk, 8);
+    chunk.writeUInt32BE(
+      crc32(chunk.subarray(4, 8 + data.length)),
+      8 + data.length,
+    );
+    return chunk;
+  }
 
-    expect(readImageDimensions(image, "image/png")).toEqual({
+  function pngImage() {
+    const header = Buffer.alloc(13);
+    header.writeUInt32BE(1200, 0);
+    header.writeUInt32BE(800, 4);
+    header[8] = 8;
+    header[9] = 2;
+    const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+    return Buffer.concat([
+      signature,
+      pngChunk("IHDR", header),
+      pngChunk("IDAT", Buffer.from([1, 2, 3])),
+      pngChunk("IEND", Buffer.alloc(0)),
+    ]);
+  }
+
+  it("reads PNG dimensions from the IHDR header", () => {
+    expect(readImageDimensions(pngImage(), "image/png")).toEqual({
       width: 1200,
       height: 800,
     });
   });
 
   it("rejects PNG data without a valid IHDR chunk", () => {
-    const image = Buffer.alloc(33);
-    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).copy(image, 0);
-    image.writeUInt32BE(13, 8);
+    const image = pngImage();
     image.write("IDAT", 12, "ascii");
-    image.writeUInt32BE(1200, 16);
-    image.writeUInt32BE(800, 20);
+
+    expect(() => readImageDimensions(image, "image/png")).toThrow(
+      BadRequestException,
+    );
+  });
+
+  it("rejects PNG chunks with invalid CRCs", () => {
+    const image = pngImage();
+    image[image.length - 5] = 1;
 
     expect(() => readImageDimensions(image, "image/png")).toThrow(
       BadRequestException,
