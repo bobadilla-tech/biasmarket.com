@@ -203,6 +203,7 @@ describe("stores + my-stores (e2e)", () => {
         // Marketplace search skips imageless products (#356), and the isDemo
         // test below expects this one to be listed.
         images: ["https://cdn.biasmarket.com/e2e-store.jpg"],
+        categoryIds: [categoryId],
       })
       .expect(201);
     productId = productRes.body.id;

@@ -513,7 +513,9 @@ describe("storefront empty states", () => {
         />
       </NextIntlClientProvider>,
     );
-    expect(screen.getByText("Pronto podrás ver las referencias")).toBeTruthy();
+    expect(
+      screen.getByText("Esta tienda aún no tiene referencias"),
+    ).toBeTruthy();
     expect(screen.getByText("Referencias de Mi tienda")).toBeTruthy();
     fireEvent.change(screen.getByRole("combobox", { name: "Ordenar por" }), {
       target: { value: "antiguas" },

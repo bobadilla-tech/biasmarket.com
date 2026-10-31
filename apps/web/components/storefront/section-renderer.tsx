@@ -1,9 +1,18 @@
 "use client";
 
-import { type ReactNode, useEffect, useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowUpRight, Images, Search, Shapes } from "lucide-react";
+import Image from "next/image";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpRight,
+  Images,
+  Search,
+  Shapes,
+  X,
+} from "lucide-react";
 import { ProductCard } from "@/features/storefront/components/product-card";
 import { isProductOutOfStock } from "@/features/discovery/lib/product-stock";
 import {
@@ -112,6 +121,28 @@ export interface RenderableSection {
   } | null;
 }
 
+export interface RenderableStoreReference {
+  id: string;
+  imageUrl: string;
+  width: number;
+  height: number;
+  takenAt: string;
+  caption: string | null;
+  source: "STORE" | "BUYER";
+}
+
+function referenceDate(value: string, locale: string) {
+  const parts = new Intl.DateTimeFormat(locale, {
+    timeZone: "America/Lima",
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+  }).formatToParts(new Date(value));
+  const part = (type: string) =>
+    parts.find((item) => item.type === type)?.value ?? "";
+  return `${part("day")}/${part("month")}/${part("year")}`;
+}
+
 // Shared with the real public storefront (`app/[locale]/(storefront)/store/[slug]/page.tsx`)
 // so the seller's section-builder preview can't drift from what buyers see —
 // see .artifacts/2026/08/20260808--storefront-section-drag-drop-preview/plan.md. Does
@@ -129,6 +160,9 @@ export function StoreSectionRenderer({
   showAbout = false,
   catalogControls = false,
   storeCategories = [],
+  storeReferences = [],
+  referencesPagination = null,
+  referencesLoadError = false,
   catalogPagination,
   serverSorted = false,
 }: {
@@ -141,6 +175,9 @@ export function StoreSectionRenderer({
   showAbout?: boolean;
   catalogControls?: boolean;
   storeCategories?: StorefrontCategory[];
+  storeReferences?: RenderableStoreReference[];
+  referencesPagination?: { page: number; limit: number; total: number } | null;
+  referencesLoadError?: boolean;
   catalogPagination?: { page: number; limit: number; total: number } | null;
   serverSorted?: boolean;
 }) {
@@ -148,6 +185,11 @@ export function StoreSectionRenderer({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const locale = useLocale();
+  const [selectedReference, setSelectedReference] = useState<number | null>(
+    null,
+  );
+  const referenceDialogRef = useRef<HTMLDialogElement>(null);
   const searchString = searchParams?.toString() ?? "";
   const tabValue = searchParams?.get("tab") ?? null;
   const activeTab = catalogControls
@@ -168,14 +210,22 @@ export function StoreSectionRenderer({
     key: catalogKey,
     pages: catalogSectionsForPage(currentPage, sections),
   });
+  useEffect(() => {
+    const dialog = referenceDialogRef.current;
+    if (!dialog) return;
+    if (selectedReference !== null && !dialog.open) dialog.showModal();
+    if (selectedReference === null && dialog.open) dialog.close();
+  }, [selectedReference]);
   const displayedSections =
     serverSorted && loadedCatalog.key === catalogKey
       ? mergeCatalogPages(loadedCatalog.pages)
       : sections;
   useEffect(() => {
-    setCategoryIds(parseCategorySlugs(searchParams?.get("categoria") ?? null));
-    setQuery(searchParams?.get("q") ?? "");
-    setSort(searchParams?.get("orden") ?? defaultSort);
+    const params = new URLSearchParams(searchString);
+    setSelectedReference(null);
+    setCategoryIds(parseCategorySlugs(params.get("categoria")));
+    setQuery(params.get("q") ?? "");
+    setSort(params.get("orden") ?? defaultSort);
   }, [defaultSort, searchString]);
 
   useEffect(() => {
@@ -244,6 +294,24 @@ export function StoreSectionRenderer({
     router.push(queryString ? `${pathname}?${queryString}` : pathname, {
       scroll: false,
     });
+  }
+
+  function changeReferencePage(page: number) {
+    const params = new URLSearchParams(searchString);
+    if (page <= 1) params.delete("page");
+    else params.set("page", String(page));
+    const queryString = params.toString();
+    router.push(queryString ? `${pathname}?${queryString}` : pathname, {
+      scroll: false,
+    });
+  }
+
+  function moveReference(offset: number) {
+    if (!storeReferences.length || selectedReference === null) return;
+    setSelectedReference(
+      (selectedReference + offset + storeReferences.length) %
+        storeReferences.length,
+    );
   }
   const categories = useMemo(() => {
     const byId = new Map<string, StorefrontCategory>(
@@ -612,7 +680,7 @@ export function StoreSectionRenderer({
             </label>
           </div>
           {categories.length ? (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
               {[...categories]
                 .filter((category) =>
                   normalizeSearchText(category.name).includes(normalizedQuery),
@@ -630,14 +698,26 @@ export function StoreSectionRenderer({
                     )}`}
                     className="group flex min-h-[76px] items-center gap-3 rounded-2xl border border-(--store-border) bg-(--store-card) p-3 text-left text-sm font-semibold text-(--store-text) shadow-sm transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-(--store-primary) hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) motion-reduce:transform-none motion-reduce:transition-none"
                   >
-                    <span
-                      aria-hidden="true"
-                      className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-(--store-surface) text-lg font-bold text-(--store-primary)"
-                    >
-                      {category.name.trim().slice(0, 1).toLocaleUpperCase() || (
-                        <Shapes className="size-5" />
-                      )}
-                    </span>
+                    {category.imageUrl ? (
+                      <Image
+                        src={category.imageUrl}
+                        alt=""
+                        width={48}
+                        height={48}
+                        sizes="48px"
+                        className="size-12 shrink-0 rounded-xl object-cover"
+                      />
+                    ) : (
+                      <span
+                        aria-hidden="true"
+                        className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-gray-200 text-lg font-bold text-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                      >
+                        {category.name
+                          .trim()
+                          .slice(0, 1)
+                          .toLocaleUpperCase() || <Shapes className="size-5" />}
+                      </span>
+                    )}
                     <span className="min-w-0 flex-1 truncate">
                       {category.name}
                     </span>
@@ -689,21 +769,199 @@ export function StoreSectionRenderer({
               <option value="antiguas">{t("sortOldest")}</option>
             </select>
           </label>
-          <div className="relative isolate overflow-hidden rounded-3xl border border-(--store-border) bg-(--store-card) px-6 py-12 text-center shadow-sm sm:py-16">
-            <div
-              aria-hidden="true"
-              className="absolute -right-12 -top-16 -z-10 size-48 rounded-full bg-(--store-surface) blur-2xl"
-            />
-            <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-(--store-surface) text-(--store-primary)">
-              <Images aria-hidden="true" className="size-6" />
-            </span>
-            <p className="mt-4 text-base font-semibold text-(--store-text)">
-              {t("referencesEmptyTitle")}
-            </p>
-            <p className="mx-auto mt-1 max-w-md text-sm leading-6 text-(--store-muted)">
-              {t("referencesEmpty")}
-            </p>
-          </div>
+          {storeReferences.length ||
+          (referencesPagination?.total ?? 0) > 0 ||
+          (referencesPagination?.page ?? 1) > 1 ? (
+            <>
+              {storeReferences.length ? (
+                <div className="columns-2 gap-3 md:columns-3 xl:columns-4">
+                  {storeReferences.map((reference, index) => (
+                    <article
+                      key={reference.id}
+                      className="mb-3 break-inside-avoid overflow-hidden rounded-xl border border-(--store-border) bg-(--store-card)"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setSelectedReference(index)}
+                        aria-label={t("openReference", {
+                          date: referenceDate(reference.takenAt, locale),
+                        })}
+                        className="block w-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary)"
+                      >
+                        <Image
+                          src={reference.imageUrl}
+                          alt={t("referenceImageAlt", {
+                            date: referenceDate(reference.takenAt, locale),
+                            caption: reference.caption ?? "",
+                          })}
+                          width={reference.width}
+                          height={reference.height}
+                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                          className="h-auto w-full object-cover"
+                        />
+                      </button>
+                      <div className="p-3 text-sm">
+                        <p className="font-semibold text-(--store-text)">
+                          {t("referenceDay", {
+                            date: referenceDate(reference.takenAt, locale),
+                          })}
+                        </p>
+                        <p className="text-(--store-muted)">
+                          {t(
+                            reference.source === "BUYER"
+                              ? "uploadedByBuyer"
+                              : "uploadedByStore",
+                          )}
+                        </p>
+                        {reference.caption ? (
+                          <p className="mt-1 break-words text-(--store-text)">
+                            {reference.caption}
+                          </p>
+                        ) : null}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <p className="rounded-xl border border-dashed border-(--store-border) bg-(--store-card) p-8 text-center text-(--store-muted)">
+                  {t("referencesPageEmpty")}
+                </p>
+              )}
+              {referencesPagination &&
+              (referencesPagination.total > referencesPagination.limit ||
+                referencesPagination.page > 1) ? (
+                <nav
+                  aria-label={t("referencesPagination")}
+                  className="flex items-center justify-center gap-3"
+                >
+                  <button
+                    type="button"
+                    disabled={referencesPagination.page <= 1}
+                    onClick={() =>
+                      changeReferencePage(referencesPagination.page - 1)
+                    }
+                    className="min-h-11 rounded-full border border-(--store-border) px-4 disabled:opacity-50"
+                  >
+                    {t("previousPage")}
+                  </button>
+                  <span className="text-sm text-(--store-muted)">
+                    {t("pageOf", {
+                      page: referencesPagination.page,
+                      pages: Math.max(
+                        1,
+                        Math.ceil(
+                          referencesPagination.total /
+                            referencesPagination.limit,
+                        ),
+                      ),
+                    })}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={
+                      referencesPagination.page * referencesPagination.limit >=
+                      referencesPagination.total
+                    }
+                    onClick={() =>
+                      changeReferencePage(referencesPagination.page + 1)
+                    }
+                    className="min-h-11 rounded-full border border-(--store-border) px-4 disabled:opacity-50"
+                  >
+                    {t("nextPage")}
+                  </button>
+                </nav>
+              ) : null}
+              <dialog
+                ref={referenceDialogRef}
+                aria-label={
+                  selectedReference === null
+                    ? t("referencesTitle", { storeName })
+                    : t("openReference", {
+                        date: referenceDate(
+                          storeReferences[selectedReference]?.takenAt ??
+                            new Date().toISOString(),
+                          locale,
+                        ),
+                      })
+                }
+                onCancel={() => setSelectedReference(null)}
+                onKeyDown={(event) => {
+                  if (event.key === "ArrowLeft") {
+                    event.preventDefault();
+                    moveReference(-1);
+                  }
+                  if (event.key === "ArrowRight") {
+                    event.preventDefault();
+                    moveReference(1);
+                  }
+                }}
+                className="max-h-[95dvh] max-w-[95vw] rounded-2xl border-0 bg-black/95 p-3 text-white backdrop:bg-black/80"
+              >
+                {selectedReference !== null &&
+                storeReferences[selectedReference] ? (
+                  <div className="relative grid max-h-[90dvh] min-w-[min(90vw,64rem)] place-items-center">
+                    <button
+                      type="button"
+                      aria-label={t("closeViewer")}
+                      onClick={() => setSelectedReference(null)}
+                      className="absolute right-2 top-2 z-10 flex size-11 items-center justify-center rounded-full bg-white/90 text-black"
+                    >
+                      <X aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={t("previousImage")}
+                      onClick={() => moveReference(-1)}
+                      className="absolute left-2 z-10 flex size-11 items-center justify-center rounded-full bg-white/90 text-black"
+                    >
+                      <ArrowLeft aria-hidden="true" />
+                    </button>
+                    <Image
+                      src={storeReferences[selectedReference].imageUrl}
+                      alt={t("referenceImageAlt", {
+                        date: referenceDate(
+                          storeReferences[selectedReference].takenAt,
+                          locale,
+                        ),
+                        caption:
+                          storeReferences[selectedReference].caption ?? "",
+                      })}
+                      width={storeReferences[selectedReference].width}
+                      height={storeReferences[selectedReference].height}
+                      sizes="95vw"
+                      className="max-h-[85dvh] max-w-full object-contain"
+                    />
+                    <button
+                      type="button"
+                      aria-label={t("nextImage")}
+                      onClick={() => moveReference(1)}
+                      className="absolute right-2 top-1/2 z-10 flex size-11 items-center justify-center rounded-full bg-white/90 text-black"
+                    >
+                      <ArrowRight aria-hidden="true" />
+                    </button>
+                  </div>
+                ) : null}
+              </dialog>
+            </>
+          ) : (
+            <div className="relative isolate overflow-hidden rounded-3xl border border-(--store-border) bg-(--store-card) px-6 py-12 text-center shadow-sm sm:py-16">
+              <div
+                aria-hidden="true"
+                className="absolute -right-12 -top-16 -z-10 size-48 rounded-full bg-(--store-surface) blur-2xl"
+              />
+              <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-(--store-surface) text-(--store-primary)">
+                <Images aria-hidden="true" className="size-6" />
+              </span>
+              <p className="mt-4 text-base font-semibold text-(--store-text)">
+                {t("referencesEmptyTitle")}
+              </p>
+              <p className="mx-auto mt-1 max-w-md text-sm leading-6 text-(--store-muted)">
+                {referencesLoadError
+                  ? t("referencesLoadError")
+                  : t("referencesEmpty")}
+              </p>
+            </div>
+          )}
         </section>
       )}
       {catalogControls && showAbout && (

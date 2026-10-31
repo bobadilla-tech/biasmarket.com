@@ -11,6 +11,19 @@ import { cookieNamed, stubGoogle, uniqueGoogleCode } from "./helpers/google";
 import { uniquePhone } from "./helpers/phones";
 import { createShop, getOrder, sellerApi } from "./helpers/seller-api";
 
+function limaCalendarDate(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en", {
+    timeZone: "America/Lima",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const values = Object.fromEntries(
+    parts.map(({ type, value }) => [type, value]),
+  );
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
 test("golden path: seller creates, buyer pays with a proof, seller approves and advances, buyer confirms and saves with Google", async ({
   page,
   browser,
@@ -155,9 +168,7 @@ test("seller-registered payment: the seller records a transfer with its capture 
     page.getByText("Registrar pago", { exact: true }).first(),
   ).toBeVisible();
   await page.locator("#payment-amount").fill(String(shop.price));
-  await page
-    .locator("#payment-date")
-    .fill(new Date().toISOString().slice(0, 10));
+  await page.locator("#payment-date").fill(limaCalendarDate());
   await page
     .getByLabel("Selecciona un método de pago")
     .selectOption({ label: "Transferencia bancaria" });

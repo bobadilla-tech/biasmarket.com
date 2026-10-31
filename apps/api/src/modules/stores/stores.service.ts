@@ -195,6 +195,22 @@ export class StoresService {
     }
   }
 
+  async getReferenceImageUrlsForDeletion(storeId: string, userId: string) {
+    const store = await this.prisma.store.findUnique({
+      where: { id: storeId },
+      select: { ownerId: true },
+    });
+    if (!store) throw new NotFoundException("Store no encontrada");
+    if (store.ownerId !== userId) {
+      throw new ForbiddenException("No eres dueño de esta store");
+    }
+    const references = await this.prisma.storeReference.findMany({
+      where: { storeId },
+      select: { imageUrl: true },
+    });
+    return references.map(({ imageUrl }) => imageUrl);
+  }
+
   async findBySlugForOwner(slug: string, userId: string) {
     const store = await this.prisma.store.findUnique({ where: { slug } });
     if (!store) throw new NotFoundException("Store no encontrada");
@@ -507,6 +523,10 @@ export class StoresService {
     });
     if (!store) throw new NotFoundException("Tienda no encontrada");
 
+    const categorySlugs = query.categories.length
+      ? await this.findCategoryAndDescendantSlugs(store.id, query.categories)
+      : [];
+
     const normalizedQuery = query.q
       ?.normalize("NFD")
       .replace(/\p{Diacritic}/gu, "")
@@ -516,13 +536,15 @@ export class StoresService {
       ? Prisma.sql`AND TRANSLATE(LOWER(CONCAT_WS(' ', p."name", p."description")), 'áàäâãåéèëêíìïîóòöôõúùüûñç', 'aaaaaaeeeeiiiiooooouuuunc') LIKE ${`%${escapedQuery}%`} ESCAPE '\\'`
       : Prisma.empty;
     const categoryFilter = query.categories.length
-      ? Prisma.sql`AND EXISTS (
+      ? categorySlugs.length
+        ? Prisma.sql`AND EXISTS (
           SELECT 1 FROM "ProductCategory" AS pc
           JOIN "Category" AS c ON c."id" = pc."categoryId"
           WHERE pc."productId" = p."id"
             AND c."storeId" = p."storeId"
-            AND c."slug" IN (${Prisma.join(query.categories)})
+            AND c."slug" IN (${Prisma.join(categorySlugs)})
         )`
+        : Prisma.sql`AND FALSE`
       : Prisma.empty;
     const filters = Prisma.sql`
       p."storeId" = ${store.id}
@@ -574,6 +596,39 @@ export class StoresService {
     };
   }
 
+  private async findCategoryAndDescendantSlugs(
+    storeId: string,
+    requestedSlugs: string[],
+  ) {
+    const categories = await this.prisma.category.findMany({
+      where: { storeId },
+      select: { id: true, slug: true, parentId: true },
+    });
+    const children = new Map<string, typeof categories>();
+    for (const category of categories) {
+      if (!category.parentId) continue;
+      const siblings = children.get(category.parentId) ?? [];
+      siblings.push(category);
+      children.set(category.parentId, siblings);
+    }
+    const bySlug = new Map(
+      categories.map((category) => [category.slug, category]),
+    );
+    const included = new Set<string>();
+    const visit = (categoryId: string) => {
+      if (included.has(categoryId)) return;
+      included.add(categoryId);
+      for (const child of children.get(categoryId) ?? []) visit(child.id);
+    };
+    for (const slug of requestedSlugs) {
+      const category = bySlug.get(slug);
+      if (category) visit(category.id);
+    }
+    return categories
+      .filter((category) => included.has(category.id))
+      .map(({ slug }) => slug);
+  }
+
   async findCategoriesPublic(slug: string) {
     const store = await this.prisma.store.findFirst({
       where: {
@@ -589,27 +644,53 @@ export class StoresService {
         name: true,
         slug: true,
         parentId: true,
-        _count: {
-          select: {
-            products: {
-              where: {
-                product: {
-                  status: "PUBLISHED",
-                  deletedAt: null,
-                  discontinued: false,
-                  storeId: store.id,
-                },
-              },
+        imageUrl: true,
+        products: {
+          where: {
+            product: {
+              status: "PUBLISHED",
+              deletedAt: null,
+              discontinued: false,
+              storeId: store.id,
             },
           },
+          select: { productId: true, product: { select: { images: true } } },
         },
       },
       orderBy: { name: "asc" },
     });
-    return categories.map(({ _count, ...category }) => ({
-      ...category,
-      productCount: _count.products,
-    }));
+    return categories
+      .filter((category) => category.parentId === null)
+      .map((category) => {
+        const descendants: typeof categories = [];
+        const visit = (parentId: string) => {
+          for (const child of categories.filter(
+            (item) => item.parentId === parentId,
+          )) {
+            descendants.push(child);
+            visit(child.id);
+          }
+        };
+        visit(category.id);
+        const products = [category, ...descendants].flatMap(
+          (entry) => entry.products,
+        );
+        const productIds = new Set(products.map(({ productId }) => productId));
+        const imageUrl =
+          category.imageUrl ??
+          products.find(({ product }) => product.images[0])?.product
+            .images[0] ??
+          null;
+        return {
+          id: category.id,
+          name: category.name,
+          slug: category.slug,
+          parentId: null,
+          imageUrl,
+          productCount: productIds.size,
+        };
+      })
+      .filter((category) => category.productCount > 0);
   }
 
   async findPublicProduct(slug: string, productId: string) {

@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  Logger,
   Param,
   Patch,
   Post,
@@ -176,7 +177,7 @@ function toPublicProductDto(
     deletedAt: product.deletedAt?.toISOString() ?? null,
     createdAt: product.createdAt.toISOString(),
     variants: product.variants.map(toVariantDto),
-    categories: product.categories,
+    categories: product.categories.map(({ category }) => ({ category })),
   };
 }
 
@@ -206,6 +207,8 @@ function toSectionDto(
 
 @Controller("stores")
 export class StoresController {
+  private readonly logger = new Logger(StoresController.name);
+
   constructor(
     private readonly stores: StoresService,
     private readonly storage: StorageService,
@@ -259,7 +262,21 @@ export class StoresController {
     @Param("storeId") storeId: string,
     @Session() session: UserSession,
   ): Promise<StoreResponseDto> {
+    const referenceImageUrls =
+      await this.stores.getReferenceImageUrlsForDeletion(
+        storeId,
+        session.user.id,
+      );
     const store = await this.stores.delete(storeId, session.user.id);
+    await Promise.all(
+      referenceImageUrls.map((url) =>
+        this.storage.deleteImage(url).catch((error: unknown) => {
+          this.logger.warn(
+            `Failed to delete store reference image ${url}: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }),
+      ),
+    );
     return toStoreDto(store);
   }
 

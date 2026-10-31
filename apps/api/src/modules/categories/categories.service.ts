@@ -27,7 +27,7 @@ export class CategoriesService {
     return `${base}-${suffix}`;
   }
 
-  private async assertOwnership(storeId: string, userId: string) {
+  async assertOwnership(storeId: string, userId: string) {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
@@ -75,7 +75,11 @@ export class CategoriesService {
 
   async findAllForStore(storeId: string, userId: string) {
     await this.assertOwnership(storeId, userId);
-    return this.prisma.category.findMany({ where: { storeId } });
+    return this.prisma.category.findMany({
+      where: { storeId },
+      include: { _count: { select: { products: true } } },
+      orderBy: { name: "asc" },
+    });
   }
 
   async update(
@@ -93,9 +97,77 @@ export class CategoriesService {
       }
       await this.assertParentInStore(dto.parentId, storeId);
     }
-    return this.prisma.category.update({
-      where: { id: categoryId },
-      data: dto,
+    if (dto.slug) {
+      const existing = await this.prisma.category.findFirst({
+        where: { storeId, slug: dto.slug, NOT: { id: categoryId } },
+        select: { id: true },
+      });
+      if (existing) throw new ConflictException("El slug ya está en uso");
+    }
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const category = await tx.category.update({
+          where: { id: categoryId },
+          data: dto,
+          include: { _count: { select: { products: true } } },
+        });
+        await tx.store.update({
+          where: { id: storeId },
+          data: { contentStaleAt: new Date() },
+        });
+        return category;
+      });
+    } catch (error) {
+      if (
+        error !== null &&
+        typeof error === "object" &&
+        "code" in error &&
+        error.code === "P2002"
+      ) {
+        let serializedMeta = "";
+        try {
+          const errorRecord = error as Record<string, unknown>;
+          serializedMeta =
+            JSON.stringify({
+              meta: errorRecord.meta,
+              driverAdapterError: errorRecord.driverAdapterError,
+              cause: errorRecord.cause,
+            }) ?? "";
+        } catch {
+          // Keep the slug conflict fallback when Prisma metadata is not serializable.
+        }
+        const isNameConflict =
+          serializedMeta.includes("Category_storeId_parentId_name_key") ||
+          (serializedMeta.includes("parentId") &&
+            serializedMeta.includes("name"));
+        throw new ConflictException(
+          isNameConflict
+            ? "Ya existe una categoría con ese nombre"
+            : "El slug ya está en uso",
+        );
+      }
+      throw error;
+    }
+  }
+
+  async updateImage(
+    categoryId: string,
+    storeId: string,
+    userId: string,
+    imageUrl: string | null,
+  ) {
+    await this.findOwnedCategory(categoryId, storeId, userId);
+    return this.prisma.$transaction(async (tx) => {
+      const category = await tx.category.update({
+        where: { id: categoryId },
+        data: { imageUrl },
+        include: { _count: { select: { products: true } } },
+      });
+      await tx.store.update({
+        where: { id: storeId },
+        data: { contentStaleAt: new Date() },
+      });
+      return category;
     });
   }
 

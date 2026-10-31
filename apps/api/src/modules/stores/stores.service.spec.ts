@@ -903,6 +903,11 @@ describe("StoresService", () => {
 
     beforeEach(() => {
       prisma.store.findFirst.mockResolvedValue({ id: "store-1" });
+      prisma.category.findMany.mockResolvedValue([
+        { id: "category-1", slug: "photocards", parentId: null },
+        { id: "category-2", slug: "bts", parentId: "category-1" },
+        { id: "category-3", slug: "deep", parentId: "category-2" },
+      ]);
       prisma.$queryRaw
         .mockResolvedValueOnce([{ total: 1n }])
         .mockResolvedValueOnce([{ id: "product-1" }]);
@@ -924,6 +929,11 @@ describe("StoresService", () => {
       expect(idSql.values).toContain("%album%");
       expect(idSql.values).toContain("photocards");
       expect(idSql.values).toContain("bts");
+      expect(idSql.values).toContain("deep");
+      expect(prisma.category.findMany).toHaveBeenCalledWith({
+        where: { storeId: "store-1" },
+        select: { id: true, slug: true, parentId: true },
+      });
       expect(result).toEqual({
         items: [
           { id: "product-1", name: "Album", variants: [], categories: [] },
@@ -991,7 +1001,49 @@ describe("StoresService", () => {
           name: "Photocards",
           slug: "photocards",
           parentId: null,
-          _count: { products: 3 },
+          imageUrl: null,
+          products: [
+            {
+              productId: "p1",
+              product: { images: ["https://cdn.test/p1.jpg"] },
+            },
+            { productId: "p2", product: { images: [] } },
+          ],
+        },
+        {
+          id: "category-2",
+          name: "Subcategory",
+          slug: "subcategory",
+          parentId: "category-1",
+          imageUrl: null,
+          products: [
+            {
+              productId: "p2",
+              product: { images: ["https://cdn.test/p2.jpg"] },
+            },
+            { productId: "p3", product: { images: [] } },
+          ],
+        },
+        {
+          id: "category-3",
+          name: "Nested subcategory",
+          slug: "nested-subcategory",
+          parentId: "category-2",
+          imageUrl: null,
+          products: [
+            {
+              productId: "p4",
+              product: { images: ["https://cdn.test/p4.jpg"] },
+            },
+          ],
+        },
+        {
+          id: "empty",
+          name: "Empty",
+          slug: "empty",
+          parentId: null,
+          imageUrl: null,
+          products: [],
         },
       ]);
 
@@ -1014,7 +1066,8 @@ describe("StoresService", () => {
           name: "Photocards",
           slug: "photocards",
           parentId: null,
-          productCount: 3,
+          imageUrl: "https://cdn.test/p1.jpg",
+          productCount: 4,
         },
       ]);
     });

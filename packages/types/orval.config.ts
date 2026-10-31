@@ -30,6 +30,7 @@ export default defineConfig({
           "Collections",
           "Products",
           "Categories",
+          "StoreReferences",
           "Notifications",
           "Contact",
           "Suggestions",

@@ -1,4 +1,4 @@
-import { act, render } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import { describe, expect, it, vi } from "vitest";
 import { getMessages } from "@biasmarket/i18n";
@@ -56,6 +56,65 @@ describe("StoreSectionRenderer catalog URL state", () => {
       vi.useRealTimers();
       navigation.search = "";
     }
+  });
+
+  it("links category cards to the matching product filter and image", () => {
+    navigation.search = "tab=categorias";
+    render(
+      <NextIntlClientProvider locale="es" messages={getMessages("es")}>
+        <StoreSectionRenderer
+          slug="demo"
+          sections={[]}
+          catalogControls
+          storeCategories={[
+            {
+              id: "category-1",
+              slug: "bts",
+              name: "BTS",
+              productCount: 3,
+              imageUrl: "https://cdn.test/bts.jpg",
+            },
+          ]}
+        />
+      </NextIntlClientProvider>,
+    );
+
+    const link = screen.getByRole("link", { name: "BTS" });
+    expect(link.getAttribute("href")).toBe("?tab=productos&categoria=bts");
+    expect(link.querySelector("img")?.getAttribute("src")).toBe(
+      "https://cdn.test/bts.jpg",
+    );
+    navigation.search = "";
+  });
+
+  it("renders reference date and upload source in the public gallery", () => {
+    navigation.search = "tab=referencias";
+    render(
+      <NextIntlClientProvider locale="es" messages={getMessages("es")}>
+        <StoreSectionRenderer
+          slug="demo"
+          storeName="Demo Store"
+          sections={[]}
+          catalogControls
+          storeReferences={[
+            {
+              id: "reference-1",
+              imageUrl: "https://cdn.test/reference.jpg",
+              width: 1200,
+              height: 800,
+              takenAt: "2026-10-01T12:00:00.000Z",
+              caption: "Pedido preparado",
+              source: "STORE",
+            },
+          ]}
+        />
+      </NextIntlClientProvider>,
+    );
+
+    expect(screen.getByText("Día: 01/10/26")).toBeTruthy();
+    expect(screen.getByText("Subida por la tienda")).toBeTruthy();
+    expect(screen.getByText("Pedido preparado")).toBeTruthy();
+    navigation.search = "";
   });
 });
 

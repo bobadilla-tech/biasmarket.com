@@ -19,6 +19,7 @@ export type StorefrontCategory = {
   name: string;
   slug?: string;
   productCount?: number;
+  imageUrl?: string | null;
 };
 
 /** Renders the public store identity shared by its catalog tabs. */

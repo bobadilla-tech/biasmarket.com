@@ -12,9 +12,10 @@ import { PrismaService } from "../../prisma/prisma.service.js";
 describe("CategoriesService", () => {
   let service: CategoriesService;
   let prisma: {
-    store: { findUnique: Mock };
+    store: { findUnique: Mock; update: Mock };
     category: {
       findUnique: Mock;
+      findFirst: Mock;
       findMany: Mock;
       create: Mock;
       update: Mock;
@@ -22,6 +23,7 @@ describe("CategoriesService", () => {
       count: Mock;
     };
     productCategory: { count: Mock };
+    $transaction: Mock;
   };
 
   const ownerId = "user-1";
@@ -30,9 +32,10 @@ describe("CategoriesService", () => {
 
   beforeEach(async () => {
     prisma = {
-      store: { findUnique: vi.fn() },
+      store: { findUnique: vi.fn(), update: vi.fn() },
       category: {
         findUnique: vi.fn(),
+        findFirst: vi.fn(),
         findMany: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
@@ -40,6 +43,9 @@ describe("CategoriesService", () => {
         count: vi.fn(),
       },
       productCategory: { count: vi.fn() },
+      $transaction: vi.fn((callback: (tx: unknown) => unknown) =>
+        callback(prisma),
+      ),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -163,6 +169,70 @@ describe("CategoriesService", () => {
       await expect(
         service.update(categoryId, storeId, ownerId, { parentId: categoryId }),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it("returns the product count and maps slug uniqueness races to conflict", async () => {
+      prisma.category.update.mockResolvedValue({
+        id: categoryId,
+        _count: { products: 4 },
+      });
+      await service.update(categoryId, storeId, ownerId, { name: "Updated" });
+      expect(prisma.category.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: { _count: { select: { products: true } } },
+        }),
+      );
+      expect(prisma.store.update).toHaveBeenCalledWith({
+        where: { id: storeId },
+        data: { contentStaleAt: expect.any(Date) },
+      });
+
+      prisma.category.update.mockRejectedValue({ code: "P2002" });
+      await expect(
+        service.update(categoryId, storeId, ownerId, { slug: "taken" }),
+      ).rejects.toThrow(ConflictException);
+
+      prisma.category.update.mockRejectedValue({
+        code: "P2002",
+        meta: {
+          driverAdapterError: {
+            cause: {
+              constraint: "Category_storeId_parentId_name_key",
+              fields: ["storeId", "parentId", "name"],
+            },
+          },
+        },
+      });
+      await expect(
+        service.update(categoryId, storeId, ownerId, { name: "Taken" }),
+      ).rejects.toThrow("Ya existe una categoría con ese nombre");
+    });
+
+    it("updates the image, product count, and sitemap freshness atomically", async () => {
+      const tx = {
+        category: {
+          update: vi.fn().mockResolvedValue({
+            id: categoryId,
+            _count: { products: 2 },
+          }),
+        },
+        store: { update: vi.fn().mockResolvedValue({}) },
+      };
+      prisma.$transaction.mockImplementation(
+        (callback: (transaction: typeof tx) => unknown) => callback(tx),
+      );
+
+      await service.updateImage(categoryId, storeId, ownerId, null);
+      expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+      expect(tx.category.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: { _count: { select: { products: true } } },
+        }),
+      );
+      expect(tx.store.update).toHaveBeenCalledWith({
+        where: { id: storeId },
+        data: { contentStaleAt: expect.any(Date) },
+      });
     });
   });
 

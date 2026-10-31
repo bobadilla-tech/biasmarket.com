@@ -7,6 +7,7 @@ import { isStorefrontRedesignEnabled } from "@/lib/storefront-redesign";
 import { ProductCard } from "@/components/storefront/product-card";
 import { StoreSectionRenderer } from "@/components/storefront/section-renderer";
 import { StorePublicProfile } from "@/features/storefront/components/storefront";
+import { apiClient } from "@/lib/api-client";
 import { buildProductJsonLd, serializeJsonLd } from "@/lib/product-json-ld";
 import {
   firstStoreMarkdownImage,
@@ -105,6 +106,30 @@ async function getPublicCategories(slug: string) {
     return response.ok ? await response.json() : [];
   } catch {
     return [];
+  }
+}
+
+async function getPublicReferences(slug: string, order: string, page: string) {
+  if (!STORE_SLUG_PATTERN.test(slug)) return null;
+  try {
+    const references = await apiClient.storeReferences.findPublic(
+      slug,
+      {
+        orden: order === "antiguas" ? "antiguas" : "recientes",
+        page: Math.max(1, Number.parseInt(page, 10) || 1),
+        limit: 24,
+      },
+      { cache: "no-store" },
+    );
+    return {
+      ...references,
+      items: references.items.map((reference) => ({
+        ...reference,
+        caption: reference.caption ?? null,
+      })),
+    };
+  } catch {
+    return null;
   }
 }
 
@@ -329,16 +354,31 @@ export default async function StorePage({
       : {}),
     ...(typeof queryParams.page === "string" ? { page: queryParams.page } : {}),
   };
-  const [store, t, catalog, publicCategories, firstPageCatalog] =
-    await Promise.all([
-      getStore(slug),
-      getTranslations({ locale, namespace: "storefront" }),
-      redesignedStore && tab === "productos"
-        ? getCatalog(slug, catalogQuery)
-        : Promise.resolve(null),
-      redesignedStore ? getPublicCategories(slug) : Promise.resolve([]),
-      redesignedStore ? getCatalog(slug, {}) : Promise.resolve(null),
-    ]);
+  const [
+    store,
+    t,
+    catalog,
+    publicCategories,
+    publicReferences,
+    firstPageCatalog,
+  ] = await Promise.all([
+    getStore(slug),
+    getTranslations({ locale, namespace: "storefront" }),
+    redesignedStore && tab === "productos"
+      ? getCatalog(slug, catalogQuery)
+      : Promise.resolve(null),
+    redesignedStore ? getPublicCategories(slug) : Promise.resolve([]),
+    redesignedStore && tab === "referencias"
+      ? getPublicReferences(
+          slug,
+          typeof queryParams.orden === "string"
+            ? queryParams.orden
+            : "recientes",
+          typeof queryParams.page === "string" ? queryParams.page : "1",
+        )
+      : Promise.resolve(null),
+    redesignedStore ? getCatalog(slug, {}) : Promise.resolve(null),
+  ]);
 
   if (!store) {
     return (
@@ -467,6 +507,17 @@ export default async function StorePage({
           showAbout={redesignedStore && hasAboutContent}
           sections={productSections}
           storeCategories={publicCategories}
+          storeReferences={publicReferences?.items ?? []}
+          referencesLoadError={tab === "referencias" && !publicReferences}
+          referencesPagination={
+            publicReferences
+              ? {
+                  page: publicReferences.page,
+                  limit: publicReferences.limit,
+                  total: publicReferences.total,
+                }
+              : null
+          }
           catalogPagination={
             catalog
               ? {
