@@ -15,6 +15,7 @@ import { useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Check,
+  Image as ImageIcon,
   MapPin,
   MessageCircle,
   Minus,
@@ -187,7 +188,7 @@ export function StorePublicProfile({
             <img
               src={logo}
               alt={t("storeLogoAlt", { storeName })}
-              className="size-14 shrink-0 rounded-2xl object-cover sm:size-20"
+              className="size-14 shrink-0 rounded-2xl bg-white p-2 object-contain ring-1 ring-(--store-border) sm:size-20"
             />
           ) : (
             <div
@@ -683,6 +684,12 @@ export function ImagePlaceholder({
       role="img"
       aria-label={alt}
       className={`storefront-placeholder flex aspect-square items-center justify-center text-xs ${className}`}
-    />
+    >
+      <ImageIcon
+        aria-hidden="true"
+        className="size-10 text-(--store-muted) sm:size-12"
+        strokeWidth={1.5}
+      />
+    </div>
   );
 }

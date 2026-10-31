@@ -192,7 +192,10 @@ describe("storefront empty states", () => {
 
   it("renders an accessible placeholder when an image is missing", () => {
     withMessages(<ImagePlaceholder alt="Categoría Álbumes" />);
-    expect(screen.getByRole("img", { name: "Categoría Álbumes" })).toBeTruthy();
+    const placeholder = screen.getByRole("img", {
+      name: "Categoría Álbumes",
+    });
+    expect(placeholder.querySelector("svg")).toBeTruthy();
   });
 
   it("renders mobile category chips that select a single category", () => {

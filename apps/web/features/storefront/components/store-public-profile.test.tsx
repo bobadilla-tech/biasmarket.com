@@ -34,11 +34,21 @@ test("renders the branded banner and logo placeholder when images are absent", (
   expect(
     screen.getByRole("heading", { level: 1, name: "Luna Shop" }).className,
   ).toContain("line-clamp-2");
+  expect(
+    screen.getByRole("img", { name: "Logo de Luna Shop no configurado" }),
+  ).toBeTruthy();
   expect(screen.getByText("SELECCIÓN CUIDADA · BIAS MARKET")).toBeTruthy();
   expect(
     screen.getByRole("img", { name: "Logo de Luna Shop no configurado" })
       .className,
   ).toContain("bg-(--store-primary)");
+});
+
+test("contains configured store logos on a clean white background", () => {
+  renderProfile({ logoUrl: "https://cdn.example.com/logo.png" });
+  const logo = screen.getByRole("img", { name: "Logo de Luna Shop" });
+  expect(logo.className).toContain("object-contain");
+  expect(logo.className).toContain("bg-white");
 });
 
 test("shows only configured public links and labels them for assistive technology", () => {
