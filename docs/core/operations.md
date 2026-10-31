@@ -155,6 +155,9 @@ to be recreated in the UI. What fires when a monitor misses is in
 
 ## Logs
 
+This is the short version. The full guide (searching, following one request,
+debugging playbooks, sampling) is [observability.md](observability.md).
+
 The `api` writes one structured JSON line per request (pino, via `nestjs-pino`),
 and Nest's own `Logger` calls come out in the same format. Config:
 `apps/api/src/common/logging/logger.config.ts`. The `workers` process uses the

@@ -51,5 +51,8 @@ it. The front door for all docs is [../readme.md](../readme.md).
   setup. Read this when operating db, redis, MinIO, or Uptime Kuma.
 - [caddy.md](caddy.md): the production reverse proxy. Read this when changing
   routing or TLS.
+- [observability.md](observability.md): where logs, errors and traces live, how
+  to read them, and how to debug with them. Read this when something is slow or
+  failing in production, or before adding logging.
 - [incident-response.md](incident-response.md): the on-call runbook. Read this
   when an alert fires.

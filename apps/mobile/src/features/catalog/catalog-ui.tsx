@@ -12,7 +12,7 @@ import type {
   SearchProductResponseDto,
 } from "@biasmarket/types";
 import type { Locale } from "@biasmarket/i18n";
-import { useMobileI18n } from "../../i18n/mobile-i18n.js";
+import { useMobileI18n } from "../../i18n/mobile-i18n";
 
 export function StoreImage({
   uri,

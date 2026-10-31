@@ -14,7 +14,7 @@ import type { PublicProductVariantResponseDto } from "@biasmarket/types";
 import { formatPrice } from "../../../features/catalog/catalog-ui";
 import { cartCount } from "@biasmarket/utils/cart";
 import { useStoreCart } from "../../../features/cart/use-store-cart";
-import { useMobileI18n } from "../../../i18n/mobile-i18n.js";
+import { useMobileI18n } from "../../../i18n/mobile-i18n";
 
 export default function ProductDetailScreen() {
   const { storeSlug, productId } = useLocalSearchParams<{
