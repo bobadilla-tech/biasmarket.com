@@ -56,9 +56,7 @@ export function StorefrontCompactHeaderProvider({
         setCompactHeaderVisible: () => undefined,
       };
   return (
-    <StorefrontCompactHeaderContext.Provider
-      value={value}
-    >
+    <StorefrontCompactHeaderContext.Provider value={value}>
       {children}
     </StorefrontCompactHeaderContext.Provider>
   );
