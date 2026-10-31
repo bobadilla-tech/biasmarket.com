@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { buildCheckoutFormSchema } from "./checkout.schema";
 
 const validValues = {
-  customerName: "",
+  customerName: "Jane Doe",
   customerPhone: "+51999999999",
   customerEmail: "jane@example.com",
   deliveryMethodType: "COURIER",
@@ -12,13 +12,13 @@ const validValues = {
   courierName: "Olva",
   courierModality: "HOME",
   shippingRecipientName: "Jane Doe",
-  shippingRecipientSurnames: "",
+  shippingRecipientSurnames: "Doe",
   shippingPhone: "+51999999999",
-  shippingDocumentType: "",
-  shippingDocumentNumber: "",
-  shippingDepartment: "",
-  shippingProvince: "",
-  shippingDistrict: "",
+  shippingDocumentType: "DNI",
+  shippingDocumentNumber: "12345678",
+  shippingDepartment: "Lima",
+  shippingProvince: "Lima",
+  shippingDistrict: "Miraflores",
   shippingLine1: "Av. Principal 123",
   shippingLine2: "",
   shippingCity: "Lima",
@@ -57,10 +57,16 @@ test("rejects an invalid email when one is provided", () => {
   expect(result.success).toBe(false);
 });
 
-test("rejects an empty email (required)", () => {
+test("requires a buyer name", () => {
+  const schema = buildCheckoutFormSchema(false, false);
+  const result = schema.safeParse({ ...validValues, customerName: " " });
+  expect(result.success).toBe(false);
+});
+
+test("allows an empty email and validates it when provided", () => {
   const schema = buildCheckoutFormSchema(false, false);
   const result = schema.safeParse({ ...validValues, customerEmail: "" });
-  expect(result.success).toBe(false);
+  expect(result.success).toBe(true);
 });
 
 test("requires a pickup point when the store has pickup points and PICKUP is selected", () => {
@@ -145,6 +151,16 @@ test("requires an agency name when COURIER AGENCY is selected", () => {
     deliveryMethodType: "COURIER",
     courierModality: "AGENCY",
     shippingAgencyName: "",
+  });
+  expect(result.success).toBe(false);
+});
+
+test("requires valid courier recipient, document, and cascading address fields", () => {
+  const schema = buildCheckoutFormSchema(false, false);
+  const result = schema.safeParse({
+    ...validValues,
+    shippingDocumentNumber: "1234",
+    shippingProvince: "",
   });
   expect(result.success).toBe(false);
 });

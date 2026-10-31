@@ -138,6 +138,10 @@ test("submits the delivery type, pickup point, and manual payment method with an
   );
 
   await screen.findByText("Alameda 28 de Julio");
+  await user.type(
+    screen.getByPlaceholderText("Ej. Vale, Ana, etc."),
+    "Jane Doe",
+  );
 
   await user.click(
     screen.getByRole("radio", { name: "Transferencia bancaria" }),
@@ -147,12 +151,13 @@ test("submits the delivery type, pickup point, and manual payment method with an
     fileInput,
     new File(["proof"], "proof.png", { type: "image/png" }),
   );
-  await user.type(
-    screen.getByPlaceholderText("Teléfono (WhatsApp)"),
-    "988888888",
-  );
+  await user.type(screen.getByPlaceholderText("Ej. 999 999 999"), "988888888");
   await user.type(screen.getByPlaceholderText("Email"), "jane@example.com");
-  await user.click(screen.getByRole("button", { name: /Confirmar pedido/i }));
+  const submitButton = screen.getByRole("button", {
+    name: /Confirmar pedido/i,
+  }) as HTMLButtonElement;
+  expect(submitButton.disabled).toBe(false);
+  await user.click(submitButton);
 
   await waitFor(() => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -172,6 +177,13 @@ test("submits the delivery type, pickup point, and manual payment method with an
       totalAmount: "15.00",
       currency: "PEN",
       whatsappUrl: null,
+      deliveryMethodType: "PICKUP",
+      pickupPointLabel: "Alameda 28 de Julio",
+      pickupDate: null,
+      courierName: null,
+      courierModality: null,
+      paymentType: "FULL",
+      depositPercent: 100,
     });
   });
 });
@@ -203,9 +215,10 @@ test("keeps the submit button disabled for a manual method until a proof is atta
 
   await screen.findByText("Alameda 28 de Julio");
   await user.type(
-    screen.getByPlaceholderText("Teléfono (WhatsApp)"),
-    "988888888",
+    screen.getByPlaceholderText("Ej. Vale, Ana, etc."),
+    "Jane Doe",
   );
+  await user.type(screen.getByPlaceholderText("Ej. 999 999 999"), "988888888");
 
   const submitButton = screen.getByRole("button", {
     name: /Confirmar pedido/i,
@@ -251,9 +264,10 @@ test("a PDF proof renders without a preview but still unlocks submit", async () 
 
   await screen.findByText("Alameda 28 de Julio");
   await user.type(
-    screen.getByPlaceholderText("Teléfono (WhatsApp)"),
-    "988888888",
+    screen.getByPlaceholderText("Ej. Vale, Ana, etc."),
+    "Jane Doe",
   );
+  await user.type(screen.getByPlaceholderText("Ej. 999 999 999"), "988888888");
 
   await user.upload(
     screen.getByLabelText(proofUploadLabel),
@@ -328,6 +342,10 @@ test("selecting a closed-today point reveals a date picker defaulted to the next
   );
 
   const card = await screen.findByRole("radio", { name: "Estación Central" });
+  await user.type(
+    screen.getByPlaceholderText("Ej. Vale, Ana, etc."),
+    "Jane Doe",
+  );
   await user.click(card);
 
   // closedTodayDays excludes only today, so the next open day is tomorrow.
@@ -340,10 +358,7 @@ test("selecting a closed-today point reveals a date picker defaulted to the next
   const dateInput = await screen.findByLabelText("Fecha de recojo");
   expect((dateInput as HTMLInputElement).value).toBe(expected);
 
-  await user.type(
-    screen.getByPlaceholderText("Teléfono (WhatsApp)"),
-    "988888888",
-  );
+  await user.type(screen.getByPlaceholderText("Ej. 999 999 999"), "988888888");
   const submitButton = screen.getByRole("button", {
     name: /Confirmar pedido/i,
   }) as HTMLButtonElement;
@@ -381,13 +396,14 @@ test("submits with the chosen pickupDate when a closed-today point was selected"
   );
 
   const card = await screen.findByRole("radio", { name: "Estación Central" });
+  await user.type(
+    screen.getByPlaceholderText("Ej. Vale, Ana, etc."),
+    "Jane Doe",
+  );
   await user.click(card);
   await screen.findByLabelText("Fecha de recojo");
 
-  await user.type(
-    screen.getByPlaceholderText("Teléfono (WhatsApp)"),
-    "988888888",
-  );
+  await user.type(screen.getByPlaceholderText("Ej. 999 999 999"), "988888888");
   await user.type(screen.getByPlaceholderText("Email"), "jane@example.com");
   await user.click(screen.getByRole("button", { name: /Confirmar pedido/i }));
 
@@ -435,6 +451,10 @@ test("switching to courier shows the courier selection UI instead of pickup card
   );
 
   await screen.findByText("Alameda 28 de Julio");
+  await user.type(
+    screen.getByPlaceholderText("Ej. Vale, Ana, etc."),
+    "Jane Doe",
+  );
   await user.click(screen.getByText("Envío por courier"));
 
   await waitFor(() => {
@@ -467,6 +487,11 @@ test("submits the inline shippingAddress fields for a COURIER HOME order without
     <CheckoutForm slug="my-store" items={cartItems} onOrderCreated={vi.fn()} />,
   );
 
+  await user.type(
+    screen.getByPlaceholderText("Ej. Vale, Ana, etc."),
+    "Jane Doe",
+  );
+
   // Wait for courier data to load, then select courier + modality
   await screen.findByRole("combobox", { name: /Selecciona un courier/i });
   await user.selectOptions(
@@ -477,22 +502,30 @@ test("submits the inline shippingAddress fields for a COURIER HOME order without
   await user.click(screen.getByText("Envío a domicilio"));
 
   const nameInputs = screen.getAllByPlaceholderText("Nombre");
-  // First "Nombre" is shippingRecipientName (in the COURIER section),
-  // second is customerName (below the payment section).
+  // The courier recipient keeps the shipping name placeholder.
   await user.type(nameInputs[0], "Jane Doe");
+  await user.type(screen.getByPlaceholderText("Apellidos"), "Doe");
   await user.type(
     screen.getByPlaceholderText("Teléfono de contacto"),
     "988888888",
   );
+  await user.selectOptions(
+    screen.getByRole("combobox", { name: "Tipo de documento" }),
+    "DNI",
+  );
+  await user.type(
+    screen.getByPlaceholderText("Número de documento"),
+    "12345678",
+  );
+  await user.type(screen.getByPlaceholderText("Departamento"), "Lima");
+  await user.type(screen.getByPlaceholderText("Provincia"), "Lima");
+  await user.type(screen.getByPlaceholderText("Distrito"), "Miraflores");
   await user.type(
     screen.getByPlaceholderText("Dirección (calle, número)"),
     "Av. Principal 123",
   );
   await user.type(screen.getByPlaceholderText("Ciudad"), "Lima");
-  await user.type(
-    screen.getByPlaceholderText("Teléfono (WhatsApp)"),
-    "988888888",
-  );
+  await user.type(screen.getByPlaceholderText("Ej. 999 999 999"), "988888888");
   await user.type(screen.getByPlaceholderText("Email"), "jane@example.com");
   await user.click(screen.getByRole("button", { name: /Confirmar pedido/i }));
 
@@ -591,14 +624,17 @@ test("prefills name/phone/email from a logged-in buyer's saved profile, editable
 
   await waitFor(() => {
     expect(
-      (screen.getByPlaceholderText("Nombre") as HTMLInputElement).value,
+      (screen.getByPlaceholderText("Ej. Vale, Ana, etc.") as HTMLInputElement)
+        .value,
     ).toBe("Jane Doe");
     expect(
       (screen.getByPlaceholderText("Email") as HTMLInputElement).value,
     ).toBe("jane@example.com");
   });
 
-  const nameInput = screen.getByPlaceholderText("Nombre") as HTMLInputElement;
+  const nameInput = screen.getByPlaceholderText(
+    "Ej. Vale, Ana, etc.",
+  ) as HTMLInputElement;
   await user.clear(nameInput);
   await user.type(nameInput, "John Doe");
   expect(nameInput.value).toBe("John Doe");
@@ -619,11 +655,11 @@ test("a guest buyer (no saved profile) gets empty, editable name / phone / email
   );
 
   const nameInput = (await screen.findByPlaceholderText(
-    "Nombre",
+    "Ej. Vale, Ana, etc.",
   )) as HTMLInputElement;
   const emailInput = screen.getByPlaceholderText("Email") as HTMLInputElement;
   const phoneInput = screen.getByPlaceholderText(
-    "Teléfono (WhatsApp)",
+    "Ej. 999 999 999",
   ) as HTMLInputElement;
 
   // Give the (rejected) profile query a tick to settle before asserting the
@@ -687,16 +723,18 @@ test("checking out with a method the store enabled but never configured skips th
     />,
   );
 
+  await user.type(
+    screen.getByPlaceholderText("Ej. Vale, Ana, etc."),
+    "Jane Doe",
+  );
+
   await screen.findByText(/todavía no configuró este método de pago/i);
   expect(screen.queryByLabelText(proofUploadLabel)).toBeNull();
   expect(
     screen.getByText(/Te contactaremos por WhatsApp para coordinar el pago/i),
   ).toBeDefined();
 
-  await user.type(
-    screen.getByPlaceholderText("Teléfono (WhatsApp)"),
-    "988888888",
-  );
+  await user.type(screen.getByPlaceholderText("Ej. 999 999 999"), "988888888");
   await user.type(screen.getByPlaceholderText("Email"), "jane@example.com");
   const submitButton = screen.getByRole("button", {
     name: /Confirmar pedido/i,
@@ -733,7 +771,7 @@ test("the payment-type selector is hidden for a CASH method", async () => {
     <CheckoutForm slug="my-store" items={cartItems} onOrderCreated={vi.fn()} />,
   );
 
-  await screen.findByText("Efectivo");
+  await screen.findByText("Contraentrega");
   expect(screen.queryByText("Pago parcial")).toBeNull();
 });
 

@@ -26,9 +26,12 @@ export function buildCheckoutFormSchema(
   return (
     z
       .object({
-        customerName: z.string(),
+        customerName: z.string().trim().min(1, "name required"),
         customerPhone: z.string().min(1, "phone required"),
-        customerEmail: z.string().email("invalid email"),
+        customerEmail: z.union([
+          z.string().email("invalid email"),
+          z.literal(""),
+        ]),
         deliveryMethodType: z.string().min(1, "delivery method required"),
         pickupPointId: z.string(),
         pickupDate: z.string(),
@@ -128,6 +131,81 @@ export function buildCheckoutFormSchema(
         (data) =>
           !(data.deliveryMethodType === "COURIER" && !data.shippingPhone),
         { message: "shipping phone required", path: ["shippingPhone"] },
+      )
+      .refine(
+        (data) =>
+          data.deliveryMethodType !== "COURIER" ||
+          data.shippingRecipientSurnames.trim().length > 0,
+        {
+          message: "shipping recipient surnames required",
+          path: ["shippingRecipientSurnames"],
+        },
+      )
+      .refine(
+        (data) =>
+          data.deliveryMethodType !== "COURIER" ||
+          (/^\+?[\d\s()-]{8,19}$/.test(data.shippingPhone.trim()) &&
+            data.shippingPhone.replace(/\D/g, "").length >= 9 &&
+            data.shippingPhone.replace(/\D/g, "").length <= 15),
+        { message: "invalid shipping phone", path: ["shippingPhone"] },
+      )
+      .refine(
+        (data) =>
+          data.deliveryMethodType !== "COURIER" ||
+          (data.shippingDocumentType !== "" &&
+            data.shippingDocumentNumber.trim().length > 0),
+        {
+          message: "shipping document required",
+          path: ["shippingDocumentType"],
+        },
+      )
+      .refine(
+        (data) => {
+          if (data.deliveryMethodType !== "COURIER") return true;
+          const number = data.shippingDocumentNumber.replace(/\s/g, "");
+          switch (data.shippingDocumentType) {
+            case "DNI":
+              return /^\d{8}$/.test(number);
+            case "RUC":
+              return /^\d{11}$/.test(number);
+            case "CE":
+            case "PASSPORT":
+              return /^[a-z\d-]{6,12}$/i.test(number);
+            default:
+              return false;
+          }
+        },
+        {
+          message: "invalid shipping document number",
+          path: ["shippingDocumentNumber"],
+        },
+      )
+      .refine(
+        (data) =>
+          data.deliveryMethodType !== "COURIER" ||
+          data.shippingDepartment.trim().length > 0,
+        {
+          message: "shipping department required",
+          path: ["shippingDepartment"],
+        },
+      )
+      .refine(
+        (data) =>
+          data.deliveryMethodType !== "COURIER" ||
+          data.shippingProvince.trim().length > 0,
+        {
+          message: "shipping province required",
+          path: ["shippingProvince"],
+        },
+      )
+      .refine(
+        (data) =>
+          data.deliveryMethodType !== "COURIER" ||
+          data.shippingDistrict.trim().length > 0,
+        {
+          message: "shipping district required",
+          path: ["shippingDistrict"],
+        },
       )
       // HOME modality: address and city required
       .refine(
