@@ -40,7 +40,8 @@ export class StoreReferencesService {
       caption?: string;
       width: number;
       height: number;
-      privacyConfirmed: true;
+      hidden?: boolean;
+      privacyConfirmed?: boolean;
     },
   ) {
     await this.assertOwnership(storeId, userId);
@@ -53,7 +54,12 @@ export class StoreReferencesService {
         );
       }
       const reference = await tx.storeReference.create({
-        data: { ...input, storeId },
+        data: {
+          ...input,
+          hidden: input.hidden ?? false,
+          privacyConfirmed: input.privacyConfirmed ?? false,
+          storeId,
+        },
       });
       await tx.auditLog.create({
         data: {
@@ -69,22 +75,38 @@ export class StoreReferencesService {
     });
   }
 
+  async findOwned(referenceId: string, storeId: string, userId: string) {
+    await this.assertOwnership(storeId, userId);
+    const reference = await this.prisma.storeReference.findFirst({
+      where: { id: referenceId, storeId },
+    });
+    if (!reference) throw new NotFoundException("Referencia no encontrada");
+    return reference;
+  }
+
   async update(
     referenceId: string,
     storeId: string,
     userId: string,
-    dto: UpdateStoreReferenceDto,
+    dto: UpdateStoreReferenceDto & {
+      imageUrl?: string;
+      width?: number;
+      height?: number;
+    },
   ) {
-    await this.assertOwnership(storeId, userId);
-    const existing = await this.prisma.storeReference.findFirst({
-      where: { id: referenceId, storeId },
-    });
-    if (!existing) throw new NotFoundException("Referencia no encontrada");
+    await this.findOwned(referenceId, storeId, userId);
     return this.prisma.storeReference.update({
       where: { id: referenceId },
       data: {
-        ...dto,
         ...(dto.takenAt ? { takenAt: new Date(dto.takenAt) } : {}),
+        ...(dto.caption !== undefined ? { caption: dto.caption } : {}),
+        ...(dto.hidden !== undefined ? { hidden: dto.hidden } : {}),
+        ...(dto.privacyConfirmed !== undefined
+          ? { privacyConfirmed: dto.privacyConfirmed }
+          : {}),
+        ...(dto.imageUrl ? { imageUrl: dto.imageUrl } : {}),
+        ...(dto.width ? { width: dto.width } : {}),
+        ...(dto.height ? { height: dto.height } : {}),
       },
     });
   }

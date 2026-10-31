@@ -5680,13 +5680,7 @@
             "multipart/form-data": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "file",
-                  "takenAt",
-                  "width",
-                  "height",
-                  "privacyConfirmed"
-                ],
+                "required": ["file", "takenAt", "width", "height"],
                 "properties": {
                   "file": {
                     "type": "string",
@@ -5699,6 +5693,9 @@
                   "caption": {
                     "type": "string",
                     "maxLength": 240
+                  },
+                  "hidden": {
+                    "type": "boolean"
                   },
                   "width": {
                     "type": "integer",
@@ -5757,9 +5754,39 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateStoreReferenceDto"
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "takenAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "caption": {
+                    "type": "string",
+                    "maxLength": 240
+                  },
+                  "hidden": {
+                    "type": "boolean"
+                  },
+                  "privacyConfirmed": {
+                    "type": "boolean"
+                  },
+                  "width": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 12000
+                  },
+                  "height": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 12000
+                  }
+                }
               }
             }
           }
@@ -12047,19 +12074,6 @@
           "hidden",
           "createdAt"
         ]
-      },
-      "UpdateStoreReferenceDto": {
-        "type": "object",
-        "properties": {
-          "takenAt": {
-            "type": "string"
-          },
-          "caption": {
-            "type": "string",
-            "nullable": true,
-            "maxLength": 240
-          }
-        }
       },
       "PublicStoreReferencesResponseDto": {
         "type": "object",

@@ -47,6 +47,10 @@ import { readImageDimensions } from "./image-dimensions.js";
 const REFERENCE_IMAGE_PIPE = new UploadedFileValidationPipe({
   allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
 });
+const OPTIONAL_REFERENCE_IMAGE_PIPE = new UploadedFileValidationPipe({
+  allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
+  fileIsRequired: false,
+});
 
 function serializeReference(reference: any): StoreReferenceResponseDto {
   const { privacyConfirmed: _privacyConfirmed, ...serialized } = reference;
@@ -83,11 +87,12 @@ export class StoreReferencesController {
   @ApiBody({
     schema: {
       type: "object",
-      required: ["file", "takenAt", "width", "height", "privacyConfirmed"],
+      required: ["file", "takenAt", "width", "height"],
       properties: {
         file: { type: "string", format: "binary" },
         takenAt: { type: "string", format: "date-time" },
         caption: { type: "string", maxLength: 240 },
+        hidden: { type: "boolean" },
         width: { type: "integer", minimum: 1, maximum: 12000 },
         height: { type: "integer", minimum: 1, maximum: 12000 },
         privacyConfirmed: { type: "boolean" },
@@ -112,7 +117,7 @@ export class StoreReferencesController {
         "Las dimensiones no coinciden con la imagen enviada",
       );
     }
-    if (!dto.privacyConfirmed) {
+    if (dto.hidden !== true && !dto.privacyConfirmed) {
       throw new BadRequestException("Se requiere confirmar la privacidad");
     }
     const imageUrl = await this.storage.uploadStoreReferenceImage(
@@ -126,7 +131,8 @@ export class StoreReferencesController {
         caption: dto.caption?.trim() || undefined,
         width: dto.width,
         height: dto.height,
-        privacyConfirmed: true,
+        hidden: dto.hidden ?? false,
+        privacyConfirmed: dto.privacyConfirmed ?? false,
       });
       return serializeReference(reference);
     } catch (error) {
@@ -137,15 +143,91 @@ export class StoreReferencesController {
 
   @UseGuards(AuthGuard)
   @Patch("stores/:storeId/references/:referenceId")
+  @ApiConsumes("multipart/form-data")
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        file: { type: "string", format: "binary" },
+        takenAt: { type: "string", format: "date-time" },
+        caption: { type: "string", maxLength: 240 },
+        hidden: { type: "boolean" },
+        privacyConfirmed: { type: "boolean" },
+        width: { type: "integer", minimum: 1, maximum: 12000 },
+        height: { type: "integer", minimum: 1, maximum: 12000 },
+      },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor("file", {
+      limits: { fileSize: MAX_UPLOAD_SIZE_BYTES + 1 },
+    }),
+  )
   async update(
     @Param("storeId") storeId: string,
     @Param("referenceId") referenceId: string,
     @Session() session: UserSession,
+    @UploadedFile(OPTIONAL_REFERENCE_IMAGE_PIPE)
+    file: ValidatedUploadedFile | undefined,
     @Body() dto: UpdateStoreReferenceDto,
   ): Promise<StoreReferenceResponseDto> {
-    return serializeReference(
-      await this.references.update(referenceId, storeId, session.user.id, dto),
+    const userId = session.user.id;
+    const existing = await this.references.findOwned(
+      referenceId,
+      storeId,
+      userId,
     );
+    if ((dto.hidden === false || file) && !dto.privacyConfirmed) {
+      throw new BadRequestException("Se requiere confirmar la privacidad");
+    }
+
+    let uploadedUrl: string | undefined;
+    if (file) {
+      const dimensions = readImageDimensions(
+        file.buffer,
+        file.detectedMimeType,
+      );
+      if (dimensions.width !== dto.width || dimensions.height !== dto.height) {
+        throw new BadRequestException(
+          "Las dimensiones no coinciden con la imagen enviada",
+        );
+      }
+      uploadedUrl = await this.storage.uploadStoreReferenceImage(
+        file.buffer,
+        file.detectedMimeType,
+      );
+    }
+
+    try {
+      const updated = await this.references.update(
+        referenceId,
+        storeId,
+        userId,
+        {
+          ...dto,
+          ...(uploadedUrl
+            ? {
+                imageUrl: uploadedUrl,
+                width: dto.width,
+                height: dto.height,
+                privacyConfirmed: true,
+              }
+            : {}),
+          ...(dto.privacyConfirmed ? { privacyConfirmed: true } : {}),
+        },
+      );
+      if (uploadedUrl) {
+        await this.storage
+          .deleteImage(existing.imageUrl)
+          .catch(() => undefined);
+      }
+      return serializeReference(updated);
+    } catch (error) {
+      if (uploadedUrl) {
+        await this.storage.deleteImage(uploadedUrl).catch(() => undefined);
+      }
+      throw error;
+    }
   }
 
   @UseGuards(AuthGuard)
