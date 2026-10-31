@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -95,6 +95,7 @@ export default function CheckoutScreen() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [loadingProof, setLoadingProof] = useState(false);
+  const touchedFields = useRef(new Set<keyof CheckoutFormInput>());
 
   const cartQuery = useQuery({
     queryKey: ["cart", storeSlug],
@@ -134,6 +135,51 @@ export default function CheckoutScreen() {
     retry: (failureCount, error) =>
       !(error instanceof ApiError && error.status === 401) && failureCount < 2,
   });
+
+  useEffect(() => {
+    const customer = profileQuery.data?.customer;
+    if (!customer) return;
+    setForm((current) => ({
+      ...current,
+      customerName:
+        touchedFields.current.has("customerName") || current.customerName
+          ? current.customerName
+          : (customer.name ?? ""),
+      customerPhone:
+        touchedFields.current.has("customerPhone") || current.customerPhone
+          ? current.customerPhone
+          : (customer.phone ?? ""),
+      customerEmail:
+        touchedFields.current.has("customerEmail") || current.customerEmail
+          ? current.customerEmail
+          : (customer.email ?? ""),
+    }));
+  }, [profileQuery.data?.customer]);
+
+  useEffect(() => {
+    let mounted = true;
+    void ImagePicker.getPendingResultAsync()
+      .then(async (result) => {
+        const pendingAsset =
+          result && "assets" in result ? result.assets?.[0] : undefined;
+        if (!mounted || !pendingAsset) return;
+        setLoadingProof(true);
+        try {
+          const proof = await compressPaymentProof(pendingAsset.uri);
+          if (mounted) setField("paymentProof", proof);
+        } catch (error) {
+          if (mounted) setSubmitError(t(proofSelectionErrorKey(error)));
+        } finally {
+          if (mounted) setLoadingProof(false);
+        }
+      })
+      .catch((error: unknown) => {
+        if (mounted) setSubmitError(t(proofSelectionErrorKey(error)));
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [t]);
 
   const items = cartQuery.data ?? [];
   const deliveryMethods = deliveryQuery.data ?? [];
@@ -188,6 +234,7 @@ export default function CheckoutScreen() {
     key: K,
     value: CheckoutFormInput[K],
   ) {
+    touchedFields.current.add(key);
     setForm((current) => ({ ...current, [key]: value }));
   }
 
@@ -195,12 +242,12 @@ export default function CheckoutScreen() {
     setSubmitError(null);
     setLoadingProof(true);
     try {
-      const permission = useCamera
-        ? await ImagePicker.requestCameraPermissionsAsync()
-        : await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        setSubmitError(t("checkout.permissionRequired"));
-        return;
+      if (useCamera) {
+        const permission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!permission.granted) {
+          setSubmitError(t("checkout.permissionRequired"));
+          return;
+        }
       }
       const result = useCamera
         ? await ImagePicker.launchCameraAsync({ mediaTypes: ["images"] })
@@ -217,12 +264,11 @@ export default function CheckoutScreen() {
 
   async function submitCheckout() {
     setSubmitError(null);
-    const profile = profileQuery.data?.customer;
     const values = {
       ...form,
-      customerName: form.customerName || profile?.name || "",
-      customerPhone: form.customerPhone || profile?.phone || "",
-      customerEmail: form.customerEmail || profile?.email || "",
+      customerName: form.customerName,
+      customerPhone: form.customerPhone,
+      customerEmail: form.customerEmail,
     };
     const parsed = schema.safeParse(values);
     if (!parsed.success) {
@@ -231,6 +277,10 @@ export default function CheckoutScreen() {
           t(`checkout.validation.${String(issue.path[0])}`),
         ),
       );
+      return;
+    }
+    if (parsed.data.pickupDate && !isValidDateKey(parsed.data.pickupDate)) {
+      setFieldErrors([t("checkout.validation.pickupDate")]);
       return;
     }
     setFieldErrors([]);
@@ -303,7 +353,11 @@ export default function CheckoutScreen() {
         `/stores/${encodeURIComponent(storeSlug)}/checkout`,
         { method: "POST", body },
       );
-      await clearStoreCart(storeSlug);
+      try {
+        await clearStoreCart(storeSlug);
+      } catch (error) {
+        console.warn("Could not clear the cart after checkout", error);
+      }
       queryClient.setQueryData(["cart", storeSlug], [] satisfies CartItem[]);
       router.replace({
         pathname: "/checkout/success/[orderId]",
@@ -317,7 +371,11 @@ export default function CheckoutScreen() {
       });
     } catch (error) {
       setSubmitError(
-        error instanceof Error ? error.message : t("checkout.submitFailed"),
+        error instanceof ApiError && error.status === 400
+          ? error.message
+          : error instanceof TypeError
+            ? t("checkout.connectionFailed")
+            : t("checkout.submitFailed"),
       );
     } finally {
       setSubmitting(false);
@@ -388,24 +446,20 @@ export default function CheckoutScreen() {
         <Section title={t("checkout.yourDetails")}>
           <Field
             label={t("checkout.name")}
-            value={form.customerName || profileQuery.data?.customer.name || ""}
+            value={form.customerName}
             onChangeText={(value) => setField("customerName", value)}
           />
           <Field
             label={t("checkout.phone")}
             keyboardType="phone-pad"
-            value={
-              form.customerPhone || profileQuery.data?.customer.phone || ""
-            }
+            value={form.customerPhone}
             onChangeText={(value) => setField("customerPhone", value)}
           />
           <Field
             label={t("checkout.email")}
             keyboardType="email-address"
             autoCapitalize="none"
-            value={
-              form.customerEmail || profileQuery.data?.customer.email || ""
-            }
+            value={form.customerEmail}
             onChangeText={(value) => setField("customerEmail", value)}
           />
         </Section>
@@ -663,6 +717,12 @@ export default function CheckoutScreen() {
       </View>
     </ScrollView>
   );
+}
+
+function isValidDateKey(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value;
 }
 
 function toShippingAddress(

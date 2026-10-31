@@ -148,6 +148,7 @@
     "proofLoadFailed": "Could not load the payment receipt.",
     "storeInvalid": "The store is invalid.",
     "submitFailed": "Could not complete your purchase.",
+    "connectionFailed": "Check your internet connection and try again.",
     "proofCompressFailed": "Could not compress the payment receipt below 5 MB.",
     "confirmOrder": "Place order",
     "submitting": "Submitting order…",

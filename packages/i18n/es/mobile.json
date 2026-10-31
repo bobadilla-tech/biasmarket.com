@@ -148,6 +148,7 @@
     "proofLoadFailed": "No se pudo cargar el comprobante.",
     "storeInvalid": "La tienda no es válida.",
     "submitFailed": "No se pudo completar la compra.",
+    "connectionFailed": "Revisa tu conexión a internet e inténtalo de nuevo.",
     "proofCompressFailed": "No se pudo comprimir el comprobante por debajo de 5 MB.",
     "confirmOrder": "Confirmar pedido",
     "submitting": "Enviando pedido…",
