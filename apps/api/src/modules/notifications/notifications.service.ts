@@ -1,5 +1,6 @@
 import {
   ForbiddenException,
+  Logger,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -23,10 +24,22 @@ type Client = Prisma.TransactionClient | PrismaService;
 
 @Injectable()
 export class NotificationsService {
+  private readonly logger = new Logger(NotificationsService.name);
   constructor(
     private prisma: PrismaService,
     @InjectQueue(QUEUE_NAMES.PUSH) private pushQueue: Queue,
   ) {}
+
+  private async enqueuePush(payload: unknown) {
+    try {
+      await this.pushQueue.add(
+        PUSH_JOB_NAME,
+        expoPushPayloadSchema.parse(payload),
+      );
+    } catch (error) {
+      this.logger.warn(`Could not enqueue push notification: ${String(error)}`);
+    }
+  }
 
   async pushToBuyer(
     buyerAccountId: string | null,
@@ -35,18 +48,24 @@ export class NotificationsService {
     data: Record<string, unknown>,
   ) {
     if (!buyerAccountId) return;
-    const tokens = await this.prisma.deviceToken.findMany({
-      where: { buyerAccountId },
-      select: { expoPushToken: true },
-    });
-    await Promise.all(
-      tokens.map(({ expoPushToken }) =>
-        this.pushQueue.add(
-          PUSH_JOB_NAME,
-          expoPushPayloadSchema.parse({ to: expoPushToken, title, body, data }),
+    try {
+      const tokens = await this.prisma.deviceToken.findMany({
+        where: { buyerAccountId },
+        select: { expoPushToken: true },
+      });
+      await Promise.all(
+        tokens.map(({ expoPushToken }) =>
+          this.enqueuePush({
+            to: expoPushToken,
+            title,
+            body,
+            data,
+          }),
         ),
-      ),
-    );
+      );
+    } catch (error) {
+      this.logger.warn(`Could not load buyer push tokens: ${String(error)}`);
+    }
   }
 
   private async assertOwnership(storeId: string, userId: string) {
@@ -154,27 +173,30 @@ export class NotificationsService {
       },
     });
     if (notification && params.type === 'PAYMENT_PROOF_SUBMITTED') {
-      const store = await this.prisma.store.findUnique({
-        where: { id: params.storeId },
-        select: { ownerId: true },
-      });
-      if (store) {
-        const tokens = await this.prisma.deviceToken.findMany({
-          where: { userId: store.ownerId },
-          select: { expoPushToken: true },
+      try {
+        const store = await this.prisma.store.findUnique({
+          where: { id: params.storeId },
+          select: { ownerId: true },
         });
-        await Promise.all(
-          tokens.map(({ expoPushToken }) =>
-            this.pushQueue.add(
-              PUSH_JOB_NAME,
-              expoPushPayloadSchema.parse({
+        if (store) {
+          const tokens = await this.prisma.deviceToken.findMany({
+            where: { userId: store.ownerId },
+            select: { expoPushToken: true },
+          });
+          await Promise.all(
+            tokens.map(({ expoPushToken }) =>
+              this.enqueuePush({
                 to: expoPushToken,
                 title: params.title,
                 body: params.body ?? '',
                 data: { type: params.type, entityId: params.entityId },
               }),
             ),
-          ),
+          );
+        }
+      } catch (error) {
+        this.logger.warn(
+          `Could not notify store about payment proof: ${String(error)}`,
         );
       }
     }
