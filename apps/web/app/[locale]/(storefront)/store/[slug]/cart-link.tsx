@@ -6,7 +6,13 @@ import { ShoppingCart } from "lucide-react";
 import { CART_UPDATED_EVENT, cartCount } from "@/lib/cart";
 import { Link } from "@/i18n/navigation";
 
-export function CartLink({ slug }: { slug: string }) {
+export function CartLink({
+  slug,
+  compact = false,
+}: {
+  slug: string;
+  compact?: boolean;
+}) {
   const t = useTranslations("storefront");
 
   // useSyncExternalStore (not a post-mount effect): CartLink lives in the
@@ -43,10 +49,12 @@ export function CartLink({ slug }: { slug: string }) {
     <Link
       href={`/store/${slug}/cart`}
       aria-label={t("cart")}
-      className="relative flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-(--store-border) bg-(--store-card) px-4 text-sm font-semibold text-(--store-text) transition hover:bg-(--store-surface) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2"
+      className={`relative flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-(--store-border) bg-(--store-card) text-sm font-semibold text-(--store-text) transition hover:bg-(--store-surface) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2 ${compact ? "size-11 px-0 sm:size-auto sm:px-4" : "px-4"}`}
     >
       <ShoppingCart className="size-4" />
-      <span>{t("cart")}</span>
+      <span className={compact ? "sr-only sm:not-sr-only" : undefined}>
+        {t("cart")}
+      </span>
       {count > 0 && (
         <span
           key={count}

@@ -31,6 +31,9 @@ test("renders the branded banner and logo placeholder when images are absent", (
   expect(
     screen.getByRole("heading", { level: 1, name: "Luna Shop" }),
   ).toBeTruthy();
+  expect(
+    screen.getByRole("heading", { level: 1, name: "Luna Shop" }).className,
+  ).toContain("line-clamp-2");
   expect(screen.getByText("SELECCIÓN CUIDADA · BIAS MARKET")).toBeTruthy();
   expect(
     screen.getByRole("img", { name: "Logo de Luna Shop no configurado" })
@@ -100,6 +103,8 @@ test("renders the public owner and reuses the WhatsApp contact button", () => {
     screen.getByRole("img", { name: "Foto del dueño de la tienda" }),
   ).toBeTruthy();
   const contact = screen.getByRole("link", { name: "Contactar" });
+  expect(contact.className).toContain("whitespace-nowrap");
+  expect(contact.className).toContain("min-h-11");
   expect(contact.querySelector("svg")?.getAttribute("class")).toContain(
     "lucide-mail",
   );

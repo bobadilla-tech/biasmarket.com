@@ -190,6 +190,8 @@ export function StoreSectionRenderer({
     null,
   );
   const referenceDialogRef = useRef<HTMLDialogElement>(null);
+  const referenceTouchStartX = useRef<number | null>(null);
+  const referenceTouchStartY = useRef<number | null>(null);
   const searchString = searchParams?.toString() ?? "";
   const tabValue = searchParams?.get("tab") ?? null;
   const activeTab = catalogControls
@@ -313,6 +315,30 @@ export function StoreSectionRenderer({
         storeReferences.length,
     );
   }
+
+  function openReference(index: number) {
+    window.history.pushState(
+      { ...window.history.state, storeReferenceViewer: true },
+      "",
+    );
+    setSelectedReference(index);
+  }
+
+  function closeReference() {
+    if (window.history.state?.storeReferenceViewer) {
+      window.history.back();
+    } else {
+      setSelectedReference(null);
+    }
+  }
+
+  useEffect(() => {
+    function handlePopState() {
+      setSelectedReference(null);
+    }
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
   const categories = useMemo(() => {
     const byId = new Map<string, StorefrontCategory>(
       storeCategories.map((category) => [
@@ -491,7 +517,7 @@ export function StoreSectionRenderer({
         className="space-y-6"
       >
         {catalogControls ? (
-          <div className="space-y-5">
+          <div className="space-y-4 sm:space-y-5">
             <StoreSearchBar
               value={query}
               onChange={setQuery}
@@ -507,7 +533,7 @@ export function StoreSectionRenderer({
             >
               {productCategories.length > 0 && (
                 <>
-                  <div className="md:hidden">
+                  <div className="-mx-4 min-w-0 px-4 md:hidden">
                     <CategoryFilter
                       categories={productCategories}
                       selected={categoryIds}
@@ -696,7 +722,7 @@ export function StoreSectionRenderer({
                     href={`?tab=productos&categoria=${encodeURIComponent(
                       category.slug ?? category.id,
                     )}`}
-                    className="group flex min-h-[76px] items-center gap-3 rounded-2xl border border-(--store-border) bg-(--store-card) p-3 text-left text-sm font-semibold text-(--store-text) shadow-sm transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-(--store-primary) hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) motion-reduce:transform-none motion-reduce:transition-none"
+                    className="group flex min-h-[4.75rem] min-w-0 items-center gap-2 rounded-2xl border border-(--store-border) bg-(--store-card) p-2 text-left text-sm font-semibold text-(--store-text) shadow-sm transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-(--store-primary) hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--store-primary) motion-reduce:transform-none motion-reduce:transition-none sm:gap-3 sm:p-3"
                   >
                     {category.imageUrl ? (
                       <Image
@@ -705,12 +731,12 @@ export function StoreSectionRenderer({
                         width={48}
                         height={48}
                         sizes="48px"
-                        className="size-12 shrink-0 rounded-xl object-cover"
+                        className="size-12 shrink-0 rounded-xl object-cover sm:size-14"
                       />
                     ) : (
                       <span
                         aria-hidden="true"
-                        className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-gray-200 text-lg font-bold text-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                        className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-gray-200 text-lg font-bold text-gray-600 dark:bg-gray-700 dark:text-gray-100 sm:size-14"
                       >
                         {category.name
                           .trim()
@@ -718,7 +744,7 @@ export function StoreSectionRenderer({
                           .toLocaleUpperCase() || <Shapes className="size-5" />}
                       </span>
                     )}
-                    <span className="min-w-0 flex-1 truncate">
+                    <span className="line-clamp-2 min-w-0 flex-1">
                       {category.name}
                     </span>
                     <ArrowUpRight
@@ -757,8 +783,8 @@ export function StoreSectionRenderer({
               {t("referencesSubtitle")}
             </p>
           </header>
-          <label className="flex min-h-11 max-w-xs items-center gap-2 rounded-xl border border-(--store-border) bg-(--store-card) px-3 text-sm text-(--store-muted)">
-            <span>{t("sortBy")}</span>
+          <label className="flex min-h-11 w-full max-w-[10rem] items-center gap-2 rounded-xl border border-(--store-border) bg-(--store-card) px-3 text-xs text-(--store-muted) sm:max-w-xs sm:text-sm">
+            <span className="shrink-0">{t("sortByShort")}</span>
             <select
               aria-label={t("sortBy")}
               value={sort === "antiguas" ? sort : "recientes"}
@@ -782,7 +808,7 @@ export function StoreSectionRenderer({
                     >
                       <button
                         type="button"
-                        onClick={() => setSelectedReference(index)}
+                        onClick={() => openReference(index)}
                         aria-label={t("openReference", {
                           date: referenceDate(reference.takenAt, locale),
                         })}
@@ -884,7 +910,40 @@ export function StoreSectionRenderer({
                         ),
                       })
                 }
-                onCancel={() => setSelectedReference(null)}
+                onCancel={(event) => {
+                  event.preventDefault();
+                  closeReference();
+                }}
+                onTouchStart={(event) => {
+                  referenceTouchStartX.current =
+                    event.changedTouches[0]?.clientX ?? null;
+                  referenceTouchStartY.current =
+                    event.changedTouches[0]?.clientY ?? null;
+                }}
+                onTouchEnd={(event) => {
+                  const startX = referenceTouchStartX.current;
+                  const startY = referenceTouchStartY.current;
+                  const endX = event.changedTouches[0]?.clientX;
+                  const endY = event.changedTouches[0]?.clientY;
+                  referenceTouchStartX.current = null;
+                  referenceTouchStartY.current = null;
+                  if (
+                    startX === null ||
+                    startY === null ||
+                    endX === undefined ||
+                    endY === undefined
+                  ) {
+                    return;
+                  }
+                  const delta = endX - startX;
+                  const verticalDelta = endY - startY;
+                  if (
+                    Math.abs(delta) > 48 &&
+                    Math.abs(delta) > Math.abs(verticalDelta)
+                  ) {
+                    moveReference(delta > 0 ? -1 : 1);
+                  }
+                }}
                 onKeyDown={(event) => {
                   if (event.key === "ArrowLeft") {
                     event.preventDefault();
@@ -899,11 +958,11 @@ export function StoreSectionRenderer({
               >
                 {selectedReference !== null &&
                 storeReferences[selectedReference] ? (
-                  <div className="relative grid max-h-[90dvh] min-w-[min(90vw,64rem)] place-items-center">
+                  <div className="relative grid max-h-[90dvh] min-w-[min(80vw,64rem)] place-items-center md:min-w-[min(90vw,64rem)]">
                     <button
                       type="button"
                       aria-label={t("closeViewer")}
-                      onClick={() => setSelectedReference(null)}
+                      onClick={closeReference}
                       className="absolute right-2 top-2 z-10 flex size-11 items-center justify-center rounded-full bg-white/90 text-black"
                     >
                       <X aria-hidden="true" />

@@ -85,6 +85,7 @@ pnpm --filter @biasmarket/db exec prisma migrate deploy
 
 echo "--- Build api + web"
 NEXT_PUBLIC_API_URL="$API_URL" \
+NEXT_PUBLIC_STOREFRONT_REDESIGN_STORE_SLUGS="demo-kpop-corner" \
   pnpm turbo run build --filter=api --filter=web
 
 echo "--- Seed base fixtures"
@@ -128,6 +129,7 @@ echo "--- Start web on :3001"
     PORT=3001 \
     NODE_ENV=production \
     NEXT_PUBLIC_API_URL="$API_URL" \
+    NEXT_PUBLIC_STOREFRONT_REDESIGN_STORE_SLUGS="demo-kpop-corner" \
     INTERNAL_API_URL="$API_URL" \
     pnpm --filter web exec next start -p 3001
 ) > .ci/web-e2e-web.log 2>&1 &

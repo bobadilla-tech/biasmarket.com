@@ -34,6 +34,7 @@
   "searchStorePlaceholder": "Search in this store",
   "searchCategories": "Search categories...",
   "sortBy": "Sort by",
+  "sortByShort": "Sort",
   "sortRecent": "Newest",
   "sortOldest": "Oldest",
   "sortPriceAsc": "Price: low to high",

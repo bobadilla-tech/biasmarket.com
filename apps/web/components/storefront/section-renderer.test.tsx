@@ -84,6 +84,7 @@ describe("StoreSectionRenderer catalog URL state", () => {
     expect(link.querySelector("img")?.getAttribute("src")).toBe(
       "https://cdn.test/bts.jpg",
     );
+    expect(link.className).toContain("min-h-[4.75rem]");
     navigation.search = "";
   });
 
@@ -114,6 +115,9 @@ describe("StoreSectionRenderer catalog URL state", () => {
     expect(screen.getByText("Día: 01/10/26")).toBeTruthy();
     expect(screen.getByText("Subida por la tienda")).toBeTruthy();
     expect(screen.getByText("Pedido preparado")).toBeTruthy();
+    expect(
+      screen.getByRole("img", { name: /Referencia del/ }).getAttribute("width"),
+    ).toBe("1200");
     navigation.search = "";
   });
 });
