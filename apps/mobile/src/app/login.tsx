@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, useRouter } from "expo-router";
+import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
@@ -13,6 +13,10 @@ import { useMobileI18n } from "../i18n/mobile-i18n.js";
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { returnTo, orderId } = useLocalSearchParams<{
+    returnTo?: string;
+    orderId?: string;
+  }>();
   const { t } = useMobileI18n();
   const { signIn, error: sessionError } = useBuyerSession();
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +35,13 @@ export default function LoginScreen() {
     setError(null);
     try {
       await signIn(storeSlug.trim(), phone.trim(), password);
-      router.replace("/");
+      if (returnTo === "order-detail" && orderId) {
+        router.replace({ pathname: "/orders/[orderId]", params: { orderId } });
+      } else if (returnTo === "orders") {
+        router.replace("/orders");
+      } else {
+        router.replace("/");
+      }
     } catch {
       setError(t("auth.loginFailed"));
     }

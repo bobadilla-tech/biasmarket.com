@@ -46,10 +46,15 @@ export default function OrderDetailScreen() {
         <Pressable
           accessibilityRole="button"
           className="rounded-xl bg-brand-pink px-5 py-3"
-          onPress={() => router.push("/login")}
+          onPress={() =>
+            router.push({
+              pathname: "/login",
+              params: { returnTo: "order-detail", orderId },
+            })
+          }
         >
           <Text className="font-semibold text-brand-ink">
-            {t("auth.signIn")}
+            {t("auth.loginTitle")}
           </Text>
         </Pressable>
       </View>
