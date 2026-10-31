@@ -26,3 +26,13 @@ Before store submission, the owner must provide the public privacy policy URL,
 confirm data retention and deletion practices, and complete Apple's App Privacy
 and Google's Data safety forms. No screenshots are included yet; capture the
 final localized app on iOS and Android after the staging beta is approved.
+
+## Store submission blockers
+
+- Account deletion is not implemented. Before submitting, add an in-app delete
+  account action, the authenticated API endpoint and confirmation flow, then
+  publish the web deletion request URL required by Google Play. Verify that
+  deletion removes or anonymizes buyer profile data, push tokens, and account
+  credentials while preserving order records only where legally required.
+- Do not submit either store listing until the account deletion flow is live
+  and tested on both platforms.
