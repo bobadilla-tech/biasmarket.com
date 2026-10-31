@@ -2471,3 +2471,53 @@ export type MonitoringControllerfindAllParams = {
   limit?: string;
   page?: string;
 };
+
+export interface LinkedStoreResponseDto {
+  slug: string;
+  name: string;
+}
+
+export interface GlobalAccountProfileResponseDto {
+  name: string | null;
+  email: string | null;
+  phone: string;
+  emailVerified: boolean;
+  pendingEmail: string | null;
+  pendingPhone: string | null;
+  stores: LinkedStoreResponseDto[];
+}
+
+export type GlobalAccountOrderResponseDtoPaymentStatus =
+  | "PENDING_PAYMENT"
+  | "PARTIALLY_PAID"
+  | "PAYMENT_SUBMITTED"
+  | "VERIFIED"
+  | "REJECTED"
+  | "CANCELLED";
+
+export type GlobalAccountOrderResponseDtoFulfillmentStatus =
+  "ORDERING" | "IN_TRANSIT" | "READY" | "COMPLETED";
+
+export interface GlobalAccountOrderResponseDto {
+  id: string;
+  paymentStatus: GlobalAccountOrderResponseDtoPaymentStatus;
+  fulfillmentStatus: GlobalAccountOrderResponseDtoFulfillmentStatus;
+  totalAmount: string;
+  currency: string;
+  createdAt: string;
+  paidAmount: number;
+  pendingAmount: number;
+  paidPercentage: number;
+  storeSlug: string;
+  storeName: string;
+}
+
+export interface DeviceTokenDto {
+  expoPushToken: string;
+  platform: "ios" | "android";
+}
+
+export type CustomerDeviceTokensControllerUnregister200 = Record<
+  string,
+  unknown
+>;

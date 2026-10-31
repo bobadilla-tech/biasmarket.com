@@ -1,5 +1,6 @@
 import {
   ForbiddenException,
+  Logger,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -11,12 +12,87 @@ import type {
   Store,
 } from '@biasmarket/db';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import { InjectQueue } from '@nestjs/bullmq';
+import type { Queue } from 'bullmq';
+import {
+  PUSH_JOB_NAME,
+  QUEUE_NAMES,
+  expoPushPayloadSchema,
+} from '@biasmarket/queue';
 
 type Client = Prisma.TransactionClient | PrismaService;
 
 @Injectable()
 export class NotificationsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(NotificationsService.name);
+  constructor(
+    private prisma: PrismaService,
+    @InjectQueue(QUEUE_NAMES.PUSH) private pushQueue: Queue,
+  ) {}
+
+  private async enqueuePush(payload: unknown) {
+    try {
+      await this.pushQueue.add(
+        PUSH_JOB_NAME,
+        expoPushPayloadSchema.parse(payload),
+      );
+    } catch (error) {
+      this.logger.warn(`Could not enqueue push notification: ${String(error)}`);
+    }
+  }
+
+  async pushToBuyer(
+    buyerAccountId: string | null,
+    title: string,
+    body: string,
+    data: Record<string, unknown>,
+  ) {
+    if (!buyerAccountId) return;
+    try {
+      const tokens = await this.prisma.deviceToken.findMany({
+        where: { buyerAccountId },
+        select: { expoPushToken: true },
+      });
+      await Promise.all(
+        tokens.map(({ expoPushToken }) =>
+          this.enqueuePush({
+            to: expoPushToken,
+            title,
+            body,
+            data,
+          }),
+        ),
+      );
+    } catch (error) {
+      this.logger.warn(`Could not load buyer push tokens: ${String(error)}`);
+    }
+  }
+
+  async pushToStoreOwner(params: {
+    storeId: string;
+    title: string;
+    body: string;
+    data: Record<string, unknown>;
+  }) {
+    try {
+      const store = await this.prisma.store.findUnique({
+        where: { id: params.storeId },
+        select: { ownerId: true },
+      });
+      if (!store) return;
+      const tokens = await this.prisma.deviceToken.findMany({
+        where: { userId: store.ownerId },
+        select: { expoPushToken: true },
+      });
+      await Promise.all(
+        tokens.map(({ expoPushToken }) =>
+          this.enqueuePush({ ...params, to: expoPushToken }),
+        ),
+      );
+    } catch (error) {
+      this.logger.warn(`Could not load store push tokens: ${String(error)}`);
+    }
+  }
 
   private async assertOwnership(storeId: string, userId: string) {
     const store = await this.prisma.store.findUnique({
@@ -111,7 +187,7 @@ export class NotificationsService {
       },
     });
     if (existing) return null;
-    return client.notification.create({
+    const notification = await client.notification.create({
       data: {
         storeId: params.storeId,
         type: params.type,
@@ -122,6 +198,7 @@ export class NotificationsService {
         metadata: (params.metadata ?? {}) as Prisma.InputJsonValue,
       },
     });
+    return notification;
   }
 
   async resolveOpenStockAlerts(

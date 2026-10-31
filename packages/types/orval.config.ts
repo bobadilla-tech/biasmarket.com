@@ -45,6 +45,8 @@ export default defineConfig({
           "Order",
           "Checkout",
           "CustomerAuth",
+          "CustomerDeviceTokens",
+          "GlobalAccount",
           "CustomerAccount",
           "Customers",
           "ProductSearch",
