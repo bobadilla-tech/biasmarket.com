@@ -130,11 +130,17 @@ export function StorePublicProfile({
     const sentinel = profileEndRef.current;
     if (!sentinel || typeof IntersectionObserver === "undefined") return;
     const observer = new IntersectionObserver(
-      ([entry]) => setCompactHeaderVisible(!entry.isIntersecting),
-      { rootMargin: "-3rem 0px 0px 0px", threshold: 0 },
+      ([entry]) =>
+        setCompactHeaderVisible(
+          !entry.isIntersecting && entry.boundingClientRect.top < 0,
+        ),
+      { rootMargin: "0px", threshold: 0 },
     );
     observer.observe(sentinel);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      setCompactHeaderVisible(false);
+    };
   }, [setCompactHeaderVisible]);
 
   return (

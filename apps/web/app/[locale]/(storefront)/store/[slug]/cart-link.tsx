@@ -49,10 +49,12 @@ export function CartLink({
     <Link
       href={`/store/${slug}/cart`}
       aria-label={t("cart")}
-      className={`relative flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-(--store-border) bg-(--store-card) text-sm font-semibold text-(--store-text) transition hover:bg-(--store-surface) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2 ${compact ? "size-11 px-0" : "px-4"}`}
+      className={`relative flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-(--store-border) bg-(--store-card) text-sm font-semibold text-(--store-text) transition hover:bg-(--store-surface) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2 ${compact ? "size-11 px-0 sm:size-auto sm:px-4" : "px-4"}`}
     >
       <ShoppingCart className="size-4" />
-      <span className={compact ? "sr-only" : undefined}>{t("cart")}</span>
+      <span className={compact ? "sr-only sm:not-sr-only" : undefined}>
+        {t("cart")}
+      </span>
       {count > 0 && (
         <span
           key={count}

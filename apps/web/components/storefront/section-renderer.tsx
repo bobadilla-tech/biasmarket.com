@@ -191,6 +191,7 @@ export function StoreSectionRenderer({
   );
   const referenceDialogRef = useRef<HTMLDialogElement>(null);
   const referenceTouchStartX = useRef<number | null>(null);
+  const referenceTouchStartY = useRef<number | null>(null);
   const searchString = searchParams?.toString() ?? "";
   const tabValue = searchParams?.get("tab") ?? null;
   const activeTab = catalogControls
@@ -916,14 +917,32 @@ export function StoreSectionRenderer({
                 onTouchStart={(event) => {
                   referenceTouchStartX.current =
                     event.changedTouches[0]?.clientX ?? null;
+                  referenceTouchStartY.current =
+                    event.changedTouches[0]?.clientY ?? null;
                 }}
                 onTouchEnd={(event) => {
                   const startX = referenceTouchStartX.current;
+                  const startY = referenceTouchStartY.current;
                   const endX = event.changedTouches[0]?.clientX;
+                  const endY = event.changedTouches[0]?.clientY;
                   referenceTouchStartX.current = null;
-                  if (startX === null || endX === undefined) return;
+                  referenceTouchStartY.current = null;
+                  if (
+                    startX === null ||
+                    startY === null ||
+                    endX === undefined ||
+                    endY === undefined
+                  ) {
+                    return;
+                  }
                   const delta = endX - startX;
-                  if (Math.abs(delta) > 48) moveReference(delta > 0 ? -1 : 1);
+                  const verticalDelta = endY - startY;
+                  if (
+                    Math.abs(delta) > 48 &&
+                    Math.abs(delta) > Math.abs(verticalDelta)
+                  ) {
+                    moveReference(delta > 0 ? -1 : 1);
+                  }
                 }}
                 onKeyDown={(event) => {
                   if (event.key === "ArrowLeft") {

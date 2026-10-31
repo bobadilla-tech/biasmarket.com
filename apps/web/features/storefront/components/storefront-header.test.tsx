@@ -43,3 +43,25 @@ test("renders the Bias Market brand, cart, and account link", () => {
     screen.getByRole("link", { name: "Ingresar" }).getAttribute("href"),
   ).toBe("/es/store/my-store/account/login");
 });
+
+test("shows the store social links in the mobile utility bar", () => {
+  useCustomerProfile.mockReturnValue({ data: undefined, isPending: false });
+  renderWithProviders(
+    <StorefrontHeader
+      slug="my-store"
+      storeName="My Store"
+      socialLinks={[
+        { platform: "instagram", url: "https://instagram.com/my-store" },
+        { platform: "tiktok", url: "https://tiktok.com/@my-store" },
+      ]}
+    />,
+  );
+
+  const links = screen.getByRole("group", { name: "Redes sociales de la tienda" });
+  expect(links.querySelectorAll("a")).toHaveLength(2);
+  expect(
+    screen
+      .getByRole("link", { name: /Instagram/ })
+      .getAttribute("href"),
+  ).toBe("https://instagram.com/my-store");
+});

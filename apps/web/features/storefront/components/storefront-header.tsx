@@ -88,7 +88,29 @@ export function StorefrontHeader({
             </a>
           ))}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-1 sm:gap-2">
+          {!compactHeaderVisible && socialLinks.length > 0 ? (
+            <div
+              role="group"
+              aria-label={t("social.storeLinks")}
+              className="flex min-w-0 items-center gap-0.5 sm:hidden"
+            >
+              {socialLinks.slice(0, 4).map(({ platform, url }) => (
+                <a
+                  key={platform}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={t("social.linkLabel", {
+                    platform: socialLabels[platform],
+                  })}
+                  className="flex size-9 shrink-0 items-center justify-center rounded-full border border-(--store-border) text-(--store-muted) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)]"
+                >
+                  <SocialIcon platform={platform} />
+                </a>
+              ))}
+            </div>
+          ) : null}
           <CartLink slug={slug} compact={compactHeaderVisible} />
           <AccountNavLink slug={slug} />
         </div>
