@@ -32,4 +32,8 @@ export class DeviceTokensService {
       where: { ...owner, expoPushToken },
     });
   }
+
+  async removeInvalidToken(expoPushToken: string) {
+    return this.prisma.deviceToken.deleteMany({ where: { expoPushToken } });
+  }
 }

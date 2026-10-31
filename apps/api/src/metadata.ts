@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 31342)
+Total output lines: 3291
+
 /* eslint-disable */
 export default async () => {
   const t = {
@@ -1511,148 +1514,7 @@ export default async () => {
               },
               closedOverride: { required: false, type: () => Boolean },
             },
-          },
-        ],
-        [
-          import('./modules/pickup-points/dto/pickup-point-response.dto.js'),
-          {
-            PickupPointResponseDto: {
-              id: { required: true, type: () => String },
-              storeId: { required: true, type: () => String },
-              label: { required: true, type: () => String },
-              enabled: { required: true, type: () => Boolean },
-              sortOrder: { required: true, type: () => Number },
-              openDays: { required: true, type: () => [Number] },
-              closedOverride: { required: true, type: () => Boolean },
-              createdAt: { required: true, type: () => String },
-            },
-          },
-        ],
-        [
-          import('./modules/pickup-points/dto/public-pickup-points-response.dto.js'),
-          {
-            PublicPickupPointsResponseDto: {
-              weekday: { required: true, type: () => Number },
-              points: {
-                required: true,
-                type: () => [
-                  t['./modules/pickup-points/dto/pickup-point-response.dto.js']
-                    .PickupPointResponseDto,
-                ],
-              },
-            },
-          },
-        ],
-        [
-          import('./modules/contact/dto/create-inquiry.dto.js'),
-          {
-            CreateInquiryDto: {
-              name: { required: true, type: () => String, minLength: 1 },
-              email: { required: true, type: () => String, format: 'email' },
-              company: { required: false, type: () => String },
-              inquiryType: { required: false, type: () => String },
-              message: { required: true, type: () => String, minLength: 1 },
-            },
-          },
-        ],
-        [
-          import('./modules/contact/dto/inquiry-response.dto.js'),
-          {
-            InquiryResponseDto: {
-              id: { required: true, type: () => String },
-              name: { required: true, type: () => String },
-              email: { required: true, type: () => String },
-              company: { required: true, type: () => String, nullable: true },
-              inquiryType: {
-                required: true,
-                type: () => String,
-                nullable: true,
-              },
-              message: { required: true, type: () => String },
-              status: { required: true, enum: ['NEW', 'REVIEWED', 'ARCHIVED'] },
-              createdAt: { required: true, type: () => String },
-            },
-          },
-        ],
-        [
-          import('./modules/categories/dto/create-category.dto.js'),
-          {
-            CreateCategoryDto: {
-              name: { required: true, type: () => String, minLength: 1 },
-              parentId: { required: false, type: () => String },
-            },
-          },
-        ],
-        [
-          import('./modules/categories/dto/update-category.dto.js'),
-          {
-            UpdateCategoryDto: {
-              name: { required: false, type: () => String, minLength: 1 },
-              parentId: { required: false, type: () => String },
-            },
-          },
-        ],
-        [
-          import('./modules/categories/dto/category-response.dto.js'),
-          {
-            CategoryResponseDto: {
-              id: { required: true, type: () => String },
-              storeId: { required: true, type: () => String },
-              parentId: { required: true, type: () => String, nullable: true },
-              name: { required: true, type: () => String },
-              createdAt: { required: true, type: () => String },
-            },
-          },
-        ],
-        [
-          import('./modules/collections/dto/create-collection.dto.js'),
-          {
-            CreateCollectionDto: {
-              name: { required: true, type: () => String, minLength: 1 },
-              description: { required: false, type: () => String },
-            },
-          },
-        ],
-        [
-          import('./modules/collections/dto/update-collection.dto.js'),
-          {
-            UpdateCollectionDto: {
-              name: { required: false, type: () => String, minLength: 1 },
-              description: { required: false, type: () => String },
-            },
-          },
-        ],
-        [
-          import('./modules/collections/dto/add-collection-product.dto.js'),
-          {
-            AddCollectionProductDto: {
-              productId: { required: true, type: () => String },
-              position: { required: false, type: () => Number },
-            },
-          },
-        ],
-        [
-          import('./modules/collections/dto/reorder-collection-products.dto.js'),
-          {
-            ReorderCollectionProductsDto: {
-              productIds: { required: true, type: () => [String] },
-            },
-          },
-        ],
-        [
-          import('./modules/collections/dto/collection-response.dto.js'),
-          {
-            ProductVariantInCollectionResponseDto: {
-              id: { required: true, type: () => String },
-              name: { required: true, type: () => String },
-              stock: { required: true, type: () => Number, nullable: true },
-              reserved: { required: true, type: () => Number },
-              priceOverride: {
-                required: true,
-                type: () => String,
-                nullable: true,
-              },
-              imageOverride: {
+          }…1342 tokens truncated…{
                 required: true,
                 type: () => String,
                 nullable: true,
@@ -2080,6 +1942,20 @@ export default async () => {
                 pattern: '^(Exponent|Expo)PushToken\\[[A-Za-z0-9_-]+\\]$',
               },
               platform: { required: true, enum: ['ios', 'android'] },
+            },
+          },
+        ],
+        [
+          import('./modules/device-tokens/prune-device-token.dto.js'),
+          {
+            PruneDeviceTokenDto: {
+              expoPushToken: {
+                required: true,
+                type: () => String,
+                minLength: 20,
+                maxLength: 256,
+                pattern: '^(Exponent|Expo)PushToken\\[[A-Za-z0-9_-]+\\]$',
+              },
             },
           },
         ],
@@ -3119,6 +2995,10 @@ export default async () => {
               unregister: { type: Object },
             },
           },
+        ],
+        [
+          import('./modules/device-tokens/internal-device-tokens.controller.js'),
+          { InternalDeviceTokensController: { prune: { type: Object } } },
         ],
         [
           import('./modules/restock/restock.controller.js'),

@@ -79,10 +79,12 @@ export class ReviewPaymentUseCase {
     }
 
     let storeName = '';
+    let storeSlug = '';
 
     const updated = await this.prisma.$transaction(async (tx) => {
       const store = await tx.store.findUnique({ where: { id: storeId } });
       storeName = store?.name ?? '';
+      storeSlug = store?.slug ?? '';
 
       // Guard against two concurrent reviews of the same order (double
       // click, retry): only proceed if the row is still at the status
@@ -175,11 +177,13 @@ export class ReviewPaymentUseCase {
 
     await this.notifications.pushToBuyer(
       row.buyerAccountId,
-      decision === 'approve' ? 'Pago aprobado' : 'Pago rechazado',
       decision === 'approve'
-        ? `El pago del pedido ${orderId} fue aprobado.`
-        : `El pago del pedido ${orderId} fue rechazado.`,
-      { type: 'PAYMENT_REVIEWED', orderId, decision },
+        ? 'Pago aprobado / Payment approved'
+        : 'Pago rechazado / Payment rejected',
+      decision === 'approve'
+        ? `Pedido ${orderId.slice(0, 8)} aprobado / Order ${orderId.slice(0, 8)} approved.`
+        : `Pedido ${orderId.slice(0, 8)} rechazado / Order ${orderId.slice(0, 8)} rejected.`,
+      { type: 'PAYMENT_REVIEWED', orderId, storeSlug, decision },
     );
 
     return updated;

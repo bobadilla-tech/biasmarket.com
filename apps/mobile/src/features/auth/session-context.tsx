@@ -20,7 +20,10 @@ import {
   setMobileBearerToken,
   setUnauthorizedHandler,
 } from "./api-client.js";
-import { registerBuyerPushToken, unregisterBuyerPushToken } from "./push-token.js";
+import {
+  registerBuyerPushToken,
+  unregisterBuyerPushToken,
+} from "./push-token.js";
 
 type SessionStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -47,6 +50,7 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
   const queryClient = useQueryClient();
   const sessionGeneration = useRef(0);
   const storageQueue = useRef<Promise<void>>(Promise.resolve());
+  const requestPushPermission = useRef(false);
   const [status, setStatus] = useState<SessionStatus>("loading");
   const [storeSlug, setStoreSlug] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -116,6 +120,15 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
     };
   }, [clearLocalSession, runStorageOperation]);
 
+  useEffect(() => {
+    if (status !== "authenticated" || !storeSlug) return;
+    const shouldRequestPermission = requestPushPermission.current;
+    requestPushPermission.current = false;
+    void registerBuyerPushToken(storeSlug, {
+      requestPermission: shouldRequestPermission,
+    }).catch(() => undefined);
+  }, [status, storeSlug]);
+
   const signIn = useCallback(
     async (slug: string, phone: string, password: string) => {
       const generation = ++sessionGeneration.current;
@@ -140,7 +153,7 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
         throw new Error("auth.sessionChanged");
       }
       setMobileBearerToken(token);
-      void registerBuyerPushToken(slug).catch(() => undefined);
+      requestPushPermission.current = true;
       setStoreSlug(slug);
       setStatus("authenticated");
     },

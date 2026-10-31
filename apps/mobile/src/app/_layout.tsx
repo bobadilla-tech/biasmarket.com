@@ -1,6 +1,6 @@
 import "../global.css";
 import { Stack } from "expo-router";
-import { useRouter, type Href } from "expo-router";
+import { useRouter, useRootNavigationState } from "expo-router";
 import * as Notifications from "expo-notifications";
 import { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
@@ -12,27 +12,41 @@ import { MobileI18nProvider } from "../i18n/mobile-i18n.js";
 
 const queryClient = createQueryClient();
 configureMobileApiClient();
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 export default function RootLayout() {
   const router = useRouter();
+  const navigationState = useRootNavigationState();
 
   useEffect(() => {
     const openNotification = (response: Notifications.NotificationResponse) => {
       const data = response.notification.request.content.data ?? {};
       if (
         data.type === "PAYMENT_REVIEWED" &&
-        typeof data.orderId === "string"
+        typeof data.orderId === "string" &&
+        typeof data.storeSlug === "string"
       ) {
-        router.push(`/orders/${encodeURIComponent(data.orderId)}` as Href);
+        router.push({
+          pathname: "/orders/[orderId]",
+          params: { orderId: data.orderId, storeSlug: data.storeSlug },
+        });
       }
     };
+    if (!navigationState?.key) return;
     const subscription =
       Notifications.addNotificationResponseReceivedListener(openNotification);
     void Notifications.getLastNotificationResponseAsync().then((response) => {
       if (response) openNotification(response);
     });
     return () => subscription.remove();
-  }, [router]);
+  }, [navigationState?.key, router]);
 
   return (
     <QueryClientProvider client={queryClient}>

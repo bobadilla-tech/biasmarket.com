@@ -43,4 +43,12 @@ describe('DeviceTokensService', () => {
       where: { userId: 'seller-1', expoPushToken: 'ExponentPushToken[secret]' },
     });
   });
+
+  it('removes a token Expo has marked as unregistered', async () => {
+    prisma.deviceToken.deleteMany.mockResolvedValue({ count: 1 });
+    await service.removeInvalidToken('ExponentPushToken[secret]');
+    expect(prisma.deviceToken.deleteMany).toHaveBeenCalledWith({
+      where: { expoPushToken: 'ExponentPushToken[secret]' },
+    });
+  });
 });
