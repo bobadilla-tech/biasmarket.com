@@ -73,6 +73,45 @@ describe("readImageDimensions", () => {
     });
   });
 
+  it("swaps JPEG dimensions when EXIF orientation rotates the image", () => {
+    const exif = Buffer.alloc(32);
+    exif.write("Exif\0\0", 0, "binary");
+    exif.write("II", 6, "ascii");
+    exif.writeUInt16LE(42, 8);
+    exif.writeUInt32LE(8, 10);
+    exif.writeUInt16LE(1, 14);
+    exif.writeUInt16LE(0x0112, 16);
+    exif.writeUInt16LE(3, 18);
+    exif.writeUInt32LE(1, 20);
+    exif.writeUInt16LE(6, 24);
+
+    const app1 = Buffer.alloc(4 + exif.length);
+    app1[0] = 0xff;
+    app1[1] = 0xe1;
+    app1.writeUInt16BE(exif.length + 2, 2);
+    exif.copy(app1, 4);
+
+    const frame = Buffer.alloc(11);
+    frame[0] = 0xff;
+    frame[1] = 0xc0;
+    frame.writeUInt16BE(7, 2);
+    frame[4] = 8;
+    frame.writeUInt16BE(800, 5);
+    frame.writeUInt16BE(1200, 7);
+
+    const image = Buffer.concat([
+      Buffer.from([0xff, 0xd8]),
+      app1,
+      Buffer.from([0xff]),
+      frame,
+    ]);
+
+    expect(readImageDimensions(image, "image/jpeg")).toEqual({
+      width: 800,
+      height: 1200,
+    });
+  });
+
   it("rejects malformed image data", () => {
     expect(() => readImageDimensions(Buffer.alloc(10), "image/jpeg")).toThrow(
       BadRequestException,

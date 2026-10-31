@@ -191,6 +191,21 @@ describe("CategoriesService", () => {
       await expect(
         service.update(categoryId, storeId, ownerId, { slug: "taken" }),
       ).rejects.toThrow(ConflictException);
+
+      prisma.category.update.mockRejectedValue({
+        code: "P2002",
+        meta: {
+          driverAdapterError: {
+            cause: {
+              constraint: "Category_storeId_parentId_name_key",
+              fields: ["storeId", "parentId", "name"],
+            },
+          },
+        },
+      });
+      await expect(
+        service.update(categoryId, storeId, ownerId, { name: "Taken" }),
+      ).rejects.toThrow("Ya existe una categoría con ese nombre");
     });
 
     it("updates the image, product count, and sitemap freshness atomically", async () => {

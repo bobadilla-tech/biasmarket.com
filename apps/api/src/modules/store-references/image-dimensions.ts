@@ -11,6 +11,41 @@ const JPEG_START_OF_FRAME_MARKERS = new Set([
   0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf,
 ]);
 
+function readExifOrientation(segment: Buffer): number {
+  if (segment.length < 14 || segment.toString("ascii", 0, 4) !== "Exif") {
+    return 1;
+  }
+
+  const tiff = segment.subarray(6);
+  const byteOrder = tiff.toString("ascii", 0, 2);
+  if (byteOrder !== "II" && byteOrder !== "MM") return 1;
+  const littleEndian = byteOrder === "II";
+  const readUInt16 = (offset: number) =>
+    littleEndian ? tiff.readUInt16LE(offset) : tiff.readUInt16BE(offset);
+  const readUInt32 = (offset: number) =>
+    littleEndian ? tiff.readUInt32LE(offset) : tiff.readUInt32BE(offset);
+
+  if (tiff.length < 8 || readUInt16(2) !== 42) return 1;
+  const ifdOffset = readUInt32(4);
+  if (ifdOffset + 2 > tiff.length) return 1;
+  const entryCount = readUInt16(ifdOffset);
+
+  for (let index = 0; index < entryCount; index += 1) {
+    const entryOffset = ifdOffset + 2 + index * 12;
+    if (entryOffset + 12 > tiff.length) return 1;
+    if (
+      readUInt16(entryOffset) === 0x0112 &&
+      readUInt16(entryOffset + 2) === 3 &&
+      readUInt32(entryOffset + 4) === 1
+    ) {
+      const orientation = readUInt16(entryOffset + 8);
+      return orientation >= 1 && orientation <= 8 ? orientation : 1;
+    }
+  }
+
+  return 1;
+}
+
 export function readImageDimensions(
   buffer: Buffer,
   mimeType: SupportedUploadMimeType,
@@ -68,6 +103,7 @@ export function readImageDimensions(
     buffer[1] === 0xd8
   ) {
     let offset = 2;
+    let orientation = 1;
     while (offset + 3 < buffer.length) {
       if (buffer[offset] !== 0xff) break;
       while (buffer[offset] === 0xff) offset += 1;
@@ -77,11 +113,21 @@ export function readImageDimensions(
       if (offset + 1 >= buffer.length) break;
       const segmentLength = buffer.readUInt16BE(offset);
       if (segmentLength < 2 || offset + segmentLength > buffer.length) break;
+      if (marker === 0xe1) {
+        orientation = readExifOrientation(
+          buffer.subarray(offset + 2, offset + segmentLength),
+        );
+      }
       if (JPEG_START_OF_FRAME_MARKERS.has(marker)) {
         if (segmentLength < 7) break;
+        const height = buffer.readUInt16BE(offset + 3);
+        const width = buffer.readUInt16BE(offset + 5);
+        if (orientation >= 5 && orientation <= 8) {
+          return { width: height, height: width };
+        }
         return {
-          height: buffer.readUInt16BE(offset + 3),
-          width: buffer.readUInt16BE(offset + 5),
+          height,
+          width,
         };
       }
       offset += segmentLength;

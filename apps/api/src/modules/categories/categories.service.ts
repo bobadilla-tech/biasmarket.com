@@ -124,7 +124,27 @@ export class CategoriesService {
         "code" in error &&
         error.code === "P2002"
       ) {
-        throw new ConflictException("El slug ya está en uso");
+        let serializedMeta = "";
+        try {
+          const errorRecord = error as Record<string, unknown>;
+          serializedMeta =
+            JSON.stringify({
+              meta: errorRecord.meta,
+              driverAdapterError: errorRecord.driverAdapterError,
+              cause: errorRecord.cause,
+            }) ?? "";
+        } catch {
+          // Keep the slug conflict fallback when Prisma metadata is not serializable.
+        }
+        const isNameConflict =
+          serializedMeta.includes("Category_storeId_parentId_name_key") ||
+          (serializedMeta.includes("parentId") &&
+            serializedMeta.includes("name"));
+        throw new ConflictException(
+          isNameConflict
+            ? "Ya existe una categoría con ese nombre"
+            : "El slug ya está en uso",
+        );
       }
       throw error;
     }
