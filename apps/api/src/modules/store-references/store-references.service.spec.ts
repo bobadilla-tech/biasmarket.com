@@ -100,6 +100,54 @@ describe("StoreReferencesService", () => {
     });
   });
 
+  it("updates visibility and replacement image fields only within the owned store", async () => {
+    prisma.store.findUnique.mockResolvedValue({
+      id: "store-a",
+      ownerId: "owner-a",
+    });
+    prisma.storeReference.findFirst.mockResolvedValue({
+      id: "ref-1",
+      storeId: "store-a",
+      imageUrl: "https://cdn.test/old.jpg",
+    });
+    prisma.storeReference.update.mockResolvedValue({
+      id: "ref-1",
+      hidden: false,
+      imageUrl: "https://cdn.test/new.jpg",
+      width: 640,
+      height: 480,
+    });
+
+    await service.update("ref-1", "store-a", "owner-a", {
+      hidden: false,
+      privacyConfirmed: true,
+      imageUrl: "https://cdn.test/new.jpg",
+      width: 640,
+      height: 480,
+    });
+
+    expect(prisma.storeReference.update).toHaveBeenCalledWith({
+      where: { id: "ref-1" },
+      data: {
+        hidden: false,
+        privacyConfirmed: true,
+        imageUrl: "https://cdn.test/new.jpg",
+        width: 640,
+        height: 480,
+      },
+    });
+  });
+
+  it("returns an empty owned list when the store has no references", async () => {
+    prisma.store.findUnique.mockResolvedValue({
+      id: "store-a",
+      ownerId: "owner-a",
+    });
+    prisma.storeReference.findMany.mockResolvedValue([]);
+
+    await expect(service.findAll("store-a", "owner-a")).resolves.toEqual([]);
+  });
+
   it("filters hidden references and sorts newest first on the public API", async () => {
     prisma.store.findFirst.mockResolvedValue({ id: "store-a" });
     prisma.storeReference.findMany.mockResolvedValue([]);
