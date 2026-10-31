@@ -111,9 +111,6 @@ export class CategoriesController {
       storeId,
       session.user.id,
     );
-    if (category.imageUrl) {
-      await this.storage.deleteImage(category.imageUrl).catch(() => undefined);
-    }
     return toCategoryDto(category);
   }
 

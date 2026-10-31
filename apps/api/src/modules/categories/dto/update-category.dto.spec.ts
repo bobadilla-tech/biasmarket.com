@@ -46,4 +46,14 @@ describe("UpdateCategoryDto imageUrl", () => {
 
     expect(await validate(dto)).not.toEqual([]);
   });
+
+  it("rejects URLs from the allowed host but outside the category image path", async () => {
+    process.env.S3_PUBLIC_URL = "https://cdn.biasmarket.com";
+    process.env.S3_BUCKET = "products";
+    const dto = Object.assign(new UpdateCategoryDto(), {
+      imageUrl: "https://cdn.biasmarket.com/products/product-images/image.png",
+    });
+
+    expect(await validate(dto)).not.toEqual([]);
+  });
 });

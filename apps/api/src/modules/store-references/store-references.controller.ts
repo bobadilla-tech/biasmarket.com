@@ -206,7 +206,7 @@ export class StoreReferencesController {
       throw new BadRequestException("orden inválido");
     const page = Number(rawPage);
     const limit = Number(rawLimit);
-    if (!Number.isInteger(page) || page < 1)
+    if (!Number.isSafeInteger(page) || page < 1 || page > 201)
       throw new BadRequestException("page inválido");
     if (!Number.isInteger(limit) || limit < 1 || limit > 50)
       throw new BadRequestException("limit inválido");

@@ -194,17 +194,27 @@ describe("CategoriesService", () => {
     });
 
     it("updates the image, product count, and sitemap freshness atomically", async () => {
-      prisma.category.update.mockResolvedValue({
-        id: categoryId,
-        _count: { products: 2 },
-      });
+      const tx = {
+        category: {
+          update: vi.fn().mockResolvedValue({
+            id: categoryId,
+            _count: { products: 2 },
+          }),
+        },
+        store: { update: vi.fn().mockResolvedValue({}) },
+      };
+      prisma.$transaction.mockImplementation(
+        (callback: (transaction: typeof tx) => unknown) => callback(tx),
+      );
+
       await service.updateImage(categoryId, storeId, ownerId, null);
-      expect(prisma.category.update).toHaveBeenCalledWith(
+      expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+      expect(tx.category.update).toHaveBeenCalledWith(
         expect.objectContaining({
           include: { _count: { select: { products: true } } },
         }),
       );
-      expect(prisma.store.update).toHaveBeenCalledWith({
+      expect(tx.store.update).toHaveBeenCalledWith({
         where: { id: storeId },
         data: { contentStaleAt: expect.any(Date) },
       });
