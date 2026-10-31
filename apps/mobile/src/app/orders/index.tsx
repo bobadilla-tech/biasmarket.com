@@ -2,19 +2,29 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { customerAuth } from "@biasmarket/types";
+import { customFetch } from "@biasmarket/types";
 import { useBuyerSession } from "../../features/auth/session-context";
 import { formatPrice } from "../../features/catalog/catalog-ui";
 import { useMobileI18n } from "../../i18n/mobile-i18n.js";
 
+interface GlobalAccountOrder {
+  id: string;
+  paymentStatus: string;
+  totalAmount: string;
+  currency: string;
+  createdAt: string;
+  storeSlug: string;
+  storeName: string;
+}
+
 export default function OrderHistoryScreen() {
   const router = useRouter();
-  const { status, storeSlug } = useBuyerSession();
+  const { status } = useBuyerSession();
   const { locale, t } = useMobileI18n();
   const ordersQuery = useQuery({
-    queryKey: ["buyer", storeSlug, "orders"],
-    queryFn: async () => (await customerAuth.me(storeSlug!)).orders,
-    enabled: status === "authenticated" && Boolean(storeSlug),
+    queryKey: ["buyer", "orders"],
+    queryFn: () => customFetch<GlobalAccountOrder[]>("/account/orders"),
+    enabled: status === "authenticated",
   });
 
   if (
@@ -28,7 +38,7 @@ export default function OrderHistoryScreen() {
     );
   }
 
-  if (status !== "authenticated" || !storeSlug) {
+  if (status !== "authenticated") {
     return (
       <View className="flex-1 items-center justify-center gap-4 bg-brand-ink px-6">
         <Text className="text-center text-white">
@@ -89,7 +99,7 @@ export default function OrderHistoryScreen() {
             onPress={() =>
               router.push({
                 pathname: "/orders/[orderId]",
-                params: { orderId: item.id, storeSlug },
+                params: { orderId: item.id, storeSlug: item.storeSlug },
               })
             }
           >
@@ -103,6 +113,7 @@ export default function OrderHistoryScreen() {
             </View>
             <View className="flex-row items-center justify-between">
               <Text className="text-sm text-white/60">
+                {item.storeName} ·{" "}
                 {new Date(item.createdAt).toLocaleDateString(
                   locale === "es" ? "es-PE" : "en-US",
                 )}

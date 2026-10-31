@@ -13,9 +13,10 @@ import { useMobileI18n } from "../i18n/mobile-i18n.js";
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { returnTo, orderId } = useLocalSearchParams<{
+  const { returnTo, orderId, storeSlug } = useLocalSearchParams<{
     returnTo?: string;
     orderId?: string;
+    storeSlug?: string;
   }>();
   const { t } = useMobileI18n();
   const { signIn, error: sessionError } = useBuyerSession();
@@ -28,7 +29,11 @@ export default function LoginScreen() {
     resolver: zodResolver(
       customerLoginSchema.extend({ storeSlug: z.string().min(1) }),
     ),
-    defaultValues: { storeSlug: "", phone: "", password: "" },
+    defaultValues: {
+      storeSlug: typeof storeSlug === "string" ? storeSlug : "",
+      phone: "",
+      password: "",
+    },
   });
 
   const submit = handleSubmit(async ({ storeSlug, phone, password }) => {
@@ -36,7 +41,10 @@ export default function LoginScreen() {
     try {
       await signIn(storeSlug.trim(), phone.trim(), password);
       if (returnTo === "order-detail" && orderId) {
-        router.replace({ pathname: "/orders/[orderId]", params: { orderId } });
+        router.replace({
+          pathname: "/orders/[orderId]",
+          params: { orderId, storeSlug: storeSlug.trim() },
+        });
       } else if (returnTo === "orders") {
         router.replace("/orders");
       } else {
