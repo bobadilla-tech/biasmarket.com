@@ -86,7 +86,7 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
     setMobileBearerToken(null);
     setStoreSlug(null);
     setStatus("unauthenticated");
-  }, [queryClient, runStorageOperation, t]);
+  }, [queryClient, runStorageOperation]);
 
   useEffect(() => {
     const generation = ++sessionGeneration.current;
@@ -113,7 +113,7 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
       active = false;
       setUnauthorizedHandler(undefined);
     };
-  }, [clearLocalSession, runStorageOperation, t]);
+  }, [clearLocalSession, runStorageOperation]);
 
   const signIn = useCallback(
     async (slug: string, phone: string, password: string) => {

@@ -1,12 +1,6 @@
 name: Mobile production build
 
 on:
-  push:
-    branches: [mobile-release]
-    paths:
-      - "apps/mobile/**"
-      - "packages/**"
-      - ".github/workflows/mobile-production-build.yml"
   workflow_dispatch:
 
 permissions:
