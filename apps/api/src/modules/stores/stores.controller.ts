@@ -177,7 +177,7 @@ function toPublicProductDto(
     deletedAt: product.deletedAt?.toISOString() ?? null,
     createdAt: product.createdAt.toISOString(),
     variants: product.variants.map(toVariantDto),
-    categories: product.categories,
+    categories: product.categories.map(({ category }) => ({ category })),
   };
 }
 
