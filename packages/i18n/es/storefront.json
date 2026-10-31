@@ -222,6 +222,7 @@
     "noDeliveryMethod": "La tienda todavía no configuró un método de entrega — contacta al vendedor.",
     "mixedCurrencyWarning": "No puedes pagar productos en distintas monedas en el mismo pedido. Quita alguno del carrito.",
     "orderCreatedTitle": "¡Pedido creado!",
+    "closeConfirmation": "Cerrar confirmación del pedido",
     "orderCreatedSubtitle": "Tu pedido se ha registrado correctamente.",
     "orderCreatedBody": "Pedido #{orderId}. La tienda se pondrá en contacto para confirmar el pago.",
     "viewOrderDetails": "Ver detalle de confirmación",

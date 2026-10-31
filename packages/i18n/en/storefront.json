@@ -226,6 +226,7 @@
     "noDeliveryMethod": "The store hasn't set up a delivery method yet — contact the seller.",
     "mixedCurrencyWarning": "You can't check out products in different currencies in the same order. Remove one from your cart.",
     "orderCreatedTitle": "Order created!",
+    "closeConfirmation": "Close order confirmation",
     "orderCreatedSubtitle": "Your order was registered successfully.",
     "orderCreatedBody": "Order #{orderId}. The store will reach out to confirm payment.",
     "viewOrderDetails": "View confirmation details",

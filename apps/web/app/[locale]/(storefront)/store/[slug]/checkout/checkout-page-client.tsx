@@ -186,7 +186,7 @@ export function CheckoutPageClient() {
           <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-gray-950/55 p-3 backdrop-blur-sm sm:p-6">
             <button
               type="button"
-              aria-label={t("close")}
+              aria-label={t("closeConfirmation")}
               className="absolute inset-0 h-full w-full cursor-default"
               onClick={() => setConfirmationOpen(false)}
             />
