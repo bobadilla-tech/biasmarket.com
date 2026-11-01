@@ -8,6 +8,7 @@ import { PrismaService } from "../../../prisma/prisma.service.js";
 import type { CreateOrderDto } from "../dto/create-order.dto.js";
 import { NotificationsService } from "../../notifications/notifications.service.js";
 import { CustomerAccountService } from "./customer-account.service.js";
+import { isIdempotencyKeyConflict } from "./idempotency-key.js";
 import {
   lockAndValidate,
   reserveItems,
@@ -22,6 +23,18 @@ export class CreateOrderUseCase {
     private customerAccounts: CustomerAccountService,
   ) {}
 
+  async findCheckoutReplay(slug: string, idempotencyKey: string) {
+    const store = await this.prisma.store.findUnique({
+      where: { slug },
+      select: { id: true },
+    });
+    if (!store) throw new NotFoundException("Tienda no encontrada");
+    return this.prisma.order.findFirst({
+      where: { storeId: store.id, checkoutIdempotencyKey: idempotencyKey },
+      include: { items: true },
+    });
+  }
+
   // `proof` is the buyer's checkout-time proof-of-payment upload (already
   // validated + uploaded to the private payment bucket by the controller).
   // When present, the use case attaches a BUYER_SUBMITTED/PENDING_REVIEW
@@ -34,98 +47,121 @@ export class CreateOrderUseCase {
     dto: CreateOrderDto,
     proof?: { imageUrl: string },
     session?: { buyerAccountId: string; passwordVersion: number },
+    idempotencyKey?: string,
   ) {
     const store = await this.prisma.store.findUnique({ where: { slug } });
     if (!store) throw new NotFoundException("Tienda no encontrada");
 
+    if (idempotencyKey) {
+      const replay = await this.prisma.order.findFirst({
+        where: { storeId: store.id, checkoutIdempotencyKey: idempotencyKey },
+        include: { items: true },
+      });
+      if (replay) return { order: replay, whatsappUrl: null };
+    }
+
     const pre = await validateDeliveryPreTx(this.prisma, store, dto);
+
+    let transactionResult;
+    try {
+      transactionResult = await this.prisma.$transaction(async (tx) => {
+        const locked = await lockAndValidate(tx, store, dto, pre);
+
+        let customerId: string | undefined;
+        let buyerAccountId: string | undefined;
+        let pendingVerificationCustomer: Awaited<
+          ReturnType<CustomerAccountService["findOrCreateCustomer"]>
+        > | null = null;
+        if (dto.customerEmail) {
+          pendingVerificationCustomer =
+            await this.customerAccounts.findOrCreateCustomer(
+              tx,
+              store.id,
+              dto.customerPhone,
+              dto.customerEmail,
+              dto.customerName,
+              session,
+            );
+          customerId = pendingVerificationCustomer.customer?.id;
+          buyerAccountId = pendingVerificationCustomer.buyerAccount?.id;
+        }
+
+        const { orderData, requiredAmount, messageItems, pickupPointLabel } =
+          await reserveItems(tx, this.notifications, store, {
+            ...dto,
+            ...pre,
+            ...locked,
+          });
+
+        const order = await tx.order.create({
+          data: {
+            ...orderData,
+            customerId,
+            buyerAccountId,
+            customerEmail: dto.customerEmail,
+            customerPhone: dto.customerPhone,
+            customerPhoneNormalized: normalizePhone(dto.customerPhone),
+            customerName: dto.customerName,
+            checkoutIdempotencyKey: idempotencyKey ?? null,
+          },
+          include: { items: true },
+        });
+
+        // Attach the buyer's proof as a PENDING_REVIEW payment for the
+        // required amount (or full amount if no partial). It does NOT count
+        // toward paidAmount until the seller approves it
+        // (common/payment-summary.ts's `countsTowardPaid`). The seller
+        // notification uses the same dedup-as-an-open-notification helper
+        // as the buyer account's later submit-proof endpoint.
+        if (proof?.imageUrl) {
+          await tx.orderPayment.create({
+            data: {
+              orderId: order.id,
+              storeId: store.id,
+              amount: requiredAmount,
+              currency: order.currency,
+              method: dto.paymentMethod,
+              imageUrl: proof.imageUrl,
+              source: "BUYER_SUBMITTED",
+              reviewStatus: "PENDING_REVIEW",
+            },
+          });
+          await this.notifications.createIfNotOpen(
+            {
+              storeId: store.id,
+              type: "PAYMENT_PROOF_SUBMITTED",
+              entityType: "Order",
+              entityId: order.id,
+              title: "Comprobante de pago recibido",
+              body: `El comprador envió un comprobante de ${order.currency} ${requiredAmount} para revisar.`,
+            },
+            tx,
+          );
+        }
+
+        return {
+          order,
+          pendingVerificationCustomer,
+          pickupPointLabel,
+          messageItems,
+        };
+      });
+    } catch (error) {
+      if (!idempotencyKey || !isIdempotencyKeyConflict(error)) throw error;
+      const replay = await this.prisma.order.findFirst({
+        where: { storeId: store.id, checkoutIdempotencyKey: idempotencyKey },
+        include: { items: true },
+      });
+      if (!replay) throw error;
+      return { order: replay, whatsappUrl: null };
+    }
 
     const {
       order,
       pendingVerificationCustomer,
       pickupPointLabel,
       messageItems,
-    } = await this.prisma.$transaction(async (tx) => {
-      const locked = await lockAndValidate(tx, store, dto, pre);
-
-      let customerId: string | undefined;
-      let buyerAccountId: string | undefined;
-      let pendingVerificationCustomer: Awaited<
-        ReturnType<CustomerAccountService["findOrCreateCustomer"]>
-      > | null = null;
-      if (dto.customerEmail) {
-        pendingVerificationCustomer =
-          await this.customerAccounts.findOrCreateCustomer(
-            tx,
-            store.id,
-            dto.customerPhone,
-            dto.customerEmail,
-            dto.customerName,
-            session,
-          );
-        customerId = pendingVerificationCustomer.customer?.id;
-        buyerAccountId = pendingVerificationCustomer.buyerAccount?.id;
-      }
-
-      const { orderData, requiredAmount, messageItems, pickupPointLabel } =
-        await reserveItems(tx, this.notifications, store, {
-          ...dto,
-          ...pre,
-          ...locked,
-        });
-
-      const order = await tx.order.create({
-        data: {
-          ...orderData,
-          customerId,
-          buyerAccountId,
-          customerEmail: dto.customerEmail,
-          customerPhone: dto.customerPhone,
-          customerPhoneNormalized: normalizePhone(dto.customerPhone),
-          customerName: dto.customerName,
-        },
-        include: { items: true },
-      });
-
-      // Attach the buyer's proof as a PENDING_REVIEW payment for the
-      // required amount (or full amount if no partial). It does NOT count
-      // toward paidAmount until the seller approves it
-      // (common/payment-summary.ts's `countsTowardPaid`). The seller
-      // notification uses the same dedup-as-an-open-notification helper
-      // as the buyer account's later submit-proof endpoint.
-      if (proof?.imageUrl) {
-        await tx.orderPayment.create({
-          data: {
-            orderId: order.id,
-            storeId: store.id,
-            amount: requiredAmount,
-            currency: order.currency,
-            method: dto.paymentMethod,
-            imageUrl: proof.imageUrl,
-            source: "BUYER_SUBMITTED",
-            reviewStatus: "PENDING_REVIEW",
-          },
-        });
-        await this.notifications.createIfNotOpen(
-          {
-            storeId: store.id,
-            type: "PAYMENT_PROOF_SUBMITTED",
-            entityType: "Order",
-            entityId: order.id,
-            title: "Comprobante de pago recibido",
-            body: `El comprador envió un comprobante de ${order.currency} ${requiredAmount} para revisar.`,
-          },
-          tx,
-        );
-      }
-
-      return {
-        order,
-        pendingVerificationCustomer,
-        pickupPointLabel,
-        messageItems,
-      };
-    });
+    } = transactionResult;
 
     // A store's saved NEW_ORDER override (whatsapp-templates module); null
     // when the seller never customized it, in which case

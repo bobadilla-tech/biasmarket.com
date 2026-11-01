@@ -8,6 +8,8 @@ import {
 } from "@biasmarket/utils/cart";
 
 const storageKey = (storeSlug: string) => `biasmarket:cart:${storeSlug}`;
+const checkoutKeyStorageKey = (storeSlug: string) =>
+  `biasmarket:checkout-key:${storeSlug}`;
 const pendingWrites = new Map<string, Promise<CartItem[]>>();
 
 export async function readStoreCart(storeSlug: string): Promise<CartItem[]> {
@@ -90,5 +92,50 @@ export function removeFromStoreCart(
 }
 
 export function clearStoreCart(storeSlug: string): Promise<CartItem[]> {
-  return updateStoreCart(storeSlug, () => []);
+  return updateStoreCart(storeSlug, () => []).then(async (items) => {
+    await AsyncStorage.removeItem(checkoutKeyStorageKey(storeSlug)).catch(
+      () => undefined,
+    );
+    return items;
+  });
+}
+
+export async function getCheckoutIdempotencyKey(
+  storeSlug: string,
+  items: readonly CartItem[],
+): Promise<string> {
+  const key = checkoutKeyStorageKey(storeSlug);
+  const fingerprint = JSON.stringify(
+    items.map(({ productId, variantId, quantity }) => ({
+      productId,
+      variantId: variantId ?? null,
+      quantity,
+    })),
+  );
+  const serialized = await AsyncStorage.getItem(key);
+  if (serialized) {
+    try {
+      const existing = JSON.parse(serialized) as {
+        fingerprint?: unknown;
+        id?: unknown;
+      };
+      if (
+        existing.fingerprint === fingerprint &&
+        typeof existing.id === "string"
+      ) {
+        return existing.id;
+      }
+    } catch {
+      // Replace an invalid record with a fresh UUID below.
+    }
+  }
+
+  const bytes = new Uint8Array(16);
+  globalThis.crypto.getRandomValues(bytes);
+  bytes[6] = (bytes[6]! & 0x0f) | 0x40;
+  bytes[8] = (bytes[8]! & 0x3f) | 0x80;
+  const hex = [...bytes].map((byte) => byte.toString(16).padStart(2, "0"));
+  const id = `${hex.slice(0, 4).join("")}-${hex.slice(4, 6).join("")}-${hex.slice(6, 8).join("")}-${hex.slice(8, 10).join("")}-${hex.slice(10).join("")}`;
+  await AsyncStorage.setItem(key, JSON.stringify({ fingerprint, id }));
+  return id;
 }

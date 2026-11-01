@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Body,
+  Headers,
   Controller,
   Param,
   Post,
@@ -12,7 +13,7 @@ import {
 import { FileInterceptor } from "@nestjs/platform-express";
 import type { Request } from "express";
 import { verifyCustomerSessionToken } from "@biasmarket/utils/customer-account-token";
-import { ApiBody, ApiConsumes } from "@nestjs/swagger";
+import { ApiBody, ApiConsumes, ApiHeader } from "@nestjs/swagger";
 import { Public } from "@thallesp/nestjs-better-auth";
 import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
 import { plainToInstance } from "class-transformer";
@@ -31,6 +32,7 @@ import type {
   CheckoutResultResponseDto,
 } from "../dto/checkout-response.dto.js";
 import { CHECKOUT_UPLOAD_LIMITS } from "../../../common/upload-limits.js";
+import { parseIdempotencyKey } from "../application/idempotency-key.js";
 import {
   PROOF_UPLOAD_MIME_TYPES,
   UploadedFileValidationPipe,
@@ -193,6 +195,11 @@ export class CheckoutController {
   // marks non-primitive properties as application/json-encoded under
   // multipart/form-data, which matches that transport.
   @ApiBody({ type: CreateOrderDto })
+  @ApiHeader({
+    name: "Idempotency-Key",
+    required: false,
+    description: "UUID reused when retrying the same checkout submission.",
+  })
   @UseInterceptors(FileInterceptor("file", { limits: CHECKOUT_UPLOAD_LIMITS }))
   @Post()
   async create(
@@ -200,7 +207,18 @@ export class CheckoutController {
     @Body() body: Record<string, unknown>,
     @UploadedFile(CHECKOUT_PROOF_PIPE) file: ValidatedUploadedFile | undefined,
     @Req() req: Request,
+    @Headers("idempotency-key") idempotencyKeyHeader?: string | string[],
   ): Promise<CheckoutResultResponseDto> {
+    const idempotencyKey = parseIdempotencyKey(idempotencyKeyHeader);
+    if (idempotencyKey) {
+      const replay = await this.createOrder.findCheckoutReplay(
+        slug,
+        idempotencyKey,
+      );
+      if (replay) {
+        return { order: toCheckoutOrderDto(replay), whatsappUrl: null };
+      }
+    }
     const dto = await buildValidatedDto(body ?? {});
 
     let configured = false;
@@ -232,6 +250,7 @@ export class CheckoutController {
       dto,
       proofImageUrl ? { imageUrl: proofImageUrl } : undefined,
       this.sessionFromRequest(req),
+      idempotencyKey,
     );
     return { order: toCheckoutOrderDto(order), whatsappUrl };
   }
