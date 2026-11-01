@@ -526,8 +526,11 @@ model AssistedOrderMediaDeletion {
   id        String   @id @default(cuid())
   url       String   @unique
   createdAt DateTime @default(now())
+  // Failed attempts; failing rows sort behind untried ones so they cannot
+  // starve newer deletions.
+  attempts  Int      @default(0)
 
-  @@index([createdAt])
+  @@index([attempts, createdAt, id])
 }
 
 enum PaymentSource {
