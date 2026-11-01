@@ -7,6 +7,8 @@ import { lockAssistedCustomer } from "./assisted-customer.js";
 
 export const ASSISTED_ORDER_IDENTITY_RETENTION_DAYS = 90;
 const RETENTION_BATCH_SIZE = 500;
+// Keeps the scheduled sweep's HTTP call well under client header timeouts.
+const MEDIA_DELETION_BUDGET_MS = 60_000;
 
 type ErasureCause = "BUYER_REQUEST" | "RETENTION";
 type RequestAuditContext = { operatorId: string; requestReference: string };
@@ -84,7 +86,8 @@ export class AssistedOrderIdentityRetentionUseCase {
       }
     }
 
-    await this.processPendingMediaDeletions();
+    // Media objects are already queued durably by eraseOrder; the scheduled
+    // sweep deletes them so this interactive request never waits on S3.
 
     // Keep the store contact available while any matched order is still active.
     // Its Customer row is shared by all order types for this store and phone.
@@ -215,13 +218,18 @@ export class AssistedOrderIdentityRetentionUseCase {
     return { anonymized };
   }
 
+  // Rows that keep failing are pushed behind untried ones (attempts ASC), so a
+  // permanently failing head of the queue cannot starve newer rows. The loop
+  // is bounded by batch size and a time budget; leftovers wait for next sweep.
   private async processPendingMediaDeletions() {
     const pending = await this.prisma.assistedOrderMediaDeletion.findMany({
-      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      orderBy: [{ attempts: "asc" }, { createdAt: "asc" }, { id: "asc" }],
       take: RETENTION_BATCH_SIZE,
       select: { id: true, url: true },
     });
+    const deadline = Date.now() + MEDIA_DELETION_BUDGET_MS;
     for (const item of pending) {
+      if (Date.now() > deadline) break;
       try {
         await this.storage.deleteImage(item.url);
         await this.prisma.assistedOrderMediaDeletion.deleteMany({
@@ -233,6 +241,16 @@ export class AssistedOrderIdentityRetentionUseCase {
         this.logger.error(
           `Assisted-order media deletion failed; deletionId=${item.id}`,
         );
+        try {
+          await this.prisma.assistedOrderMediaDeletion.updateMany({
+            where: { id: item.id },
+            data: { attempts: { increment: 1 } },
+          });
+        } catch {
+          this.logger.error(
+            `Assisted-order media deletion attempt not recorded; deletionId=${item.id}`,
+          );
+        }
       }
     }
   }

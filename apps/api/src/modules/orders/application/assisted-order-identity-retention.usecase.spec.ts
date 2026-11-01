@@ -8,7 +8,11 @@ describe("AssistedOrderIdentityRetentionUseCase", () => {
   let prisma: {
     order: { findMany: Mock; findFirst: Mock; updateMany: Mock; count: Mock };
     orderPayment: { findMany: Mock; updateMany: Mock };
-    assistedOrderMediaDeletion: { findMany: Mock; deleteMany: Mock };
+    assistedOrderMediaDeletion: {
+      findMany: Mock;
+      deleteMany: Mock;
+      updateMany: Mock;
+    };
     customer: { findUnique: Mock; updateMany: Mock };
     auditLog: { create: Mock };
     $transaction: Mock;
@@ -34,6 +38,7 @@ describe("AssistedOrderIdentityRetentionUseCase", () => {
       assistedOrderMediaDeletion: {
         findMany: vi.fn().mockResolvedValue([]),
         deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       auditLog: { create: vi.fn() },
       $executeRaw: vi.fn().mockResolvedValue(1),
@@ -170,6 +175,38 @@ describe("AssistedOrderIdentityRetentionUseCase", () => {
 
     expect(storage.deleteImage).toHaveBeenCalledWith(media.url);
     expect(prisma.assistedOrderMediaDeletion.deleteMany).not.toHaveBeenCalled();
+    expect(prisma.assistedOrderMediaDeletion.updateMany).toHaveBeenCalledWith({
+      where: { id: media.id },
+      data: { attempts: { increment: 1 } },
+    });
+  });
+
+  it("orders the media queue by attempts so failing rows cannot starve new ones", async () => {
+    prisma.assistedOrderMediaDeletion.findMany.mockResolvedValueOnce([
+      { id: "new", url: "https://cdn.biasmarket.com/private/new.jpg" },
+    ]);
+
+    await useCase.eraseExpiredUnclaimedIdentities();
+
+    expect(prisma.assistedOrderMediaDeletion.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [{ attempts: "asc" }, { createdAt: "asc" }, { id: "asc" }],
+        take: 500,
+      }),
+    );
+    expect(prisma.assistedOrderMediaDeletion.deleteMany).toHaveBeenCalledWith({
+      where: { id: "new" },
+    });
+  });
+
+  it("does not run the media sweep inside a buyer erasure request", async () => {
+    await useCase.eraseOnBuyerRequest(
+      "store-1",
+      "+51987654321",
+      "operator-1",
+      "PRIV-1",
+    );
+    expect(prisma.assistedOrderMediaDeletion.findMany).not.toHaveBeenCalled();
   });
 
   it("limits the scheduled cleanup to 90-day-old unclaimed assisted orders", async () => {

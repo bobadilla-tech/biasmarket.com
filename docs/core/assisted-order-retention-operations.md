@@ -151,6 +151,8 @@ date.
 Erasure keeps the order, item, payment amount/status, and event history needed
 for financial integrity. It clears buyer free-text fields and payment proof
 notes, removes proof-image references in the same database transaction, and
-queues the corresponding private objects for deletion. S3 deletion is retried
-until successful. Verify that the retry table is empty after a successful
+queues the corresponding private objects for deletion. The scheduled sweep
+(not the operator request) deletes them, so a buyer-request erasure removes
+objects at the next sweep. S3 deletion is retried until successful; rows that
+fail are retried after untried rows (`attempts` counts failures). Verify that the retry table is empty after a successful
 sweep; a non-empty queue means storage deletion still needs attention.
