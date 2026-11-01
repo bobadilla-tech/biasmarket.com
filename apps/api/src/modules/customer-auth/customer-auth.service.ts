@@ -111,7 +111,13 @@ export class CustomerAuthService {
     const buyerAccount = await this.prisma.buyerAccount.findUnique({
       where: { id: verified.buyerAccountId },
     });
-    if (!buyerAccount) {
+    if (
+      !buyerAccount ||
+      (!buyerAccount.phone &&
+        !buyerAccount.email &&
+        !buyerAccount.googleSub &&
+        !buyerAccount.passwordHash)
+    ) {
       throw new BadRequestException("Enlace inválido o expirado");
     }
 

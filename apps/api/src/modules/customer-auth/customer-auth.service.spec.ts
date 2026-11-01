@@ -98,6 +98,7 @@ describe("CustomerAuthService", () => {
       const token = createCustomerAccountToken("buyer-1", "test-secret");
       prisma.buyerAccount.findUnique.mockResolvedValue({
         id: "buyer-1",
+        email: "buyer@example.com",
         passwordHash: null,
       });
 
@@ -188,6 +189,26 @@ describe("CustomerAuthService", () => {
         "test-secret",
         "change-email",
       );
+
+      await expect(
+        service.register("my-store", token, "super-secret-1"),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
+    });
+
+    it("rejects tokens when the buyer account has been erased", async () => {
+      const token = createCustomerAccountToken(
+        "buyer-1",
+        "test-secret",
+        "confirm",
+      );
+      prisma.buyerAccount.findUnique.mockResolvedValueOnce({
+        id: "buyer-1",
+        phone: null,
+        email: null,
+        googleSub: null,
+        passwordHash: null,
+      });
 
       await expect(
         service.register("my-store", token, "super-secret-1"),
