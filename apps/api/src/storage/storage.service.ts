@@ -89,13 +89,19 @@ export class StorageService {
 
   // Inverse of `upload`'s `${publicUrl}/${bucket}/${key}` URL shape.
   async deleteImage(url: string): Promise<void> {
-    const parsed = new URL(url);
-    const publicOrigin = new URL(this.publicUrl).origin;
-    const [, bucket, ...keyParts] = parsed.pathname.split("/");
+    const prefix = `${this.publicUrl}/`;
+    if (!url.startsWith(prefix)) {
+      throw new Error("Unsupported storage object URL");
+    }
+    const [bucket, ...keyParts] = url
+      .slice(prefix.length)
+      .replace(/[?#].*$/, "")
+      .split("/");
     const key = keyParts.map(decodeURIComponent).join("/");
     if (
-      parsed.origin !== publicOrigin ||
-      ![this.bucket, this.paymentBucket].includes(bucket ?? "") ||
+      ![this.bucket, this.logoBucket, this.paymentBucket].includes(
+        bucket ?? "",
+      ) ||
       !key
     ) {
       throw new Error("Unsupported storage object URL");
