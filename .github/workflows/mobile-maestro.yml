@@ -61,8 +61,22 @@ jobs:
             curl -Ls "https://get.maestro.mobile.dev" | bash
             export PATH="$PATH:$HOME/.maestro/bin"
             cd apps/mobile
-            eas build --platform android --profile preview --non-interactive --wait
-            eas build:run --platform android --latest --non-interactive
+            BUILD_OUTPUT=$(eas build --platform android --profile preview --non-interactive --wait --json)
+            BUILD_ID=$(node -e '
+              const input = process.argv[1];
+              try {
+                const parsed = JSON.parse(input);
+                const id = Array.isArray(parsed) ? parsed[0]?.id : parsed?.id;
+                if (!id) throw new Error("No id");
+                console.log(id);
+              } catch {
+                const match = input.match(/"id"\s*:\s*"([a-f0-9-]+)"/i);
+                if (match) console.log(match[1]);
+                else process.exit(1);
+              }
+            ' "$BUILD_OUTPUT")
+            test -n "$BUILD_ID" || (echo "Failed to extract build ID from EAS build output" && exit 1)
+            eas build:run --platform android --id "$BUILD_ID" --non-interactive
             adb shell mkdir -p /sdcard/Pictures
             adb push .maestro/fixtures/payment-proof.png /sdcard/Pictures/payment-proof.png
             adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Pictures/payment-proof.png
