@@ -12,6 +12,7 @@ import {
   CheckoutSummary,
   useDeliveryOptions,
 } from "@/features/checkout";
+import { useCustomerProfile } from "@/features/customer-auth";
 
 type PaymentMethod = "YAPE" | "PLIN" | "TRANSFER" | "CASH";
 
@@ -53,6 +54,9 @@ export function CheckoutPageClient() {
   // `details`, plus the store's paymentInstructions) instead of firing a
   // second network request for data the form already has.
   const deliveryOptions = useDeliveryOptions(slug);
+  // Buyer-only order details require an active customer session; guests can
+  // still place orders, but must not be sent to that session-protected page.
+  const customerProfile = useCustomerProfile(slug);
   useEffect(() => {
     setItems(getCart(slug));
   }, [slug]);
@@ -306,7 +310,11 @@ export function CheckoutPageClient() {
                     </p>
                   )}
                   <p className="mt-4 text-sm leading-6 text-gray-600">
-                    {t("shareProofNotice")}
+                    {t(
+                      order.paymentMethod === "CASH"
+                        ? "confirmationCashNote"
+                        : "shareProofNotice",
+                    )}
                   </p>
 
                   <div className="mt-5 rounded-2xl border border-gray-100 p-4">
@@ -346,12 +354,14 @@ export function CheckoutPageClient() {
                         {t("whatsappButton")}
                       </a>
                     )}
-                    <Link
-                      href={`/store/${slug}/account/orders/${order.orderId}`}
-                      className="flex min-h-12 flex-1 items-center justify-center rounded-xl border border-gray-200 px-5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
-                    >
-                      {t("viewOrderLink")}
-                    </Link>
+                    {customerProfile.data && (
+                      <Link
+                        href={`/store/${slug}/account/orders/${order.orderId}`}
+                        className="flex min-h-12 flex-1 items-center justify-center rounded-xl border border-gray-200 px-5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+                      >
+                        {t("viewOrderLink")}
+                      </Link>
+                    )}
                   </div>
                 </div>
 
