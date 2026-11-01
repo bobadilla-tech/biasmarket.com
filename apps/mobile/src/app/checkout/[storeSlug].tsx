@@ -106,8 +106,10 @@ export default function CheckoutScreen() {
     let active = true;
     void ImagePicker.getPendingResultAsync()
       .then(async (result) => {
-        if (!result || !("assets" in result) || !result.assets[0]) return;
-        const proof = await compressPaymentProof(result.assets[0].uri);
+        if (!result || !("assets" in result)) return;
+        const asset = result.assets?.[0];
+        if (!asset) return;
+        const proof = await compressPaymentProof(asset.uri);
         if (active) setField("paymentProof", proof);
       })
       .catch(() => {
