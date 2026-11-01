@@ -157,25 +157,25 @@ export default function CheckoutScreen() {
       !(error instanceof ApiError && error.status === 401) && failureCount < 2,
   });
 
-  useEffect(() => {
-    const customer = profileQuery.data?.customer;
-    if (!customer) return;
-    setForm((current) => ({
-      ...current,
+  const profile = profileQuery.data?.customer;
+  const formValues = useMemo(
+    () => ({
+      ...form,
       customerName:
-        !profileFieldsTouched.customerName && !current.customerName
-          ? (customer.name ?? "")
-          : current.customerName,
+        !profileFieldsTouched.customerName && !form.customerName
+          ? (profile?.name ?? "")
+          : form.customerName,
       customerPhone:
-        !profileFieldsTouched.customerPhone && !current.customerPhone
-          ? (customer.phone ?? "")
-          : current.customerPhone,
+        !profileFieldsTouched.customerPhone && !form.customerPhone
+          ? (profile?.phone ?? "")
+          : form.customerPhone,
       customerEmail:
-        !profileFieldsTouched.customerEmail && !current.customerEmail
-          ? (customer.email ?? "")
-          : current.customerEmail,
-    }));
-  }, [profileFieldsTouched, profileQuery.data]);
+        !profileFieldsTouched.customerEmail && !form.customerEmail
+          ? (profile?.email ?? "")
+          : form.customerEmail,
+    }),
+    [form, profile, profileFieldsTouched],
+  );
 
   const items = cartQuery.data ?? [];
   const deliveryMethods = deliveryQuery.data ?? [];
@@ -230,6 +230,22 @@ export default function CheckoutScreen() {
     key: K,
     value: CheckoutFormInput[K],
   ) {
+    if (key === "customerName") {
+      setProfileFieldsTouched((current) => ({
+        ...current,
+        customerName: true,
+      }));
+    } else if (key === "customerPhone") {
+      setProfileFieldsTouched((current) => ({
+        ...current,
+        customerPhone: true,
+      }));
+    } else if (key === "customerEmail") {
+      setProfileFieldsTouched((current) => ({
+        ...current,
+        customerEmail: true,
+      }));
+    }
     setForm((current) => ({ ...current, [key]: value }));
   }
 
@@ -259,7 +275,7 @@ export default function CheckoutScreen() {
 
   async function submitCheckout() {
     setSubmitError(null);
-    const parsed = schema.safeParse(form);
+    const parsed = schema.safeParse(formValues);
     if (!parsed.success) {
       setFieldErrors(
         parsed.error.issues.map((issue) =>
@@ -455,7 +471,7 @@ export default function CheckoutScreen() {
         <Section title={t("checkout.yourDetails")}>
           <Field
             label={t("checkout.name")}
-            value={form.customerName}
+            value={formValues.customerName}
             onChangeText={(value) => {
               setProfileFieldsTouched((current) => ({
                 ...current,
@@ -467,7 +483,7 @@ export default function CheckoutScreen() {
           <Field
             label={t("checkout.phone")}
             keyboardType="phone-pad"
-            value={form.customerPhone}
+            value={formValues.customerPhone}
             onChangeText={(value) => {
               setProfileFieldsTouched((current) => ({
                 ...current,
@@ -480,7 +496,7 @@ export default function CheckoutScreen() {
             label={t("checkout.email")}
             keyboardType="email-address"
             autoCapitalize="none"
-            value={form.customerEmail}
+            value={formValues.customerEmail}
             onChangeText={(value) => {
               setProfileFieldsTouched((current) => ({
                 ...current,
