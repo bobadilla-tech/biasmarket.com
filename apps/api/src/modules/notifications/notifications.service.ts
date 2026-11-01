@@ -2,60 +2,29 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
+} from "@nestjs/common";
 import type {
   NotificationType,
   Prisma,
   Product,
   ProductVariant,
   Store,
-} from '@biasmarket/db';
-import { PrismaService } from '../../prisma/prisma.service.js';
-import { InjectQueue } from '@nestjs/bullmq';
-import type { Queue } from 'bullmq';
-import {
-  PUSH_JOB_NAME,
-  QUEUE_NAMES,
-  expoPushPayloadSchema,
-} from '@biasmarket/queue';
+} from "@biasmarket/db";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
 type Client = Prisma.TransactionClient | PrismaService;
 
 @Injectable()
 export class NotificationsService {
-  constructor(
-    private prisma: PrismaService,
-    @InjectQueue(QUEUE_NAMES.PUSH) private pushQueue: Queue,
-  ) {}
-
-  async pushToBuyer(
-    buyerAccountId: string | null,
-    title: string,
-    body: string,
-    data: Record<string, unknown>,
-  ) {
-    if (!buyerAccountId) return;
-    const tokens = await this.prisma.deviceToken.findMany({
-      where: { buyerAccountId },
-      select: { expoPushToken: true },
-    });
-    await Promise.all(
-      tokens.map(({ expoPushToken }) =>
-        this.pushQueue.add(
-          PUSH_JOB_NAME,
-          expoPushPayloadSchema.parse({ to: expoPushToken, title, body, data }),
-        ),
-      ),
-    );
-  }
+  constructor(private prisma: PrismaService) {}
 
   private async assertOwnership(storeId: string, userId: string) {
     const store = await this.prisma.store.findUnique({
       where: { id: storeId },
     });
-    if (!store) throw new NotFoundException('Store no encontrada');
+    if (!store) throw new NotFoundException("Store no encontrada");
     if (store.ownerId !== userId) {
-      throw new ForbiddenException('No sos dueño de esta store');
+      throw new ForbiddenException("No sos dueño de esta store");
     }
     return store;
   }
@@ -72,7 +41,7 @@ export class NotificationsService {
         ...(filters.archived !== undefined && { archived: filters.archived }),
         ...(filters.read !== undefined && { read: filters.read }),
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
   }
 
@@ -90,7 +59,7 @@ export class NotificationsService {
       where: { id: notificationId },
     });
     if (!notification || notification.storeId !== storeId) {
-      throw new NotFoundException('Notificación no encontrada');
+      throw new NotFoundException("Notificación no encontrada");
     }
     return this.prisma.notification.update({
       where: { id: notificationId },
@@ -112,7 +81,7 @@ export class NotificationsService {
       where: { id: notificationId },
     });
     if (!notification || notification.storeId !== storeId) {
-      throw new NotFoundException('Notificación no encontrada');
+      throw new NotFoundException("Notificación no encontrada");
     }
     return this.prisma.notification.update({
       where: { id: notificationId },
@@ -142,43 +111,17 @@ export class NotificationsService {
       },
     });
     if (existing) return null;
-    const notification = await client.notification.create({
+    return client.notification.create({
       data: {
         storeId: params.storeId,
         type: params.type,
         entityType: params.entityType,
         entityId: params.entityId,
         title: params.title,
-        body: params.body ?? '',
+        body: params.body ?? "",
         metadata: (params.metadata ?? {}) as Prisma.InputJsonValue,
       },
     });
-    if (notification && params.type === 'PAYMENT_PROOF_SUBMITTED') {
-      const store = await this.prisma.store.findUnique({
-        where: { id: params.storeId },
-        select: { ownerId: true },
-      });
-      if (store) {
-        const tokens = await this.prisma.deviceToken.findMany({
-          where: { userId: store.ownerId },
-          select: { expoPushToken: true },
-        });
-        await Promise.all(
-          tokens.map(({ expoPushToken }) =>
-            this.pushQueue.add(
-              PUSH_JOB_NAME,
-              expoPushPayloadSchema.parse({
-                to: expoPushToken,
-                title: params.title,
-                body: params.body ?? '',
-                data: { type: params.type, entityId: params.entityId },
-              }),
-            ),
-          ),
-        );
-      }
-    }
-    return notification;
   }
 
   async resolveOpenStockAlerts(
@@ -193,7 +136,7 @@ export class NotificationsService {
         entityType,
         entityId,
         archived: false,
-        type: { in: ['LOW_STOCK', 'OUT_OF_STOCK'] },
+        type: { in: ["LOW_STOCK", "OUT_OF_STOCK"] },
       },
       data: { archived: true, archivedAt: new Date() },
     });
@@ -210,7 +153,7 @@ export class NotificationsService {
     await this.syncEntityStockAlert(
       client,
       store,
-      'ProductVariant',
+      "ProductVariant",
       variant.id,
       variant.stock === null ? null : variant.stock - variant.reserved,
       variant.name,
@@ -230,7 +173,7 @@ export class NotificationsService {
     await this.syncEntityStockAlert(
       client,
       store,
-      'Product',
+      "Product",
       product.id,
       productAvailable,
       product.name,
@@ -240,7 +183,7 @@ export class NotificationsService {
   private async syncEntityStockAlert(
     client: Client,
     store: Store,
-    entityType: 'ProductVariant' | 'Product',
+    entityType: "ProductVariant" | "Product",
     entityId: string,
     available: number | null,
     name: string,
@@ -253,7 +196,7 @@ export class NotificationsService {
       await this.createIfNotOpen(
         {
           storeId: store.id,
-          type: 'OUT_OF_STOCK',
+          type: "OUT_OF_STOCK",
           entityType,
           entityId,
           title: `Sin stock: ${name}`,
@@ -267,7 +210,7 @@ export class NotificationsService {
       await this.createIfNotOpen(
         {
           storeId: store.id,
-          type: 'LOW_STOCK',
+          type: "LOW_STOCK",
           entityType,
           entityId,
           title: `Stock bajo: ${name}`,

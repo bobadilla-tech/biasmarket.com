@@ -191,15 +191,6 @@ export class ReviewPaymentUseCase {
       }
     }
 
-    await this.notifications.pushToBuyer(
-      row.buyerAccountId,
-      decision === 'approve' ? 'Pago aprobado' : 'Pago rechazado',
-      decision === 'approve'
-        ? `El pago del pedido ${orderId} fue aprobado.`
-        : `El pago del pedido ${orderId} fue rechazado.`,
-      { type: 'PAYMENT_REVIEWED', orderId, decision },
-    );
-
     return updated;
   }
 }
