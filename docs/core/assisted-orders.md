@@ -197,6 +197,7 @@ codes.
 | `order.claimed`                                    | a buyer claims the order                                                               | buyer account                   |
 | `order.assisted_identity_erased`                   | an order's buyer identity is erased                                                    | system, or the support operator |
 | `customer.assisted_identity_erased`                | a store contact is erased with its last order                                          | system, or the support operator |
+| `order.assisted_closed_at_backfilled`              | an operator sets a verified close date on a reviewed legacy order                      | support operator                |
 
 ## Identity retention and erasure
 
@@ -216,6 +217,11 @@ An order qualifies for the scheduled sweep when all of these hold:
 For a qualifying order the sweep clears the phone, normalized phone, name, email
 and delivery details, drops the link hash and marks the link revoked, and stamps
 `buyerIdentityErasedAt`, all in one transaction that re-checks the conditions.
+It also clears buyer free-text fields (`OrderPayment.note`, cancellation and
+payment-rejection reasons, tracking number/URL), removes proof-image references,
+and queues payment-proof and packed-photo objects for deletion. Object deletion
+is retried by later sweeps until it succeeds. Failed deletions are logged only
+by their stable queue ID.
 If no other live order uses the store contact (`Customer`), the contact is
 anonymized too: its phone becomes a non-phone marker so the row and its foreign
 keys stay valid. Each erasure writes the audit rows above with the cause
@@ -231,6 +237,12 @@ once they close. The phone is used to find records and is never copied into an
 audit row or a log. Each sweep run takes a bounded batch, oldest first, so a
 backlog clears over several daily runs, and a failure on one order logs only its
 id.
+
+Older terminal orders without a reliable close event retain a null `closedAt`
+and are excluded from automatic erasure. Review them using the procedure in
+[assisted-order-retention-operations.md](assisted-order-retention-operations.md);
+set a close date only when it is confirmed from authoritative records. The same
+runbook contains the exact reachable command for the operator endpoints.
 
 ## Worker involvement
 
