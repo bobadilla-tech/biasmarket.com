@@ -129,10 +129,10 @@ SELECT * FROM changed;
 INSERT INTO "AuditLog" ("id", "actorId", "storeId", "action", "entityType", "entityId", "metadata")
 SELECT gen_random_uuid()::text,
        'OPERATOR_ACCOUNT_ID',
-       orders."storeId",
+       backfilled."storeId",
        'order.assisted_closed_at_backfilled',
        'Order',
-       orders."id",
+       backfilled."id",
        jsonb_build_object(
          'requestReference', 'SUPPORT_OR_CHANGE_TICKET',
          'fields', jsonb_build_array('closedAt')
