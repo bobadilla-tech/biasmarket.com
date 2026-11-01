@@ -41,7 +41,9 @@ describe("StorageService.deleteImage", () => {
   );
 
   it("ignores query strings and fragments", async () => {
-    await service.deleteImage("https://cdn.example.com/files/public/a.png?v=1#x");
+    await service.deleteImage(
+      "https://cdn.example.com/files/public/a.png?v=1#x",
+    );
     expect(send.mock.calls[0]![0].input).toEqual({
       Bucket: "public",
       Key: "a.png",
