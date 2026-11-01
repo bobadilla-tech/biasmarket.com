@@ -14,6 +14,7 @@ import {
   Percent,
   Store,
   Truck,
+  UserRound,
   Wallet,
 } from "lucide-react";
 import { isPaymentMethodConfigured } from "@biasmarket/utils/payment-methods";
@@ -91,6 +92,7 @@ interface CheckoutFormProps {
   // exactly like CreateOrderUseCase does with
   // deliveryConfig.details.estimatedCost.
   onDeliveryCostChange?: (deliveryCost: number) => void;
+  onFormStatusChange?: (canSubmit: boolean, isSubmitting: boolean) => void;
   onOrderCreated: (result: {
     orderId: string;
     customerEmail: string;
@@ -99,6 +101,13 @@ interface CheckoutFormProps {
     totalAmount: string;
     currency: string;
     whatsappUrl: string | null;
+    deliveryMethodType: string;
+    pickupPointLabel: string | null;
+    pickupDate: string | null;
+    courierName: string | null;
+    courierModality: "AGENCY" | "HOME" | null;
+    paymentType: "FULL" | "PARTIAL";
+    depositPercent: number;
   }) => void;
 }
 
@@ -142,6 +151,7 @@ export function CheckoutForm({
   items,
   onPaymentTypeChange,
   onDeliveryCostChange,
+  onFormStatusChange,
   onOrderCreated,
 }: CheckoutFormProps) {
   const t = useTranslations("storefront.checkoutPage");
@@ -277,7 +287,9 @@ export function CheckoutForm({
     form.getValues,
   ]);
 
+  const customerName = form.watch("customerName");
   const customerPhone = form.watch("customerPhone");
+  const customerEmail = form.watch("customerEmail");
   const deliveryMethodType = form.watch("deliveryMethodType");
   const courierName = form.watch("courierName");
   const courierModality = form.watch("courierModality");
@@ -300,6 +312,12 @@ export function CheckoutForm({
   const shippingLine1 = form.watch("shippingLine1");
   const shippingCity = form.watch("shippingCity");
   const shippingAgencyName = form.watch("shippingAgencyName");
+  const shippingDepartment = form.watch("shippingDepartment");
+  const shippingProvince = form.watch("shippingProvince");
+  const shippingDistrict = form.watch("shippingDistrict");
+  const shippingDocumentType = form.watch("shippingDocumentType");
+  const shippingDocumentNumber = form.watch("shippingDocumentNumber");
+  const shippingRecipientSurnames = form.watch("shippingRecipientSurnames");
   const checkoutErrors = Object.values(form.formState.errors)
     .map((error) => error?.message)
     .filter((message): message is string => typeof message === "string");
@@ -447,6 +465,53 @@ export function CheckoutForm({
     requiringDate: pointsRequiringDate,
   });
 
+  const canSubmit =
+    !submitCheckout.isPending &&
+    Boolean(customerName.trim()) &&
+    (!customerEmail || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) &&
+    Boolean(customerPhone) &&
+    Boolean(deliveryMethodType) &&
+    !mixedCurrencies &&
+    !(deliveryMethodType === "PICKUP" && points.length > 0 && !pickupPointId) &&
+    !dateBlocking &&
+    !(paymentMethods.length > 0 && !paymentMethod) &&
+    !(
+      paymentMethod !== "" &&
+      paymentMethod !== "CASH" &&
+      selectedMethodConfigured &&
+      !paymentProof
+    ) &&
+    !(
+      deliveryMethodType === "COURIER" &&
+      (!courierName ||
+        !courierModality ||
+        !shippingRecipientName ||
+        !shippingRecipientSurnames.trim() ||
+        !shippingPhone ||
+        !/^\+?[\d\s()-]{8,19}$/.test(shippingPhone.trim()) ||
+        shippingPhone.replace(/\D/g, "").length < 9 ||
+        shippingPhone.replace(/\D/g, "").length > 15 ||
+        !shippingDocumentType ||
+        !shippingDocumentNumber.trim() ||
+        (shippingDocumentType === "DNI" &&
+          !/^\d{8}$/.test(shippingDocumentNumber.replace(/\s/g, ""))) ||
+        (shippingDocumentType === "RUC" &&
+          !/^\d{11}$/.test(shippingDocumentNumber.replace(/\s/g, ""))) ||
+        (["CE", "PASSPORT"].includes(shippingDocumentType) &&
+          !/^[a-z\d-]{6,12}$/i.test(
+            shippingDocumentNumber.replace(/\s/g, ""),
+          )) ||
+        !shippingDepartment.trim() ||
+        !shippingProvince.trim() ||
+        !shippingDistrict.trim() ||
+        (courierModality === "HOME" && (!shippingLine1 || !shippingCity)) ||
+        (courierModality === "AGENCY" && !shippingAgencyName))
+    );
+
+  useEffect(() => {
+    onFormStatusChange?.(canSubmit, submitCheckout.isPending);
+  }, [canSubmit, onFormStatusChange, submitCheckout.isPending]);
+
   const onSubmit = form.handleSubmit(async (values) => {
     const result = await submitCheckout.mutateAsync({
       deliveryMethodType: values.deliveryMethodType,
@@ -487,6 +552,24 @@ export function CheckoutForm({
       totalAmount: result.order.totalAmount,
       currency: result.order.currency,
       whatsappUrl: result.whatsappUrl,
+      deliveryMethodType: values.deliveryMethodType,
+      pickupPointLabel:
+        values.deliveryMethodType === "PICKUP"
+          ? (points.find((point) => point.id === values.pickupPointId)?.label ??
+            null)
+          : null,
+      pickupDate:
+        values.deliveryMethodType === "PICKUP"
+          ? values.pickupDate || null
+          : null,
+      courierName:
+        values.deliveryMethodType === "COURIER" ? values.courierName : null,
+      courierModality:
+        values.deliveryMethodType === "COURIER"
+          ? (values.courierModality as "AGENCY" | "HOME")
+          : null,
+      paymentType: values.paymentType,
+      depositPercent,
     });
   });
 
@@ -494,7 +577,11 @@ export function CheckoutForm({
   const paymentLabels = paymentMethodLabels(t);
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-6">
+    <form
+      id="checkout-order-form"
+      onSubmit={onSubmit}
+      className="flex flex-col gap-6"
+    >
       <FormErrorSummary
         id="checkout-error-summary"
         title={tCommon("formErrorsSummary")}
@@ -521,127 +608,141 @@ export function CheckoutForm({
         </ol>
       </nav>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-5">
-        {methods.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <h2
-              id="checkout-delivery-type-label"
-              className="text-sm font-semibold text-foreground"
-            >
-              {t("deliveryTypeLabel")}
-            </h2>
-            <Controller
-              control={form.control}
-              name="deliveryMethodType"
-              render={({ field }) => (
-                <RadioCardGroup
-                  name={field.name}
-                  value={field.value}
-                  onValueChange={(value) =>
-                    field.onChange(
-                      value as CheckoutFormInput["deliveryMethodType"],
-                    )
-                  }
-                  aria-labelledby="checkout-delivery-type-label"
-                  aria-describedby={
-                    form.formState.errors.deliveryMethodType
-                      ? "checkout-delivery-type-error"
-                      : undefined
-                  }
-                  className="grid grid-cols-2 gap-3"
-                >
-                  {methods.map((m) => (
-                    <RadioCard
-                      key={m.type}
-                      value={m.type}
-                      aria-label={
-                        m.type === "PICKUP"
-                          ? t("deliveryPickup")
-                          : t("deliveryCourier")
-                      }
-                    >
-                      {m.type === "PICKUP" ? (
-                        <Store aria-hidden="true" className="size-5" />
-                      ) : (
-                        <Truck aria-hidden="true" className="size-5" />
-                      )}
-                      <span className="pr-6 text-sm font-semibold">
-                        {m.type === "PICKUP"
-                          ? t("deliveryPickup")
-                          : t("deliveryCourier")}
-                      </span>
-                      <RadioCardIndicator>
-                        <Check
-                          aria-hidden="true"
-                          className="size-3"
-                          strokeWidth={3}
-                        />
-                      </RadioCardIndicator>
-                    </RadioCard>
-                  ))}
-                </RadioCardGroup>
-              )}
-            />
-            {form.formState.errors.deliveryMethodType && (
-              <p
-                id="checkout-delivery-type-error"
-                role="alert"
-                className="text-sm text-error-foreground"
+      <div className="flex flex-col gap-4">
+        <section
+          aria-labelledby="checkout-buyer-heading"
+          className="space-y-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6"
+        >
+          <div className="flex items-start gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-700">
+              <UserRound aria-hidden="true" className="size-5" />
+            </span>
+            <div>
+              <h2
+                id="checkout-buyer-heading"
+                className="text-base font-bold text-gray-900"
+              >
+                {t("buyerDetailsTitle")}
+              </h2>
+              <p className="mt-1 text-sm text-gray-500">
+                {t("buyerDetailsDescription")}
+              </p>
+            </div>
+          </div>
+          <FormField
+            id="checkout-customer-name"
+            label={t("buyerNameLabel")}
+            error={formErrorMessage(
+              form.formState.errors.customerName,
+              t("buyerNameLabel"),
+            )}
+          >
+            {(props) => (
+              <input
+                {...props}
+                autoComplete="name"
+                placeholder={t("buyerNamePlaceholder")}
+                className={inputClassName}
+                {...form.register("customerName")}
+              />
+            )}
+          </FormField>
+          <FormField
+            id="checkout-customer-phone"
+            label={t("phonePlaceholder")}
+            error={formErrorMessage(
+              form.formState.errors.customerPhone,
+              t("phonePlaceholder"),
+            )}
+          >
+            {(props) => (
+              <Controller
+                control={form.control}
+                name="customerPhone"
+                render={({ field }) => (
+                  <PhoneInput
+                    {...props}
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder={t("buyerPhonePlaceholder")}
+                    selectClassName={inputClassName}
+                    inputClassName={inputClassName}
+                    countryId="checkout-customer-phone-country"
+                  />
+                )}
+              />
+            )}
+          </FormField>
+          <FormField
+            id="checkout-customer-email"
+            label={t("emailOptionalLabel")}
+            error={formErrorMessage(
+              form.formState.errors.customerEmail,
+              t("invalidEmail"),
+            )}
+          >
+            {(props) => (
+              <input
+                {...props}
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder={t("emailPlaceholder")}
+                className={inputClassName}
+                {...form.register("customerEmail")}
+              />
+            )}
+          </FormField>
+        </section>
+
+        <section className="space-y-6 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+          {methods.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <h2
+                id="checkout-delivery-type-label"
+                className="text-sm font-semibold text-foreground"
               >
                 {t("deliveryTypeLabel")}
-              </p>
-            )}
-          </div>
-        )}
-
-        {deliveryMethodType === "PICKUP" && points.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <h2
-              id="checkout-pickup-point-label"
-              className="text-sm font-semibold text-foreground"
-            >
-              {t("pickupPointsLabel")}
-            </h2>
-            <Controller
-              control={form.control}
-              name="pickupPointId"
-              render={({ field }) => (
-                <RadioCardGroup
-                  name={field.name}
-                  value={field.value}
-                  onValueChange={(value) => field.onChange(value)}
-                  aria-labelledby="checkout-pickup-point-label"
-                  aria-describedby={
-                    form.formState.errors.pickupPointId
-                      ? "checkout-pickup-point-error"
-                      : undefined
-                  }
-                  className="grid grid-cols-1 gap-3 sm:grid-cols-2"
-                >
-                  {points.map((point) => {
-                    // `points` is only non-empty once deliveryOptions.data has
-                    // loaded, so `weekday` (sourced from that same payload) is
-                    // defined here. Cards are always clickable now — a
-                    // closed-today point is a valid, completable selection once
-                    // it has a pickupDate, so it's no longer `disabled`.
-                    const availability = getPickupAvailability(point, weekday);
-                    return (
+              </h2>
+              <Controller
+                control={form.control}
+                name="deliveryMethodType"
+                render={({ field }) => (
+                  <RadioCardGroup
+                    name={field.name}
+                    value={field.value}
+                    onValueChange={(value) =>
+                      field.onChange(
+                        value as CheckoutFormInput["deliveryMethodType"],
+                      )
+                    }
+                    aria-labelledby="checkout-delivery-type-label"
+                    aria-describedby={
+                      form.formState.errors.deliveryMethodType
+                        ? "checkout-delivery-type-error"
+                        : undefined
+                    }
+                    className="grid grid-cols-2 gap-3"
+                  >
+                    {methods.map((m) => (
                       <RadioCard
-                        key={point.id}
-                        value={point.id}
-                        aria-label={point.label}
+                        key={m.type}
+                        value={m.type}
+                        aria-label={
+                          m.type === "PICKUP"
+                            ? t("deliveryPickup")
+                            : t("deliveryCourier")
+                        }
                       >
+                        {m.type === "PICKUP" ? (
+                          <Store aria-hidden="true" className="size-5" />
+                        ) : (
+                          <Truck aria-hidden="true" className="size-5" />
+                        )}
                         <span className="pr-6 text-sm font-semibold">
-                          {point.label}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {availability.availableToday
-                            ? t("availableToday")
-                            : availability.nextAvailableDay !== null
-                              ? t("nextAvailable", {
-                                  day: weekdays[availability.nextAvailableDay],
-                                })
-                              : t("pickupNoAvailability")}
+                          {m.type === "PICKUP"
+                            ? t("deliveryPickup")
+                            : t("deliveryCourier")}
                         </span>
                         <RadioCardIndicator>
                           <Check
@@ -651,465 +752,633 @@ export function CheckoutForm({
                           />
                         </RadioCardIndicator>
                       </RadioCard>
-                    );
-                  })}
-                </RadioCardGroup>
+                    ))}
+                  </RadioCardGroup>
+                )}
+              />
+              {form.formState.errors.deliveryMethodType && (
+                <p
+                  id="checkout-delivery-type-error"
+                  role="alert"
+                  className="text-sm text-error-foreground"
+                >
+                  {t("deliveryTypeLabel")}
+                </p>
               )}
-            />
-            {form.formState.errors.pickupPointId && (
-              <p
-                id="checkout-pickup-point-error"
-                role="alert"
-                className="text-sm text-error-foreground"
+            </div>
+          )}
+
+          {deliveryMethodType === "PICKUP" && points.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <h2
+                id="checkout-pickup-point-label"
+                className="text-sm font-semibold text-foreground"
               >
                 {t("pickupPointsLabel")}
-              </p>
-            )}
-
-            {pickupPointId &&
-              pointsRequiringDate.has(pickupPointId) &&
-              (() => {
-                const selectedPoint = points.find(
-                  (p) => p.id === pickupPointId,
-                );
-                if (!selectedPoint || weekday === undefined) return null;
-                const availability = getPickupAvailability(
-                  selectedPoint,
-                  weekday,
-                );
-                if (availability.nextAvailableDay === null) {
-                  return (
-                    <p className="text-sm text-amber-600">
-                      {t("pickupNoAvailability")}
-                    </p>
-                  );
-                }
-                const selectedWeekday = pickupDate
-                  ? new Date(`${pickupDate}T00:00:00Z`).getUTCDay()
-                  : undefined;
-                const invalidWeekday =
-                  selectedWeekday !== undefined &&
-                  selectedPoint.openDays.length > 0 &&
-                  !selectedPoint.openDays.includes(selectedWeekday);
-                return (
-                  <FormField
-                    id="pickup-date-input"
-                    label={t("pickupDateLabel")}
-                    error={
-                      invalidWeekday
-                        ? t("pickupDateInvalidWeekday")
-                        : formErrorMessage(
-                            form.formState.errors.pickupDate,
-                            t("pickupDateRequired"),
-                          )
+              </h2>
+              <Controller
+                control={form.control}
+                name="pickupPointId"
+                render={({ field }) => (
+                  <RadioCardGroup
+                    name={field.name}
+                    value={field.value}
+                    onValueChange={(value) => field.onChange(value)}
+                    aria-labelledby="checkout-pickup-point-label"
+                    aria-describedby={
+                      form.formState.errors.pickupPointId
+                        ? "checkout-pickup-point-error"
+                        : undefined
                     }
+                    className="grid grid-cols-1 gap-3 sm:grid-cols-2"
                   >
-                    {(props) => (
+                    {points.map((point) => {
+                      // `points` is only non-empty once deliveryOptions.data has
+                      // loaded, so `weekday` (sourced from that same payload) is
+                      // defined here. Cards are always clickable now — a
+                      // closed-today point is a valid, completable selection once
+                      // it has a pickupDate, so it's no longer `disabled`.
+                      const availability = getPickupAvailability(
+                        point,
+                        weekday,
+                      );
+                      return (
+                        <RadioCard
+                          key={point.id}
+                          value={point.id}
+                          aria-label={point.label}
+                        >
+                          <span className="pr-6 text-sm font-semibold">
+                            {point.label}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {availability.availableToday
+                              ? t("availableToday")
+                              : availability.nextAvailableDay !== null
+                                ? t("nextAvailable", {
+                                    day: weekdays[
+                                      availability.nextAvailableDay
+                                    ],
+                                  })
+                                : t("pickupNoAvailability")}
+                          </span>
+                          <RadioCardIndicator>
+                            <Check
+                              aria-hidden="true"
+                              className="size-3"
+                              strokeWidth={3}
+                            />
+                          </RadioCardIndicator>
+                        </RadioCard>
+                      );
+                    })}
+                  </RadioCardGroup>
+                )}
+              />
+              {form.formState.errors.pickupPointId && (
+                <p
+                  id="checkout-pickup-point-error"
+                  role="alert"
+                  className="text-sm text-error-foreground"
+                >
+                  {t("pickupPointsLabel")}
+                </p>
+              )}
+
+              {pickupPointId &&
+                pointsRequiringDate.has(pickupPointId) &&
+                (() => {
+                  const selectedPoint = points.find(
+                    (p) => p.id === pickupPointId,
+                  );
+                  if (!selectedPoint || weekday === undefined) return null;
+                  const availability = getPickupAvailability(
+                    selectedPoint,
+                    weekday,
+                  );
+                  if (availability.nextAvailableDay === null) {
+                    return (
+                      <p className="text-sm text-amber-600">
+                        {t("pickupNoAvailability")}
+                      </p>
+                    );
+                  }
+                  const selectedWeekday = pickupDate
+                    ? new Date(`${pickupDate}T00:00:00Z`).getUTCDay()
+                    : undefined;
+                  const invalidWeekday =
+                    selectedWeekday !== undefined &&
+                    selectedPoint.openDays.length > 0 &&
+                    !selectedPoint.openDays.includes(selectedWeekday);
+                  return (
+                    <FormField
+                      id="pickup-date-input"
+                      label={t("pickupDateLabel")}
+                      error={
+                        invalidWeekday
+                          ? t("pickupDateInvalidWeekday")
+                          : formErrorMessage(
+                              form.formState.errors.pickupDate,
+                              t("pickupDateRequired"),
+                            )
+                      }
+                    >
+                      {(props) => (
+                        <Controller
+                          control={form.control}
+                          name="pickupDate"
+                          render={({ field }) => (
+                            <input
+                              {...props}
+                              id="pickup-date-input"
+                              type="date"
+                              min={toDateInputValue(new Date())}
+                              className={inputClassName}
+                              value={field.value}
+                              onChange={field.onChange}
+                            />
+                          )}
+                        />
+                      )}
+                    </FormField>
+                  );
+                })()}
+            </div>
+          )}
+
+          {deliveryMethodType === "COURIER" && (
+            <div className="flex flex-col gap-3">
+              {couriers.length > 0 && (
+                <FormField
+                  id="checkout-courier-name"
+                  label={t("courierSelectLabel")}
+                  error={formErrorMessage(
+                    form.formState.errors.courierName,
+                    t("courierSelectRequired"),
+                  )}
+                >
+                  {(props) => (
+                    <select
+                      {...props}
+                      className={inputClassName}
+                      value={courierName}
+                      onChange={(e) => {
+                        form.setValue("courierName", e.target.value, {
+                          shouldValidate: true,
+                        });
+                        form.setValue("courierModality", "", {
+                          shouldValidate: true,
+                        });
+                      }}
+                    >
+                      <option value="">{t("courierSelectPlaceholder")}</option>
+                      {couriers.map((c) => (
+                        <option key={c.name} value={c.name}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </FormField>
+              )}
+
+              {courierName &&
+                (() => {
+                  const courier = couriers.find((c) => c.name === courierName);
+                  const modalities = courier?.modalities ?? [];
+                  if (modalities.length === 0) return null;
+                  return (
+                    <div className="flex flex-col gap-2">
+                      <h3
+                        id="checkout-courier-modality-label"
+                        className="text-sm font-semibold text-foreground"
+                      >
+                        {t("courierModalityLabel")}
+                      </h3>
                       <Controller
                         control={form.control}
-                        name="pickupDate"
+                        name="courierModality"
                         render={({ field }) => (
-                          <input
-                            {...props}
-                            id="pickup-date-input"
-                            type="date"
-                            min={toDateInputValue(new Date())}
-                            className={inputClassName}
+                          <RadioCardGroup
+                            name={field.name}
                             value={field.value}
-                            onChange={field.onChange}
-                          />
+                            onValueChange={(value) => field.onChange(value)}
+                            aria-labelledby="checkout-courier-modality-label"
+                            aria-describedby={
+                              form.formState.errors.courierModality
+                                ? "checkout-courier-modality-error"
+                                : undefined
+                            }
+                            className="grid grid-cols-2 gap-3"
+                          >
+                            {modalities.some(
+                              (m) => m.modality === "AGENCY",
+                            ) && (
+                              <RadioCard
+                                value="AGENCY"
+                                aria-label={t("courierModalityAgency")}
+                              >
+                                <Store aria-hidden="true" className="size-5" />
+                                <span className="pr-6 text-sm font-semibold">
+                                  {t("courierModalityAgency")}
+                                </span>
+                                <RadioCardIndicator>
+                                  <Check
+                                    aria-hidden="true"
+                                    className="size-3"
+                                    strokeWidth={3}
+                                  />
+                                </RadioCardIndicator>
+                              </RadioCard>
+                            )}
+                            {modalities.some((m) => m.modality === "HOME") && (
+                              <RadioCard
+                                value="HOME"
+                                aria-label={t("courierModalityHome")}
+                              >
+                                <Home aria-hidden="true" className="size-5" />
+                                <span className="pr-6 text-sm font-semibold">
+                                  {t("courierModalityHome")}
+                                </span>
+                                <RadioCardIndicator>
+                                  <Check
+                                    aria-hidden="true"
+                                    className="size-3"
+                                    strokeWidth={3}
+                                  />
+                                </RadioCardIndicator>
+                              </RadioCard>
+                            )}
+                          </RadioCardGroup>
                         )}
                       />
-                    )}
-                  </FormField>
-                );
-              })()}
-          </div>
-        )}
-
-        {deliveryMethodType === "COURIER" && (
-          <div className="flex flex-col gap-3">
-            {couriers.length > 0 && (
-              <FormField
-                id="checkout-courier-name"
-                label={t("courierSelectLabel")}
-                error={formErrorMessage(
-                  form.formState.errors.courierName,
-                  t("courierSelectRequired"),
-                )}
-              >
-                {(props) => (
-                  <select
-                    {...props}
-                    className={inputClassName}
-                    value={courierName}
-                    onChange={(e) => {
-                      form.setValue("courierName", e.target.value, {
-                        shouldValidate: true,
-                      });
-                      form.setValue("courierModality", "", {
-                        shouldValidate: true,
-                      });
-                    }}
-                  >
-                    <option value="">{t("courierSelectPlaceholder")}</option>
-                    {couriers.map((c) => (
-                      <option key={c.name} value={c.name}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </FormField>
-            )}
-
-            {courierName &&
-              (() => {
-                const courier = couriers.find((c) => c.name === courierName);
-                const modalities = courier?.modalities ?? [];
-                if (modalities.length === 0) return null;
-                return (
-                  <div className="flex flex-col gap-2">
-                    <h3
-                      id="checkout-courier-modality-label"
-                      className="text-sm font-semibold text-foreground"
-                    >
-                      {t("courierModalityLabel")}
-                    </h3>
-                    <Controller
-                      control={form.control}
-                      name="courierModality"
-                      render={({ field }) => (
-                        <RadioCardGroup
-                          name={field.name}
-                          value={field.value}
-                          onValueChange={(value) => field.onChange(value)}
-                          aria-labelledby="checkout-courier-modality-label"
-                          aria-describedby={
-                            form.formState.errors.courierModality
-                              ? "checkout-courier-modality-error"
-                              : undefined
-                          }
-                          className="grid grid-cols-2 gap-3"
+                      {form.formState.errors.courierModality && (
+                        <p
+                          id="checkout-courier-modality-error"
+                          role="alert"
+                          className="text-sm text-error-foreground"
                         >
-                          {modalities.some((m) => m.modality === "AGENCY") && (
-                            <RadioCard
-                              value="AGENCY"
-                              aria-label={t("courierModalityAgency")}
-                            >
-                              <Store aria-hidden="true" className="size-5" />
-                              <span className="pr-6 text-sm font-semibold">
-                                {t("courierModalityAgency")}
-                              </span>
-                              <RadioCardIndicator>
-                                <Check
-                                  aria-hidden="true"
-                                  className="size-3"
-                                  strokeWidth={3}
-                                />
-                              </RadioCardIndicator>
-                            </RadioCard>
-                          )}
-                          {modalities.some((m) => m.modality === "HOME") && (
-                            <RadioCard
-                              value="HOME"
-                              aria-label={t("courierModalityHome")}
-                            >
-                              <Home aria-hidden="true" className="size-5" />
-                              <span className="pr-6 text-sm font-semibold">
-                                {t("courierModalityHome")}
-                              </span>
-                              <RadioCardIndicator>
-                                <Check
-                                  aria-hidden="true"
-                                  className="size-3"
-                                  strokeWidth={3}
-                                />
-                              </RadioCardIndicator>
-                            </RadioCard>
-                          )}
-                        </RadioCardGroup>
+                          {t("courierModalityRequired")}
+                        </p>
                       )}
-                    />
-                    {form.formState.errors.courierModality && (
-                      <p
-                        id="checkout-courier-modality-error"
-                        role="alert"
-                        className="text-sm text-error-foreground"
-                      >
-                        {t("courierModalityRequired")}
-                      </p>
-                    )}
-                  </div>
-                );
-              })()}
+                    </div>
+                  );
+                })()}
 
-            <h3 className="text-sm font-semibold text-foreground">
-              {t("shippingAddressLabel")}
-            </h3>
+              <h3 className="text-sm font-semibold text-foreground">
+                {t("shippingAddressLabel")}
+              </h3>
 
-            {courierModality === "AGENCY" && (
-              <FormField
-                id="checkout-shipping-agency"
-                label={t("shippingAgencyNamePlaceholder")}
-                error={formErrorMessage(
-                  form.formState.errors.shippingAgencyName,
-                  t("courierAgencyNameRequired"),
-                )}
-              >
-                {(props) => (
-                  <input
-                    {...props}
-                    placeholder={t("shippingAgencyNamePlaceholder")}
-                    className={inputClassName}
-                    {...form.register("shippingAgencyName")}
-                  />
-                )}
-              </FormField>
-            )}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <FormField
-                id="checkout-shipping-recipient-name"
-                label={t("shippingRecipientNamePlaceholder")}
-                error={formErrorMessage(
-                  form.formState.errors.shippingRecipientName,
-                  t("shippingRecipientNameRequired"),
-                )}
-              >
-                {(props) => (
-                  <input
-                    {...props}
-                    autoComplete="given-name"
-                    placeholder={t("shippingRecipientNamePlaceholder")}
-                    className={inputClassName}
-                    {...form.register("shippingRecipientName")}
-                  />
-                )}
-              </FormField>
-              <FormField
-                id="checkout-shipping-recipient-surnames"
-                label={t("shippingRecipientSurnamesPlaceholder")}
-              >
-                {(props) => (
-                  <input
-                    {...props}
-                    autoComplete="family-name"
-                    placeholder={t("shippingRecipientSurnamesPlaceholder")}
-                    className={inputClassName}
-                    {...form.register("shippingRecipientSurnames")}
-                  />
-                )}
-              </FormField>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <FormField
-                id="checkout-shipping-document-type"
-                label={t("shippingDocumentTypePlaceholder")}
-              >
-                {(props) => (
-                  <select
-                    {...props}
-                    className={inputClassName}
-                    {...form.register("shippingDocumentType")}
-                  >
-                    <option value="">
-                      {t("shippingDocumentTypePlaceholder")}
-                    </option>
-                    <option value="DNI">DNI</option>
-                    <option value="CE">Carnet de Extranjería</option>
-                    <option value="RUC">RUC</option>
-                    <option value="PASSPORT">Pasaporte</option>
-                  </select>
-                )}
-              </FormField>
-              <FormField
-                id="checkout-shipping-document-number"
-                label={t("shippingDocumentNumberPlaceholder")}
-              >
-                {(props) => (
-                  <input
-                    {...props}
-                    inputMode="numeric"
-                    placeholder={t("shippingDocumentNumberPlaceholder")}
-                    className={inputClassName}
-                    {...form.register("shippingDocumentNumber")}
-                  />
-                )}
-              </FormField>
-            </div>
-
-            <FormField
-              id="checkout-shipping-phone"
-              label={t("shippingPhonePlaceholder")}
-              error={formErrorMessage(
-                form.formState.errors.shippingPhone,
-                t("shippingPhoneRequired"),
-              )}
-            >
-              {(props) => (
-                <input
-                  {...props}
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="tel"
-                  placeholder={t("shippingPhonePlaceholder")}
-                  className={inputClassName}
-                  {...form.register("shippingPhone")}
-                />
-              )}
-            </FormField>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <FormField
-                id="checkout-shipping-department"
-                label={t("shippingDepartmentPlaceholder")}
-              >
-                {(props) => (
-                  <input
-                    {...props}
-                    autoComplete="address-level1"
-                    placeholder={t("shippingDepartmentPlaceholder")}
-                    className={inputClassName}
-                    {...form.register("shippingDepartment")}
-                  />
-                )}
-              </FormField>
-              <FormField
-                id="checkout-shipping-province"
-                label={t("shippingProvincePlaceholder")}
-              >
-                {(props) => (
-                  <input
-                    {...props}
-                    placeholder={t("shippingProvincePlaceholder")}
-                    className={inputClassName}
-                    {...form.register("shippingProvince")}
-                  />
-                )}
-              </FormField>
-              <FormField
-                id="checkout-shipping-district"
-                label={t("shippingDistrictPlaceholder")}
-              >
-                {(props) => (
-                  <input
-                    {...props}
-                    autoComplete="address-level2"
-                    placeholder={t("shippingDistrictPlaceholder")}
-                    className={inputClassName}
-                    {...form.register("shippingDistrict")}
-                  />
-                )}
-              </FormField>
-            </div>
-
-            {courierModality === "HOME" && (
-              <>
+              {courierModality === "AGENCY" && (
                 <FormField
-                  id="checkout-shipping-line1"
-                  label={t("shippingLine1Placeholder")}
+                  id="checkout-shipping-agency"
+                  label={t("shippingAgencyNamePlaceholder")}
                   error={formErrorMessage(
-                    form.formState.errors.shippingLine1,
-                    t("shippingAddressRequired"),
+                    form.formState.errors.shippingAgencyName,
+                    t("courierAgencyNameRequired"),
                   )}
                 >
                   {(props) => (
                     <input
                       {...props}
-                      autoComplete="street-address"
-                      placeholder={t("shippingLine1Placeholder")}
+                      placeholder={t("shippingAgencyNamePlaceholder")}
                       className={inputClassName}
-                      {...form.register("shippingLine1")}
+                      {...form.register("shippingAgencyName")}
                     />
                   )}
                 </FormField>
-
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <FormField
-                    id="checkout-shipping-city"
-                    label={t("shippingCityPlaceholder")}
-                    error={formErrorMessage(
-                      form.formState.errors.shippingCity,
-                      t("shippingCityRequired"),
-                    )}
-                  >
-                    {(props) => (
-                      <input
-                        {...props}
-                        autoComplete="address-level2"
-                        placeholder={t("shippingCityPlaceholder")}
-                        className={inputClassName}
-                        {...form.register("shippingCity")}
-                      />
-                    )}
-                  </FormField>
-                  <FormField
-                    id="checkout-shipping-region"
-                    label={t("shippingRegionPlaceholder")}
-                  >
-                    {(props) => (
-                      <input
-                        {...props}
-                        autoComplete="address-level1"
-                        placeholder={t("shippingRegionPlaceholder")}
-                        className={inputClassName}
-                        {...form.register("shippingRegion")}
-                      />
-                    )}
-                  </FormField>
-                </div>
+              )}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <FormField
-                  id="checkout-shipping-reference"
-                  label={t("shippingReferencePlaceholder")}
+                  id="checkout-shipping-recipient-name"
+                  label={t("shippingRecipientNamePlaceholder")}
+                  error={formErrorMessage(
+                    form.formState.errors.shippingRecipientName,
+                    t("shippingRecipientNameRequired"),
+                  )}
                 >
                   {(props) => (
                     <input
                       {...props}
-                      placeholder={t("shippingReferencePlaceholder")}
+                      autoComplete="given-name"
+                      placeholder={t("shippingRecipientNamePlaceholder")}
                       className={inputClassName}
-                      {...form.register("shippingReference")}
+                      {...form.register("shippingRecipientName")}
                     />
                   )}
                 </FormField>
-              </>
-            )}
-          </div>
-        )}
-
-        {paymentMethods.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <h2
-              id="checkout-payment-method-label"
-              className="text-sm font-semibold text-foreground"
-            >
-              {t("paymentMethodLabel")}
-            </h2>
-            <Controller
-              control={form.control}
-              name="paymentMethod"
-              render={({ field }) => (
-                <RadioCardGroup
-                  name={field.name}
-                  value={field.value}
-                  onValueChange={(value) => field.onChange(value)}
-                  aria-labelledby="checkout-payment-method-label"
-                  aria-describedby={
-                    form.formState.errors.paymentMethod
-                      ? "checkout-payment-method-error"
-                      : undefined
-                  }
-                  className="grid grid-cols-2 gap-3"
+                <FormField
+                  id="checkout-shipping-recipient-surnames"
+                  label={t("shippingRecipientSurnamesPlaceholder")}
+                  error={formErrorMessage(
+                    form.formState.errors.shippingRecipientSurnames,
+                    t("shippingRecipientSurnamesRequired"),
+                  )}
                 >
-                  {paymentMethods.map((method) => (
-                    <RadioCard
-                      key={method.method}
-                      value={method.method}
-                      aria-label={paymentLabels[method.method] ?? method.method}
+                  {(props) => (
+                    <input
+                      {...props}
+                      autoComplete="family-name"
+                      placeholder={t("shippingRecipientSurnamesPlaceholder")}
+                      className={inputClassName}
+                      {...form.register("shippingRecipientSurnames")}
+                    />
+                  )}
+                </FormField>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <FormField
+                  id="checkout-shipping-document-type"
+                  label={t("shippingDocumentTypePlaceholder")}
+                  error={formErrorMessage(
+                    form.formState.errors.shippingDocumentType,
+                    t("shippingDocumentRequired"),
+                  )}
+                >
+                  {(props) => (
+                    <select
+                      {...props}
+                      className={inputClassName}
+                      {...form.register("shippingDocumentType")}
                     >
-                      {PAYMENT_METHOD_ICONS[method.method]}
+                      <option value="">
+                        {t("shippingDocumentTypePlaceholder")}
+                      </option>
+                      <option value="DNI">DNI</option>
+                      <option value="CE">Carnet de Extranjería</option>
+                      <option value="RUC">RUC</option>
+                      <option value="PASSPORT">Pasaporte</option>
+                    </select>
+                  )}
+                </FormField>
+                <FormField
+                  id="checkout-shipping-document-number"
+                  label={t("shippingDocumentNumberPlaceholder")}
+                  error={formErrorMessage(
+                    form.formState.errors.shippingDocumentNumber,
+                    t("shippingDocumentInvalid"),
+                  )}
+                >
+                  {(props) => (
+                    <input
+                      {...props}
+                      inputMode="numeric"
+                      placeholder={t("shippingDocumentNumberPlaceholder")}
+                      className={inputClassName}
+                      {...form.register("shippingDocumentNumber")}
+                    />
+                  )}
+                </FormField>
+              </div>
+
+              <FormField
+                id="checkout-shipping-phone"
+                label={t("shippingPhonePlaceholder")}
+                error={formErrorMessage(
+                  form.formState.errors.shippingPhone,
+                  t("shippingPhoneInvalid"),
+                )}
+              >
+                {(props) => (
+                  <input
+                    {...props}
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    placeholder={t("shippingPhonePlaceholder")}
+                    className={inputClassName}
+                    {...form.register("shippingPhone")}
+                  />
+                )}
+              </FormField>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <FormField
+                  id="checkout-shipping-department"
+                  label={t("shippingDepartmentPlaceholder")}
+                  error={formErrorMessage(
+                    form.formState.errors.shippingDepartment,
+                    t("shippingDepartmentRequired"),
+                  )}
+                >
+                  {(props) => (
+                    <input
+                      {...props}
+                      autoComplete="address-level1"
+                      placeholder={t("shippingDepartmentPlaceholder")}
+                      className={inputClassName}
+                      {...form.register("shippingDepartment", {
+                        onChange: () => {
+                          form.setValue("shippingProvince", "");
+                          form.setValue("shippingDistrict", "");
+                        },
+                      })}
+                    />
+                  )}
+                </FormField>
+                <FormField
+                  id="checkout-shipping-province"
+                  label={t("shippingProvincePlaceholder")}
+                  error={formErrorMessage(
+                    form.formState.errors.shippingProvince,
+                    t("shippingProvinceRequired"),
+                  )}
+                >
+                  {(props) => (
+                    <input
+                      {...props}
+                      placeholder={t("shippingProvincePlaceholder")}
+                      className={inputClassName}
+                      disabled={!shippingDepartment.trim()}
+                      {...form.register("shippingProvince", {
+                        onChange: () => form.setValue("shippingDistrict", ""),
+                      })}
+                    />
+                  )}
+                </FormField>
+                <FormField
+                  id="checkout-shipping-district"
+                  label={t("shippingDistrictPlaceholder")}
+                  error={formErrorMessage(
+                    form.formState.errors.shippingDistrict,
+                    t("shippingDistrictRequired"),
+                  )}
+                >
+                  {(props) => (
+                    <input
+                      {...props}
+                      autoComplete="address-level2"
+                      placeholder={t("shippingDistrictPlaceholder")}
+                      className={inputClassName}
+                      disabled={!shippingProvince.trim()}
+                      {...form.register("shippingDistrict")}
+                    />
+                  )}
+                </FormField>
+              </div>
+
+              {courierModality === "HOME" && (
+                <>
+                  <FormField
+                    id="checkout-shipping-line1"
+                    label={t("shippingLine1Placeholder")}
+                    error={formErrorMessage(
+                      form.formState.errors.shippingLine1,
+                      t("shippingAddressRequired"),
+                    )}
+                  >
+                    {(props) => (
+                      <input
+                        {...props}
+                        autoComplete="street-address"
+                        placeholder={t("shippingLine1Placeholder")}
+                        className={inputClassName}
+                        {...form.register("shippingLine1")}
+                      />
+                    )}
+                  </FormField>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <FormField
+                      id="checkout-shipping-city"
+                      label={t("shippingCityPlaceholder")}
+                      error={formErrorMessage(
+                        form.formState.errors.shippingCity,
+                        t("shippingCityRequired"),
+                      )}
+                    >
+                      {(props) => (
+                        <input
+                          {...props}
+                          autoComplete="address-level2"
+                          placeholder={t("shippingCityPlaceholder")}
+                          className={inputClassName}
+                          {...form.register("shippingCity")}
+                        />
+                      )}
+                    </FormField>
+                    <FormField
+                      id="checkout-shipping-region"
+                      label={t("shippingRegionPlaceholder")}
+                    >
+                      {(props) => (
+                        <input
+                          {...props}
+                          autoComplete="address-level1"
+                          placeholder={t("shippingRegionPlaceholder")}
+                          className={inputClassName}
+                          {...form.register("shippingRegion")}
+                        />
+                      )}
+                    </FormField>
+                  </div>
+                  <FormField
+                    id="checkout-shipping-reference"
+                    label={t("shippingReferencePlaceholder")}
+                  >
+                    {(props) => (
+                      <input
+                        {...props}
+                        placeholder={t("shippingReferencePlaceholder")}
+                        className={inputClassName}
+                        {...form.register("shippingReference")}
+                      />
+                    )}
+                  </FormField>
+                </>
+              )}
+            </div>
+          )}
+        </section>
+
+        <section className="flex flex-col gap-5 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
+          {paymentMethods.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <h2
+                id="checkout-payment-method-label"
+                className="text-sm font-semibold text-foreground"
+              >
+                {t("paymentMethodLabel")}
+              </h2>
+              <Controller
+                control={form.control}
+                name="paymentMethod"
+                render={({ field }) => (
+                  <RadioCardGroup
+                    name={field.name}
+                    value={field.value}
+                    onValueChange={(value) => field.onChange(value)}
+                    aria-labelledby="checkout-payment-method-label"
+                    aria-describedby={
+                      form.formState.errors.paymentMethod
+                        ? "checkout-payment-method-error"
+                        : undefined
+                    }
+                    className="grid grid-cols-2 gap-3"
+                  >
+                    {paymentMethods.map((method) => (
+                      <RadioCard
+                        key={method.method}
+                        value={method.method}
+                        aria-label={
+                          paymentLabels[method.method] ?? method.method
+                        }
+                      >
+                        {PAYMENT_METHOD_ICONS[method.method]}
+                        <span className="pr-6 text-sm font-semibold">
+                          {paymentLabels[method.method] ?? method.method}
+                        </span>
+                        <RadioCardIndicator>
+                          <Check
+                            aria-hidden="true"
+                            className="size-3"
+                            strokeWidth={3}
+                          />
+                        </RadioCardIndicator>
+                      </RadioCard>
+                    ))}
+                  </RadioCardGroup>
+                )}
+              />
+              {form.formState.errors.paymentMethod && (
+                <p
+                  id="checkout-payment-method-error"
+                  role="alert"
+                  className="text-sm text-error-foreground"
+                >
+                  {t("paymentMethodLabel")}
+                </p>
+              )}
+            </div>
+          )}
+
+          {partialAvailable && (
+            <div className="flex flex-col gap-2">
+              <h2
+                id="checkout-payment-type-label"
+                className="text-sm font-semibold text-foreground"
+              >
+                {t("paymentTypeLabel")}
+              </h2>
+              <Controller
+                control={form.control}
+                name="paymentType"
+                render={({ field }) => (
+                  <RadioCardGroup
+                    name={field.name}
+                    value={field.value}
+                    onValueChange={(value) => field.onChange(value)}
+                    aria-labelledby="checkout-payment-type-label"
+                    className="grid grid-cols-2 gap-3"
+                  >
+                    <RadioCard value="FULL" aria-label={t("paymentTypeFull")}>
+                      <Wallet aria-hidden="true" className="size-5" />
                       <span className="pr-6 text-sm font-semibold">
-                        {paymentLabels[method.method] ?? method.method}
+                        {t("paymentTypeFull")}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {t("paymentTypeFullSubtext")}
                       </span>
                       <RadioCardIndicator>
                         <Check
@@ -1119,181 +1388,64 @@ export function CheckoutForm({
                         />
                       </RadioCardIndicator>
                     </RadioCard>
-                  ))}
-                </RadioCardGroup>
-              )}
-            />
-            {form.formState.errors.paymentMethod && (
-              <p
-                id="checkout-payment-method-error"
-                role="alert"
-                className="text-sm text-error-foreground"
+                    <RadioCard
+                      value="PARTIAL"
+                      aria-label={t("paymentTypePartial")}
+                    >
+                      <Percent aria-hidden="true" className="size-5" />
+                      <span className="pr-6 text-sm font-semibold">
+                        {t("paymentTypePartial")}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {t("paymentTypePartialSubtext", {
+                          percent: depositPercent,
+                        })}
+                      </span>
+                      <RadioCardIndicator>
+                        <Check
+                          aria-hidden="true"
+                          className="size-3"
+                          strokeWidth={3}
+                        />
+                      </RadioCardIndicator>
+                    </RadioCard>
+                  </RadioCardGroup>
+                )}
+              />
+            </div>
+          )}
+
+          {paymentMethod && selectedPaymentConfig && (
+            <PaymentMethodDetails method={selectedPaymentConfig} />
+          )}
+
+          {paymentMethod &&
+            paymentMethod !== "CASH" &&
+            selectedMethodConfigured && (
+              <FormField
+                id="checkout-payment-proof"
+                label={t("paymentProofUploadLabel")}
+                error={formErrorMessage(
+                  form.formState.errors.paymentProof,
+                  t("paymentProofRequired"),
+                )}
               >
-                {t("paymentMethodLabel")}
-              </p>
+                {(props) => (
+                  <Controller
+                    control={form.control}
+                    name="paymentProof"
+                    render={({ field }) => (
+                      <PaymentProofUpload
+                        {...props}
+                        value={field.value as File | null}
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
+                )}
+              </FormField>
             )}
-          </div>
-        )}
-
-        {partialAvailable && (
-          <div className="flex flex-col gap-2">
-            <h2
-              id="checkout-payment-type-label"
-              className="text-sm font-semibold text-foreground"
-            >
-              {t("paymentTypeLabel")}
-            </h2>
-            <Controller
-              control={form.control}
-              name="paymentType"
-              render={({ field }) => (
-                <RadioCardGroup
-                  name={field.name}
-                  value={field.value}
-                  onValueChange={(value) => field.onChange(value)}
-                  aria-labelledby="checkout-payment-type-label"
-                  className="grid grid-cols-2 gap-3"
-                >
-                  <RadioCard value="FULL" aria-label={t("paymentTypeFull")}>
-                    <Wallet aria-hidden="true" className="size-5" />
-                    <span className="pr-6 text-sm font-semibold">
-                      {t("paymentTypeFull")}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {t("paymentTypeFullSubtext")}
-                    </span>
-                    <RadioCardIndicator>
-                      <Check
-                        aria-hidden="true"
-                        className="size-3"
-                        strokeWidth={3}
-                      />
-                    </RadioCardIndicator>
-                  </RadioCard>
-                  <RadioCard
-                    value="PARTIAL"
-                    aria-label={t("paymentTypePartial")}
-                  >
-                    <Percent aria-hidden="true" className="size-5" />
-                    <span className="pr-6 text-sm font-semibold">
-                      {t("paymentTypePartial")}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {t("paymentTypePartialSubtext", {
-                        percent: depositPercent,
-                      })}
-                    </span>
-                    <RadioCardIndicator>
-                      <Check
-                        aria-hidden="true"
-                        className="size-3"
-                        strokeWidth={3}
-                      />
-                    </RadioCardIndicator>
-                  </RadioCard>
-                </RadioCardGroup>
-              )}
-            />
-          </div>
-        )}
-
-        {paymentMethod && selectedPaymentConfig && (
-          <PaymentMethodDetails method={selectedPaymentConfig} />
-        )}
-
-        {paymentMethod &&
-          paymentMethod !== "CASH" &&
-          selectedMethodConfigured && (
-            <FormField
-              id="checkout-payment-proof"
-              label={t("paymentProofUploadLabel")}
-              error={formErrorMessage(
-                form.formState.errors.paymentProof,
-                t("paymentProofRequired"),
-              )}
-            >
-              {(props) => (
-                <Controller
-                  control={form.control}
-                  name="paymentProof"
-                  render={({ field }) => (
-                    <PaymentProofUpload
-                      {...props}
-                      value={field.value as File | null}
-                      onChange={field.onChange}
-                    />
-                  )}
-                />
-              )}
-            </FormField>
-          )}
-
-        <FormField
-          id="checkout-customer-name"
-          label={t("namePlaceholder")}
-          error={formErrorMessage(
-            form.formState.errors.customerName,
-            t("namePlaceholder"),
-          )}
-        >
-          {(props) => (
-            <input
-              {...props}
-              autoComplete="name"
-              placeholder={t("namePlaceholder")}
-              className={inputClassName}
-              {...form.register("customerName")}
-            />
-          )}
-        </FormField>
-
-        <FormField
-          id="checkout-customer-phone"
-          label={t("phonePlaceholder")}
-          error={formErrorMessage(
-            form.formState.errors.customerPhone,
-            t("phonePlaceholder"),
-          )}
-        >
-          {(props) => (
-            <Controller
-              control={form.control}
-              name="customerPhone"
-              render={({ field }) => (
-                <PhoneInput
-                  {...props}
-                  value={field.value}
-                  onChange={field.onChange}
-                  placeholder={t("phonePlaceholder")}
-                  selectClassName={inputClassName}
-                  inputClassName={inputClassName}
-                  countryId="checkout-customer-phone-country"
-                />
-              )}
-            />
-          )}
-        </FormField>
-
-        <FormField
-          id="checkout-customer-email"
-          label={t("emailPlaceholder")}
-          error={formErrorMessage(
-            form.formState.errors.customerEmail,
-            t("invalidEmail"),
-          )}
-        >
-          {(props) => (
-            <input
-              {...props}
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              placeholder={t("emailPlaceholder")}
-              className={inputClassName}
-              {...form.register("customerEmail")}
-            />
-          )}
-        </FormField>
+        </section>
       </div>
 
       {submitCheckout.error && (
@@ -1314,30 +1466,8 @@ export function CheckoutForm({
 
       <button
         type="submit"
-        disabled={
-          submitCheckout.isPending ||
-          !customerPhone ||
-          !deliveryMethodType ||
-          mixedCurrencies ||
-          (deliveryMethodType === "PICKUP" &&
-            points.length > 0 &&
-            !pickupPointId) ||
-          dateBlocking ||
-          (paymentMethods.length > 0 && !paymentMethod) ||
-          (paymentMethod !== "" &&
-            paymentMethod !== "CASH" &&
-            selectedMethodConfigured &&
-            !paymentProof) ||
-          (deliveryMethodType === "COURIER" &&
-            (!courierName ||
-              !courierModality ||
-              !shippingRecipientName ||
-              !shippingPhone ||
-              (courierModality === "HOME" &&
-                (!shippingLine1 || !shippingCity)) ||
-              (courierModality === "AGENCY" && !shippingAgencyName)))
-        }
-        className="store-theme-primary-button flex flex-col items-center gap-1 rounded-xl px-5 py-4 transition disabled:opacity-60"
+        disabled={!canSubmit}
+        className="store-theme-primary-button flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl px-5 py-4 transition disabled:opacity-60 lg:hidden"
       >
         <span className="flex items-center gap-2 text-sm font-semibold">
           <MessageCircle className="size-4" />

@@ -21,6 +21,7 @@ export const checkoutApi = {
       points: pickupPoints.points,
       weekday: pickupPoints.weekday,
       paymentMethods,
+      store,
       storePaymentInstructions: store.paymentInstructions,
       couriers: courierRows,
     };
