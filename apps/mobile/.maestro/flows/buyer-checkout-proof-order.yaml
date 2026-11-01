@@ -26,8 +26,8 @@ appId: com.biasmarket.mobile
 - tapOn: ${PICKUP_LABEL}
 - tapOn: ${PAYMENT_METHOD}
 - tapOn: "^(?:Choose image|Elegir imagen)$"
-- tapOn:
-    point: "25%, 35%"
+- tapOn: ".*payment-proof.*"
+- assertVisible: "^(?:Proof ready: .*payment-proof.*|Comprobante listo: .*payment-proof.*)$"
 - tapOn: "^(?:Place order|Confirmar pedido)$"
 - assertVisible: "^(?:Order placed|Pedido enviado)$"
 - tapOn: "^(?:View my order|Ver mi pedido)$"
