@@ -20,7 +20,6 @@ import {
   setMobileBearerToken,
   setUnauthorizedHandler,
 } from "./api-client";
-import { registerBuyerPushToken, unregisterBuyerPushToken } from "./push-token";
 import { useMobileI18n } from "../../i18n/mobile-i18n";
 
 type SessionStatus = "loading" | "authenticated" | "unauthenticated";
@@ -62,31 +61,35 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
     return result;
   }, []);
 
-  const clearLocalSession = useCallback(async (authorization?: string) => {
-    if (authorization && !isCurrentMobileAuthorization(authorization)) return;
-    const generation = ++sessionGeneration.current;
-    try {
-      await runStorageOperation(deleteBuyerSession);
-    } catch (cause) {
-      if (
-        generation === sessionGeneration.current &&
-        (!authorization || isCurrentMobileAuthorization(authorization))
-      ) {
-        setError("auth.sessionDeleteFailed");
+  const clearLocalSession = useCallback(
+    async (authorization?: string) => {
+      if (authorization && !isCurrentMobileAuthorization(authorization)) return;
+      const generation = ++sessionGeneration.current;
+      try {
+        await runStorageOperation(deleteBuyerSession);
+      } catch (cause) {
+        if (
+          generation === sessionGeneration.current &&
+          (!authorization || isCurrentMobileAuthorization(authorization))
+        ) {
+          setError("auth.sessionDeleteFailed");
+        }
+        throw cause;
       }
-      throw cause;
-    }
-    if (
-      generation !== sessionGeneration.current ||
-      (authorization && !isCurrentMobileAuthorization(authorization))
-    ) return;
-    queryClient.removeQueries({ queryKey: ["private-payment-proof"] });
-    queryClient.removeQueries({ queryKey: ["buyer"] });
-    queryClient.removeQueries({ queryKey: ["buyer-order"] });
-    setMobileBearerToken(null);
-    setStoreSlug(null);
-    setStatus("unauthenticated");
-  }, [queryClient, runStorageOperation]);
+      if (
+        generation !== sessionGeneration.current ||
+        (authorization && !isCurrentMobileAuthorization(authorization))
+      )
+        return;
+      queryClient.removeQueries({ queryKey: ["private-payment-proof"] });
+      queryClient.removeQueries({ queryKey: ["buyer"] });
+      queryClient.removeQueries({ queryKey: ["buyer-order"] });
+      setMobileBearerToken(null);
+      setStoreSlug(null);
+      setStatus("unauthenticated");
+    },
+    [queryClient, runStorageOperation],
+  );
 
   useEffect(() => {
     const generation = ++sessionGeneration.current;
@@ -119,6 +122,9 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
     async (slug: string, phone: string, password: string) => {
       const generation = ++sessionGeneration.current;
       setError(null);
+      queryClient.removeQueries({ queryKey: ["buyer"] });
+      queryClient.removeQueries({ queryKey: ["buyer-order"] });
+      queryClient.removeQueries({ queryKey: ["private-payment-proof"] });
       const response = await customerAuth.login(
         slug,
         { phone, password },
@@ -139,14 +145,10 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
         throw new Error(t("auth.sessionChanged"));
       }
       setMobileBearerToken(token);
-      void registerBuyerPushToken(
-        slug,
-        t("notifications.defaultChannel"),
-      ).catch(() => undefined);
       setStoreSlug(slug);
       setStatus("authenticated");
     },
-    [runStorageOperation, t],
+    [queryClient, runStorageOperation, t],
   );
 
   const register = useCallback(
@@ -170,13 +172,6 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
 
   const signOut = useCallback(async () => {
     setError(null);
-    if (storeSlug) {
-      try {
-        await unregisterBuyerPushToken(storeSlug);
-      } catch {
-        /* local logout must still complete */
-      }
-    }
     await clearLocalSession();
   }, [clearLocalSession, storeSlug]);
 

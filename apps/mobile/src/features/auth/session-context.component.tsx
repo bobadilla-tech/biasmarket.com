@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Pressable, Text } from "react-native";
 
@@ -7,11 +13,6 @@ jest.mock("./session-storage.js", () => ({
   readBuyerSession: jest.fn(),
   writeBuyerSession: jest.fn(),
   deleteBuyerSession: jest.fn(),
-}));
-
-jest.mock("./push-token.js", () => ({
-  registerBuyerPushToken: jest.fn(),
-  unregisterBuyerPushToken: jest.fn(),
 }));
 
 jest.mock("@biasmarket/types", () => ({
@@ -29,10 +30,6 @@ import {
   readBuyerSession,
   writeBuyerSession,
 } from "./session-storage.js";
-import {
-  registerBuyerPushToken,
-  unregisterBuyerPushToken,
-} from "./push-token.js";
 import { MobileI18nProvider } from "../../i18n/mobile-i18n.js";
 import { BuyerSessionProvider, useBuyerSession } from "./session-context.js";
 import { configureMobileApiClient } from "./api-client.js";
@@ -40,8 +37,6 @@ import { configureMobileApiClient } from "./api-client.js";
 const mockRead = jest.mocked(readBuyerSession);
 const mockWrite = jest.mocked(writeBuyerSession);
 const mockRemove = jest.mocked(deleteBuyerSession);
-const mockRegisterPush = jest.mocked(registerBuyerPushToken);
-const mockUnregisterPush = jest.mocked(unregisterBuyerPushToken);
 const mockLogin = jest.mocked(customerAuth.login);
 
 function SessionProbe() {
@@ -50,7 +45,10 @@ function SessionProbe() {
   return (
     <>
       <Text testID="session-status">{status}</Text>
-      <Pressable testID="sign-in" onPress={() => void signIn("demo", "555", "password123")} />
+      <Pressable
+        testID="sign-in"
+        onPress={() => void signIn("demo", "555", "password123")}
+      />
       <Pressable testID="sign-out" onPress={() => void signOut()} />
     </>
   );
@@ -78,8 +76,6 @@ describe("buyer session lifecycle", () => {
     mockRead.mockResolvedValue(null);
     mockWrite.mockResolvedValue(undefined);
     mockRemove.mockResolvedValue(undefined);
-    mockRegisterPush.mockResolvedValue(undefined);
-    mockUnregisterPush.mockResolvedValue(undefined);
     mockLogin.mockResolvedValue({ ok: true, sessionToken: "buyer-token" });
     configureMobileApiClient();
   });
@@ -111,17 +107,14 @@ describe("buyer session lifecycle", () => {
       ),
     );
     expect(mockRemove).toHaveBeenCalledTimes(1);
-    expect(mockUnregisterPush).toHaveBeenCalledWith("demo");
   });
 
   it("clears SecureStore and session state when an authenticated request returns 401", async () => {
-    const fetchMock = jest
-      .spyOn(globalThis, "fetch")
-      .mockResolvedValue(
-        new Response(JSON.stringify({ message: "Unauthorized" }), {
-          status: 401,
-        }),
-      );
+    const fetchMock = jest.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ message: "Unauthorized" }), {
+        status: 401,
+      }),
+    );
     renderSession();
     await waitFor(() =>
       expect(screen.getByTestId("session-status").props.children).toBe(
@@ -146,9 +139,9 @@ describe("buyer session lifecycle", () => {
         "unauthenticated",
       ),
     );
-    expect(new Headers(fetchMock.mock.calls[0]?.[1]?.headers).get("Authorization")).toBe(
-      "Bearer buyer-token",
-    );
+    expect(
+      new Headers(fetchMock.mock.calls[0]?.[1]?.headers).get("Authorization"),
+    ).toBe("Bearer buyer-token");
     expect(mockRemove).toHaveBeenCalledTimes(1);
   });
 });
