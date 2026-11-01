@@ -1,9 +1,6 @@
 import { getInfoAsync } from "expo-file-system/legacy";
 import * as ImageManipulator from "expo-image-manipulator";
-import {
-  MAX_FILE_SIZE,
-  type ProofFileLike,
-} from "@biasmarket/validation";
+import { MAX_FILE_SIZE, type ProofFileLike } from "@biasmarket/validation";
 
 export async function compressPaymentProof(
   uri: string,
@@ -39,7 +36,8 @@ export async function compressPaymentProof(
 export function proofSelectionErrorKey(
   error: unknown,
 ): "checkout.proofCompressFailed" | "checkout.proofLoadFailed" {
-  return error instanceof Error && error.message === "checkout.proofCompressFailed"
+  return error instanceof Error &&
+    error.message === "checkout.proofCompressFailed"
     ? "checkout.proofCompressFailed"
     : "checkout.proofLoadFailed";
 }

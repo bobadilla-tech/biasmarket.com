@@ -149,12 +149,16 @@ test("binary fetch sends the bearer token and returns the private image bytes", 
     getAuthHeader: () => ({ Authorization: "Bearer buyer-token" }),
   });
 
-  const blob = await customFetchBlob("/stores/demo/account/orders/o1/payments/p1/image");
+  const blob = await customFetchBlob(
+    "/stores/demo/account/orders/o1/payments/p1/image",
+  );
 
   expect(await blob.text()).toBe("private proof");
   const init = requestOf(fetchFn);
   expect(init?.credentials).toBe("omit");
-  expect(new Headers(init?.headers).get("Authorization")).toBe("Bearer buyer-token");
+  expect(new Headers(init?.headers).get("Authorization")).toBe(
+    "Bearer buyer-token",
+  );
 });
 
 // The claim ticket is an httpOnly cookie set by this very request on the API

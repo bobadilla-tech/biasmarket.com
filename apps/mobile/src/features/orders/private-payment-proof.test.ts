@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { configureApiClient } from "@biasmarket/types";
-import { fetchPrivatePaymentProof, privatePaymentProofPath } from "./private-payment-proof";
+import {
+  fetchPrivatePaymentProof,
+  privatePaymentProofPath,
+} from "./private-payment-proof";
 
 class StubFileReader {
   result: string | ArrayBuffer | null = null;
@@ -35,14 +38,18 @@ describe("private buyer payment proof", () => {
       getAuthHeader: () => ({ Authorization: "Bearer buyer-token" }),
     });
 
-    const result = await fetchPrivatePaymentProof("shop", "order-1", "payment-1");
+    const result = await fetchPrivatePaymentProof(
+      "shop",
+      "order-1",
+      "payment-1",
+    );
 
     expect(result).toBe("data:image/jpeg;base64,cHJvb2Y=");
     expect(request.mock.calls[0][0]).toBe(
       "https://api.example.test/api/stores/shop/account/orders/order-1/payments/payment-1/image",
     );
-    expect(new Headers(request.mock.calls[0][1]?.headers).get("Authorization")).toBe(
-      "Bearer buyer-token",
-    );
+    expect(
+      new Headers(request.mock.calls[0][1]?.headers).get("Authorization"),
+    ).toBe("Bearer buyer-token");
   });
 });

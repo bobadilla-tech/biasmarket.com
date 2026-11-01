@@ -15,10 +15,7 @@ vi.mock("expo-image-manipulator", () => ({
   SaveFormat: mocks.saveFormat,
 }));
 
-import {
-  compressPaymentProof,
-  proofSelectionErrorKey,
-} from "./proof-image";
+import { compressPaymentProof, proofSelectionErrorKey } from "./proof-image";
 
 afterEach(() => vi.clearAllMocks());
 
@@ -54,9 +51,11 @@ describe("compressPaymentProof", () => {
   });
 
   it("fails with the localized key if every JPEG preset exceeds the upload limit", async () => {
-    mocks.manipulateAsync.mockImplementation(async (_uri, _actions, options) => ({
-      uri: `file://compressed-${String(options.compress)}.jpg`,
-    }));
+    mocks.manipulateAsync.mockImplementation(
+      async (_uri, _actions, options) => ({
+        uri: `file://compressed-${String(options.compress)}.jpg`,
+      }),
+    );
     mocks.getInfoAsync.mockResolvedValue({
       exists: true,
       size: MAX_FILE_SIZE + 1,
@@ -69,9 +68,9 @@ describe("compressPaymentProof", () => {
   });
 
   it("maps native errors to catalog keys instead of displaying platform text", () => {
-    expect(proofSelectionErrorKey(new Error("checkout.proofCompressFailed"))).toBe(
-      "checkout.proofCompressFailed",
-    );
+    expect(
+      proofSelectionErrorKey(new Error("checkout.proofCompressFailed")),
+    ).toBe("checkout.proofCompressFailed");
     expect(proofSelectionErrorKey(new Error("native platform error"))).toBe(
       "checkout.proofLoadFailed",
     );
