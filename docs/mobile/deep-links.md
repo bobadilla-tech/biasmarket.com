@@ -1,8 +1,9 @@
 # Mobile deep links
 
-The Expo app claims `https://biasmarket.com/store/*` on iOS and Android. Product
-URLs open the product screen, store URLs open that store's catalog, and buyer
-order URLs open the order screen. The web app remains the browser fallback.
+The Expo app claims localized product and buyer-order URLs on iOS and Android:
+`/{es,en}/store/:slug/product/:productId` and
+`/{es,en}/store/:slug/account/orders/:orderId`. These paths map to mobile
+product and order screens; other web URLs remain in the browser.
 
 The API association documents are served by Next.js at
 `/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json`.

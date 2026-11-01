@@ -4,19 +4,14 @@
     "slug": "biasmarket-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "platforms": [
-      "ios",
-      "android"
-    ],
+    "platforms": ["ios", "android"],
     "icon": "./assets/images/icon.png",
     "scheme": "biasmarket",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.biasmarket.mobile",
-      "associatedDomains": [
-        "applinks:biasmarket.com"
-      ]
+      "associatedDomains": ["applinks:biasmarket.com"]
     },
     "android": {
       "package": "com.biasmarket.mobile",
@@ -24,15 +19,27 @@
         {
           "action": "VIEW",
           "autoVerify": true,
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ],
+          "category": ["BROWSABLE", "DEFAULT"],
           "data": [
             {
               "scheme": "https",
               "host": "biasmarket.com",
-              "pathPrefix": "/store"
+              "pathPattern": "/es/store/.*/product/.*"
+            },
+            {
+              "scheme": "https",
+              "host": "biasmarket.com",
+              "pathPattern": "/en/store/.*/product/.*"
+            },
+            {
+              "scheme": "https",
+              "host": "biasmarket.com",
+              "pathPattern": "/es/store/.*/account/orders/.*"
+            },
+            {
+              "scheme": "https",
+              "host": "biasmarket.com",
+              "pathPattern": "/en/store/.*/account/orders/.*"
             }
           ]
         }
@@ -57,13 +64,6 @@
         }
       ],
       "expo-image",
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/icon.png",
-          "color": "#208AEF"
-        }
-      ],
       [
         "expo-image-picker",
         {

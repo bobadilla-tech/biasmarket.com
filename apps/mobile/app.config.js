@@ -35,7 +35,7 @@ module.exports = ({ config }) => {
 
   return {
     ...config,
-    runtimeVersion: { policy: "appVersion" },
+    runtimeVersion: { policy: "fingerprint" },
     updates: {
       ...config.updates,
       ...(projectId

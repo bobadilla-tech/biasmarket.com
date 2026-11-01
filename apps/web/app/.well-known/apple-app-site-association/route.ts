@@ -17,10 +17,13 @@ export function GET() {
           {
             appIDs: [`${teamId}.${bundleId}`],
             components: [
-              { "/": "/store/*/product/*", comment: "Product detail" },
               {
-                "/": "/store/*/account/orders/*",
-                comment: "Buyer order detail",
+                "/": "/*/store/*/product/*",
+                comment: "Localized product detail",
+              },
+              {
+                "/": "/*/store/*/account/orders/*",
+                comment: "Localized buyer order detail",
               },
             ],
           },
