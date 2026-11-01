@@ -151,6 +151,7 @@ test("binary fetch sends the bearer token and returns the private image bytes", 
 
   const blob = await customFetchBlob(
     "/stores/demo/account/orders/o1/payments/p1/image",
+    { headers: { "X-Request-Source": "checkout" } },
   );
 
   expect(await blob.text()).toBe("private proof");
@@ -159,6 +160,67 @@ test("binary fetch sends the bearer token and returns the private image bytes", 
   expect(new Headers(init?.headers).get("Authorization")).toBe(
     "Bearer buyer-token",
   );
+  expect(new Headers(init?.headers).get("X-Request-Source")).toBe("checkout");
+});
+
+test("binary fetch preserves API error messages and status codes", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      async (): Promise<Response> =>
+        new Response(JSON.stringify({ message: "Proof is unavailable" }), {
+          status: 403,
+        }),
+    ),
+  );
+  configureApiClient({ baseUrl });
+
+  await expect(customFetchBlob("/private-proof")).rejects.toMatchObject({
+    name: "ApiError",
+    message: "Proof is unavailable",
+    status: 403,
+  });
+});
+
+test("binary fetch uses the fallback for an invalid error body", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      async (): Promise<Response> => new Response("not-json", { status: 500 }),
+    ),
+  );
+  configureApiClient({ baseUrl });
+
+  await expect(
+    customFetchBlob("/private-proof", {
+      fallbackErrorMessage: "Could not load proof",
+    }),
+  ).rejects.toMatchObject({
+    name: "ApiError",
+    message: "Could not load proof",
+    status: 500,
+  });
+});
+
+test("binary fetch keeps a 401 error if session cleanup rejects", async () => {
+  const cleanup = vi.fn(async () => {
+    throw new Error("SecureStore unavailable");
+  });
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (): Promise<Response> => new Response(null, { status: 401 })),
+  );
+  configureApiClient({
+    baseUrl,
+    getAuthHeader: () => ({ Authorization: "Bearer expired-token" }),
+    onUnauthorized: cleanup,
+  });
+
+  await expect(customFetchBlob("/private-proof")).rejects.toMatchObject({
+    name: "ApiError",
+    status: 401,
+  });
+  expect(cleanup).toHaveBeenCalledWith("Bearer expired-token");
 });
 
 // The claim ticket is an httpOnly cookie set by this very request on the API
