@@ -4,8 +4,11 @@ import { PrismaService } from "../../../prisma/prisma.service.js";
 
 describe("AssistedOrderIdentityRetentionUseCase", () => {
   let useCase: AssistedOrderIdentityRetentionUseCase;
+  let storage: { deleteImage: Mock };
   let prisma: {
-    order: { findMany: Mock; updateMany: Mock; count: Mock };
+    order: { findMany: Mock; findUnique: Mock; updateMany: Mock; count: Mock };
+    orderPayment: { findMany: Mock; updateMany: Mock };
+    assistedOrderMediaDeletion: { findMany: Mock; deleteMany: Mock };
     customer: { findUnique: Mock; updateMany: Mock };
     auditLog: { create: Mock };
     $transaction: Mock;
@@ -16,6 +19,7 @@ describe("AssistedOrderIdentityRetentionUseCase", () => {
     prisma = {
       order: {
         findMany: vi.fn().mockResolvedValue([]),
+        findUnique: vi.fn().mockResolvedValue({ packedPhotoUrl: null }),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         count: vi.fn().mockResolvedValue(0),
       },
@@ -23,14 +27,24 @@ describe("AssistedOrderIdentityRetentionUseCase", () => {
         findUnique: vi.fn().mockResolvedValue(null),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
+      orderPayment: {
+        findMany: vi.fn().mockResolvedValue([]),
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+      },
+      assistedOrderMediaDeletion: {
+        findMany: vi.fn().mockResolvedValue([]),
+        deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
       auditLog: { create: vi.fn() },
       $executeRaw: vi.fn().mockResolvedValue(1),
       $transaction: vi.fn((callback: (tx: unknown) => unknown) =>
         callback(prisma),
       ),
     };
+    storage = { deleteImage: vi.fn().mockResolvedValue(undefined) };
     useCase = new AssistedOrderIdentityRetentionUseCase(
       prisma as unknown as PrismaService,
+      storage as never,
     );
   });
 
@@ -140,6 +154,22 @@ describe("AssistedOrderIdentityRetentionUseCase", () => {
     expect(JSON.stringify(prisma.auditLog.create.mock.calls)).not.toContain(
       "+51987654321",
     );
+  });
+
+  it("keeps failed media deletions queued for the next retention sweep", async () => {
+    const media = {
+      id: "deletion-1",
+      url: "https://cdn.biasmarket.com/private/proof.jpg",
+    };
+    prisma.assistedOrderMediaDeletion.findMany.mockResolvedValueOnce([media]);
+    storage.deleteImage.mockRejectedValueOnce(new Error("storage offline"));
+
+    await expect(useCase.eraseExpiredUnclaimedIdentities()).resolves.toEqual({
+      anonymized: 0,
+    });
+
+    expect(storage.deleteImage).toHaveBeenCalledWith(media.url);
+    expect(prisma.assistedOrderMediaDeletion.deleteMany).not.toHaveBeenCalled();
   });
 
   it("limits the scheduled cleanup to 90-day-old unclaimed assisted orders", async () => {
