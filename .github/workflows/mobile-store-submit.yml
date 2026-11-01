@@ -8,6 +8,14 @@ on:
         required: true
         type: choice
         options: [ios, android, all]
+      ios_build_id:
+        description: "EAS build ID for iOS (required for ios or all)"
+        required: false
+        type: string
+      android_build_id:
+        description: "EAS build ID for Android (required for android or all)"
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -21,6 +29,8 @@ jobs:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
       PLATFORM: ${{ inputs.platform }}
+      IOS_BUILD_ID: ${{ inputs.ios_build_id }}
+      ANDROID_BUILD_ID: ${{ inputs.android_build_id }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -41,4 +51,11 @@ jobs:
           test -n "$EAS_PROJECT_ID" || (echo "EAS_PROJECT_ID is required in mobile-production" && exit 1)
           npm install --global eas-cli
           cd apps/mobile
-          eas submit --platform "$PLATFORM" --profile production --latest --non-interactive
+          if [ "$PLATFORM" = "ios" ] || [ "$PLATFORM" = "all" ]; then
+            test -n "$IOS_BUILD_ID" || (echo "ios_build_id is required when submitting to iOS" && exit 1)
+            eas submit --platform ios --profile production --id "$IOS_BUILD_ID" --non-interactive
+          fi
+          if [ "$PLATFORM" = "android" ] || [ "$PLATFORM" = "all" ]; then
+            test -n "$ANDROID_BUILD_ID" || (echo "android_build_id is required when submitting to Android" && exit 1)
+            eas submit --platform android --profile production --id "$ANDROID_BUILD_ID" --non-interactive
+          fi
