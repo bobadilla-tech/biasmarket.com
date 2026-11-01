@@ -20,6 +20,15 @@ describe("Apple Universal Links association", () => {
     expect(body.applinks.details[0].appIDs).toEqual([
       "ABCDE12345.com.biasmarket.mobile",
     ]);
-    expect(body.applinks.details[0].components).toHaveLength(2);
+    const components = body.applinks.details[0].components;
+    expect(components.map((c: { "/"?: string }) => c["/"])).toEqual([
+      "/*/store/*/product/*/*",
+      "/*/store/*/product/",
+      "/*/store/*/product/*",
+      "/*/store/*/account/orders/*/*",
+      "/*/store/*/account/orders/",
+      "/*/store/*/account/orders/*",
+    ]);
+    expect(components.filter((c: { exclude?: boolean }) => c.exclude)).toHaveLength(4);
   });
 });

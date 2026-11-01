@@ -18,8 +18,28 @@ export function GET() {
             appIDs: [`${teamId}.${bundleId}`],
             components: [
               {
+                "/": "/*/store/*/product/*/*",
+                exclude: true,
+                comment: "Exclude extra path segments under product",
+              },
+              {
+                "/": "/*/store/*/product/",
+                exclude: true,
+                comment: "Exclude empty product id",
+              },
+              {
                 "/": "/*/store/*/product/*",
                 comment: "Localized product detail",
+              },
+              {
+                "/": "/*/store/*/account/orders/*/*",
+                exclude: true,
+                comment: "Exclude extra path segments under orders",
+              },
+              {
+                "/": "/*/store/*/account/orders/",
+                exclude: true,
+                comment: "Exclude empty order id",
               },
               {
                 "/": "/*/store/*/account/orders/*",
