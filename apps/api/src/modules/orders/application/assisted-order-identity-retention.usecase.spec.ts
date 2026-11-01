@@ -4,8 +4,15 @@ import { PrismaService } from "../../../prisma/prisma.service.js";
 
 describe("AssistedOrderIdentityRetentionUseCase", () => {
   let useCase: AssistedOrderIdentityRetentionUseCase;
+  let storage: { deleteImage: Mock };
   let prisma: {
-    order: { findMany: Mock; updateMany: Mock; count: Mock };
+    order: { findMany: Mock; findFirst: Mock; updateMany: Mock; count: Mock };
+    orderPayment: { findMany: Mock; updateMany: Mock };
+    assistedOrderMediaDeletion: {
+      findMany: Mock;
+      deleteMany: Mock;
+      updateMany: Mock;
+    };
     customer: { findUnique: Mock; updateMany: Mock };
     auditLog: { create: Mock };
     $transaction: Mock;
@@ -16,11 +23,21 @@ describe("AssistedOrderIdentityRetentionUseCase", () => {
     prisma = {
       order: {
         findMany: vi.fn().mockResolvedValue([]),
+        findFirst: vi.fn().mockResolvedValue({ packedPhotoUrl: null }),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         count: vi.fn().mockResolvedValue(0),
       },
       customer: {
         findUnique: vi.fn().mockResolvedValue(null),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+      orderPayment: {
+        findMany: vi.fn().mockResolvedValue([]),
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+      },
+      assistedOrderMediaDeletion: {
+        findMany: vi.fn().mockResolvedValue([]),
+        deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       auditLog: { create: vi.fn() },
@@ -29,8 +46,10 @@ describe("AssistedOrderIdentityRetentionUseCase", () => {
         callback(prisma),
       ),
     };
+    storage = { deleteImage: vi.fn().mockResolvedValue(undefined) };
     useCase = new AssistedOrderIdentityRetentionUseCase(
       prisma as unknown as PrismaService,
+      storage as never,
     );
   });
 
@@ -140,6 +159,54 @@ describe("AssistedOrderIdentityRetentionUseCase", () => {
     expect(JSON.stringify(prisma.auditLog.create.mock.calls)).not.toContain(
       "+51987654321",
     );
+  });
+
+  it("keeps failed media deletions queued for the next retention sweep", async () => {
+    const media = {
+      id: "deletion-1",
+      url: "https://cdn.biasmarket.com/private/proof.jpg",
+    };
+    prisma.assistedOrderMediaDeletion.findMany.mockResolvedValueOnce([media]);
+    storage.deleteImage.mockRejectedValueOnce(new Error("storage offline"));
+
+    await expect(useCase.eraseExpiredUnclaimedIdentities()).resolves.toEqual({
+      anonymized: 0,
+    });
+
+    expect(storage.deleteImage).toHaveBeenCalledWith(media.url);
+    expect(prisma.assistedOrderMediaDeletion.deleteMany).not.toHaveBeenCalled();
+    expect(prisma.assistedOrderMediaDeletion.updateMany).toHaveBeenCalledWith({
+      where: { id: media.id },
+      data: { attempts: { increment: 1 } },
+    });
+  });
+
+  it("orders the media queue by attempts so failing rows cannot starve new ones", async () => {
+    prisma.assistedOrderMediaDeletion.findMany.mockResolvedValueOnce([
+      { id: "new", url: "https://cdn.biasmarket.com/private/new.jpg" },
+    ]);
+
+    await useCase.eraseExpiredUnclaimedIdentities();
+
+    expect(prisma.assistedOrderMediaDeletion.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [{ attempts: "asc" }, { createdAt: "asc" }, { id: "asc" }],
+        take: 500,
+      }),
+    );
+    expect(prisma.assistedOrderMediaDeletion.deleteMany).toHaveBeenCalledWith({
+      where: { id: "new" },
+    });
+  });
+
+  it("does not run the media sweep inside a buyer erasure request", async () => {
+    await useCase.eraseOnBuyerRequest(
+      "store-1",
+      "+51987654321",
+      "operator-1",
+      "PRIV-1",
+    );
+    expect(prisma.assistedOrderMediaDeletion.findMany).not.toHaveBeenCalled();
   });
 
   it("limits the scheduled cleanup to 90-day-old unclaimed assisted orders", async () => {

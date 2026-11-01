@@ -2,10 +2,13 @@ import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { normalizePhone, validatePhone } from "@biasmarket/utils/phone-country";
 import type { Prisma } from "@biasmarket/db";
 import { PrismaService } from "../../../prisma/prisma.service.js";
+import { StorageService } from "../../../storage/storage.service.js";
 import { lockAssistedCustomer } from "./assisted-customer.js";
 
 export const ASSISTED_ORDER_IDENTITY_RETENTION_DAYS = 90;
 const RETENTION_BATCH_SIZE = 500;
+// Keeps the scheduled sweep's HTTP call well under client header timeouts.
+const MEDIA_DELETION_BUDGET_MS = 60_000;
 
 type ErasureCause = "BUYER_REQUEST" | "RETENTION";
 type RequestAuditContext = { operatorId: string; requestReference: string };
@@ -16,7 +19,10 @@ export class AssistedOrderIdentityRetentionUseCase {
     AssistedOrderIdentityRetentionUseCase.name,
   );
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: StorageService,
+  ) {}
 
   // Called by an authorized support operator after verifying the buyer's
   // request out-of-band. The phone is only used to find records and is never
@@ -79,6 +85,9 @@ export class AssistedOrderIdentityRetentionUseCase {
         anonymized++;
       }
     }
+
+    // Media objects are already queued durably by eraseOrder; the scheduled
+    // sweep deletes them so this interactive request never waits on S3.
 
     // Keep the store contact available while any matched order is still active.
     // Its Customer row is shared by all order types for this store and phone.
@@ -205,7 +214,45 @@ export class AssistedOrderIdentityRetentionUseCase {
         );
       }
     }
+    await this.processPendingMediaDeletions();
     return { anonymized };
+  }
+
+  // Rows that keep failing are pushed behind untried ones (attempts ASC), so a
+  // permanently failing head of the queue cannot starve newer rows. The loop
+  // is bounded by batch size and a time budget; leftovers wait for next sweep.
+  private async processPendingMediaDeletions() {
+    const pending = await this.prisma.assistedOrderMediaDeletion.findMany({
+      orderBy: [{ attempts: "asc" }, { createdAt: "asc" }, { id: "asc" }],
+      take: RETENTION_BATCH_SIZE,
+      select: { id: true, url: true },
+    });
+    const deadline = Date.now() + MEDIA_DELETION_BUDGET_MS;
+    for (const item of pending) {
+      if (Date.now() > deadline) break;
+      try {
+        await this.storage.deleteImage(item.url);
+        await this.prisma.assistedOrderMediaDeletion.deleteMany({
+          where: { id: item.id },
+        });
+      } catch {
+        // Keep the retry row. Neither the storage URL nor provider error is
+        // copied into logs; the next scheduled sweep retries this object.
+        this.logger.error(
+          `Assisted-order media deletion failed; deletionId=${item.id}`,
+        );
+        try {
+          await this.prisma.assistedOrderMediaDeletion.updateMany({
+            where: { id: item.id },
+            data: { attempts: { increment: 1 } },
+          });
+        } catch {
+          this.logger.error(
+            `Assisted-order media deletion attempt not recorded; deletionId=${item.id}`,
+          );
+        }
+      }
+    }
   }
 
   private async eraseOrder(
@@ -227,6 +274,21 @@ export class AssistedOrderIdentityRetentionUseCase {
   ): Promise<boolean> {
     const erasedAt = new Date();
     return this.prisma.$transaction(async (tx) => {
+      const payments = await tx.orderPayment.findMany({
+        where: { orderId: order.id, storeId: order.storeId },
+        select: { imageUrl: true },
+      });
+      const mediaUrls = [
+        ...payments.flatMap((payment) =>
+          payment.imageUrl ? [payment.imageUrl] : [],
+        ),
+      ];
+      const currentOrder = await tx.order.findFirst({
+        where: { id: order.id, storeId: order.storeId },
+        select: { packedPhotoUrl: true },
+      });
+      if (currentOrder?.packedPhotoUrl)
+        mediaUrls.push(currentOrder.packedPhotoUrl);
       const orderPhone =
         order.customerPhoneNormalized ??
         (order.customerPhone?.trim()
@@ -308,11 +370,27 @@ export class AssistedOrderIdentityRetentionUseCase {
           deliveryDetails: {},
           buyerAccountId: null,
           accessTokenHash: null,
+          trackingNumber: null,
+          trackingUrl: null,
+          packedPhotoUrl: null,
+          paymentRejectionReason: null,
+          cancellationReason: null,
           accessTokenRevokedAt: order.accessTokenRevokedAt ?? erasedAt,
           buyerIdentityErasedAt: erasedAt,
         },
       });
       if (changed.count === 0) return false;
+
+      await tx.orderPayment.updateMany({
+        where: { orderId: order.id, storeId: order.storeId },
+        data: { imageUrl: null, note: null, voidReason: null },
+      });
+      if (mediaUrls.length > 0) {
+        await tx.assistedOrderMediaDeletion.createMany({
+          data: [...new Set(mediaUrls)].map((url) => ({ url })),
+          skipDuplicates: true,
+        });
+      }
 
       if (
         customerForErasure &&
@@ -348,6 +426,14 @@ export class AssistedOrderIdentityRetentionUseCase {
               "deliveryDetails",
               "buyerAccountId",
               "accessTokenHash",
+              "trackingNumber",
+              "trackingUrl",
+              "packedPhotoUrl",
+              "paymentRejectionReason",
+              "cancellationReason",
+              "OrderPayment.imageUrl",
+              "OrderPayment.note",
+              "OrderPayment.voidReason",
             ],
           },
         },

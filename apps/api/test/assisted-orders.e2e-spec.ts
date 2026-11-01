@@ -4,6 +4,7 @@ import request from "supertest";
 import { createHash, randomInt, randomUUID } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import { PrismaService } from "../src/prisma/prisma.service.js";
+import { StorageService } from "../src/storage/storage.service.js";
 import { AssistedOrderIdentityRetentionUseCase } from "../src/modules/orders/application/assisted-order-identity-retention.usecase.js";
 import { AppModule } from "./../src/app.module.js";
 import {
@@ -127,6 +128,7 @@ describe("assisted orders (e2e)", () => {
       Boolean,
     )) {
       await prisma.orderItem.deleteMany({ where: { storeId: id } });
+      await prisma.orderPayment.deleteMany({ where: { storeId: id } });
       await deleteOrders(prisma, { storeId: id });
       await prisma.auditLog.deleteMany({ where: { storeId: id } });
       await prisma.customerStoreLink.deleteMany({ where: { storeId: id } });
@@ -845,6 +847,89 @@ describe("assisted orders (e2e)", () => {
         where: { id: second.body.order.id },
       });
       expect(unlinked.buyerIdentityErasedAt).toBeNull();
+    });
+
+    it("erases terminal data only after 90 days and deletes proof media", async () => {
+      const oldOrderResponse = await post(
+        body({
+          customerPhone: `+519${String(randomInt(1e8)).padStart(8, "0")}`,
+        }),
+      ).expect(201);
+      const recentOrderResponse = await post(
+        body({
+          customerPhone: `+519${String(randomInt(1e8)).padStart(8, "0")}`,
+        }),
+      ).expect(201);
+      const oldOrderId = oldOrderResponse.body.order.id as string;
+      const recentOrderId = recentOrderResponse.body.order.id as string;
+      const now = new Date();
+      const oldImageUrl = "https://cdn.biasmarket.com/payments/proof-old.jpg";
+      const packedPhotoUrl =
+        "https://cdn.biasmarket.com/payments/packed-old.jpg";
+
+      await prisma.order.update({
+        where: { id: oldOrderId },
+        data: {
+          status: "CANCELLED",
+          closedAt: new Date(now.getTime() - 91 * 24 * 60 * 60 * 1000),
+          cancellationReason: "buyer address and phone",
+          paymentRejectionReason: "buyer name mismatch",
+          trackingNumber: "TRACK-PRIVATE-123",
+          trackingUrl: "https://carrier.example/private?name=buyer",
+          packedPhotoUrl,
+        },
+      });
+      await prisma.order.update({
+        where: { id: recentOrderId },
+        data: {
+          status: "CANCELLED",
+          closedAt: new Date(now.getTime() - 89 * 24 * 60 * 60 * 1000),
+        },
+      });
+      await prisma.orderPayment.create({
+        data: {
+          orderId: oldOrderId,
+          storeId,
+          amount: 10,
+          currency: "PEN",
+          source: "BUYER_SUBMITTED",
+          reviewStatus: "REJECTED",
+          imageUrl: oldImageUrl,
+          note: "buyer phone +51987654321",
+        },
+      });
+
+      const storage = app.get(StorageService);
+      const deleteImage = vi
+        .spyOn(storage, "deleteImage")
+        .mockResolvedValue(undefined);
+      const retention = app.get(AssistedOrderIdentityRetentionUseCase);
+      const result = await retention.eraseExpiredUnclaimedIdentities(now);
+
+      expect(result).toEqual({ anonymized: 1 });
+      expect(deleteImage).toHaveBeenCalledWith(oldImageUrl);
+      expect(deleteImage).toHaveBeenCalledWith(packedPhotoUrl);
+      expect(await prisma.assistedOrderMediaDeletion.count()).toBe(0);
+      const erasedOrder = await prisma.order.findUniqueOrThrow({
+        where: { id: oldOrderId },
+      });
+      expect(erasedOrder).toMatchObject({
+        customerPhone: "",
+        cancellationReason: null,
+        paymentRejectionReason: null,
+        trackingNumber: null,
+        trackingUrl: null,
+        packedPhotoUrl: null,
+      });
+      const erasedPayment = await prisma.orderPayment.findFirstOrThrow({
+        where: { orderId: oldOrderId },
+      });
+      expect(erasedPayment).toMatchObject({ imageUrl: null, note: null });
+      const recentOrder = await prisma.order.findUniqueOrThrow({
+        where: { id: recentOrderId },
+      });
+      expect(recentOrder.buyerIdentityErasedAt).toBeNull();
+      deleteImage.mockRestore();
     });
   });
 });
