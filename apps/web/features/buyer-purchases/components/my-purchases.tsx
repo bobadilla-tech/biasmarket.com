@@ -1,9 +1,11 @@
 "use client";
 
 import { ChevronRight } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import type { GlobalAccountOrderResponseDto } from "@biasmarket/types";
+import { apiClient } from "@/lib/api-client";
 import { Link } from "@/i18n/navigation";
 import { OrderStatusBadge } from "@/features/orders";
 import { CustomerLoginForm } from "@/features/customer-auth";
@@ -46,6 +48,17 @@ export function MyPurchases({ claimCode }: { claimCode?: string }) {
   const orders = useGlobalOrders(Boolean(profile.data));
   const logout = useGlobalLogout();
   const queryClient = useQueryClient();
+  const deleteAccount = useMutation({
+    mutationFn: async () => {
+      await apiClient.globalAccount.deleteMe();
+      await apiClient.globalAccount.logout().catch(() => undefined);
+    },
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: ["customer-auth"] });
+      queryClient.removeQueries({ queryKey: globalAccountKeys.orders });
+      queryClient.removeQueries({ queryKey: globalAccountKeys.profile });
+    },
+  });
 
   if (profile.isPending) return <LoadingState />;
 
@@ -92,7 +105,24 @@ export function MyPurchases({ claimCode }: { claimCode?: string }) {
         >
           {t("signOut")}
         </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (window.confirm(t("deleteConfirmation"))) {
+              deleteAccount.mutate();
+            }
+          }}
+          disabled={deleteAccount.isPending}
+          className="rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-60"
+        >
+          {deleteAccount.isPending ? t("deletingAccount") : t("deleteAccount")}
+        </button>
       </div>
+      {deleteAccount.isError ? (
+        <p role="alert" className="text-sm text-red-700">
+          {t("deleteAccountFailed")}
+        </p>
+      ) : null}
 
       {orders.isPending ? (
         <LoadingState />

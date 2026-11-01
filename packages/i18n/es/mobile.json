@@ -148,9 +148,11 @@
     "proofReady": "Comprobante listo: {filename}",
     "proofInstructions": "Adjunta una imagen del comprobante. Se comprimirá antes de subirla.",
     "permissionRequired": "Necesitamos permiso para acceder a tus imágenes.",
+    "proofRecoveryFailed": "No se pudo recuperar el comprobante seleccionado. Elígelo de nuevo.",
     "proofLoadFailed": "No se pudo cargar el comprobante.",
     "storeInvalid": "La tienda no es válida.",
     "submitFailed": "No se pudo completar la compra.",
+    "paymentConfigFailed": "No se pudieron cargar las opciones de pago. Inténtalo de nuevo antes de confirmar tu pedido.",
     "proofCompressFailed": "No se pudo comprimir el comprobante por debajo de 5 MB.",
     "confirmOrder": "Confirmar pedido",
     "submitting": "Enviando pedido…",
@@ -225,10 +227,13 @@
   "account": {
     "buyerAccount": "Cuenta de comprador",
     "language": "Idioma de la aplicación",
-    "greeting": "Hola, {name}"
-  },
-  "notifications": {
-    "defaultChannel": "Actualizaciones de pedidos"
+    "greeting": "Hola, {name}",
+    "deleteAction": "Eliminar cuenta",
+    "deleting": "Eliminando cuenta…",
+    "deleteTitle": "¿Eliminar tu cuenta?",
+    "deleteConfirmation": "Se eliminarán tu perfil de comprador, direcciones guardadas y credenciales. La tienda puede conservar los pedidos por motivos de transacción y entrega.",
+    "deleteFailedTitle": "No se eliminó la cuenta",
+    "deleteFailed": "No pudimos eliminar tu cuenta. Revisa tu conexión e inténtalo de nuevo."
   },
   "ios": {
     "NSPhotoLibraryUsageDescription": "Bias Market necesita acceso a tus fotos para adjuntar un comprobante de pago.",

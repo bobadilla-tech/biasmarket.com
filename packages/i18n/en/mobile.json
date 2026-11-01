@@ -148,9 +148,11 @@
     "proofReady": "Proof ready: {filename}",
     "proofInstructions": "Attach an image of your payment receipt. It will be compressed before upload.",
     "permissionRequired": "We need permission to access your photos.",
+    "proofRecoveryFailed": "The selected receipt could not be recovered. Please select it again.",
     "proofLoadFailed": "Could not load the payment receipt.",
     "storeInvalid": "The store is invalid.",
     "submitFailed": "Could not complete your purchase.",
+    "paymentConfigFailed": "Payment options could not be loaded. Try again before placing your order.",
     "proofCompressFailed": "Could not compress the payment receipt below 5 MB.",
     "confirmOrder": "Place order",
     "submitting": "Submitting order…",
@@ -225,10 +227,13 @@
   "account": {
     "buyerAccount": "Buyer account",
     "language": "App language",
-    "greeting": "Hello, {name}"
-  },
-  "notifications": {
-    "defaultChannel": "Order updates"
+    "greeting": "Hello, {name}",
+    "deleteAction": "Delete account",
+    "deleting": "Deleting account…",
+    "deleteTitle": "Delete your account?",
+    "deleteConfirmation": "Your buyer profile, saved addresses, and sign-in credentials will be deleted. Store order records may be retained for transaction and fulfillment requirements.",
+    "deleteFailedTitle": "Account not deleted",
+    "deleteFailed": "We could not delete your account. Check your connection and try again."
   },
   "ios": {
     "NSPhotoLibraryUsageDescription": "Bias Market needs access to your photos so you can attach a payment receipt.",

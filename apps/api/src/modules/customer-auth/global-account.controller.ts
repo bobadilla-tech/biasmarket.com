@@ -1,5 +1,6 @@
 import {
   Body,
+  Delete,
   Controller,
   Get,
   Headers,
@@ -72,6 +73,16 @@ export class GlobalAccountController {
       session.buyerAccountId,
       orderId,
     );
+  }
+
+  @Public()
+  @ApiBearerAuth("bearer")
+  @UseGuards(CustomerSessionGuard, OriginGuard)
+  @Delete("me")
+  deleteMe(
+    @CustomerSession() session: { buyerAccountId: string },
+  ): Promise<{ ok: true }> {
+    return this.customerAuth.deleteGlobalAccount(session.buyerAccountId);
   }
 
   // Global (no-store) phone + password login, for the My purchases page. Same

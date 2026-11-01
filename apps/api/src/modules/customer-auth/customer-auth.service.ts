@@ -611,6 +611,42 @@ export class CustomerAuthService {
     };
   }
 
+  async deleteGlobalAccount(buyerAccountId: string): Promise<{ ok: true }> {
+    await this.prisma.$transaction(async (tx) => {
+      const account = await tx.buyerAccount.findUnique({
+        where: { id: buyerAccountId },
+        select: { id: true },
+      });
+      if (!account) return;
+
+      // Keep store order rows as merchant transaction records, but detach
+      // them from the reusable buyer identity. Saved addresses and device
+      // tokens are buyer-owned and are removed with the credentials.
+      await tx.order.updateMany({
+        where: { buyerAccountId },
+        data: { buyerAccountId: null },
+      });
+      await tx.address.deleteMany({ where: { buyerAccountId } });
+      await tx.customerStoreLink.deleteMany({ where: { buyerAccountId } });
+      await tx.buyerAccount.update({
+        where: { id: buyerAccountId },
+        data: {
+          phone: null,
+          passwordHash: null,
+          passwordVersion: { increment: 1 },
+          email: null,
+          emailVerified: false,
+          googleSub: null,
+          pendingEmail: null,
+          pendingPhone: null,
+          name: null,
+        },
+      });
+    });
+
+    return { ok: true };
+  }
+
   // Raw scan by `buyerAccountId` rather than joining through
   // `CustomerStoreLink` — an order can exist without an active link (e.g. a
   // since-removed link), and the intent here is "every order this account

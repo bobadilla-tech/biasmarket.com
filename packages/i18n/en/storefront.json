@@ -491,6 +491,10 @@
     "storeAccount": "Store account",
     "pendingBalance": "Pending: {currency} {amount}",
     "signOut": "Sign out",
+    "deleteAccount": "Delete account",
+    "deletingAccount": "Deleting account…",
+    "deleteConfirmation": "Delete your buyer account? Your reusable profile and saved addresses will be removed. Store order records may be retained.",
+    "deleteAccountFailed": "We couldn't delete your account. Please try again.",
     "claimErrors": {
       "already_claimed": "This order was already saved to another account. If you think this is a mistake, message the store.",
       "not_claimable": "This order can't be saved yet. Open your order link again once the payment is validated.",
