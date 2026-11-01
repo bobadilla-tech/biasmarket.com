@@ -257,7 +257,7 @@ export class AssistedOrderIdentityRetentionUseCase {
     const erasedAt = new Date();
     return this.prisma.$transaction(async (tx) => {
       const payments = await tx.orderPayment.findMany({
-        where: { orderId: order.id },
+        where: { orderId: order.id, storeId: order.storeId },
         select: { imageUrl: true },
       });
       const mediaUrls = [
@@ -265,8 +265,8 @@ export class AssistedOrderIdentityRetentionUseCase {
           payment.imageUrl ? [payment.imageUrl] : [],
         ),
       ];
-      const currentOrder = await tx.order.findUnique({
-        where: { id: order.id },
+      const currentOrder = await tx.order.findFirst({
+        where: { id: order.id, storeId: order.storeId },
         select: { packedPhotoUrl: true },
       });
       if (currentOrder?.packedPhotoUrl)
@@ -364,8 +364,8 @@ export class AssistedOrderIdentityRetentionUseCase {
       if (changed.count === 0) return false;
 
       await tx.orderPayment.updateMany({
-        where: { orderId: order.id },
-        data: { imageUrl: null, note: null },
+        where: { orderId: order.id, storeId: order.storeId },
+        data: { imageUrl: null, note: null, voidReason: null },
       });
       if (mediaUrls.length > 0) {
         await tx.assistedOrderMediaDeletion.createMany({
@@ -415,6 +415,7 @@ export class AssistedOrderIdentityRetentionUseCase {
               "cancellationReason",
               "OrderPayment.imageUrl",
               "OrderPayment.note",
+              "OrderPayment.voidReason",
             ],
           },
         },

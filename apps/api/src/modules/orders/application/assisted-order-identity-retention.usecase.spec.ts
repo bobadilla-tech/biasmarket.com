@@ -6,7 +6,7 @@ describe("AssistedOrderIdentityRetentionUseCase", () => {
   let useCase: AssistedOrderIdentityRetentionUseCase;
   let storage: { deleteImage: Mock };
   let prisma: {
-    order: { findMany: Mock; findUnique: Mock; updateMany: Mock; count: Mock };
+    order: { findMany: Mock; findFirst: Mock; updateMany: Mock; count: Mock };
     orderPayment: { findMany: Mock; updateMany: Mock };
     assistedOrderMediaDeletion: { findMany: Mock; deleteMany: Mock };
     customer: { findUnique: Mock; updateMany: Mock };
@@ -19,7 +19,7 @@ describe("AssistedOrderIdentityRetentionUseCase", () => {
     prisma = {
       order: {
         findMany: vi.fn().mockResolvedValue([]),
-        findUnique: vi.fn().mockResolvedValue({ packedPhotoUrl: null }),
+        findFirst: vi.fn().mockResolvedValue({ packedPhotoUrl: null }),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         count: vi.fn().mockResolvedValue(0),
       },
