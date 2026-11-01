@@ -64,7 +64,7 @@
     "lint": "node ../../scripts/lint-changed-files.mjs apps/mobile && eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:components": "jest --config jest.config.cjs --runInBand"
+    "test:components": "jest --config jest.config.cjs --runInBand",
     "test:cov": "vitest run --coverage"
   }
 }
