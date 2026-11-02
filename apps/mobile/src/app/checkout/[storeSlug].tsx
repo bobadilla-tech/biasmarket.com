@@ -117,7 +117,7 @@ export default function CheckoutScreen() {
         if (!result || !("assets" in result)) return;
         const asset = result.assets?.[0];
         if (!asset) return;
-        const proof = await compressPaymentProof(asset.uri, asset.width);
+        const proof = await compressPaymentProof(asset.uri);
         if (active) setField("paymentProof", proof);
       })
       .catch(() => {
@@ -194,6 +194,7 @@ export default function CheckoutScreen() {
   const paymentMethods = paymentQuery.data ?? EMPTY_PAYMENT_METHODS;
   const couriers = courierQuery.data ?? [];
   const viewState = checkoutViewState({
+    selectedDeliveryMethodType: form.deliveryMethodType,
     deliveryQuery,
     pickupQuery,
     paymentQuery,
@@ -290,10 +291,7 @@ export default function CheckoutScreen() {
         ? await ImagePicker.launchCameraAsync({ mediaTypes: ["images"] })
         : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"] });
       if (result.canceled || !result.assets[0]) return;
-      const proof = await compressPaymentProof(
-        result.assets[0].uri,
-        result.assets[0].width,
-      );
+      const proof = await compressPaymentProof(result.assets[0].uri);
       setField("paymentProof", proof);
     } catch (error) {
       setSubmitError(t(proofSelectionErrorKey(error)));

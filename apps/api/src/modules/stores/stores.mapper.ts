@@ -8,6 +8,8 @@ export interface StoreRow {
   name: string;
   slug: string;
   locale: string;
+  countryCode: string | null;
+  buyerRegister: string;
   ownerId: string;
   themeConfig: unknown;
   logoUrl: string | null;
@@ -39,11 +41,16 @@ export interface StoreRow {
 // bookkeeping columns started showing up on `POST /stores` and tripped the
 // e2e schema assertion. Keep this a real whitelist.
 export function toStoreDto(row: StoreRow): StoreResponseDto {
+  const buyerRegister = ["auto", "tuteo", "voseo"].includes(row.buyerRegister)
+    ? (row.buyerRegister as StoreResponseDto["buyerRegister"])
+    : "auto";
   return {
     id: row.id,
     name: row.name,
     slug: row.slug,
     locale: row.locale,
+    countryCode: row.countryCode,
+    buyerRegister,
     ownerId: row.ownerId,
     themeConfig: row.themeConfig as Record<string, unknown>,
     logoUrl: row.logoUrl,

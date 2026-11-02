@@ -51,4 +51,23 @@ describe("product image cap", () => {
       (await errorsFor(ReorderImagesDto, { images: urls(7) }))[0]?.property,
     ).toBe("images");
   });
+
+  it("accepts a boolean shipping flag and rejects other values", async () => {
+    for (const [name, cls, base] of [
+      ["create", CreateProductDto, validBase],
+      ["update", UpdateProductDto, {}],
+    ] as const) {
+      expect(
+        await errorsFor(cls, { ...base, shipsInternationally: false }),
+      ).toEqual([]);
+      const errors = await errorsFor(cls, {
+        ...base,
+        shipsInternationally: "false",
+      });
+      expect(
+        errors.map(({ property }) => property),
+        name,
+      ).toContain("shipsInternationally");
+    }
+  });
 });

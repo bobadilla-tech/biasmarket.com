@@ -221,12 +221,12 @@ It also clears buyer free-text fields (`OrderPayment.note`, cancellation and
 payment-rejection reasons, tracking number/URL), removes proof-image references,
 and queues payment-proof and packed-photo objects for deletion. Object deletion
 is retried by later sweeps until it succeeds. Failed deletions are logged only
-by their stable queue ID.
-If no other live order uses the store contact (`Customer`), the contact is
-anonymized too: its phone becomes a non-phone marker so the row and its foreign
-keys stay valid. Each erasure writes the audit rows above with the cause
-(`RETENTION` or `BUYER_REQUEST`) and the list of erased field names. Money,
-items and event history remain; they hold no identity.
+by their stable queue ID. If no other live order uses the store contact
+(`Customer`), the contact is anonymized too: its phone becomes a non-phone
+marker so the row and its foreign keys stay valid. Each erasure writes the audit
+rows above with the cause (`RETENTION` or `BUYER_REQUEST`) and the list of
+erased field names. Money, items and event history remain; they hold no
+identity.
 
 Claimed orders are not touched by the sweep: they belong to the buyer's account
 and are erased only when the buyer asks. A buyer request is handled by a support

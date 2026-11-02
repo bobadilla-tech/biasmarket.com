@@ -9,12 +9,17 @@ export const PHONE_COUNTRIES: PhoneCountry[] = [
   { iso: "PE", name: "Peru", dialCode: "+51", flag: "🇵🇪" },
   { iso: "MX", name: "Mexico", dialCode: "+52", flag: "🇲🇽" },
   { iso: "AR", name: "Argentina", dialCode: "+54", flag: "🇦🇷" },
+  { iso: "CR", name: "Costa Rica", dialCode: "+506", flag: "🇨🇷" },
   { iso: "CO", name: "Colombia", dialCode: "+57", flag: "🇨🇴" },
   { iso: "CL", name: "Chile", dialCode: "+56", flag: "🇨🇱" },
   { iso: "BR", name: "Brazil", dialCode: "+55", flag: "🇧🇷" },
   { iso: "EC", name: "Ecuador", dialCode: "+593", flag: "🇪🇨" },
   { iso: "BO", name: "Bolivia", dialCode: "+591", flag: "🇧🇴" },
   { iso: "PY", name: "Paraguay", dialCode: "+595", flag: "🇵🇾" },
+  { iso: "NI", name: "Nicaragua", dialCode: "+505", flag: "🇳🇮" },
+  { iso: "HN", name: "Honduras", dialCode: "+504", flag: "🇭🇳" },
+  { iso: "SV", name: "El Salvador", dialCode: "+503", flag: "🇸🇻" },
+  { iso: "GT", name: "Guatemala", dialCode: "+502", flag: "🇬🇹" },
   { iso: "UY", name: "Uruguay", dialCode: "+598", flag: "🇺🇾" },
   { iso: "VE", name: "Venezuela", dialCode: "+58", flag: "🇻🇪" },
   { iso: "US", name: "United States", dialCode: "+1", flag: "🇺🇸" },
@@ -60,7 +65,7 @@ function explicitInternational(value: string): string | null {
   return null;
 }
 
-function countryForInternational(e164: string): PhoneCountry | null {
+export function countryForInternational(e164: string): PhoneCountry | null {
   return (
     COUNTRIES_BY_DIAL_CODE_LENGTH_DESC.find(
       (country) =>
@@ -68,6 +73,12 @@ function countryForInternational(e164: string): PhoneCountry | null {
         e164.length > country.dialCode.length,
     ) ?? null
   );
+}
+
+export function countryForBuyerPhone(value: string): string | null {
+  const international = explicitInternational(value);
+  if (international === null || international.startsWith("+1")) return null;
+  return countryForInternational(international)?.iso ?? null;
 }
 
 // Buyers type phone numbers in whatever shape they like across checkout,
@@ -104,6 +115,11 @@ export function normalizePhone(value: string): string {
 // "00" prefix that matches no supported dial code is rejected instead.
 const NATIONAL_LENGTH: Record<string, { min: number; max: number }> = {
   PE: { min: 9, max: 9 },
+  CR: { min: 8, max: 8 },
+  NI: { min: 8, max: 8 },
+  HN: { min: 8, max: 8 },
+  SV: { min: 8, max: 8 },
+  GT: { min: 8, max: 8 },
   MX: { min: 10, max: 10 },
   AR: { min: 10, max: 11 },
   CO: { min: 10, max: 10 },

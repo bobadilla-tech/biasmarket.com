@@ -8,6 +8,7 @@ test("accepts a valid profile payload", () => {
     paymentInstructions: "Bank transfer to account X",
     defaultCurrency: "PEN",
     locale: "es",
+    buyerRegister: "auto",
   });
   expect(result.success).toBe(true);
 });
@@ -19,6 +20,7 @@ test("rejects an empty name", () => {
     paymentInstructions: "",
     defaultCurrency: "PEN",
     locale: "es",
+    buyerRegister: "auto",
   });
   expect(result.success).toBe(false);
 });
@@ -30,6 +32,7 @@ test("allows empty payment instructions", () => {
     paymentInstructions: "",
     defaultCurrency: "PEN",
     locale: "es",
+    buyerRegister: "auto",
   });
   expect(result.success).toBe(true);
 });
@@ -41,6 +44,7 @@ test("accepts valid locale and social link URLs", () => {
     paymentInstructions: "",
     defaultCurrency: "PEN",
     locale: "en",
+    buyerRegister: "voseo",
     instagramUrl: "https://instagram.com/mystore",
     facebookUrl: "https://facebook.com/mystore",
     tiktokUrl: "",
@@ -67,6 +71,7 @@ test("validates public location and owner name up to 60 characters", () => {
     paymentInstructions: "",
     defaultCurrency: "PEN",
     locale: "es",
+    buyerRegister: "auto",
   };
   expect(
     profileFormSchema.safeParse({ ...base, locationLabel: "Lima" }).success,
@@ -88,6 +93,7 @@ test("allows saving the public profile without a WhatsApp number", () => {
     paymentInstructions: "",
     defaultCurrency: "PEN",
     locale: "es",
+    buyerRegister: "auto",
     publicOwnerName: "Store Owner",
   });
   expect(result.success).toBe(true);

@@ -17,6 +17,8 @@ export const dashboardStoreSchema = z.object({
   name: z.string(),
   slug: z.string(),
   locale: z.string().optional(),
+  countryCode: z.string().nullable().optional(),
+  buyerRegister: z.enum(["auto", "tuteo", "voseo"]).optional(),
   whatsappNumber: z.string().nullable(),
   instagramUrl: z.string().nullable().optional(),
   facebookUrl: z.string().nullable().optional(),

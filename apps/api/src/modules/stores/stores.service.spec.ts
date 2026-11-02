@@ -11,6 +11,7 @@ import { PrismaService } from "../../prisma/prisma.service.js";
 describe("StoresService", () => {
   let service: StoresService;
   let prisma: {
+    user: { findUnique: Mock };
     store: {
       findFirst: Mock;
       findUnique: Mock;
@@ -33,6 +34,7 @@ describe("StoresService", () => {
 
   beforeEach(async () => {
     prisma = {
+      user: { findUnique: vi.fn().mockResolvedValue(null) },
       store: {
         findFirst: vi.fn(),
         findUnique: vi.fn(),
@@ -84,6 +86,7 @@ describe("StoresService", () => {
 
   it("creates the store with a slugified slug, whatsappNumber, and a default PICKUP delivery method", async () => {
     prisma.store.findUnique.mockResolvedValue(null);
+    prisma.user.findUnique.mockResolvedValue({ countryCode: "AR" });
     prisma.store.create.mockResolvedValue({ id: "store-1" });
 
     await service.create(ownerId, {
@@ -100,6 +103,7 @@ describe("StoresService", () => {
         name: "My Cool Store!",
         slug: "my-cool-store",
         ownerId,
+        countryCode: "AR",
         themeConfig: {},
         paymentInstructions: "",
         whatsappNumber: "+51999999999",
@@ -127,6 +131,7 @@ describe("StoresService", () => {
         name: "My Store",
         slug: "my-store",
         ownerId,
+        countryCode: null,
         themeConfig: {
           paletteId: "royal-bloom",
           colors: { primary: "#7c3aed", accent: "#f472b6" },
@@ -340,6 +345,21 @@ describe("StoresService", () => {
       expect(prisma.store.update).toHaveBeenCalledWith({
         where: { id: "store-1" },
         data: { whatsappNumber: "+51999999999" },
+      });
+    });
+
+    it("persists buyer register and country only after the ownership check", async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: "store-1", ownerId });
+      prisma.store.update.mockResolvedValue({ id: "store-1" });
+
+      await service.update("store-1", ownerId, {
+        buyerRegister: "voseo",
+        countryCode: "AR",
+      });
+
+      expect(prisma.store.update).toHaveBeenCalledWith({
+        where: { id: "store-1" },
+        data: { buyerRegister: "voseo", countryCode: "AR" },
       });
     });
 

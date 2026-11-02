@@ -7,6 +7,7 @@ export interface CheckoutQueryState<T> {
 }
 
 export interface CheckoutViewStateInput {
+  selectedDeliveryMethodType: string;
   deliveryQuery: CheckoutQueryState<DeliveryMethodConfigResponseDto[]>;
   pickupQuery: CheckoutQueryState<unknown>;
   paymentQuery: CheckoutQueryState<unknown>;
@@ -24,6 +25,7 @@ const queryFailed = ({ isError, data }: CheckoutQueryState<unknown>) =>
   isError && data === undefined;
 
 export function checkoutViewState({
+  selectedDeliveryMethodType,
   deliveryQuery,
   pickupQuery,
   paymentQuery,
@@ -40,9 +42,13 @@ export function checkoutViewState({
     ? "delivery"
     : queryFailed(paymentQuery)
       ? "payment"
-      : pickupEnabled && queryFailed(pickupQuery)
+      : pickupEnabled &&
+          selectedDeliveryMethodType === "PICKUP" &&
+          queryFailed(pickupQuery)
         ? "pickup"
-        : courierEnabled && queryFailed(courierQuery)
+        : courierEnabled &&
+            selectedDeliveryMethodType === "COURIER" &&
+            queryFailed(courierQuery)
           ? "courier"
           : null;
 
@@ -50,8 +56,12 @@ export function checkoutViewState({
     isLoading:
       deliveryQuery.isPending ||
       paymentQuery.isPending ||
-      (pickupEnabled === true && pickupQuery.isPending) ||
-      (courierEnabled === true && courierQuery.isPending),
+      (pickupEnabled === true &&
+        selectedDeliveryMethodType === "PICKUP" &&
+        pickupQuery.isPending) ||
+      (courierEnabled === true &&
+        selectedDeliveryMethodType === "COURIER" &&
+        courierQuery.isPending),
     configError,
   };
 }

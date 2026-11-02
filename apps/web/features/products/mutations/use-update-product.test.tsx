@@ -108,6 +108,7 @@ test("upserts matched and new variants against a fresh baseline, then deletes st
     stock: "",
     categoryId: "",
     availability: "AVAILABLE",
+    shipsInternationally: false,
     imageFiles: [],
     existingImages: [],
     variants: [
@@ -153,6 +154,7 @@ test("aggregates a failed upsert into one error and skips the delete pass", asyn
     stock: "",
     categoryId: "",
     availability: "AVAILABLE",
+    shipsInternationally: false,
     imageFiles: [],
     existingImages: [],
     variants: [{ name: "Small", attributes: { size: "S" } }],

@@ -95,6 +95,7 @@ describe("CustomersService", () => {
           email: "ana@example.com",
           emailVerified: true,
           createdAt: new Date("2026-01-02"),
+          countryCode: "AR",
         },
         {
           id: "customer-2",
@@ -241,6 +242,9 @@ describe("CustomersService", () => {
       const result = await service.findAllForStore(storeId, ownerId);
 
       expect(result).toHaveLength(2);
+      expect(result.every((customer) => !("countryCode" in customer))).toBe(
+        true,
+      );
       const ana = result.find((r) => r.id === "guest_51987654321");
       const beto = result.find((r) => r.id === "guest_51999999999");
       expect(ana).toEqual({

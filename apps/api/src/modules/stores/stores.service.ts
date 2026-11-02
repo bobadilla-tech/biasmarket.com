@@ -68,12 +68,18 @@ export class StoresService {
       throw new BadRequestException("This slug is not avaible");
     }
 
+    const owner = await this.prisma.user.findUnique({
+      where: { id: ownerId },
+      select: { countryCode: true },
+    });
+
     return this.prisma.$transaction(async (tx) => {
       const store = await tx.store.create({
         data: {
           name: dto.name,
           slug,
           ownerId,
+          countryCode: owner?.countryCode ?? null,
           themeConfig: (dto.themeConfig ?? {}) as Prisma.InputJsonValue,
           paymentInstructions: "",
           whatsappNumber: dto.whatsappNumber,
@@ -118,7 +124,7 @@ export class StoresService {
     });
     if (!store) throw new NotFoundException("Store no encontrada");
     if (store.ownerId !== userId) {
-      throw new ForbiddenException("No sos dueño de esta store");
+      throw new ForbiddenException("No eres propietario de esta tienda");
     }
   }
 
@@ -128,7 +134,7 @@ export class StoresService {
     });
     if (!store) throw new NotFoundException("Store no encontrada");
     if (store.ownerId !== userId) {
-      throw new ForbiddenException("No sos dueño de esta store");
+      throw new ForbiddenException("No eres propietario de esta tienda");
     }
     const {
       themeConfig,
@@ -215,7 +221,7 @@ export class StoresService {
     const store = await this.prisma.store.findUnique({ where: { slug } });
     if (!store) throw new NotFoundException("Store no encontrada");
     if (store.ownerId !== userId) {
-      throw new ForbiddenException("No sos dueño de esta store");
+      throw new ForbiddenException("No eres propietario de esta tienda");
     }
     return store;
   }

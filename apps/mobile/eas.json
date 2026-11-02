@@ -6,7 +6,8 @@
   "build": {
     "development": {
       "distribution": "internal",
-      "channel": "development"
+      "channel": "development",
+      "environment": "development"
     },
     "preview": {
       "distribution": "internal",
@@ -17,6 +18,8 @@
     "beta": {
       "distribution": "store",
       "channel": "beta",
+      "environment": "preview",
+      "autoIncrement": true,
       "android": { "buildType": "app-bundle" }
     },
     "production": {

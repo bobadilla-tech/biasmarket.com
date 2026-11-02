@@ -296,7 +296,7 @@ const buildDefaultPaymentReminderMessage = (
   const lines = [
     greeting,
     `Sobre tu pedido #${orderRef(input.orderId)} en ${input.storeName}:`,
-    `Todavía tenés un saldo pendiente de ${input.pendingAmount.toFixed(
+    `Todavía tienes un saldo pendiente de ${input.pendingAmount.toFixed(
       2,
     )} ${input.currency}.`,
     "¿Podrías completar el pago para que podamos avanzar con tu pedido? ¡Gracias!",
