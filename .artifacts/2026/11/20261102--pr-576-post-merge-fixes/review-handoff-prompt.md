@@ -26,7 +26,7 @@ wait for a human to approve before posting. Do not post anything until approved.
 | 5b       |           |        |      |          |
 | 6a-i     |           |        |      |          |
 | 6a-ii    |           |        |      |          |
-| 6c       |           |        |      |          |
+| 6c       |           |        | åç   |          |
 | 6b-race  |           |        |      |          |
 | 6b-erase |           |        |      |          |
 | 2a       |           |        |      |          |
