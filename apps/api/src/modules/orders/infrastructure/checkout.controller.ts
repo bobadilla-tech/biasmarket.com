@@ -111,8 +111,9 @@ function toCheckoutItemDto(
 export function toCheckoutOrderDto(
   order: CheckoutOrderRow,
 ): CheckoutOrderResponseDto {
+  const { payments, ...orderWithoutPayments } = order;
   return {
-    ...pickPublicOrderFields(order),
+    ...pickPublicOrderFields(orderWithoutPayments),
     deliveryDetails: order.deliveryDetails as Record<string, unknown> | null,
     pickupDate: order.pickupDate?.toISOString() ?? null,
     retainedAmount: order.retainedAmount?.toString() ?? null,
@@ -122,7 +123,7 @@ export function toCheckoutOrderDto(
     requiredAmount: order.requiredAmount.toString(),
     expiresAt: order.expiresAt.toISOString(),
     createdAt: order.createdAt.toISOString(),
-    proofSubmitted: Boolean(order.payments?.some((p) => Boolean(p.imageUrl))),
+    proofSubmitted: Boolean(payments?.some((p) => Boolean(p.imageUrl))),
     items: order.items.map(toCheckoutItemDto),
   };
 }
