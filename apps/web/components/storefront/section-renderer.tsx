@@ -2,6 +2,7 @@
 
 import {
   type ReactNode,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -60,6 +61,10 @@ function normalizeSearchText(value: string) {
     .replace(/\p{Diacritic}/gu, "")
     .toLocaleLowerCase();
 }
+
+/* How long a requested catalog page may stay pending before the shopper gets a
+ * manual retry. A page that arrives later still clears the stalled state. */
+const LOAD_STALL_MS = 10_000;
 
 function parseCategorySlugs(value: string | null): string[] {
   return [
@@ -212,6 +217,8 @@ export function StoreSectionRenderer({
   );
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const isLoadingMoreRef = useRef(false);
+  const [loadStalled, setLoadStalled] = useState(false);
+  const stallTimerRef = useRef<number | undefined>(undefined);
   // The server and the hydration pass must render the sentinel; browsers
   // without IntersectionObserver switch to the manual button after hydrating.
   const observerSupported = useSyncExternalStore(
@@ -258,6 +265,8 @@ export function StoreSectionRenderer({
   useEffect(() => {
     setIsLoadingMore(false);
     isLoadingMoreRef.current = false;
+    window.clearTimeout(stallTimerRef.current);
+    setLoadStalled(false);
     if (!serverSorted) {
       setLoadedCatalog({
         key: catalogKey,
@@ -278,6 +287,29 @@ export function StoreSectionRenderer({
       };
     });
   }, [catalogKey, currentPage, sections, serverSorted]);
+
+  useEffect(() => () => window.clearTimeout(stallTimerRef.current), []);
+
+  /* Single entry point for every catalog page request. The new page replaces
+   * the loading state through the effect above; if it never arrives, the stall
+   * timer exposes a manual retry instead of leaving the spinner on forever. */
+  const startLoad = useCallback(
+    (page: number) => {
+      window.clearTimeout(stallTimerRef.current);
+      isLoadingMoreRef.current = true;
+      setIsLoadingMore(true);
+      setLoadStalled(false);
+      const params = new URLSearchParams(searchString);
+      if (page <= 1) params.delete("page");
+      else params.set("page", String(page));
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+      stallTimerRef.current = window.setTimeout(
+        () => setLoadStalled(true),
+        LOAD_STALL_MS,
+      );
+    },
+    [pathname, router, searchString],
+  );
 
   useEffect(() => {
     if (
@@ -301,12 +333,7 @@ export function StoreSectionRenderer({
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (!entry?.isIntersecting || isLoadingMoreRef.current) return;
-
-        isLoadingMoreRef.current = true;
-        setIsLoadingMore(true);
-        const params = new URLSearchParams(searchString);
-        params.set("page", String(loadedCatalogPage + 1));
-        router.push(`${pathname}?${params.toString()}`, { scroll: false });
+        startLoad(loadedCatalogPage + 1);
       },
       { rootMargin: "500px 0px", threshold: 0 },
     );
@@ -321,10 +348,8 @@ export function StoreSectionRenderer({
     loadedCatalog,
     loadedCatalogPage,
     observerSupported,
-    pathname,
-    router,
-    searchString,
     serverSorted,
+    startLoad,
   ]);
 
   useEffect(() => {
@@ -659,17 +684,8 @@ export function StoreSectionRenderer({
                     {catalogPagination.page > 1 && (
                       <button
                         type="button"
-                        disabled={isLoadingMore}
-                        onClick={() => {
-                          const params = new URLSearchParams(searchString);
-                          const previousPage = catalogPagination.page - 1;
-                          if (previousPage === 1) params.delete("page");
-                          else params.set("page", String(previousPage));
-                          setIsLoadingMore(true);
-                          router.push(`${pathname}?${params.toString()}`, {
-                            scroll: false,
-                          });
-                        }}
+                        disabled={isLoadingMore && !loadStalled}
+                        onClick={() => startLoad(catalogPagination.page - 1)}
                         className="min-h-11 rounded-full border border-(--store-border) px-5 text-sm font-semibold text-(--store-text) disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {t("previousPage")}
@@ -697,18 +713,11 @@ export function StoreSectionRenderer({
                       (!observerSupported ? (
                         <button
                           type="button"
-                          disabled={isLoadingMore}
-                          onClick={() => {
-                            const params = new URLSearchParams(searchString);
-                            params.set("page", String(loadedCatalogPage + 1));
-                            setIsLoadingMore(true);
-                            router.push(`${pathname}?${params.toString()}`, {
-                              scroll: false,
-                            });
-                          }}
+                          disabled={isLoadingMore && !loadStalled}
+                          onClick={() => startLoad(loadedCatalogPage + 1)}
                           className="min-h-11 rounded-full border border-(--store-border) px-5 text-sm font-semibold text-(--store-text) disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          {t("nextPage")}
+                          {loadStalled ? t("loadMore") : t("nextPage")}
                         </button>
                       ) : (
                         <div
@@ -717,14 +726,24 @@ export function StoreSectionRenderer({
                           aria-live="polite"
                           className="flex min-h-10 items-center justify-center gap-2 text-sm text-(--store-muted)"
                         >
-                          {isLoadingMore && (
-                            <>
-                              <span
-                                aria-hidden="true"
-                                className="size-4 animate-spin rounded-full border-2 border-current border-r-transparent"
-                              />
-                              <span>{t("loadingMore")}</span>
-                            </>
+                          {loadStalled ? (
+                            <button
+                              type="button"
+                              onClick={() => startLoad(loadedCatalogPage + 1)}
+                              className="min-h-11 rounded-full border border-(--store-border) px-5 text-sm font-semibold text-(--store-text)"
+                            >
+                              {t("loadMore")}
+                            </button>
+                          ) : (
+                            isLoadingMore && (
+                              <>
+                                <span
+                                  aria-hidden="true"
+                                  className="size-4 animate-spin rounded-full border-2 border-current border-r-transparent"
+                                />
+                                <span>{t("loadingMore")}</span>
+                              </>
+                            )
                           )}
                         </div>
                       ))}
