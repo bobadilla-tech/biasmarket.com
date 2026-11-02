@@ -76,7 +76,7 @@ test("disables Aprobar for an order with zero payment registered", () => {
 test("enables Aprobar once a payment has been registered", () => {
   renderWithProviders(
     <OrdersTable
-      orders={[{ ...baseOrder, paidAmount: 40 }]}
+      orders={[{ ...baseOrder, paidAmount: 40, paymentMethod: "TRANSFER" }]}
       pendingOrderIds={new Set()}
       fulfillmentLabels={{}}
       onApprove={noop}
@@ -95,7 +95,7 @@ test("enables Aprobar once a payment has been registered", () => {
 test("reveals all order details from a keyboard-accessible mobile disclosure", () => {
   renderWithProviders(
     <OrdersTable
-      orders={[{ ...baseOrder, paidAmount: 40 }]}
+      orders={[{ ...baseOrder, paidAmount: 40, paymentMethod: "TRANSFER" }]}
       pendingOrderIds={new Set()}
       fulfillmentLabels={{}}
       onApprove={noop}
@@ -105,7 +105,9 @@ test("reveals all order details from a keyboard-accessible mobile disclosure", (
     />,
   );
 
-  const disclosure = screen.getByRole("button", { name: "Pedido #RDER-1" });
+  const disclosure = screen.getAllByRole("button", {
+    name: "Pedido #RDER-1",
+  })[0];
   expect(disclosure.getAttribute("aria-expanded")).toBe("false");
 
   fireEvent.click(disclosure);
@@ -114,4 +116,89 @@ test("reveals all order details from a keyboard-accessible mobile disclosure", (
   expect(screen.getAllByText("Cliente").length).toBeGreaterThan(1);
   expect(screen.getAllByText("Jane").length).toBeGreaterThan(1);
   expect(screen.getAllByText("PEN 100.00").length).toBeGreaterThan(1);
+  expect(screen.getByText("Transferencia bancaria")).toBeTruthy();
+  expect(screen.getByText("Pago pendiente")).toBeTruthy();
+});
+
+test("shows a masked phone or an explicit unnamed-customer fallback", () => {
+  renderWithProviders(
+    <OrdersTable
+      orders={[
+        { ...baseOrder, customerName: null },
+        { ...baseOrder, id: "order-2", customerName: null, customerPhone: "" },
+      ]}
+      pendingOrderIds={new Set()}
+      fulfillmentLabels={{}}
+      onApprove={noop}
+      onReject={noop}
+      onAdvance={noop}
+      onView={noop}
+    />,
+  );
+
+  expect(screen.getAllByText("Teléfono ····4321").length).toBeGreaterThan(0);
+  const unnamed = screen.getAllByText("Sin nombre");
+  expect(unnamed.length).toBeGreaterThan(0);
+  expect(
+    unnamed.some(
+      (element) =>
+        element.tagName === "DD" && element.className.includes("italic"),
+    ),
+  ).toBe(true);
+  fireEvent.click(screen.getAllByRole("button", { name: "Pedido #RDER-2" })[0]);
+  const expandedFallbacks = screen
+    .getAllByText("Sin nombre")
+    .filter((element) => element.tagName === "DD");
+  expect(expandedFallbacks.length).toBe(2);
+  expect(
+    expandedFallbacks.every((element) => element.className.includes("italic")),
+  ).toBe(true);
+});
+
+test("the mobile View action opens the order without toggling its summary", () => {
+  const onView = vi.fn();
+  renderWithProviders(
+    <OrdersTable
+      orders={[baseOrder]}
+      pendingOrderIds={new Set()}
+      fulfillmentLabels={{}}
+      onApprove={noop}
+      onReject={noop}
+      onAdvance={noop}
+      onView={onView}
+    />,
+  );
+
+  const disclosure = screen.getAllByRole("button", {
+    name: "Pedido #RDER-1",
+  })[0];
+  fireEvent.click(screen.getAllByRole("button", { name: "Ver" })[0]);
+  expect(onView).toHaveBeenCalledWith(baseOrder);
+  expect(disclosure.getAttribute("aria-expanded")).toBe("false");
+});
+
+test("shows and runs the next fulfillment action on the mobile card", () => {
+  const onAdvance = vi.fn();
+  const order = {
+    ...baseOrder,
+    paymentStatus: "VERIFIED",
+    fulfillmentStatus: "ORDERING",
+    pendingAmount: 0,
+  } as OrderResponseDto;
+  renderWithProviders(
+    <OrdersTable
+      orders={[order]}
+      pendingOrderIds={new Set()}
+      fulfillmentLabels={{ IN_TRANSIT: "En camino" }}
+      onApprove={noop}
+      onReject={noop}
+      onAdvance={onAdvance}
+      onView={noop}
+    />,
+  );
+
+  fireEvent.click(
+    screen.getAllByRole("button", { name: "Marcar En camino" })[0],
+  );
+  expect(onAdvance).toHaveBeenCalledWith(order);
 });

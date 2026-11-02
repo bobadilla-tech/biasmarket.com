@@ -682,6 +682,10 @@
     "unknownProduct": "Product",
     "productSummaryMore": "{product} +{count}",
     "showingCount": "Showing {count} of {total}",
+    "tabsAriaLabel": "Filter orders by status",
+    "mobileOrder": "Order",
+    "unnamedCustomer": "Unnamed customer",
+    "maskedPhone": "Phone ····{phone}",
     "tabs": {
       "all": "All",
       "pending": "Pending",
@@ -697,7 +701,8 @@
       "delivery": "Delivery",
       "date": "Date",
       "status": "Status",
-      "actions": "Actions"
+      "actions": "Actions",
+      "paymentStatus": "Payment status"
     },
     "delivery": {
       "pickup": "Pickup",
@@ -827,6 +832,14 @@
       "PLIN": "Plin",
       "TRANSFER": "Bank transfer",
       "CASH": "Cash"
+    },
+    "paymentStatusLabels": {
+      "PENDING_PAYMENT": "Pending payment",
+      "PARTIALLY_PAID": "Partially paid",
+      "PAYMENT_SUBMITTED": "Proof submitted",
+      "VERIFIED": "Verified",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled"
     },
     "confirmStatus": {
       "title": "Confirm status change",
