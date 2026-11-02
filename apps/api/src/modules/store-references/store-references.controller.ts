@@ -95,7 +95,10 @@ export class StoreReferencesController {
         hidden: { type: "boolean" },
         width: { type: "integer", minimum: 1, maximum: 12000 },
         height: { type: "integer", minimum: 1, maximum: 12000 },
-        privacyConfirmed: { type: "boolean" },
+        privacyConfirmed: {
+          type: "boolean",
+          description: "Required unless hidden is true.",
+        },
       },
     },
   })
@@ -153,8 +156,15 @@ export class StoreReferencesController {
         file: { type: "string", format: "binary" },
         takenAt: { type: "string", format: "date-time" },
         caption: { type: "string", maxLength: 240 },
-        hidden: { type: "boolean" },
-        privacyConfirmed: { type: "boolean" },
+        hidden: {
+          type: "boolean",
+          description: "Setting this to false requires privacyConfirmed: true.",
+        },
+        privacyConfirmed: {
+          type: "boolean",
+          description:
+            "Required when publishing, replacing the image, or keeping a reference public.",
+        },
         width: { type: "integer", minimum: 1, maximum: 12000 },
         height: { type: "integer", minimum: 1, maximum: 12000 },
       },

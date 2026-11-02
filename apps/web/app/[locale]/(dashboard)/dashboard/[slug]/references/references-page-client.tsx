@@ -203,6 +203,7 @@ export function ReferencesPageClient() {
   }
 
   function requestPublish(itemId: string) {
+    setError(null);
     setPublishingId(itemId);
   }
 

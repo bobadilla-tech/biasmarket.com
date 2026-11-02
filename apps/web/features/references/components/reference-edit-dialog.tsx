@@ -41,6 +41,8 @@ export function ReferenceEditDialog({
 }) {
   const t = useTranslations("dashboard.references");
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const itemRef = useRef(item);
+  itemRef.current = item;
   const [file, setFile] = useState<File | null>(null);
   const [privacyConfirmed, setPrivacyConfirmed] = useState(false);
   const { register, reset, handleSubmit } = useForm<EditReferenceValues>({
@@ -53,15 +55,19 @@ export function ReferenceEditDialog({
     if (!dialog) return;
     if (item && !dialog.open) dialog.showModal();
     if (!item && dialog.open) dialog.close();
-    if (item) {
+  }, [item]);
+
+  useEffect(() => {
+    const currentItem = itemRef.current;
+    if (currentItem) {
       reset({
-        takenAt: toLocalDateTime(item.takenAt),
-        caption: item.caption ?? "",
+        takenAt: toLocalDateTime(currentItem.takenAt),
+        caption: currentItem.caption ?? "",
       });
       setFile(null);
       setPrivacyConfirmed(false);
     }
-  }, [item, reset]);
+  }, [item?.id, reset]);
 
   const submit = handleSubmit(async ({ takenAt, caption }) => {
     if (!item || busy || (file && !privacyConfirmed)) return;

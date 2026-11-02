@@ -105,4 +105,50 @@ describe("StorageService.deleteImage", () => {
     ).rejects.toThrow();
     expect(send).toHaveBeenCalledOnce();
   });
+
+  it("strips leading slashes from legacy object paths", async () => {
+    await storage.deleteStoreReferenceImage(
+      "https://cdn.example.test/assets//public-assets/store-references/ref.jpg",
+    );
+
+    expect(send.mock.calls[0]?.[0].input).toEqual({
+      Bucket: "public-assets",
+      Key: "store-references/ref.jpg",
+    });
+  });
+
+  it("matches the longest allowlisted URL base first", async () => {
+    process.env.S3_PUBLIC_URL = "https://cdn.example.test";
+    process.env.S3_LEGACY_PUBLIC_URLS = "https://cdn.example.test/old-assets";
+    storage = new StorageService();
+    send = vi.fn().mockResolvedValue({});
+    (storage as unknown as { client: { send: typeof send } }).client.send =
+      send;
+
+    await storage.deleteStoreReferenceImage(
+      "https://cdn.example.test/old-assets/public-assets/store-references/ref.jpg",
+    );
+
+    expect(send.mock.calls[0]?.[0].input).toEqual({
+      Bucket: "public-assets",
+      Key: "store-references/ref.jpg",
+    });
+  });
+
+  it("merges allowed prefixes when public and logo uploads share a bucket", async () => {
+    process.env.S3_LOGO_BUCKET = "public-assets";
+    storage = new StorageService();
+    send = vi.fn().mockResolvedValue({});
+    (storage as unknown as { client: { send: typeof send } }).client.send =
+      send;
+
+    await storage.deleteImage(
+      "https://cdn.example.test/assets/public-assets/logos/logo.png",
+    );
+
+    expect(send.mock.calls[0]?.[0].input).toEqual({
+      Bucket: "public-assets",
+      Key: "logos/logo.png",
+    });
+  });
 });

@@ -5740,7 +5740,8 @@
                     "maximum": 12000
                   },
                   "privacyConfirmed": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Required unless hidden is true."
                   }
                 }
               }
@@ -5803,10 +5804,12 @@
                     "maxLength": 240
                   },
                   "hidden": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Setting this to false requires privacyConfirmed: true."
                   },
                   "privacyConfirmed": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Required when publishing, replacing the image, or keeping a reference public."
                   },
                   "width": {
                     "type": "integer",

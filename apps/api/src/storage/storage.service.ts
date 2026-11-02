@@ -23,7 +23,9 @@ export class StorageService {
     ...(process.env.S3_LEGACY_PUBLIC_URLS?.split(",") ?? [])
       .map((value) => value.trim().replace(/\/+$/, ""))
       .filter(Boolean),
-  ].map((value) => new URL(value));
+  ]
+    .map((value) => new URL(value))
+    .sort((left, right) => right.pathname.length - left.pathname.length);
 
   private client = new S3Client({
     region: "us-east-1",
@@ -128,28 +130,29 @@ export class StorageService {
     try {
       objectPath = decodeURIComponent(
         imageUrl.pathname.slice(objectPathPrefix.length),
-      );
+      ).replace(/^\/+/, "");
     } catch {
       throw new Error("Image URL contains an invalid object path");
     }
 
     const [bucket, ...keyParts] = objectPath.split("/");
-    const allowedPrefixes = new Map<string, Set<string>>([
-      [
-        this.bucket,
-        new Set([
-          "products",
-          "store-banners",
-          "store-owner-avatars",
-          "store-content",
-          "store-categories",
-          "store-references",
-          "payment-qr",
-        ]),
-      ],
-      [this.logoBucket, new Set(["logos"])],
-      [this.paymentBucket, new Set(["payments"])],
+    const allowedPrefixes = new Map<string, Set<string>>();
+    const addAllowedPrefixes = (bucketName: string, prefixes: string[]) => {
+      const existing = allowedPrefixes.get(bucketName) ?? new Set<string>();
+      prefixes.forEach((prefix) => existing.add(prefix));
+      allowedPrefixes.set(bucketName, existing);
+    };
+    addAllowedPrefixes(this.bucket, [
+      "products",
+      "store-banners",
+      "store-owner-avatars",
+      "store-content",
+      "store-categories",
+      "store-references",
+      "payment-qr",
     ]);
+    addAllowedPrefixes(this.logoBucket, ["logos"]);
+    addAllowedPrefixes(this.paymentBucket, ["payments"]);
     const prefix = keyParts[0];
     if (
       !bucket ||

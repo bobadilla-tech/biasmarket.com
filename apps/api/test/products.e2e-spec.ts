@@ -214,7 +214,7 @@ describe("products (e2e)", () => {
         price: 5,
         currency: "USD",
         stock: 1,
-        images: urls(7),
+        images: urls(1),
       })
       .expect(400);
     expect(await prisma.product.count({ where: { name: capName } })).toBe(0);

@@ -1,5 +1,5 @@
 import { BadRequestException } from "@nestjs/common";
-import { crc32 } from "node:zlib";
+import { crc32, deflateSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import { readImageDimensions } from "./image-dimensions.js";
 
@@ -16,7 +16,7 @@ describe("readImageDimensions", () => {
     return chunk;
   }
 
-  function pngImage() {
+  function pngImage(imageData?: Buffer) {
     const header = Buffer.alloc(13);
     header.writeUInt32BE(1200, 0);
     header.writeUInt32BE(800, 4);
@@ -26,7 +26,10 @@ describe("readImageDimensions", () => {
     return Buffer.concat([
       signature,
       pngChunk("IHDR", header),
-      pngChunk("IDAT", Buffer.from([1, 2, 3])),
+      pngChunk(
+        "IDAT",
+        imageData ?? deflateSync(Buffer.alloc((1200 * 3 + 1) * 800)),
+      ),
       pngChunk("IEND", Buffer.alloc(0)),
     ]);
   }
@@ -51,6 +54,25 @@ describe("readImageDimensions", () => {
     const image = pngImage();
     image[image.length - 5] = 1;
 
+    expect(() => readImageDimensions(image, "image/png")).toThrow(
+      BadRequestException,
+    );
+  });
+
+  it("rejects PNG image data that is not a valid deflate stream", () => {
+    expect(() =>
+      readImageDimensions(pngImage(Buffer.from([1, 2, 3])), "image/png"),
+    ).toThrow(BadRequestException);
+  });
+
+  it("rejects dimensions above the supported limit", () => {
+    const image = pngImage();
+    image.writeUInt32BE(12_001, 16);
+    const crcOffset = 8 + 12 + 13;
+    image.writeUInt32BE(
+      crc32(image.subarray(12, crcOffset - 4)),
+      crcOffset - 4,
+    );
     expect(() => readImageDimensions(image, "image/png")).toThrow(
       BadRequestException,
     );
