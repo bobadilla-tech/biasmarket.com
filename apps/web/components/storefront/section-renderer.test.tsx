@@ -200,6 +200,61 @@ describe("mergeCatalogPages", () => {
 });
 
 describe("StoreSectionRenderer catalog pagination", () => {
+  it("automatically requests the next page once and preserves catalog filters", async () => {
+    let intersectionCallback: IntersectionObserverCallback | undefined;
+    const observe = vi.fn();
+    const disconnect = vi.fn();
+    class IntersectionObserverMock {
+      constructor(callback: IntersectionObserverCallback) {
+        intersectionCallback = callback;
+      }
+      observe = observe;
+      disconnect = disconnect;
+      unobserve = vi.fn();
+      takeRecords = vi.fn(() => []);
+      root = null;
+      rootMargin = "";
+      thresholds = [0];
+    }
+
+    vi.stubGlobal("IntersectionObserver", IntersectionObserverMock);
+    navigation.search =
+      "tab=productos&orden=precio_asc&categoria=albums&page=1";
+    navigation.push.mockClear();
+
+    try {
+      render(
+        <NextIntlClientProvider locale="es" messages={getMessages("es")}>
+          <StoreSectionRenderer
+            slug="demo"
+            sections={[]}
+            catalogControls
+            serverSorted
+            catalogPagination={{ page: 1, limit: 1, total: 2 }}
+          />
+        </NextIntlClientProvider>,
+      );
+
+      expect(observe).toHaveBeenCalled();
+      expect(screen.queryByRole("button", { name: /cargar más/i })).toBeNull();
+
+      const entry = { isIntersecting: true } as IntersectionObserverEntry;
+      await act(async () => {
+        intersectionCallback?.([entry], {} as IntersectionObserver);
+        intersectionCallback?.([entry], {} as IntersectionObserver);
+      });
+
+      expect(navigation.push).toHaveBeenCalledOnce();
+      expect(navigation.push).toHaveBeenCalledWith(
+        "/es/store/demo?tab=productos&orden=precio_asc&categoria=albums&page=2",
+        { scroll: false },
+      );
+    } finally {
+      vi.unstubAllGlobals();
+      navigation.search = "";
+    }
+  });
+
   it("hides a page count when the requested page is out of range", () => {
     navigation.search = "tab=productos&page=3";
     const view = render(
