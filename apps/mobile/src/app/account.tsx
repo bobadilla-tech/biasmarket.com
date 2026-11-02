@@ -56,8 +56,14 @@ export default function AccountScreen() {
           setDeleting(true);
           void globalAccount
             .deleteMe()
-            .then(() => signOut())
-            .then(() => router.replace("/login"))
+            .then(async () => {
+              try {
+                await signOut();
+              } catch {
+                // Ignore local sign-out failure since account is already deleted remotely.
+              }
+              router.replace("/login");
+            })
             .catch(() => {
               setDeleting(false);
               Alert.alert(
