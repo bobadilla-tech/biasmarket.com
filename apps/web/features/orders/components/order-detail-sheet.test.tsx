@@ -112,6 +112,7 @@ test("renders the snapshotted shipping address for a COURIER order", () => {
   renderSheet({
     ...baseOrder,
     deliveryMethodType: "COURIER",
+    courierModality: "HOME",
     deliveryDetails: {
       estimatedCost: 10,
       shippingAddress: {
@@ -123,8 +124,35 @@ test("renders the snapshotted shipping address for a COURIER order", () => {
     },
   });
 
-  expect(screen.getByText("Av. Principal 123")).toBeDefined();
+  expect(screen.getByText("Dirección: Av. Principal 123")).toBeDefined();
   expect(screen.getByText(/Jane Doe/)).toBeDefined();
+});
+
+test("renders agency and recipient details when an AGENCY order has no street address", () => {
+  renderSheet({
+    ...baseOrder,
+    deliveryMethodType: "COURIER",
+    courierName: "Olva",
+    courierModality: "AGENCY",
+    deliveryDetails: {
+      shippingAddress: {
+        recipientName: "Ana",
+        recipientSurnames: "Pérez Gómez",
+        phone: "987654321",
+        department: "Lima",
+        province: "Lima",
+        district: "Miraflores",
+        agencyName: "Olva Larco",
+      },
+    },
+  });
+
+  expect(screen.getByText("Olva · Recojo en agencia")).toBeDefined();
+  expect(screen.getByText("Ana Pérez Gómez")).toBeDefined();
+  expect(screen.getByText("Agencia: Olva Larco")).toBeDefined();
+  expect(
+    screen.getByRole("button", { name: "Copiar datos de envío" }),
+  ).toBeDefined();
 });
 
 test("does not render a shipping address section for a PICKUP order", () => {

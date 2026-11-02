@@ -710,6 +710,29 @@
       "delivery": "Delivery",
       "date": "Date",
       "shippingAddress": "Shipping address",
+      "shippingCopyButton": "Copy shipping details",
+      "shippingCopied": "Shipping details copied",
+      "shippingCopyError": "Could not copy shipping details.",
+      "shippingLabels": {
+        "courier": "Courier",
+        "modality": "Modality",
+        "recipient": "Recipient",
+        "document": "Document",
+        "phone": "Phone",
+        "location": "Location",
+        "agency": "Agency",
+        "address": "Address",
+        "reference": "Reference",
+        "order": "Order"
+      },
+      "shippingDocumentTypes": {
+        "DNI": "DNI",
+        "PASSPORT": "Passport"
+      },
+      "courierModalities": {
+        "AGENCY": "Agency pickup",
+        "HOME": "Home delivery"
+      },
       "shippingTitle": "Tracking and package",
       "trackingNumber": "Tracking number",
       "trackingUrl": "Tracking link",

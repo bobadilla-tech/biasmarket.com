@@ -81,10 +81,17 @@ export function getDeliveryLabel(
 // field existed.
 export interface OrderShippingAddress {
   recipientName: string;
+  recipientSurnames?: string;
   phone: string;
-  line1: string;
+  documentType?: string;
+  documentNumber?: string;
+  department?: string;
+  province?: string;
+  district?: string;
+  agencyName?: string;
+  line1?: string;
   line2?: string;
-  city: string;
+  city?: string;
   region?: string;
   reference?: string;
 }
@@ -99,13 +106,90 @@ export function getShippingAddress(
     !address ||
     typeof address !== "object" ||
     typeof (address as Record<string, unknown>).recipientName !== "string" ||
-    typeof (address as Record<string, unknown>).phone !== "string" ||
-    typeof (address as Record<string, unknown>).line1 !== "string" ||
-    typeof (address as Record<string, unknown>).city !== "string"
+    typeof (address as Record<string, unknown>).phone !== "string"
   ) {
     return null;
   }
-  return address as OrderShippingAddress;
+  const fields = address as Record<string, unknown>;
+  const optionalFields = [
+    "recipientSurnames",
+    "documentType",
+    "documentNumber",
+    "department",
+    "province",
+    "district",
+    "agencyName",
+    "line1",
+    "line2",
+    "city",
+    "region",
+    "reference",
+  ] as const;
+  return {
+    recipientName: fields.recipientName as string,
+    phone: fields.phone as string,
+    ...Object.fromEntries(
+      optionalFields.flatMap((field) =>
+        typeof fields[field] === "string" && fields[field].trim()
+          ? [[field, fields[field].trim()]]
+          : [],
+      ),
+    ),
+  } as OrderShippingAddress;
+}
+
+export function formatShippingDetailsForCopy(
+  order: OrderResponseDto,
+  address: OrderShippingAddress,
+  labels: {
+    courier: string;
+    modality: string;
+    agencyModality: string;
+    homeModality: string;
+    recipient: string;
+    document: string;
+    phone: string;
+    location: string;
+    agency: string;
+    address: string;
+    reference: string;
+    order: string;
+  },
+) {
+  const location = [address.department, address.province, address.district]
+    .filter(Boolean)
+    .join(" / ");
+  const name = [address.recipientName, address.recipientSurnames]
+    .filter(Boolean)
+    .join(" ");
+  const document = [address.documentType, address.documentNumber]
+    .filter(Boolean)
+    .join(" ");
+  const modality =
+    order.courierModality === "AGENCY"
+      ? labels.agencyModality
+      : order.courierModality === "HOME"
+        ? labels.homeModality
+        : "";
+  const courierLine = [order.courierName, modality].filter(Boolean).join(" · ");
+  const lines = [
+    courierLine ? `${labels.courier}: ${courierLine}` : undefined,
+    `${labels.recipient}: ${name}`,
+    document ? `${labels.document}: ${document}` : undefined,
+    `${labels.phone}: ${address.phone}`,
+    location ? `${labels.location}: ${location}` : undefined,
+    order.courierModality === "AGENCY" && address.agencyName
+      ? `${labels.agency}: ${address.agencyName}`
+      : undefined,
+    order.courierModality === "HOME" && address.line1
+      ? `${labels.address}: ${[address.line1, address.line2].filter(Boolean).join(", ")}`
+      : undefined,
+    order.courierModality === "HOME" && address.reference
+      ? `${labels.reference}: ${address.reference}`
+      : undefined,
+    `${labels.order}: ${getOrderNumber(order.id)}`,
+  ];
+  return lines.filter(Boolean).join("\n");
 }
 
 export function getProductSummary(
