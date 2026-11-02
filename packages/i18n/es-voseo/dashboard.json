@@ -19,12 +19,12 @@
       "bioHelp": "Se muestra bajo el nombre de tu tienda y en los resultados de Google.",
       "aboutPlaceholder": "Cuéntales quién sos, qué vendés y por qué comprar acá. Podés usar párrafos y listas.",
       "previewEmpty": "Acá aparece tu texto con formato.",
+      "livePreviewDescription": "Se actualiza mientras editás los datos públicos de tu tienda.",
       "help": "Este contenido aparece en la página pública de tu tienda y en su ficha para buscadores."
     },
     "appearance": {
       "description": "Elegí la paleta de la barra lateral, los botones principales y los acentos clave de la interfaz.",
-      "customDescription": "Define tu propio color de marca",
-      "customColorLabel": "Elegí tu color"
+      "customDescription": "Define tu propio color de marca"
     },
     "payments": {
       "description": "Aceptá pagos con los métodos disponibles para tu tienda.",
