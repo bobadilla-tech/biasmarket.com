@@ -668,6 +668,7 @@ export class CustomerAuthService {
           pendingEmail: null,
           pendingPhone: null,
           name: null,
+          countryCode: null,
         },
       });
     });

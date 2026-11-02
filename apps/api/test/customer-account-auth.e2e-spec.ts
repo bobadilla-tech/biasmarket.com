@@ -832,6 +832,21 @@ describe("customer account + customer auth (e2e)", () => {
       expect(
         globalMeRes.body.stores.map((s: { slug: string }) => s.slug).sort(),
       ).toEqual([storeSlug, storeBSlug].sort());
+
+      // Account deletion removes the buyer-owned country along with credentials.
+      await prisma.buyerAccount.update({
+        where: { id: buyerAccount.id },
+        data: { countryCode: "AR" },
+      });
+      await request(app.getHttpServer())
+        .delete("/account/me")
+        .set("Cookie", sessionCookie)
+        .set("Origin", "http://localhost:3001")
+        .expect(200);
+      const deletedBuyer = await prisma.buyerAccount.findUniqueOrThrow({
+        where: { id: buyerAccount.id },
+      });
+      expect(deletedBuyer.countryCode).toBeNull();
     },
   );
 });
