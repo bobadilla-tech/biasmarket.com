@@ -20,7 +20,9 @@
     "yourDetails": "Tus datos",
     "permissionRequired": "Necesitamos permiso para acceder a tus imágenes.",
     "paymentConfigFailed": "No se pudieron cargar las opciones de pago. Inténtalo de nuevo antes de confirmar tu pedido.",
+    "configFailed": "No se pudieron cargar las opciones de compra. Intentá de nuevo antes de confirmar tu pedido.",
     "validation": {
+      "customerName": "Ingresá tu nombre.",
       "customerPhone": "Ingresá tu teléfono.",
       "customerEmail": "Ingresá un correo electrónico válido.",
       "deliveryMethodType": "Elegí un método de entrega.",
@@ -30,9 +32,13 @@
       "courierName": "Elegí un courier.",
       "courierModality": "Elegí una opción de entrega del courier.",
       "shippingRecipientName": "Ingresá el nombre de quien recibe.",
+      "shippingRecipientSurnames": "Ingresá los apellidos de quien recibe.",
       "shippingDocumentType": "Elegí un tipo de documento.",
       "shippingDocumentNumber": "Ingresá un número de documento válido.",
       "shippingPhone": "Ingresá un teléfono de contacto.",
+      "shippingDepartment": "Ingresá un departamento.",
+      "shippingProvince": "Ingresá una provincia.",
+      "shippingDistrict": "Ingresá un distrito.",
       "shippingLine1": "Ingresá una dirección de entrega.",
       "shippingCity": "Ingresá una ciudad.",
       "shippingAgencyName": "Ingresá el nombre de la agencia."
