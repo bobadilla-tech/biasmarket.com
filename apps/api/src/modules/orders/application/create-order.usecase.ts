@@ -53,6 +53,7 @@ export class CreateOrderUseCase {
       customerEmail: string | null;
       customerName: string | null;
       paymentMethod: string | null;
+      paymentType: string | null;
       deliveryMethodType: string;
       pickupPointId: string | null;
       courierName: string | null;
@@ -76,6 +77,8 @@ export class CreateOrderUseCase {
       (existing.customerName ?? "") === (dto.customerName ?? "");
     const paymentMatches =
       (existing.paymentMethod ?? null) === (dto.paymentMethod ?? null);
+    const paymentTypeMatches =
+      (existing.paymentType ?? null) === (dto.paymentType ?? null);
     const deliveryTypeMatches =
       existing.deliveryMethodType === dto.deliveryMethodType;
     const pickupPointMatches =
@@ -90,6 +93,7 @@ export class CreateOrderUseCase {
       !emailMatches ||
       !nameMatches ||
       !paymentMatches ||
+      !paymentTypeMatches ||
       !deliveryTypeMatches ||
       !pickupPointMatches ||
       !courierNameMatches ||
@@ -106,18 +110,20 @@ export class CreateOrderUseCase {
       );
     }
 
+    const unmatchedItems = [...existing.items];
     for (const item of dto.items) {
-      const match = existing.items.find(
+      const matchIndex = unmatchedItems.findIndex(
         (it) =>
           it.productId === item.productId &&
           (it.variantId ?? null) === (item.variantId ?? null) &&
           it.quantity === item.quantity,
       );
-      if (!match) {
+      if (matchIndex === -1) {
         throw new ConflictException(
           "El Idempotency-Key ya fue utilizado con datos de orden diferentes",
         );
       }
+      unmatchedItems.splice(matchIndex, 1);
     }
 
     if (dto.deliveryMethodType === "COURIER" && dto.shippingAddress) {
@@ -136,8 +142,16 @@ export class CreateOrderUseCase {
         (addr?.documentNumber ?? null) !==
           (dto.shippingAddress.documentNumber ?? null) ||
         (addr?.line1 ?? null) !== (dto.shippingAddress.line1 ?? null) ||
+        (addr?.line2 ?? null) !== (dto.shippingAddress.line2 ?? null) ||
+        (addr?.city ?? null) !== (dto.shippingAddress.city ?? null) ||
+        (addr?.reference ?? null) !== (dto.shippingAddress.reference ?? null) ||
+        (addr?.recipientSurnames ?? null) !==
+          (dto.shippingAddress.recipientSurnames ?? null) ||
+        (addr?.agencyName ?? null) !==
+          (dto.shippingAddress.agencyName ?? null) ||
         (addr?.department ?? null) !==
           (dto.shippingAddress.department ?? null) ||
+        (addr?.region ?? null) !== (dto.shippingAddress.region ?? null) ||
         (addr?.province ?? null) !== (dto.shippingAddress.province ?? null) ||
         (addr?.district ?? null) !== (dto.shippingAddress.district ?? null)
       ) {
@@ -219,6 +233,7 @@ export class CreateOrderUseCase {
             customerPhoneNormalized: normalizePhone(dto.customerPhone),
             customerName: dto.customerName,
             checkoutIdempotencyKey: idempotencyKey ?? null,
+            paymentType: dto.paymentType ?? null,
           },
           include: { items: true, payments: true },
         });

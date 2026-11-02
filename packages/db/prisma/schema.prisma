@@ -388,6 +388,8 @@ model Order {
   // Buyer's chosen payment method at checkout — optional since older
   // orders (created before this field existed) never captured one.
   paymentMethod            PaymentMethodType?
+  // Buyer's checkout choice. Nullable for legacy and seller-created orders.
+  paymentType              CheckoutPaymentType?
   paymentStatus            PaymentStatus           @default(PENDING_PAYMENT)
   paymentRejectionReason   String?
   fulfillmentStatus        FulfillmentStatus       @default(ORDERING)
@@ -590,6 +592,11 @@ enum PaymentMethodType {
   PLIN
   TRANSFER
   CASH
+}
+
+enum CheckoutPaymentType {
+  FULL
+  PARTIAL
 }
 
 model PaymentMethodConfig {

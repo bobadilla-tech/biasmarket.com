@@ -1092,6 +1092,7 @@ describe("CreateOrderUseCase", () => {
         customerEmail: null,
         customerName: dto.customerName ?? null,
         paymentMethod: null,
+        paymentType: null,
         deliveryMethodType: dto.deliveryMethodType,
         pickupPointId: null,
         courierName: null,
@@ -1128,6 +1129,7 @@ describe("CreateOrderUseCase", () => {
         customerEmail: null,
         customerName: dto.customerName ?? null,
         paymentMethod: null,
+        paymentType: null,
         deliveryMethodType: dto.deliveryMethodType,
         pickupPointId: null,
         courierName: null,
@@ -1147,6 +1149,100 @@ describe("CreateOrderUseCase", () => {
       await expect(
         useCase.execute(slug, dto, undefined, undefined, "replay-key-1"),
       ).rejects.toThrow(ConflictException);
+    });
+
+    it("rejects a replay when the payment type changes", () => {
+      expect(() =>
+        useCase.assertMatchingCheckoutData(
+          {
+            customerPhone: dto.customerPhone,
+            customerEmail: null,
+            customerName: dto.customerName,
+            paymentMethod: null,
+            paymentType: "FULL",
+            deliveryMethodType: "PICKUP",
+            pickupPointId: null,
+            courierName: null,
+            courierModality: null,
+            deliveryDetails: {},
+            items: [{ productId: "product-1", variantId: null, quantity: 2 }],
+          },
+          { ...dto, paymentType: "PARTIAL" },
+        ),
+      ).toThrow(ConflictException);
+    });
+
+    it("matches repeated items as distinct order lines", () => {
+      expect(() =>
+        useCase.assertMatchingCheckoutData(
+          {
+            customerPhone: dto.customerPhone,
+            customerEmail: null,
+            customerName: dto.customerName,
+            paymentMethod: null,
+            paymentType: null,
+            deliveryMethodType: "PICKUP",
+            pickupPointId: null,
+            courierName: null,
+            courierModality: null,
+            deliveryDetails: {},
+            items: [
+              { productId: "product-1", variantId: null, quantity: 2 },
+              { productId: "product-2", variantId: null, quantity: 1 },
+            ],
+          },
+          {
+            ...dto,
+            items: [
+              { productId: "product-1", quantity: 2 },
+              { productId: "product-1", quantity: 2 },
+            ],
+          },
+        ),
+      ).toThrow(ConflictException);
+    });
+
+    it("rejects a replay when a non-primary courier field changes", () => {
+      expect(() =>
+        useCase.assertMatchingCheckoutData(
+          {
+            customerPhone: dto.customerPhone,
+            customerEmail: null,
+            customerName: dto.customerName,
+            paymentMethod: null,
+            paymentType: null,
+            deliveryMethodType: "COURIER",
+            pickupPointId: null,
+            courierName: "Olva",
+            courierModality: "HOME",
+            deliveryDetails: {
+              shippingAddress: {
+                recipientName: "Jane",
+                phone: dto.customerPhone,
+                line1: "1 Main St",
+                city: "Lima",
+                line2: "Apt 1",
+                recipientSurnames: "Doe",
+              },
+            },
+            items: [{ productId: "product-1", variantId: null, quantity: 2 }],
+          },
+          {
+            ...dto,
+            deliveryMethodType: "COURIER",
+            courierName: "Olva",
+            courierModality: "HOME",
+            shippingAddress: {
+              recipientName: "Jane",
+              phone: dto.customerPhone,
+              line1: "1 Main St",
+              city: "Lima",
+              line2: "Apt 2",
+              recipientSurnames: "Doe",
+            },
+          },
+        ),
+      ).toThrow(ConflictException);
     });
   });
 });
