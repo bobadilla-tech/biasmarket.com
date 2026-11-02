@@ -367,7 +367,7 @@
     },
     "payments": {
       "title": "Accepted payment methods",
-      "description": "Manual payment-first options aligned with the current MVP flow.",
+      "description": "Accept payments with the methods available for your store.",
       "manual": "Manual",
       "items": {
         "yape": {
@@ -476,7 +476,7 @@
     },
     "notifications": {
       "title": "Notifications",
-      "description": "Preview the notification controls that will live in this new configuration area.",
+      "description": "Choose the alerts you receive about orders and stock.",
       "items": {
         "newOrder": {
           "label": "New order received",
