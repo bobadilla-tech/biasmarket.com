@@ -2,7 +2,8 @@
 
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Wallet } from "lucide-react";
+import { ClipboardCopy, Wallet } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -18,6 +19,7 @@ import {
   getDeliveryLabel,
   getOrderNumber,
   getShippingAddress,
+  formatShippingDetailsForCopy,
 } from "../lib/order-format";
 import { paymentsLocked } from "../lib/order-status";
 import { isPendingProof, recordableCents } from "../lib/payment-limits";
@@ -169,31 +171,132 @@ export function OrderDetailSheet({
                 {(() => {
                   const shippingAddress = getShippingAddress(order);
                   if (!shippingAddress) return null;
+                  const buyerName = [
+                    shippingAddress.recipientName,
+                    shippingAddress.recipientSurnames,
+                  ]
+                    .filter(Boolean)
+                    .join(" ");
+                  const location = [
+                    shippingAddress.department,
+                    shippingAddress.province,
+                    shippingAddress.district,
+                  ]
+                    .filter(Boolean)
+                    .join(" / ");
+                  const documentType =
+                    shippingAddress.documentType === "DNI"
+                      ? t("details.shippingDocumentTypes.DNI")
+                      : shippingAddress.documentType === "PASSPORT"
+                        ? t("details.shippingDocumentTypes.PASSPORT")
+                        : shippingAddress.documentType;
+                  const document = [
+                    documentType,
+                    shippingAddress.documentNumber,
+                  ]
+                    .filter(Boolean)
+                    .join(" ");
+                  const modality =
+                    order.courierModality === "AGENCY"
+                      ? t("details.courierModalities.AGENCY")
+                      : order.courierModality === "HOME"
+                        ? t("details.courierModalities.HOME")
+                        : undefined;
+                  const copyShippingDetails = async () => {
+                    const text = formatShippingDetailsForCopy(
+                      order,
+                      shippingAddress,
+                      {
+                        courier: t("details.shippingLabels.courier"),
+                        modality: t("details.shippingLabels.modality"),
+                        agencyModality: t("details.courierModalities.AGENCY"),
+                        homeModality: t("details.courierModalities.HOME"),
+                        recipient: t("details.shippingLabels.recipient"),
+                        document: t("details.shippingLabels.document"),
+                        phone: t("details.shippingLabels.phone"),
+                        location: t("details.shippingLabels.location"),
+                        agency: t("details.shippingLabels.agency"),
+                        address: t("details.shippingLabels.address"),
+                        reference: t("details.shippingLabels.reference"),
+                        order: t("details.shippingLabels.order"),
+                      },
+                    );
+                    try {
+                      await navigator.clipboard.writeText(text);
+                      toast.success(t("details.shippingCopied"));
+                    } catch {
+                      toast.error(t("details.shippingCopyError"));
+                    }
+                  };
                   return (
-                    <div className="space-y-1 border-t border-[#f3ebff] pt-3 text-sm">
-                      <span className="font-medium text-[#8f7da8]">
-                        {t("details.shippingAddress")}
-                      </span>
+                    <div className="space-y-2 border-t border-[#f3ebff] pt-3 text-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="font-medium text-[#8f7da8]">
+                          {t("details.shippingAddress")}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => void copyShippingDetails()}
+                          className="h-8 rounded-lg border-[#eadcf8] text-xs"
+                        >
+                          <ClipboardCopy
+                            aria-hidden="true"
+                            className="size-3.5"
+                          />
+                          {t("details.shippingCopyButton")}
+                        </Button>
+                      </div>
+                      {(order.courierName || modality) && (
+                        <p className="font-semibold text-[#2d1649]">
+                          {[order.courierName, modality]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
+                      )}
                       <p className="font-semibold text-[#2d1649]">
-                        {shippingAddress.recipientName} ·{" "}
+                        {buyerName}
+                      </p>
+                      <p className="text-[#2d1649]">
+                        {t("details.shippingLabels.phone")}:{" "}
                         {shippingAddress.phone}
                       </p>
-                      <p className="text-[#2d1649]">
-                        {shippingAddress.line1}
-                        {shippingAddress.line2
-                          ? `, ${shippingAddress.line2}`
-                          : ""}
-                      </p>
-                      <p className="text-[#2d1649]">
-                        {shippingAddress.city}
-                        {shippingAddress.region
-                          ? `, ${shippingAddress.region}`
-                          : ""}
-                      </p>
-                      {shippingAddress.reference && (
-                        <p className="text-[#8f7da8]">
-                          {shippingAddress.reference}
+                      {document && (
+                        <p className="text-[#2d1649]">
+                          {t("details.shippingLabels.document")}: {document}
                         </p>
+                      )}
+                      {location && (
+                        <p className="text-[#2d1649]">
+                          {t("details.shippingLabels.location")}: {location}
+                        </p>
+                      )}
+                      {order.courierModality === "AGENCY" &&
+                        shippingAddress.agencyName && (
+                          <p className="text-[#2d1649]">
+                            {t("details.shippingLabels.agency")}:{" "}
+                            {shippingAddress.agencyName}
+                          </p>
+                        )}
+                      {order.courierModality === "HOME" && (
+                        <>
+                          {shippingAddress.line1 && (
+                            <p className="text-[#2d1649]">
+                              {t("details.shippingLabels.address")}:{" "}
+                              {shippingAddress.line1}
+                              {shippingAddress.line2
+                                ? `, ${shippingAddress.line2}`
+                                : ""}
+                            </p>
+                          )}
+                          {shippingAddress.reference && (
+                            <p className="text-[#8f7da8]">
+                              {t("details.shippingLabels.reference")}:{" "}
+                              {shippingAddress.reference}
+                            </p>
+                          )}
+                        </>
                       )}
                     </div>
                   );

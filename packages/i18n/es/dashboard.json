@@ -710,6 +710,29 @@
       "delivery": "Entrega",
       "date": "Fecha",
       "shippingAddress": "Dirección de envío",
+      "shippingCopyButton": "Copiar datos de envío",
+      "shippingCopied": "Datos de envío copiados",
+      "shippingCopyError": "No se pudieron copiar los datos de envío.",
+      "shippingLabels": {
+        "courier": "Courier",
+        "modality": "Modalidad",
+        "recipient": "Destinatario",
+        "document": "Documento",
+        "phone": "Teléfono",
+        "location": "Ubicación",
+        "agency": "Agencia",
+        "address": "Dirección",
+        "reference": "Referencia",
+        "order": "Pedido"
+      },
+      "shippingDocumentTypes": {
+        "DNI": "DNI",
+        "PASSPORT": "Pasaporte"
+      },
+      "courierModalities": {
+        "AGENCY": "Recojo en agencia",
+        "HOME": "Entrega a domicilio"
+      },
       "shippingTitle": "Seguimiento y paquete",
       "trackingNumber": "Número de seguimiento",
       "trackingUrl": "Enlace de seguimiento",
