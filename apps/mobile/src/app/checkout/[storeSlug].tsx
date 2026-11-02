@@ -680,6 +680,9 @@ export default function CheckoutScreen() {
                 if (form.paymentMethod !== method.method) {
                   setField("paymentProof", null);
                 }
+                if (method.depositPercent >= 100) {
+                  setField("paymentType", "FULL");
+                }
                 setField("paymentMethod", method.method);
               }}
             />
@@ -716,11 +719,13 @@ export default function CheckoutScreen() {
                 selected={form.paymentType === "FULL"}
                 onPress={() => setField("paymentType", "FULL")}
               />
-              <Choice
-                label={t("checkout.partialPayment")}
-                selected={form.paymentType === "PARTIAL"}
-                onPress={() => setField("paymentType", "PARTIAL")}
-              />
+              {selectedPayment && selectedPayment.depositPercent < 100 ? (
+                <Choice
+                  label={t("checkout.partialPayment")}
+                  selected={form.paymentType === "PARTIAL"}
+                  onPress={() => setField("paymentType", "PARTIAL")}
+                />
+              ) : null}
               <View className="flex-row gap-2">
                 <Pressable
                   accessibilityRole="button"
