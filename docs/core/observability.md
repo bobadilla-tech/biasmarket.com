@@ -7,8 +7,8 @@ when you want to understand how the pieces fit together.
 
 Runbooks for specific alerts are in
 [incident-response.md](incident-response.md); the always-on services and their
-raw container logs are in [operations.md](operations.md). This doc is the
-guide that connects them.
+raw container logs are in [operations.md](operations.md). This doc is the guide
+that connects them.
 
 ## The four signals
 
@@ -121,9 +121,9 @@ values on the server before relying on a specific window.
 
 If your Claude Code has the GlitchTip MCP server configured, an assistant can
 query the same data for you: `list_issues`, `get_event`, `list_logs`,
-`list_transaction_groups`, `list_transaction_spans` and `detect_n_plus_one`
-map to the UI screens above. Ask it to search by level, service, text or
-trace id, and to open the full event for an issue.
+`list_transaction_groups`, `list_transaction_spans` and `detect_n_plus_one` map
+to the UI screens above. Ask it to search by level, service, text or trace id,
+and to open the full event for an issue.
 
 ## Anatomy of a log line
 
@@ -174,12 +174,13 @@ A single request leaves several traces, joined by two ids:
   failing request) and grep the logs for it. A well-formed id sent by the caller
   is reused, otherwise one is generated.
 - **trace id** links the same request across **errors, traces and logs in
-  GlitchTip**, and across services when the web server calls the api (the api honours
-  the sampling decision when the caller sends one). It appears on the error event, the
-  transaction, and each forwarded log line; it is not in the raw stdout.
+  GlitchTip**, and across services when the web server calls the api (the api
+  honours the sampling decision when the caller sends one). It appears on the
+  error event, the transaction, and each forwarded log line; it is not in the
+  raw stdout.
 
-So: from an error event, copy its trace id and open **Logs** filtered by it. From
-a log line on the VPS, use the `requestId`.
+So: from an error event, copy its trace id and open **Logs** filtered by it.
+From a log line on the VPS, use the `requestId`.
 
 ## Debugging playbooks
 
@@ -236,8 +237,8 @@ a log line on the VPS, use the `requestId`.
 
 Telemetry can fail silently, which is the worst kind of failure: you assume no
 errors means no problems. In October 2026 a bug in the event scrubber dropped
-every real API error for roughly two days and the only trace was a pile of crashes inside
-the scrubber itself. Work down this list:
+every real API error for roughly two days and the only trace was a pile of
+crashes inside the scrubber itself. Work down this list:
 
 1. **Is the DSN set in the running container?**
    `docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' <container> | grep SENTRY_DSN | sed -E 's#//[^@]*@#//***@#'`
@@ -267,9 +268,9 @@ the web server:
 | `/_next/image`                                                            | 2%   |
 | Everything else                                                           | 10%  |
 
-If a request arrives with a sampling decision from another service, that decision
-is followed so a trace is never half-recorded. **Errors and logs are not
-sampled.** The browser reports errors only (browser tracing is not enabled).
+If a request arrives with a sampling decision from another service, that
+decision is followed so a trace is never half-recorded. **Errors and logs are
+not sampled.** The browser reports errors only (browser tracing is not enabled).
 
 To change a rate, edit the sampler and its tests; to reduce storage, lower
 `DEFAULT_TRACE_RATE` before dropping retention.
@@ -291,13 +292,13 @@ trace. Several layers enforce this and **they do not share one list**:
   ([caddy.md](caddy.md#access-logs-and-token-redaction)).
 
 Also keep out of log messages and attributes: passwords and tokens, cookies and
-`Authorization` headers, full query strings, payment-proof image URLs, and
-buyer contact details beyond what you need to debug. Prefer ids (`orderId`,
-`storeId`) over personal data.
+`Authorization` headers, full query strings, payment-proof image URLs, and buyer
+contact details beyond what you need to debug. Prefer ids (`orderId`, `storeId`)
+over personal data.
 
-If you add a route that carries a secret in its path or query, update each
-layer above and add a test next to the code. The full list of redaction layers
-is in [incident-response.md](incident-response.md#error-tracking-and-redaction).
+If you add a route that carries a secret in its path or query, update each layer
+above and add a test next to the code. The full list of redaction layers is in
+[incident-response.md](incident-response.md#error-tracking-and-redaction).
 
 ## Adding instrumentation
 
@@ -355,22 +356,25 @@ the same `SENTRY_DSN` as the api.
   average hides.
 - **N+1 query:** one query to load a list, then one more per item, instead of
   one query for all.
-- **Hot / cold retention:** recent data kept fast and queryable (hot), older data
-  kept cheaply and slower or archived (cold).
-- **Fail closed:** when a safety step breaks, drop the data instead of sending it
-  unprotected. The scrubber does this.
+- **Hot / cold retention:** recent data kept fast and queryable (hot), older
+  data kept cheaply and slower or archived (cold).
+- **Fail closed:** when a safety step breaks, drop the data instead of sending
+  it unprotected. The scrubber does this.
 
 ## Known gaps
 
 - The **web server and browser** do not emit structured logs; they report errors
   and traces only.
 - GlitchTip has **no alert rules** yet, and there is no uptime check that
-  survives the VPS going down ([#535](https://github.com/bobadilla-tech/biasmarket.com/issues/535)).
+  survives the VPS going down
+  ([#535](https://github.com/bobadilla-tech/biasmarket.com/issues/535)).
 - Some GlitchTip issues are **noise** (an exploit scanner, aborted prefetches, a
-  crawler) and are being filtered ([#533](https://github.com/bobadilla-tech/biasmarket.com/issues/533),
+  crawler) and are being filtered
+  ([#533](https://github.com/bobadilla-tech/biasmarket.com/issues/533),
   [#534](https://github.com/bobadilla-tech/biasmarket.com/issues/534)).
 - The cause of the intermittent **Redis connection failures** is still being
-  diagnosed ([#536](https://github.com/bobadilla-tech/biasmarket.com/issues/536)).
+  diagnosed
+  ([#536](https://github.com/bobadilla-tech/biasmarket.com/issues/536)).
 - Logs buffered in the last moments before a container stops may not reach
   GlitchTip.
 

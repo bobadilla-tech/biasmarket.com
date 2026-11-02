@@ -3,6 +3,7 @@ import {
   Body,
   Headers,
   Controller,
+  HttpException,
   Logger,
   Param,
   Post,
@@ -124,7 +125,12 @@ export function toCheckoutOrderDto(
     requiredAmount: order.requiredAmount.toString(),
     expiresAt: order.expiresAt.toISOString(),
     createdAt: order.createdAt.toISOString(),
-    proofSubmitted: Boolean(payments?.some((p) => Boolean(p.imageUrl))),
+    proofSubmitted: Boolean(
+      payments?.some(
+        (payment) =>
+          payment.source === "BUYER_SUBMITTED" && Boolean(payment.imageUrl),
+      ),
+    ),
     items: order.items.map(toCheckoutItemDto),
   };
 }
@@ -285,12 +291,22 @@ export class CheckoutController {
     } catch (error) {
       if (proofImageUrl) {
         try {
-          const payment = await this.prisma.orderPayment.findFirst({
-            where: { imageUrl: proofImageUrl },
-            select: { id: true },
-          });
-          if (!payment) {
+          if (error instanceof HttpException && error.getStatus() < 500) {
             await this.storage?.deleteImage?.(proofImageUrl);
+          } else {
+            const store = await this.prisma.store.findUnique({
+              where: { slug },
+              select: { id: true },
+            });
+            if (store) {
+              const payment = await this.prisma.orderPayment.findFirst({
+                where: { storeId: store.id, imageUrl: proofImageUrl },
+                select: { id: true },
+              });
+              if (!payment) {
+                await this.storage?.deleteImage?.(proofImageUrl);
+              }
+            }
           }
         } catch (cleanupError) {
           this.logger.warn(

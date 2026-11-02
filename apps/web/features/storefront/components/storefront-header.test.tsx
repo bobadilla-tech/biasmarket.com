@@ -65,3 +65,18 @@ test("shows the store social links in the mobile utility bar", () => {
     screen.getByRole("link", { name: /Instagram/ }).getAttribute("href"),
   ).toBe("https://instagram.com/my-store");
 });
+
+test("keeps compact store logos contained on a clean surface", () => {
+  useCustomerProfile.mockReturnValue({ data: undefined, isPending: false });
+  renderWithProviders(
+    <StorefrontHeader
+      slug="my-store"
+      storeName="My Store"
+      logoUrl="https://cdn.example.com/store-logo.png"
+    />,
+  );
+
+  const logo = screen.getByAltText("");
+  expect(logo.className).toContain("object-contain");
+  expect(logo.className).toContain("bg-white");
+});

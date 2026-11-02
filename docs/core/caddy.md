@@ -39,10 +39,13 @@ Assisted order links carry a private token in the path
 (`/api/public/orders/<token>` on the API, `/store/<slug>/pedido/<token>` and the
 `/es|en/...` variants on the web). Both the snippet and the default logger in
 the global options block rewrite the token segment to `REDACTED` and drop the
-`Referer` header before a line is written. The default logger matters:
-`reverse_proxy` runtime errors (for example "connection refused" during a
-blue/green switch) are written there and include the request URI. Keep the two
-regexps identical, and update both if a new route ever carries a token.
+`Referer`, `Idempotency-Key` request header, and `X-Session-Token` response
+header before a line is written. The default logger matters: `reverse_proxy`
+runtime errors (for example "connection refused" during a blue/green switch) are
+written there and include the request URI. Keep the two redaction rules
+identical, and update both if a new route ever carries a credential. Caddy's
+JSON log fields use `request>headers` for request headers and `resp_headers` for
+response headers.
 
 Changing the Caddyfile does not take effect by merging alone: the compose file
 bind-mounts the single file `./Caddyfile`, `cd.yml` rsyncs with
@@ -58,6 +61,12 @@ Local check (no VPS needed): `caddy validate` the whole file with
 point `reverse_proxy` at a dead upstream, request `/api/public/orders/SECRET`,
 `/es/store/x/pedido/SECRET?x=1` and a request with `Referer: .../pedido/SECRET`,
 and assert `SECRET` is absent from `docker logs`.
+
+## Next.js middleware-probe filter
+
+The `biasmarket.com` site rejects requests carrying `x-middleware-subrequest` in Caddy before the web upstream is reached. This internal header is not part of a legitimate browser request; dropping it at the edge also keeps scanner traffic out of the Next.js logs.
+
+The app currently pins Next.js `16.3.8` in `apps/web/package.json`. The [CVE-2025-29927 advisory](https://github.com/advisories/GHSA-f82v-jwr5-mffw) lists affected releases through patched versions in the 12.x–15.x lines; Next.js 16 is outside the affected ranges. The Caddy matcher is defense in depth for these probes.
 
 ## Related
 

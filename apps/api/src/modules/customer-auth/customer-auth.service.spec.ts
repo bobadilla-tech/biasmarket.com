@@ -1163,6 +1163,7 @@ describe("CustomerAuthService", () => {
         email: "jane@example.com",
         phone: "+51988888888",
         emailVerified: true,
+        countryCode: "AR",
       });
       const orders = [
         {
@@ -1191,6 +1192,7 @@ describe("CustomerAuthService", () => {
         email: "jane@example.com",
         phone: "+51988888888",
         emailVerified: true,
+        countryCode: "AR",
       });
       expect(result.orders).toHaveLength(1);
       expect(result.orders[0]).toEqual(
@@ -1267,6 +1269,7 @@ describe("CustomerAuthService", () => {
       email: "old@example.com",
       phone: "+51988888888",
       emailVerified: true,
+      countryCode: "PE",
     };
 
     beforeEach(() => {
@@ -1293,7 +1296,34 @@ describe("CustomerAuthService", () => {
         name: "New Name",
         pendingEmail: undefined,
         pendingPhone: undefined,
+        countryCode: "PE",
       });
+    });
+
+    it("persists a buyer country change, including clearing it", async () => {
+      prisma.buyerAccount.update
+        .mockResolvedValueOnce({ ...currentBuyerAccount, countryCode: "AR" })
+        .mockResolvedValueOnce({ ...currentBuyerAccount, countryCode: null });
+
+      const updated = await service.updateProfile("my-store", session, {
+        name: "Old Name",
+        countryCode: "AR",
+      });
+      expect(prisma.buyerAccount.update).toHaveBeenNthCalledWith(1, {
+        where: { id: "buyer-1" },
+        data: { name: "Old Name", countryCode: "AR" },
+      });
+      expect(updated.countryCode).toBe("AR");
+
+      const cleared = await service.updateProfile("my-store", session, {
+        name: "Old Name",
+        countryCode: null,
+      });
+      expect(prisma.buyerAccount.update).toHaveBeenNthCalledWith(2, {
+        where: { id: "buyer-1" },
+        data: { name: "Old Name", countryCode: null },
+      });
+      expect(cleared.countryCode).toBeNull();
     });
 
     it("stages a new email and sends a confirmation to the new address", async () => {

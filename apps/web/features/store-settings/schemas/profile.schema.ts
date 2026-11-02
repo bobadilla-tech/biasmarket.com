@@ -9,6 +9,7 @@ export const profileFormSchema = z.object({
   paymentInstructions: z.string(),
   defaultCurrency: z.enum(SUPPORTED_CURRENCIES),
   locale: z.enum(["es", "en"]),
+  buyerRegister: z.enum(["auto", "tuteo", "voseo"]),
   instagramUrl: optionalUrlSchema,
   facebookUrl: optionalUrlSchema,
   tiktokUrl: optionalUrlSchema,

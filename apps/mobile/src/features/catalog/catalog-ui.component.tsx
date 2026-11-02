@@ -42,6 +42,7 @@ describe("ProductCard", () => {
             name: "Test album",
             price: "12.5",
             currency: "PEN",
+            shipsInternationally: true,
             images: [],
             store: { name: "Moon Shop", slug: "moon-shop" },
           }}

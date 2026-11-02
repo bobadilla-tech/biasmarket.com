@@ -186,3 +186,27 @@ test("drops the query string and trace query data beside a token URL", () => {
   expect(JSON.stringify(out)).not.toContain("token=x");
   expect(out.request.query_string).toBeUndefined();
 });
+
+test.each([
+  ["request cookies", { request: { cookies: { session: "secret-cookie" } } }],
+  ["cookie header", { request: { headers: { Cookie: "secret-cookie" } } }],
+  [
+    "Cloudflare country header",
+    { request: { headers: { "CF-IPCountry": "AR" } } },
+  ],
+  [
+    "Set-Cookie response header",
+    { request: { headers: { "Set-Cookie": "bm_country=AR" } } },
+  ],
+  ["user country", { user: { id: "user-1", countryCode: "AR" } }],
+  ["extra country", { extra: { nested: { countryCode: "AR" } } }],
+])("removes country and cookie data from Sentry %s", (_label, event) => {
+  const scrubbed = scrubSentryEvent(event);
+  const serialized = JSON.stringify(scrubbed).toLowerCase();
+
+  expect(serialized).not.toContain("secret-cookie");
+  expect(serialized).not.toContain("bm_country");
+  expect(serialized).not.toContain('"countrycode"');
+  expect(serialized).not.toContain('"cf-ipcountry"');
+  expect(serialized).not.toContain('"set-cookie"');
+});

@@ -10,6 +10,7 @@ test("accepts a valid product form payload", () => {
     stock: "5",
     categoryId: "c1",
     availability: "AVAILABLE",
+    shipsInternationally: false,
   });
   expect(result.success).toBe(true);
 });
