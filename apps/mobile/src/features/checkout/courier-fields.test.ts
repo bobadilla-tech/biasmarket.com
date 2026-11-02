@@ -86,6 +86,12 @@ test.each(["HOME", "AGENCY"] as const)(
           `${field} should appear in validation issues`,
         ).toBe(true);
       }
+      if (field === "shippingReference") {
+        expect(
+          result.success,
+          "shippingReference should remain optional when blank",
+        ).toBe(true);
+      }
       if (!result.success) {
         for (const issue of result.error.issues) {
           const key = String(issue.path[0]) as keyof typeof messages.en;
