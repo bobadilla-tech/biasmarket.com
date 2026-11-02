@@ -16,6 +16,8 @@
 				request>uri regexp (/public/orders/)[^/?#]+ ${1}REDACTED
 				request>uri regexp (/pedido/)[^/?#]+ ${1}REDACTED
 				request>headers>Referer delete
+				request>headers>Idempotency-Key delete
+				resp_headers>X-Session-Token delete
 			}
 		}
 	}
@@ -41,6 +43,8 @@
 				request>uri regexp (/public/orders/)[^/?#]+ ${1}REDACTED
 				request>uri regexp (/pedido/)[^/?#]+ ${1}REDACTED
 				request>headers>Referer delete
+				request>headers>Idempotency-Key delete
+				resp_headers>X-Session-Token delete
 			}
 		}
 	}
