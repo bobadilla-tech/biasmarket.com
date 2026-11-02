@@ -10914,6 +10914,10 @@
           "pendingPhone": {
             "type": "string",
             "nullable": true
+          },
+          "countryCode": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -10922,7 +10926,8 @@
           "phone",
           "emailVerified",
           "pendingEmail",
-          "pendingPhone"
+          "pendingPhone",
+          "countryCode"
         ]
       },
       "CustomerProfileResponseDto": {
@@ -10954,6 +10959,10 @@
           "phone": {
             "type": "string",
             "minLength": 1
+          },
+          "countryCode": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": ["name"]
@@ -10972,9 +10981,13 @@
           "pendingPhone": {
             "type": "string",
             "nullable": true
+          },
+          "countryCode": {
+            "type": "string",
+            "nullable": true
           }
         },
-        "required": ["name", "pendingEmail", "pendingPhone"]
+        "required": ["name", "pendingEmail", "pendingPhone", "countryCode"]
       },
       "LinkedStoreResponseDto": {
         "type": "object",

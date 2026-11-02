@@ -505,6 +505,7 @@ export class CustomerAuthService {
         emailVerified: buyerAccount.emailVerified,
         pendingEmail: buyerAccount.pendingEmail,
         pendingPhone: buyerAccount.pendingPhone,
+        countryCode: buyerAccount.countryCode,
       },
       orders: orders.map((order) =>
         toAccountOrderDto(withPaymentSummary(order)),
@@ -535,7 +536,12 @@ export class CustomerAuthService {
   async updateProfile(
     slug: string,
     session: { buyerAccountId: string },
-    dto: { name: string; email?: string; phone?: string },
+    dto: {
+      name: string;
+      email?: string;
+      phone?: string;
+      countryCode?: string | null;
+    },
   ) {
     const store = await this.findStoreBySlug(slug);
 
@@ -543,10 +549,14 @@ export class CustomerAuthService {
       where: { id: session.buyerAccountId },
     });
 
-    const data: { name: string; pendingEmail?: string; pendingPhone?: string } =
-      {
-        name: dto.name,
-      };
+    const data: {
+      name: string;
+      pendingEmail?: string;
+      pendingPhone?: string;
+      countryCode?: string | null;
+    } = { name: dto.name };
+
+    if (dto.countryCode !== undefined) data.countryCode = dto.countryCode;
 
     let sendEmailChangeTo: string | undefined;
     let sendPhoneChange = false;
@@ -603,6 +613,7 @@ export class CustomerAuthService {
       name: updated.name,
       pendingEmail: updated.pendingEmail,
       pendingPhone: updated.pendingPhone,
+      countryCode: updated.countryCode,
     };
   }
 

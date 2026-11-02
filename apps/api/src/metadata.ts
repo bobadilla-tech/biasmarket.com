@@ -2730,6 +2730,11 @@ export default async () => {
               name: { required: true, type: () => String, minLength: 1 },
               email: { required: false, type: () => String, format: 'email' },
               phone: { required: false, type: () => String, minLength: 1 },
+              countryCode: {
+                required: false,
+                type: () => String,
+                nullable: true,
+              },
             },
           },
         ],
@@ -2763,6 +2768,11 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
+              countryCode: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
             },
             CustomerProfileResponseDto: {
               customer: {
@@ -2787,6 +2797,11 @@ export default async () => {
                 nullable: true,
               },
               pendingPhone: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              countryCode: {
                 required: true,
                 type: () => String,
                 nullable: true,

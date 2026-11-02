@@ -2806,6 +2806,8 @@ export interface CustomerProfileCustomerResponseDto {
   pendingEmail: string | null;
   /** @nullable */
   pendingPhone: string | null;
+  /** @nullable */
+  countryCode: string | null;
 }
 
 export interface CustomerProfileResponseDto {
@@ -2819,6 +2821,8 @@ export interface UpdateCustomerProfileDto {
   email?: string;
   /** @minLength 1 */
   phone?: string;
+  /** @nullable */
+  countryCode?: string | null;
 }
 
 export interface UpdateCustomerProfileResponseDto {
@@ -2828,6 +2832,8 @@ export interface UpdateCustomerProfileResponseDto {
   pendingEmail: string | null;
   /** @nullable */
   pendingPhone: string | null;
+  /** @nullable */
+  countryCode: string | null;
 }
 
 export interface LinkedStoreResponseDto {
