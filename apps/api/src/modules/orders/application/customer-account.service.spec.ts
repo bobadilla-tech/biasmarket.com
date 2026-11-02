@@ -501,7 +501,6 @@ describe("CustomerAccountService", () => {
       expect(prisma.buyerAccount.findUniqueOrThrow).not.toHaveBeenCalled();
       expect(prisma.order.findMany).not.toHaveBeenCalled();
     });
-
     it("marks the buyer account verified and returns their orders for this store", async () => {
       const token = createCustomerAccountToken("buyer-1", "test-secret");
       const buyerAccount = {

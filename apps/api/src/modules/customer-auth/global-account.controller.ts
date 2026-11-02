@@ -83,7 +83,7 @@ export class GlobalAccountController {
   async deleteMe(
     @CustomerSession() session: { buyerAccountId: string },
     @Res({ passthrough: true }) res: Response,
-  ): Promise<{ ok: true }> {
+  ): Promise<OkResponseDto> {
     const result = await this.customerAuth.deleteGlobalAccount(
       session.buyerAccountId,
     );

@@ -36,7 +36,6 @@ export const VOSEO_FORMS = [
   "fijate",
 ] as const;
 
-export const VOSEO_PATTERN = new RegExp(
-  `(?<!\\p{L})(?:${VOSEO_FORMS.join("|")})(?!\\p{L})`,
-  "iu",
-);
+// Keep this literal; the guard tests check it against VOSEO_FORMS.
+export const VOSEO_PATTERN =
+  /(?<!\p{L})(?:vos|sos|tenés|podés|querés|sabés|hacés|ponés|venís|sentís|decí|mirá|contá|creá|iniciá|elegí|ingresá|seleccioná|escribí|usá|probá|revisá|buscá|completá|cambiá|agregá|guardá|confirmá|subí|cargá|esperá|andá|vení|acá|fijate)(?!\p{L})/iu;
