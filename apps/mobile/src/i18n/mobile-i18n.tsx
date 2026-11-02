@@ -7,6 +7,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type PropsWithChildren,
 } from "react";
@@ -24,12 +25,17 @@ function getSystemLocale(): Locale {
 
 export function MobileI18nProvider({ children }: PropsWithChildren) {
   const [locale, setLocaleState] = useState<Locale>(getSystemLocale);
+  const userSelectedLocale = useRef(false);
 
   useEffect(() => {
     let active = true;
     void AsyncStorage.getItem(LANGUAGE_KEY)
       .then((stored) => {
-        if (active && (stored === "en" || stored === "es")) {
+        if (
+          active &&
+          !userSelectedLocale.current &&
+          (stored === "en" || stored === "es")
+        ) {
           setLocaleState(stored);
         }
       })
@@ -40,6 +46,7 @@ export function MobileI18nProvider({ children }: PropsWithChildren) {
   }, []);
 
   const setLocale = useCallback((nextLocale: Locale) => {
+    userSelectedLocale.current = true;
     setLocaleState(nextLocale);
     void AsyncStorage.setItem(LANGUAGE_KEY, nextLocale).catch(() => undefined);
   }, []);
