@@ -1,6 +1,4 @@
-import { ApiPropertyOptional } from "@nestjs/swagger";
 import {
-  ArrayMaxSize,
   IsArray,
   IsBoolean,
   IsDateString,
@@ -10,7 +8,6 @@ import {
   IsString,
   MinLength,
 } from "class-validator";
-import { MAX_PRODUCT_IMAGES } from "../product-images.constants.js";
 import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
 
 export class UpdateProductDto {
@@ -43,15 +40,6 @@ export class UpdateProductDto {
   @IsOptional()
   @IsBoolean()
   shipsInternationally?: boolean;
-
-  // The swagger plugin only reads literal `@ArrayMaxSize` arguments, so the
-  // cap is declared explicitly for the OpenAPI schema.
-  @ApiPropertyOptional({ type: [String], maxItems: MAX_PRODUCT_IMAGES })
-  @IsOptional()
-  @IsArray()
-  @ArrayMaxSize(MAX_PRODUCT_IMAGES)
-  @IsString({ each: true })
-  images?: string[];
 
   @IsOptional()
   @IsDateString()

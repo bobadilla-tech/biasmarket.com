@@ -27,7 +27,10 @@ describe("StoreReferencesController admin routes", () => {
       ...reference,
       imageUrl: "https://cdn.test/old.jpg",
     }),
-    update: vi.fn().mockResolvedValue(reference),
+    update: vi.fn().mockResolvedValue({
+      updated: reference,
+      previousImageUrl: "https://cdn.test/old.jpg",
+    }),
     findPublic: vi.fn().mockResolvedValue({
       items: [reference],
       total: 1,
@@ -127,6 +130,33 @@ describe("StoreReferencesController admin routes", () => {
       .expect(400);
 
     expect(service.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects malformed boolean values instead of publishing a reference", async () => {
+    await request(app.getHttpServer())
+      .patch("/stores/store-1/references/reference-1")
+      .set("x-test-role", "user")
+      .field("hidden", "tru")
+      .field("privacyConfirmed", "true")
+      .expect(400);
+
+    expect(service.update).not.toHaveBeenCalled();
+  });
+
+  it("ignores image dimensions when no replacement image is uploaded", async () => {
+    await request(app.getHttpServer())
+      .patch("/stores/store-1/references/reference-1")
+      .set("x-test-role", "user")
+      .field("width", "1")
+      .field("height", "1")
+      .expect(200);
+
+    expect(service.update).toHaveBeenCalledWith(
+      "reference-1",
+      "store-1",
+      "user-1",
+      expect.objectContaining({ width: undefined, height: undefined }),
+    );
   });
 
   it.each(["202", "9007199254740992"])(

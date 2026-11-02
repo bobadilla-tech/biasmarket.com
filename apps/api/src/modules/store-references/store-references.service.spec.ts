@@ -117,8 +117,11 @@ describe("StoreReferencesService", () => {
       width: 640,
       height: 480,
     });
+    prisma.$queryRaw.mockResolvedValue([
+      { imageUrl: "https://cdn.test/old.jpg" },
+    ]);
 
-    await service.update("ref-1", "store-a", "owner-a", {
+    const result = await service.update("ref-1", "store-a", "owner-a", {
       hidden: false,
       privacyConfirmed: true,
       imageUrl: "https://cdn.test/new.jpg",
@@ -136,6 +139,17 @@ describe("StoreReferencesService", () => {
         height: 480,
       },
     });
+    expect(result).toEqual({
+      updated: {
+        id: "ref-1",
+        hidden: false,
+        imageUrl: "https://cdn.test/new.jpg",
+        width: 640,
+        height: 480,
+      },
+      previousImageUrl: "https://cdn.test/old.jpg",
+    });
+    expect(prisma.$queryRaw).toHaveBeenCalled();
   });
 
   it("returns an empty owned list when the store has no references", async () => {

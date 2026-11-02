@@ -174,26 +174,18 @@ export class StoreReferencesController {
     @Body() dto: UpdateStoreReferenceDto,
   ): Promise<StoreReferenceResponseDto> {
     const userId = session.user.id;
-    const existing = await this.references.findOwned(
-      referenceId,
-      storeId,
-      userId,
-    );
+    await this.references.findOwned(referenceId, storeId, userId);
     if ((dto.hidden === false || file) && !dto.privacyConfirmed) {
       throw new BadRequestException("Se requiere confirmar la privacidad");
     }
 
     let uploadedUrl: string | undefined;
+    let uploadedDimensions: { width: number; height: number } | undefined;
     if (file) {
-      const dimensions = readImageDimensions(
+      uploadedDimensions = readImageDimensions(
         file.buffer,
         file.detectedMimeType,
       );
-      if (dimensions.width !== dto.width || dimensions.height !== dto.height) {
-        throw new BadRequestException(
-          "Las dimensiones no coinciden con la imagen enviada",
-        );
-      }
       uploadedUrl = await this.storage.uploadStoreReferenceImage(
         file.buffer,
         file.detectedMimeType,
@@ -201,7 +193,7 @@ export class StoreReferencesController {
     }
 
     try {
-      const updated = await this.references.update(
+      const { updated, previousImageUrl } = await this.references.update(
         referenceId,
         storeId,
         userId,
@@ -210,17 +202,18 @@ export class StoreReferencesController {
           ...(uploadedUrl
             ? {
                 imageUrl: uploadedUrl,
-                width: dto.width,
-                height: dto.height,
+                width: uploadedDimensions!.width,
+                height: uploadedDimensions!.height,
                 privacyConfirmed: true,
               }
             : {}),
+          ...(!uploadedUrl ? { width: undefined, height: undefined } : {}),
           ...(dto.privacyConfirmed ? { privacyConfirmed: true } : {}),
         },
       );
       if (uploadedUrl) {
         await this.storage
-          .deleteStoreReferenceImage(existing.imageUrl)
+          .deleteStoreReferenceImage(previousImageUrl)
           .catch(() => undefined);
       }
       return serializeReference(updated);

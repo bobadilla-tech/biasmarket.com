@@ -8,6 +8,7 @@ describe("StorageService.deleteImage", () => {
     S3_LOGO_BUCKET: process.env.S3_LOGO_BUCKET,
     S3_PAYMENT_BUCKET: process.env.S3_PAYMENT_BUCKET,
     S3_PUBLIC_URL: process.env.S3_PUBLIC_URL,
+    S3_LEGACY_PUBLIC_URLS: process.env.S3_LEGACY_PUBLIC_URLS,
     S3_ENDPOINT: process.env.S3_ENDPOINT,
     S3_ACCESS_KEY: process.env.S3_ACCESS_KEY,
     S3_SECRET_KEY: process.env.S3_SECRET_KEY,
@@ -20,6 +21,7 @@ describe("StorageService.deleteImage", () => {
     process.env.S3_LOGO_BUCKET = "store-logos";
     process.env.S3_PAYMENT_BUCKET = "private-payments";
     process.env.S3_PUBLIC_URL = "https://cdn.example.test/assets/";
+    delete process.env.S3_LEGACY_PUBLIC_URLS;
     process.env.S3_ENDPOINT = "https://s3.example.test";
     process.env.S3_ACCESS_KEY = "test-access-key";
     process.env.S3_SECRET_KEY = "test-secret-key";
@@ -49,7 +51,10 @@ describe("StorageService.deleteImage", () => {
 
       expect(send).toHaveBeenCalledOnce();
       expect(send.mock.calls[0]?.[0]).toBeInstanceOf(DeleteObjectCommand);
-      expect(send.mock.calls[0]?.[0].input).toEqual({ Bucket: bucket, Key: key });
+      expect(send.mock.calls[0]?.[0].input).toEqual({
+        Bucket: bucket,
+        Key: key,
+      });
     },
   );
 
@@ -78,5 +83,26 @@ describe("StorageService.deleteImage", () => {
       ),
     ).rejects.toThrow();
     expect(send).not.toHaveBeenCalled();
+  });
+
+  it("deletes legacy image URLs only when their exact base is allowlisted", async () => {
+    process.env.S3_LEGACY_PUBLIC_URLS =
+      "https://old-cdn.example.test/previous-assets";
+    storage = new StorageService();
+    send = vi.fn().mockResolvedValue({});
+    (storage as unknown as { client: { send: typeof send } }).client.send =
+      send;
+
+    await storage.deleteStoreReferenceImage(
+      "https://old-cdn.example.test/previous-assets/public-assets/store-references/ref.jpg",
+    );
+    expect(send).toHaveBeenCalledOnce();
+
+    await expect(
+      storage.deleteStoreReferenceImage(
+        "https://other-cdn.example.test/previous-assets/public-assets/store-references/ref.jpg",
+      ),
+    ).rejects.toThrow();
+    expect(send).toHaveBeenCalledOnce();
   });
 });

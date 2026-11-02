@@ -12,16 +12,20 @@ import { Transform, Type } from "class-transformer";
 
 export class UpdateStoreReferenceDto {
   @IsOptional()
-  @Transform(({ value }) =>
-    value == null ? value : value === true || value === "true",
-  )
+  @Transform(({ value }) => {
+    if (value === true || value === "true") return true;
+    if (value === false || value === "false") return false;
+    return value;
+  })
   @IsBoolean()
   hidden?: boolean;
 
   @IsOptional()
-  @Transform(({ value }) =>
-    value == null ? value : value === true || value === "true",
-  )
+  @Transform(({ value }) => {
+    if (value === true || value === "true") return true;
+    if (value === false || value === "false") return false;
+    return value;
+  })
   @IsBoolean()
   privacyConfirmed?: boolean;
 

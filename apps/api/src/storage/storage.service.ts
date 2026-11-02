@@ -18,6 +18,12 @@ export class StorageService {
   // is the only intended way to read a payment image.
   private readonly paymentBucket = requiredEnv("S3_PAYMENT_BUCKET");
   private readonly publicUrl = requiredEnv("S3_PUBLIC_URL").replace(/\/+$/, "");
+  private readonly trustedPublicUrls = [
+    this.publicUrl,
+    ...(process.env.S3_LEGACY_PUBLIC_URLS?.split(",") ?? [])
+      .map((value) => value.trim().replace(/\/+$/, ""))
+      .filter(Boolean),
+  ].map((value) => new URL(value));
 
   private client = new S3Client({
     region: "us-east-1",
@@ -100,25 +106,23 @@ export class StorageService {
     url: string,
     expectedPrefix?: string,
   ): Promise<void> {
-    let publicUrl: URL;
     let imageUrl: URL;
     try {
-      publicUrl = new URL(this.publicUrl);
       imageUrl = new URL(url);
     } catch {
       throw new Error("Image URL is outside the configured storage origin");
     }
-    const basePath = publicUrl.pathname.replace(/\/+$/, "");
-    const objectPathPrefix = `${basePath}/`;
-
-    if (
-      imageUrl.origin !== publicUrl.origin ||
-      imageUrl.search ||
-      imageUrl.hash ||
-      !imageUrl.pathname.startsWith(objectPathPrefix)
-    ) {
+    const matchedBase = this.trustedPublicUrls.find((base) => {
+      const objectPathPrefix = `${base.pathname.replace(/\/+$/, "")}/`;
+      return (
+        imageUrl.origin === base.origin &&
+        imageUrl.pathname.startsWith(objectPathPrefix)
+      );
+    });
+    if (!matchedBase || imageUrl.search || imageUrl.hash) {
       throw new Error("Image URL is outside the configured storage origin");
     }
+    const objectPathPrefix = `${matchedBase.pathname.replace(/\/+$/, "")}/`;
 
     let objectPath: string;
     try {

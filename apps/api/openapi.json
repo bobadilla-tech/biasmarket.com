@@ -7078,13 +7078,6 @@
       "CreateProductDto": {
         "type": "object",
         "properties": {
-          "images": {
-            "maxItems": 6,
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
           "name": {
             "type": "string",
             "minLength": 2
@@ -7382,13 +7375,6 @@
       "UpdateProductDto": {
         "type": "object",
         "properties": {
-          "images": {
-            "maxItems": 6,
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
           "name": {
             "type": "string",
             "minLength": 2

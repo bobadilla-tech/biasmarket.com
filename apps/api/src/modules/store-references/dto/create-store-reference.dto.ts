@@ -13,16 +13,20 @@ import { Transform } from "class-transformer";
 
 export class CreateStoreReferenceDto {
   @IsOptional()
-  @Transform(({ value }) =>
-    value == null ? value : value === true || value === "true",
-  )
+  @Transform(({ value }) => {
+    if (value === true || value === "true") return true;
+    if (value === false || value === "false") return false;
+    return value;
+  })
   @IsBoolean()
   hidden?: boolean;
 
   @IsOptional()
-  @Transform(({ value }) =>
-    value == null ? value : value === true || value === "true",
-  )
+  @Transform(({ value }) => {
+    if (value === true || value === "true") return true;
+    if (value === false || value === "false") return false;
+    return value;
+  })
   @IsBoolean()
   privacyConfirmed?: boolean;
 

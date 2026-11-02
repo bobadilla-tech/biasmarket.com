@@ -454,8 +454,6 @@ export interface CreateVariantDto {
 }
 
 export interface CreateProductDto {
-  /** @maxItems 6 */
-  images?: string[];
   /** @minLength 2 */
   name: string;
   categoryIds?: string[];
@@ -560,8 +558,6 @@ export interface ProductDetailResponseDto {
 }
 
 export interface UpdateProductDto {
-  /** @maxItems 6 */
-  images?: string[];
   /** @minLength 2 */
   name?: string;
   categoryIds?: string[];
