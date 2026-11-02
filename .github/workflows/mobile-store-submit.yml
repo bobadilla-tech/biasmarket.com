@@ -21,15 +21,16 @@ permissions:
   contents: read
 
 jobs:
-  submit:
-    name: Submit production build to stores
+  submit-ios:
+    name: Submit iOS production build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (inputs.platform == 'ios' || inputs.platform == 'all')
     timeout-minutes: 90
     environment: mobile-production
     concurrency:
-      group: mobile-store-submit
+      group: mobile-store-submit-ios
       cancel-in-progress: false
+      queue: max
     steps:
       - uses: actions/checkout@v7
         with:
@@ -44,25 +45,50 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Submit selected production binaries
+      - name: Submit iOS production binary
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
-          PLATFORM: ${{ inputs.platform }}
           IOS_BUILD_ID: ${{ inputs.ios_build_id }}
+        run: |
+          test -n "$EXPO_TOKEN" || (echo "EXPO_TOKEN is required in mobile-production" && exit 1)
+          test -n "$EAS_PROJECT_ID" || (echo "EAS_PROJECT_ID is required in mobile-production" && exit 1)
+          test -n "$IOS_BUILD_ID" || (echo "ios_build_id is required when submitting to iOS" && exit 1)
+          [[ "$IOS_BUILD_ID" =~ ^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$ ]] || (echo "ios_build_id must be a UUID" && exit 1)
+          pnpm --filter mobile exec eas submit --platform ios --profile production --id "$IOS_BUILD_ID" --non-interactive
+
+  submit-android:
+    name: Submit Android production build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && (inputs.platform == 'android' || inputs.platform == 'all')
+    timeout-minutes: 90
+    environment: mobile-production
+    concurrency:
+      group: mobile-store-submit-android
+      cancel-in-progress: false
+      queue: max
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+        with:
+          version: 10.11.0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Submit Android production binary
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
           ANDROID_BUILD_ID: ${{ inputs.android_build_id }}
         run: |
           test -n "$EXPO_TOKEN" || (echo "EXPO_TOKEN is required in mobile-production" && exit 1)
           test -n "$EAS_PROJECT_ID" || (echo "EAS_PROJECT_ID is required in mobile-production" && exit 1)
-          if [ "$PLATFORM" = "android" ] || [ "$PLATFORM" = "all" ]; then
-            test -n "$ANDROID_BUILD_ID" || (echo "android_build_id is required when submitting to Android" && exit 1)
-          fi
-          if [ "$PLATFORM" = "ios" ] || [ "$PLATFORM" = "all" ]; then
-            test -n "$IOS_BUILD_ID" || (echo "ios_build_id is required when submitting to iOS" && exit 1)
-            [[ "$IOS_BUILD_ID" =~ ^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$ ]] || (echo "ios_build_id must be a UUID" && exit 1)
-            pnpm --filter mobile exec eas submit --platform ios --profile production --id "$IOS_BUILD_ID" --non-interactive
-          fi
-          if [ "$PLATFORM" = "android" ] || [ "$PLATFORM" = "all" ]; then
-            [[ "$ANDROID_BUILD_ID" =~ ^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$ ]] || (echo "android_build_id must be a UUID" && exit 1)
-            pnpm --filter mobile exec eas submit --platform android --profile production --id "$ANDROID_BUILD_ID" --non-interactive
-          fi
+          test -n "$ANDROID_BUILD_ID" || (echo "android_build_id is required when submitting to Android" && exit 1)
+          [[ "$ANDROID_BUILD_ID" =~ ^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$ ]] || (echo "android_build_id must be a UUID" && exit 1)
+          pnpm --filter mobile exec eas submit --platform android --profile production --id "$ANDROID_BUILD_ID" --non-interactive

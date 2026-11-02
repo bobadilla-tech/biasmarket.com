@@ -20,6 +20,7 @@ export function useCreateProduct(storeId: string | undefined) {
       stock: string;
       categoryId: string;
       availability: "AVAILABLE" | "OUT_OF_STOCK" | "DISCONTINUED";
+      shipsInternationally: boolean;
       imageFiles: File[];
       existingImages: string[];
       variants: VariantDraft[];
@@ -37,6 +38,7 @@ export function useCreateProduct(storeId: string | undefined) {
           currency: input.currency,
           soldOut,
           discontinued,
+          shipsInternationally: input.shipsInternationally,
           stock:
             input.variants.length === 0 && input.stock
               ? Number(input.stock)

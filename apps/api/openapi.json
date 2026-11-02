@@ -6002,6 +6002,14 @@
           "locale": {
             "type": "string"
           },
+          "countryCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "buyerRegister": {
+            "enum": ["auto", "tuteo", "voseo"],
+            "type": "string"
+          },
           "ownerId": {
             "type": "string"
           },
@@ -6088,6 +6096,8 @@
           "name",
           "slug",
           "locale",
+          "countryCode",
+          "buyerRegister",
           "ownerId",
           "themeConfig",
           "logoUrl",
@@ -6141,6 +6151,14 @@
             "type": "string"
           },
           "locale": {
+            "type": "string"
+          },
+          "countryCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "buyerRegister": {
+            "enum": ["auto", "tuteo", "voseo"],
             "type": "string"
           },
           "ownerId": {
@@ -6232,6 +6250,8 @@
           "name",
           "slug",
           "locale",
+          "countryCode",
+          "buyerRegister",
           "ownerId",
           "themeConfig",
           "logoUrl",
@@ -6265,6 +6285,14 @@
           },
           "locale": {
             "type": "string"
+          },
+          "countryCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "buyerRegister": {
+            "type": "string",
+            "enum": ["auto", "tuteo", "voseo"]
           },
           "whatsappNumber": {
             "type": "string"
@@ -6572,6 +6600,9 @@
           "discontinued": {
             "type": "boolean"
           },
+          "shipsInternationally": {
+            "type": "boolean"
+          },
           "deletedAt": {
             "type": "string",
             "nullable": true,
@@ -6606,6 +6637,7 @@
           "status",
           "soldOut",
           "discontinued",
+          "shipsInternationally",
           "deletedAt",
           "createdAt",
           "variants",
@@ -6772,6 +6804,14 @@
           "locale": {
             "type": "string"
           },
+          "countryCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "buyerRegister": {
+            "enum": ["auto", "tuteo", "voseo"],
+            "type": "string"
+          },
           "ownerId": {
             "type": "string"
           },
@@ -6867,6 +6907,8 @@
           "name",
           "slug",
           "locale",
+          "countryCode",
+          "buyerRegister",
           "ownerId",
           "themeConfig",
           "logoUrl",
@@ -7030,6 +7072,9 @@
           "discontinued": {
             "type": "boolean"
           },
+          "shipsInternationally": {
+            "type": "boolean"
+          },
           "availableUntil": {
             "type": "string"
           },
@@ -7140,6 +7185,9 @@
           "discontinued": {
             "type": "boolean"
           },
+          "shipsInternationally": {
+            "type": "boolean"
+          },
           "deletedAt": {
             "type": "string",
             "nullable": true,
@@ -7168,6 +7216,7 @@
           "status",
           "soldOut",
           "discontinued",
+          "shipsInternationally",
           "deletedAt",
           "createdAt",
           "variants"
@@ -7242,6 +7291,9 @@
           "discontinued": {
             "type": "boolean"
           },
+          "shipsInternationally": {
+            "type": "boolean"
+          },
           "deletedAt": {
             "type": "string",
             "nullable": true,
@@ -7283,6 +7335,7 @@
           "status",
           "soldOut",
           "discontinued",
+          "shipsInternationally",
           "deletedAt",
           "createdAt",
           "variants",
@@ -7321,6 +7374,9 @@
             "type": "boolean"
           },
           "discontinued": {
+            "type": "boolean"
+          },
+          "shipsInternationally": {
             "type": "boolean"
           },
           "availableUntil": {
@@ -7373,6 +7429,9 @@
           "discontinued": {
             "type": "boolean"
           },
+          "shipsInternationally": {
+            "type": "boolean"
+          },
           "deletedAt": {
             "type": "string",
             "nullable": true,
@@ -7395,6 +7454,7 @@
           "status",
           "soldOut",
           "discontinued",
+          "shipsInternationally",
           "deletedAt",
           "createdAt"
         ]
@@ -7474,11 +7534,22 @@
               "type": "string"
             }
           },
+          "shipsInternationally": {
+            "type": "boolean"
+          },
           "store": {
             "$ref": "#/components/schemas/SearchProductStoreResponseDto"
           }
         },
-        "required": ["id", "name", "price", "currency", "images", "store"]
+        "required": [
+          "id",
+          "name",
+          "price",
+          "currency",
+          "images",
+          "shipsInternationally",
+          "store"
+        ]
       },
       "ProductSearchResultResponseDto": {
         "type": "object",
@@ -10876,6 +10947,10 @@
           "pendingPhone": {
             "type": "string",
             "nullable": true
+          },
+          "countryCode": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -10884,7 +10959,8 @@
           "phone",
           "emailVerified",
           "pendingEmail",
-          "pendingPhone"
+          "pendingPhone",
+          "countryCode"
         ]
       },
       "CustomerProfileResponseDto": {
@@ -10916,6 +10992,10 @@
           "phone": {
             "type": "string",
             "minLength": 1
+          },
+          "countryCode": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": ["name"]
@@ -10934,9 +11014,13 @@
           "pendingPhone": {
             "type": "string",
             "nullable": true
+          },
+          "countryCode": {
+            "type": "string",
+            "nullable": true
           }
         },
-        "required": ["name", "pendingEmail", "pendingPhone"]
+        "required": ["name", "pendingEmail", "pendingPhone", "countryCode"]
       },
       "LinkedStoreResponseDto": {
         "type": "object",

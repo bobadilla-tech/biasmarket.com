@@ -18,6 +18,7 @@ import {
 import {
   isCurrentMobileAuthorization,
   setMobileBearerToken,
+  setSessionRefreshHandler,
   setUnauthorizedHandler,
 } from "./api-client";
 import { useMobileI18n } from "../../i18n/mobile-i18n";
@@ -91,10 +92,44 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
     [queryClient, runStorageOperation],
   );
 
+  const refreshSessionToken = useCallback(
+    async (authorization: string, token: string) => {
+      if (!isCurrentMobileAuthorization(authorization)) return;
+      const generation = sessionGeneration.current;
+      const refreshed = await runStorageOperation(async () => {
+        if (
+          generation !== sessionGeneration.current ||
+          !isCurrentMobileAuthorization(authorization)
+        ) {
+          return false;
+        }
+        const session = await readBuyerSession();
+        if (
+          !session ||
+          generation !== sessionGeneration.current ||
+          !isCurrentMobileAuthorization(authorization)
+        ) {
+          return false;
+        }
+        await writeBuyerSession({ ...session, token });
+        return true;
+      });
+      if (
+        refreshed &&
+        generation === sessionGeneration.current &&
+        isCurrentMobileAuthorization(authorization)
+      ) {
+        setMobileBearerToken(token);
+      }
+    },
+    [runStorageOperation],
+  );
+
   useEffect(() => {
     const generation = ++sessionGeneration.current;
     let active = true;
     setUnauthorizedHandler((authorization) => clearLocalSession(authorization));
+    setSessionRefreshHandler(refreshSessionToken);
     void runStorageOperation(readBuyerSession)
       .then((session) => {
         if (!active || generation !== sessionGeneration.current) return;
@@ -114,9 +149,11 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
 
     return () => {
       active = false;
+      sessionGeneration.current += 1;
       setUnauthorizedHandler(undefined);
+      setSessionRefreshHandler(undefined);
     };
-  }, [clearLocalSession, runStorageOperation]);
+  }, [clearLocalSession, refreshSessionToken, runStorageOperation]);
 
   const signIn = useCallback(
     async (slug: string, phone: string, password: string) => {

@@ -1,9 +1,9 @@
 # Mobile beta and release operations
 
 This repository has separate workflows for staging QA, production builds, OTA
-updates, and store submission. The protected `mobile-release` branch is for
-release candidates. Configure GitHub environments before using these workflows;
-missing environments are created without protection when a workflow first runs.
+updates, and store submission. The GitHub environments `mobile-staging` and
+`mobile-production` have been created. The planned `mobile-release` branch is
+for release candidates and must be protected before staging QA is run.
 
 ## Workflows
 
@@ -23,38 +23,23 @@ build has been released. Do not dispatch it to test that guard in production.
 
 ## One-time repository administration
 
-A repository admin must create and protect `mobile-staging` and
-`mobile-production` before dispatching workflows. `mobile-production` should
-require an approved reviewer and limit deployments to protected `main`.
-`mobile-staging` should hold only staging credentials. Protect the
-`mobile-release` branch with pull-request review and the required `CI Success`
-check. Do not put production credentials in repository-wide secrets.
+The environments already exist. `mobile-staging` currently allows `main` and
+`mobile-release`; `mobile-production` requires an approved reviewer and allows
+protected branches only. Neither `main` nor `mobile-release` is protected yet,
+so production deployments are blocked until a repository admin protects the
+intended release branch. Create and protect `mobile-release` with pull-request
+review and the required `CI Success` check before running staging QA. Protect
+`main` before running the production workflows, which are pinned to that branch.
+These settings are release prerequisites; merging the workflow changes does not
+publish a build.
 
-An admin can create the staging environment and configure production protection
-through the GitHub REST API. Replace `OWNER/REPOSITORY` and the numeric
-reviewer id with the repository's values. The examples do not set or expose any
-secrets:
-
-```bash
-REPO=OWNER/REPOSITORY
-gh api "repos/$REPO/environments/mobile-staging"
-gh api --method PUT "repos/$REPO/environments/mobile-staging" \
-  --input - <<'JSON'
-{"deployment_branch_policy":{"protected_branches":true,"custom_branch_policies":false}}
-JSON
-REVIEWER_ID=12345678
-gh api --method PUT "repos/$REPO/environments/mobile-production" \
-  --input - <<JSON
-{"wait_timer":0,"reviewers":[{"type":"User","id":$REVIEWER_ID}],"deployment_branch_policy":{"protected_branches":true,"custom_branch_policies":false}}
-JSON
-gh api "repos/$REPO/branches/mobile-release/protection"
-```
-
-Configure the `mobile-release` branch's required review and `CI Success` check
-in repository settings, then verify it with the read-only `gh api` command
-above. Configure secrets in the environments' settings. The implementation
-session does not execute these admin commands or change branch protection.
-See GitHub's REST API documentation for [deployment environments](https://docs.github.com/en/rest/deployments/environments) and [branch protection](https://docs.github.com/en/rest/branches/branch-protection).
+Configure secrets in the environments' settings, not as repository-wide
+secrets. The staging environment should hold only staging credentials. Add
+production credentials only when a release is planned. Check environment rules
+in repository Settings → Environments and branch rules in Settings → Rules.
+See GitHub's [deployment environments](https://docs.github.com/en/rest/deployments/environments)
+and [branch protection](https://docs.github.com/en/rest/branches/branch-protection)
+documentation.
 
 Configure these `mobile-staging` environment secrets for Maestro:
 

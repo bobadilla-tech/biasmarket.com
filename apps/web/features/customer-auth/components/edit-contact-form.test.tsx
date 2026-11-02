@@ -18,6 +18,7 @@ const profile = {
     emailVerified: true,
     pendingEmail: null,
     pendingPhone: null,
+    countryCode: null,
   },
   orders: [],
 };
@@ -35,9 +36,7 @@ test("prefills the form with the current profile values and submits changes", as
   const user = userEvent.setup();
   renderWithProviders(<EditContactForm slug="my-store" profile={profile} />);
 
-  const emailInput = screen.getByPlaceholderText(
-    "Correo",
-  ) as HTMLInputElement;
+  const emailInput = screen.getByPlaceholderText("Correo") as HTMLInputElement;
   expect(emailInput.value).toBe("jane@example.com");
 
   await user.clear(emailInput);
@@ -50,8 +49,9 @@ test("prefills the form with the current profile values and submits changes", as
       email: "new@example.com",
       phone: "+51988888888",
     });
-    expect(screen.getByText("Revisa tu correo para confirmar los cambios."))
-      .toBeDefined();
+    expect(
+      screen.getByText("Revisa tu correo para confirmar los cambios."),
+    ).toBeDefined();
   });
 });
 

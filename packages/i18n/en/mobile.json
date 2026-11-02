@@ -238,7 +238,9 @@
     "deleteTitle": "Delete your account?",
     "deleteConfirmation": "Your buyer profile, saved addresses, and sign-in credentials will be deleted. Store order records may be retained for transaction and fulfillment requirements.",
     "deleteFailedTitle": "Account not deleted",
-    "deleteFailed": "We could not delete your account. Check your connection and try again."
+    "deleteFailed": "We could not delete your account. Check your connection and try again.",
+    "sessionEndedTitle": "Your session ended",
+    "sessionEnded": "Sign in to check your account."
   },
   "ios": {
     "NSPhotoLibraryUsageDescription": "Bias Market needs access to your photos so you can attach a payment receipt.",
