@@ -117,8 +117,11 @@ describe("ProductsService", () => {
       });
 
       await expect(
-        service.update(productId, storeId, ownerId, {}),
+        service.update(productId, storeId, ownerId, {
+          shipsInternationally: false,
+        }),
       ).rejects.toThrow(NotFoundException);
+      expect(prisma.product.update).not.toHaveBeenCalled();
     });
   });
 
@@ -129,7 +132,7 @@ describe("ProductsService", () => {
       defaultCurrency: "PEN",
     });
     prisma.product.create.mockResolvedValue({ id: productId });
-    const dto = { name: "Widget", price: 10 };
+    const dto = { name: "Widget", price: 10, shipsInternationally: false };
 
     await service.create(storeId, ownerId, dto);
 

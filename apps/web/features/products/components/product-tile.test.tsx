@@ -20,6 +20,29 @@ const product = {
   images: [],
 } as unknown as ProductDetailResponseDto;
 
+function contrastRatio(foreground: string, background: string) {
+  const luminance = (hex: string) => {
+    const [red, green, blue] = hex
+      .slice(1)
+      .match(/.{2}/g)!
+      .map((channel) => parseInt(channel, 16) / 255)
+      .map((channel) =>
+        channel <= 0.04045
+          ? channel / 12.92
+          : ((channel + 0.055) / 1.055) ** 2.4,
+      );
+
+    return 0.2126 * red! + 0.7152 * green! + 0.0722 * blue!;
+  };
+  const foregroundLuminance = luminance(foreground);
+  const backgroundLuminance = luminance(background);
+
+  return (
+    (Math.max(foregroundLuminance, backgroundLuminance) + 0.05) /
+    (Math.min(foregroundLuminance, backgroundLuminance) + 0.05)
+  );
+}
+
 function Wrapper({ children }: { children: ReactNode }) {
   return (
     <NextIntlClientProvider locale="es" messages={getMessages("es")}>
@@ -28,7 +51,13 @@ function Wrapper({ children }: { children: ReactNode }) {
   );
 }
 
-function renderTile(overrides: { status?: "PUBLISHED" | "DRAFT" } = {}) {
+function renderTile(
+  overrides: {
+    status?: "PUBLISHED" | "DRAFT";
+    name?: string;
+    description?: string;
+  } = {},
+) {
   const onOpen = vi.fn();
   const onEdit = vi.fn();
   const onDelete = vi.fn();
@@ -36,6 +65,8 @@ function renderTile(overrides: { status?: "PUBLISHED" | "DRAFT" } = {}) {
   const tileProduct = {
     ...product,
     status: overrides.status ?? product.status,
+    name: overrides.name ?? product.name,
+    description: overrides.description ?? product.description,
   } as ProductDetailResponseDto;
 
   render(
@@ -94,4 +125,33 @@ test("draft products keep the publish action", () => {
     screen.getAllByRole("button", { name: "Publicar" }).length,
   ).toBeGreaterThan(0);
   expect(onPublish).not.toHaveBeenCalled();
+});
+
+test("mobile card content stays compact and readable with long copy", () => {
+  const name = "Photocard set with a deliberately long product title";
+  const description =
+    "A deliberately long description that must not push the price and stock out of view";
+  renderTile({ name, description });
+
+  expect(screen.getByText(name).className).toContain("line-clamp-2");
+  expect(screen.getByText(description).className).toContain("line-clamp-2");
+  expect(screen.getByText("3 unidades").className).toContain("text-[#8a4b00]");
+  expect(screen.getByText("Publicado").className).toContain("text-[#176b45]");
+  expect(screen.getByText("TXT").className).toContain("text-[#39204f]");
+  expect(
+    screen.getByRole("button", {
+      name: "Acciones de Photocard set with a deliberately long product title",
+    }).className,
+  ).toContain("size-11");
+
+  for (const color of [
+    "#2d1649",
+    "#665776",
+    "#b4234d",
+    "#8a4b00",
+    "#176b45",
+    "#39204f",
+  ]) {
+    expect(contrastRatio(color, "#ffffff")).toBeGreaterThanOrEqual(4.5);
+  }
 });
