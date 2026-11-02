@@ -139,6 +139,15 @@ describe("device cart storage", () => {
     expect(storage.has("biasmarket:checkout-key:store-a")).toBe(false);
   });
 
+  it("reports checkout-key removal failures to retry recovery", async () => {
+    await getCheckoutIdempotencyKey("store-a", [item]);
+    failRemovals = true;
+
+    await expect(clearCheckoutIdempotencyKey("store-a")).rejects.toThrow(
+      "remove failed",
+    );
+  });
+
   it("continues clearing the cart if checkout-key removal fails", async () => {
     await addToStoreCart("store-a", item);
     failRemovals = true;

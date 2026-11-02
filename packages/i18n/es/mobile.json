@@ -156,6 +156,7 @@
     "submitFailed": "No se pudo completar la compra.",
     "replayMismatch": "No pudimos confirmar este pedido. Revisa Mis pedidos antes de volver a intentarlo.",
     "orderExpired": "Esta compra venció. Revisa tu carrito e inténtalo de nuevo.",
+    "retryResetFailed": "No pudimos restablecer esta compra. Revisa Mis pedidos antes de volver a intentarlo.",
     "paymentConfigFailed": "No se pudieron cargar las opciones de pago. Inténtalo de nuevo antes de confirmar tu pedido.",
     "configFailed": "No se pudieron cargar las opciones de compra. Inténtalo de nuevo antes de confirmar tu pedido.",
     "proofCompressFailed": "No se pudo comprimir el comprobante por debajo de 5 MB.",

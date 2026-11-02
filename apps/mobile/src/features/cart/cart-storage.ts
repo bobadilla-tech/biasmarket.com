@@ -95,7 +95,7 @@ export function removeFromStoreCart(
 
 export function clearStoreCart(storeSlug: string): Promise<CartItem[]> {
   return updateStoreCart(storeSlug, () => []).then(async (items) => {
-    await clearCheckoutIdempotencyKey(storeSlug);
+    await clearCheckoutIdempotencyKey(storeSlug).catch(() => undefined);
     return items;
   });
 }
@@ -104,9 +104,7 @@ export async function clearCheckoutIdempotencyKey(
   storeSlug: string,
 ): Promise<void> {
   await serializeCheckoutKeyWrite(storeSlug, async () => {
-    await AsyncStorage.removeItem(checkoutKeyStorageKey(storeSlug)).catch(
-      () => undefined,
-    );
+    await AsyncStorage.removeItem(checkoutKeyStorageKey(storeSlug));
   });
 }
 

@@ -422,7 +422,12 @@ export default function CheckoutScreen() {
     } catch (error) {
       const mappedError = mapCheckoutError(error);
       if (mappedError.kind === "mismatch" || mappedError.kind === "expired") {
-        await clearCheckoutIdempotencyKey(storeSlug);
+        try {
+          await clearCheckoutIdempotencyKey(storeSlug);
+        } catch {
+          setSubmitError(t("checkout.retryResetFailed"));
+          return;
+        }
       }
       setSubmitError(
         mappedError.kind === "connection"
