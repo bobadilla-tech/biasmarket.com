@@ -181,4 +181,12 @@ describe("device cart storage", () => {
     expect(generatedAfterMismatch).toMatch(/^[0-9a-f-]{36}$/);
     expect(generatedAfterMismatch).not.toBe(generatedAfterParseFailure);
   });
+
+  it("clears a stored checkout key", async () => {
+    const key = await getCheckoutIdempotencyKey("store-a", [item]);
+    expect(await getCheckoutIdempotencyKey("store-a", [item])).toBe(key);
+    await clearCheckoutIdempotencyKey("store-a");
+    const nextKey = await getCheckoutIdempotencyKey("store-a", [item]);
+    expect(nextKey).not.toBe(key);
+  });
 });
