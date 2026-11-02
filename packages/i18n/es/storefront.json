@@ -680,6 +680,9 @@
       "submitting": "Enviando...",
       "success": "¡Listo! Recibimos tu comprobante. La tienda lo revisará pronto.",
       "inReview": "Tienes {amount} en revisión.",
+      "remainingTitle": "Paga el saldo restante",
+      "remainingButton": "Pagar lo restante · {amount}",
+      "remainingDescription": "Te falta pagar {amount}. Sube el comprobante del abono.",
       "waitReview": "Espera la revisión de tu tienda antes de enviar otro comprobante.",
       "errors": {
         "amountInvalid": "Escribe un monto válido, por ejemplo 40.50.",
