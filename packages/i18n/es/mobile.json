@@ -238,7 +238,9 @@
     "deleteTitle": "¿Eliminar tu cuenta?",
     "deleteConfirmation": "Se eliminarán tu perfil de comprador, direcciones guardadas y credenciales. La tienda puede conservar los pedidos por motivos de transacción y entrega.",
     "deleteFailedTitle": "No se eliminó la cuenta",
-    "deleteFailed": "No pudimos eliminar tu cuenta. Revisa tu conexión e inténtalo de nuevo."
+    "deleteFailed": "No pudimos eliminar tu cuenta. Revisa tu conexión e inténtalo de nuevo.",
+    "sessionEndedTitle": "Tu sesión terminó",
+    "sessionEnded": "Inicia sesión para revisar tu cuenta."
   },
   "ios": {
     "NSPhotoLibraryUsageDescription": "Bias Market necesita acceso a tus fotos para adjuntar un comprobante de pago.",
