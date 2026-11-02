@@ -1682,6 +1682,14 @@ export default async () => {
           },
         ],
         [
+          import('./modules/orders/dto/create-checkout-request.dto.js'),
+          {
+            CreateCheckoutRequestDto: {
+              file: { required: false, type: () => Object },
+            },
+          },
+        ],
+        [
           import('./modules/payment-config/dto/payment-method-details.dto.js'),
           {
             PaymentMethodDetailsDto: {

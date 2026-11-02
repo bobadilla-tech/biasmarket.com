@@ -22,6 +22,9 @@ export const create = async (
   options?: Parameters<typeof customFetch>[1],
 ): Promise<CheckoutResultResponseDto> => {
   const formData = new FormData();
+  if (createOrderDto.file !== undefined) {
+    formData.append(`file`, createOrderDto.file);
+  }
   formData.append(`deliveryMethodType`, createOrderDto.deliveryMethodType);
   if (createOrderDto.pickupPointId !== undefined) {
     formData.append(`pickupPointId`, createOrderDto.pickupPointId);

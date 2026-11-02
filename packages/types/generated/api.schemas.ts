@@ -1782,6 +1782,8 @@ export const CreateOrderDtoCourierModality = {
 } as const;
 
 export interface CreateOrderDto {
+  /** Payment proof image. Required for configured non-cash payment methods. */
+  file?: Blob;
   deliveryMethodType: CreateOrderDtoDeliveryMethodType;
   pickupPointId?: string;
   /** @pattern ^\d{4}-\d{2}-\d{2}$ */
