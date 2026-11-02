@@ -81,7 +81,7 @@ describe("buyer session lifecycle", () => {
   });
 
   it("deletes the persisted SecureStore session when the buyer signs out", async () => {
-    renderSession();
+    await renderSession();
     await waitFor(() =>
       expect(screen.getByTestId("session-status").props.children).toBe(
         "unauthenticated",
@@ -115,7 +115,7 @@ describe("buyer session lifecycle", () => {
         status: 401,
       }),
     );
-    renderSession();
+    await renderSession();
     await waitFor(() =>
       expect(screen.getByTestId("session-status").props.children).toBe(
         "unauthenticated",
