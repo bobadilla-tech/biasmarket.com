@@ -77,6 +77,7 @@ for (const app of IN_APP) {
       buyer.getByRole("button", { name: "Guardar con Google" }),
     ).toHaveCount(0);
     await expect(buyer.getByText("Sube tu comprobante")).toBeVisible();
+    await buyer.getByRole("button", { name: /Pagar lo restante/ }).click();
     await expect(buyer.locator('input[type="file"]')).toBeAttached();
     await buyer.locator('input[type="file"]').setInputFiles(PROOF_IMAGE);
 

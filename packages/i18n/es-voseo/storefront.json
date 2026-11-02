@@ -192,6 +192,7 @@
       "preview": "Vista previa de tu comprobante",
       "success": "¡Listo! Recibimos tu comprobante. La tienda lo revisará pronto.",
       "inReview": "Tenés {amount} en revisión.",
+      "remainingDescription": "Te queda pagar {amount}. Adjuntá el comprobante del abono.",
       "waitReview": "Esperá la revisión de tu tienda antes de enviar otro comprobante.",
       "errors": {
         "amountInvalid": "Escribí un monto válido, por ejemplo 40.50.",
