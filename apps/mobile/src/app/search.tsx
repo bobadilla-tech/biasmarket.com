@@ -30,8 +30,16 @@ export default function SearchScreen() {
     : params.storeSlug;
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [storeSlug, setStoreSlug] = useState(routeStoreSlug ?? "");
-  const [category, setCategory] = useState("");
+  const [storeSelection, setStoreSelection] = useState({
+    routeStoreSlug,
+    storeSlug: routeStoreSlug ?? "",
+    category: "",
+  });
+  const routeChanged = storeSelection.routeStoreSlug !== routeStoreSlug;
+  const storeSlug = routeChanged
+    ? (routeStoreSlug ?? "")
+    : storeSelection.storeSlug;
+  const category = routeChanged ? "" : storeSelection.category;
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), 300);
@@ -73,8 +81,11 @@ export default function SearchScreen() {
   const categories = categoryQuery.data ?? [];
 
   function chooseStore(slug: string) {
-    setStoreSlug(slug);
-    setCategory("");
+    setStoreSelection({ routeStoreSlug, storeSlug: slug, category: "" });
+  }
+
+  function chooseCategory(nextCategory: string) {
+    setStoreSelection({ routeStoreSlug, storeSlug, category: nextCategory });
   }
 
   return (
@@ -127,14 +138,14 @@ export default function SearchScreen() {
                 <FilterChip
                   label={t("common.all")}
                   selected={!category}
-                  onPress={() => setCategory("")}
+                  onPress={() => chooseCategory("")}
                 />
                 {categories.map((item) => (
                   <FilterChip
                     key={item.id}
                     label={item.name}
                     selected={category === item.name}
-                    onPress={() => setCategory(item.name)}
+                    onPress={() => chooseCategory(item.name)}
                   />
                 ))}
               </View>

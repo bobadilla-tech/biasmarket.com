@@ -7,6 +7,10 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { AppModule } from "./../src/app.module.js";
 import {
+  createCustomerAccountToken,
+  createCustomerSessionToken,
+} from "@biasmarket/utils/customer-account-token";
+import {
   assertMatchesSchema,
   cleanupBuyerTestData,
   deleteOrders,
@@ -833,20 +837,97 @@ describe("customer account + customer auth (e2e)", () => {
         globalMeRes.body.stores.map((s: { slug: string }) => s.slug).sort(),
       ).toEqual([storeSlug, storeBSlug].sort());
 
-      // Account deletion removes the buyer-owned country along with credentials.
+      // Deletion also clears buyer-owned profile data introduced after this
+      // test was originally written.
       await prisma.buyerAccount.update({
-        where: { id: buyerAccount.id },
+        where: { id: crossStoreBuyerAccountId },
         data: { countryCode: "AR" },
       });
+      await prisma.buyerAccount.update({
+        where: { id: crossStoreBuyerAccountId },
+        data: {
+          pendingEmail: `pending-${runId}@example.com`,
+          pendingPhone: "+51970000000",
+        },
+      });
+      const accountSecret = process.env.CUSTOMER_ACCOUNT_TOKEN_SECRET;
+      if (!accountSecret) {
+        throw new Error("CUSTOMER_ACCOUNT_TOKEN_SECRET is required");
+      }
+      const resetToken = createCustomerAccountToken(
+        crossStoreBuyerAccountId,
+        accountSecret,
+        "reset",
+      );
+      const changeEmailToken = createCustomerAccountToken(
+        crossStoreBuyerAccountId,
+        accountSecret,
+        "change-email",
+      );
+      const changePhoneToken = createCustomerAccountToken(
+        crossStoreBuyerAccountId,
+        accountSecret,
+        "change-phone",
+      );
+      const staleBearer = createCustomerSessionToken(
+        crossStoreBuyerAccountId,
+        buyerAccount.passwordVersion,
+        accountSecret,
+      );
+
+      await request(app.getHttpServer()).delete("/account/me").expect(401);
       await request(app.getHttpServer())
+        .delete("/account/me")
+        .set("Cookie", sessionCookie)
+        .expect(403);
+
+      const deletionRes = await request(app.getHttpServer())
         .delete("/account/me")
         .set("Cookie", sessionCookie)
         .set("Origin", "http://localhost:3001")
         .expect(200);
-      const deletedBuyer = await prisma.buyerAccount.findUniqueOrThrow({
-        where: { id: buyerAccount.id },
+      expect(deletionRes.body).toEqual({ ok: true });
+      const deletionCookies = deletionRes.headers["set-cookie"];
+      expect(
+        (Array.isArray(deletionCookies) ? deletionCookies : [deletionCookies])
+          .filter((cookie): cookie is string => typeof cookie === "string")
+          .some((cookie) => cookie.startsWith("bm_customer_session=;")),
+      ).toBe(true);
+
+      const deletedAccount = await prisma.buyerAccount.findUniqueOrThrow({
+        where: { id: crossStoreBuyerAccountId },
       });
-      expect(deletedBuyer.countryCode).toBeNull();
+      expect(deletedAccount).toMatchObject({
+        phone: null,
+        email: null,
+        passwordHash: null,
+        emailVerified: false,
+        googleSub: null,
+        pendingEmail: null,
+        pendingPhone: null,
+        name: null,
+        countryCode: null,
+      });
+      expect(deletedAccount.passwordVersion).toBeGreaterThan(0);
+
+      await request(app.getHttpServer())
+        .get("/account/me")
+        .set("Cookie", sessionCookie)
+        .expect(401);
+      await request(app.getHttpServer())
+        .get("/account/me")
+        .set("Authorization", `Bearer ${staleBearer}`)
+        .expect(401);
+      await request(app.getHttpServer())
+        .post("/account/reset-password")
+        .send({ token: resetToken, password: "another-strong-password" })
+        .expect(400);
+      for (const staleToken of [token, changeEmailToken, changePhoneToken]) {
+        await request(app.getHttpServer())
+          .get(`/stores/${storeSlug}/account/confirm`)
+          .query({ token: staleToken })
+          .expect(400);
+      }
     },
   );
 });

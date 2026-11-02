@@ -123,7 +123,7 @@ export default function LoginScreen() {
       <Link
         href={{
           pathname: "/register",
-          params: { slug: params.storeSlug, returnTo: params.returnTo },
+          params: { slug: initialSlug, returnTo: params.returnTo },
         }}
         className="text-center font-medium text-white"
       >

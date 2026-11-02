@@ -10,13 +10,19 @@ class StubFileReader {
   onloadend: (() => void) | null = null;
   onerror: (() => void) | null = null;
 
-  readAsDataURL() {
+  readAsDataURL(blob: Blob) {
+    lastReadAsDataURLBlob = blob;
     this.result = "data:image/jpeg;base64,cHJvb2Y=";
     this.onloadend?.();
   }
 }
 
-afterEach(() => vi.unstubAllGlobals());
+let lastReadAsDataURLBlob: Blob | null = null;
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  lastReadAsDataURLBlob = null;
+});
 
 describe("private buyer payment proof", () => {
   it("uses the account image stream route rather than the public image URL", () => {
@@ -51,5 +57,7 @@ describe("private buyer payment proof", () => {
     expect(
       new Headers(request.mock.calls[0][1]?.headers).get("Authorization"),
     ).toBe("Bearer buyer-token");
+    expect(lastReadAsDataURLBlob).toBeInstanceOf(Blob);
+    expect(await lastReadAsDataURLBlob?.text()).toBe("proof");
   });
 });

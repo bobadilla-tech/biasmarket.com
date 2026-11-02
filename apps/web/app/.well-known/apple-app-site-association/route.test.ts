@@ -1,18 +1,22 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { GET } from "./route.js";
 
 describe("Apple Universal Links association", () => {
   afterEach(() => {
-    delete process.env.IOS_TEAM_ID;
+    vi.unstubAllEnvs();
   });
 
   it("does not publish an unverifiable app id", async () => {
-    delete process.env.IOS_TEAM_ID;
+    vi.stubEnv("IOS_TEAM_ID", "");
+    vi.stubEnv("IOS_BUNDLE_ID", process.env.IOS_BUNDLE_ID ?? "");
+    delete process.env.IOS_BUNDLE_ID;
     expect((await GET()).status).toBe(503);
   });
 
   it("associates product and buyer order URLs with the mobile bundle", async () => {
-    process.env.IOS_TEAM_ID = "ABCDE12345";
+    vi.stubEnv("IOS_TEAM_ID", "ABCDE12345");
+    vi.stubEnv("IOS_BUNDLE_ID", process.env.IOS_BUNDLE_ID ?? "");
+    delete process.env.IOS_BUNDLE_ID;
     const response = await GET();
     const body = await response.json();
     expect(response.status).toBe(200);
@@ -29,8 +33,25 @@ describe("Apple Universal Links association", () => {
       "/*/store/*/account/orders/",
       "/*/store/*/account/orders/*",
     ]);
-    expect(
-      components.filter((c: { exclude?: boolean }) => c.exclude),
-    ).toHaveLength(4);
+    expect(components).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          "/": "/*/store/*/product/*/*",
+          exclude: true,
+        }),
+        expect.objectContaining({
+          "/": "/*/store/*/product/",
+          exclude: true,
+        }),
+        expect.objectContaining({
+          "/": "/*/store/*/account/orders/*/*",
+          exclude: true,
+        }),
+        expect.objectContaining({
+          "/": "/*/store/*/account/orders/",
+          exclude: true,
+        }),
+      ]),
+    );
   });
 });
