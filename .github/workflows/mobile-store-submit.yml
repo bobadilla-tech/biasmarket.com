@@ -24,6 +24,7 @@ jobs:
   submit:
     name: Submit production build to stores
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     timeout-minutes: 90
     environment: mobile-production
     concurrency:
@@ -53,16 +54,15 @@ jobs:
         run: |
           test -n "$EXPO_TOKEN" || (echo "EXPO_TOKEN is required in mobile-production" && exit 1)
           test -n "$EAS_PROJECT_ID" || (echo "EAS_PROJECT_ID is required in mobile-production" && exit 1)
-          cd apps/mobile
           if [ "$PLATFORM" = "android" ] || [ "$PLATFORM" = "all" ]; then
             test -n "$ANDROID_BUILD_ID" || (echo "android_build_id is required when submitting to Android" && exit 1)
           fi
           if [ "$PLATFORM" = "ios" ] || [ "$PLATFORM" = "all" ]; then
             test -n "$IOS_BUILD_ID" || (echo "ios_build_id is required when submitting to iOS" && exit 1)
             [[ "$IOS_BUILD_ID" =~ ^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$ ]] || (echo "ios_build_id must be a UUID" && exit 1)
-            pnpm dlx eas-cli submit --platform ios --profile production --id "$IOS_BUILD_ID" --non-interactive
+            pnpm --filter mobile exec eas submit --platform ios --profile production --id "$IOS_BUILD_ID" --non-interactive
           fi
           if [ "$PLATFORM" = "android" ] || [ "$PLATFORM" = "all" ]; then
             [[ "$ANDROID_BUILD_ID" =~ ^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$ ]] || (echo "android_build_id must be a UUID" && exit 1)
-            pnpm dlx eas-cli submit --platform android --profile production --id "$ANDROID_BUILD_ID" --non-interactive
+            pnpm --filter mobile exec eas submit --platform android --profile production --id "$ANDROID_BUILD_ID" --non-interactive
           fi

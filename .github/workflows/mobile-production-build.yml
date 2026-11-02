@@ -10,6 +10,7 @@ jobs:
   build:
     name: Build production binaries
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     timeout-minutes: 90
     environment: mobile-production
     concurrency:
@@ -18,6 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ github.sha }}
           persist-credentials: false
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
         with:
@@ -28,17 +30,24 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Validate EAS credentials
+      - name: Verify EAS project configuration
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
         run: |
           test -n "$EXPO_TOKEN" || (echo "EXPO_TOKEN is required in mobile-production" && exit 1)
           test -n "$EAS_PROJECT_ID" || (echo "EAS_PROJECT_ID is required in mobile-production" && exit 1)
+          pnpm --filter mobile exec expo config --json | jq -e --arg project_id "$EAS_PROJECT_ID" '.extra.eas.projectId == $project_id' >/dev/null
       - name: Build iOS and Android
+        id: build
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
         run: |
-          cd apps/mobile
-          pnpm dlx eas-cli build --platform all --profile production --non-interactive --wait
+          build_json=$(pnpm --filter mobile exec eas build --platform all --profile production --non-interactive --wait --json)
+          mapfile -t build_ids < <(jq -r '.[].id // empty' <<< "$build_json")
+          test "${#build_ids[@]}" -eq 2 || (echo "Expected iOS and Android build IDs from EAS" && exit 1)
+          for build_id in "${build_ids[@]}"; do
+            [[ "$build_id" =~ ^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$ ]] || (echo "EAS returned an invalid build ID" && exit 1)
+            echo "- $build_id" >> "$GITHUB_STEP_SUMMARY"
+          done
