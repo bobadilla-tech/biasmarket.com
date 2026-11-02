@@ -59,11 +59,11 @@ function SessionProbe() {
   );
 }
 
-async function renderSession() {
-  const queryClient = new QueryClient({
+async function renderSession(
+  queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
-  });
-
+  }),
+) {
   return render(
     <MobileI18nProvider>
       <QueryClientProvider client={queryClient}>
@@ -116,6 +116,35 @@ describe("buyer session lifecycle", () => {
       ),
     );
     expect(mockRemove).toHaveBeenCalledTimes(1);
+  });
+
+  it("clears buyer-specific query data after a successful sign-in", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    queryClient.setQueryData(["buyer", "old-store", "profile"], { id: "old" });
+    queryClient.setQueryData(["buyer-order", "old-order"], { id: "old" });
+    queryClient.setQueryData(["private-payment-proof", "old-proof"], "old");
+    await renderSession(queryClient);
+    await waitFor(() =>
+      expect(screen.getByTestId("session-status").props.children).toBe(
+        "unauthenticated",
+      ),
+    );
+
+    await act(async () => {
+      fireEvent.press(screen.getByTestId("sign-in"));
+    });
+
+    expect(queryClient.getQueryData(["buyer", "old-store", "profile"])).toBe(
+      undefined,
+    );
+    expect(queryClient.getQueryData(["buyer-order", "old-order"])).toBe(
+      undefined,
+    );
+    expect(
+      queryClient.getQueryData(["private-payment-proof", "old-proof"]),
+    ).toBe(undefined);
   });
 
   it("clears SecureStore and session state when an authenticated request returns 401", async () => {

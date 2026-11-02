@@ -49,10 +49,21 @@ export default function OrderHistoryScreen() {
 
   if (ordersQuery.error) {
     return (
-      <View className="flex-1 items-center justify-center bg-brand-ink px-6">
+      <View className="flex-1 items-center justify-center gap-4 bg-brand-ink px-6">
         <Text accessibilityRole="alert" className="text-center text-red-200">
           {t("orders.loadFailed")}
         </Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => void ordersQuery.refetch()}
+        >
+          <Text className="font-semibold text-brand-pink">
+            {t("common.retry")}
+          </Text>
+        </Pressable>
+        <Pressable accessibilityRole="button" onPress={() => router.back()}>
+          <Text className="font-semibold text-white">{t("common.back")}</Text>
+        </Pressable>
       </View>
     );
   }
