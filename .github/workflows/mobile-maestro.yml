@@ -6,6 +6,7 @@ on:
     paths:
       - "apps/mobile/**"
       - "packages/**"
+      - "scripts/ci/mobile-maestro.sh"
       - ".github/workflows/mobile-maestro.yml"
   workflow_dispatch:
 
@@ -18,73 +19,65 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     environment: mobile-staging
-    env:
-      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-      EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
-      STORE_SLUG: ${{ secrets.MAESTRO_STORE_SLUG }}
-      PRODUCT_ID: ${{ secrets.MAESTRO_PRODUCT_ID }}
-      PRODUCT_NAME: ${{ secrets.MAESTRO_PRODUCT_NAME }}
-      BUYER_PHONE: ${{ secrets.MAESTRO_BUYER_PHONE }}
-      BUYER_PASSWORD: ${{ secrets.MAESTRO_BUYER_PASSWORD }}
-      PICKUP_LABEL: ${{ secrets.MAESTRO_PICKUP_LABEL }}
-      PAYMENT_METHOD: ${{ secrets.MAESTRO_PAYMENT_METHOD }}
+    concurrency:
+      group: mobile-maestro-${{ github.ref }}
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+        with:
+          version: 10.11.0
       - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: pnpm
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
-        with:
-          version: 10.11.0
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Install pinned Maestro CLI
+        env:
+          MAESTRO_VERSION: cli-2.12.1
+          MAESTRO_SHA256: 54dbb0716425626604973cbb374c585ca30272375d9ce15177a1152765ddd9d7
+        run: |
+          archive="$RUNNER_TEMP/maestro.zip"
+          curl --fail --location --retry 3 "https://github.com/mobile-dev-inc/Maestro/releases/download/${MAESTRO_VERSION}/maestro.zip" --output "$archive"
+          echo "$MAESTRO_SHA256  $archive" | sha256sum --check --status
+          unzip -q "$archive" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/maestro/bin" >> "$GITHUB_PATH"
+      - name: Build staging APK
+        id: build
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
+        run: |
+          test -n "$EXPO_TOKEN" || (echo "EXPO_TOKEN is required in mobile-staging" && exit 1)
+          test -n "$EAS_PROJECT_ID" || (echo "EAS_PROJECT_ID is required in mobile-staging" && exit 1)
+          cd apps/mobile
+          build_json=$(pnpm dlx eas-cli build --platform android --profile preview --non-interactive --wait --json)
+          build_id=$(jq -r '.[0].id // empty' <<< "$build_json")
+          test -n "$build_id" || (echo "Failed to extract build ID from EAS build output" && exit 1)
+          echo "id=$build_id" >> "$GITHUB_OUTPUT"
+      - name: Configure KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
       - name: Start Android emulator
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
+        env:
+          BUILD_ID: ${{ steps.build.outputs.id }}
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
+          STORE_SLUG: ${{ secrets.MAESTRO_STORE_SLUG }}
+          PRODUCT_ID: ${{ secrets.MAESTRO_PRODUCT_ID }}
+          PRODUCT_NAME: ${{ secrets.MAESTRO_PRODUCT_NAME }}
+          BUYER_PHONE: ${{ secrets.MAESTRO_BUYER_PHONE }}
+          BUYER_PASSWORD: ${{ secrets.MAESTRO_BUYER_PASSWORD }}
+          PICKUP_LABEL: ${{ secrets.MAESTRO_PICKUP_LABEL }}
+          PAYMENT_METHOD: ${{ secrets.MAESTRO_PAYMENT_METHOD }}
         with:
           api-level: 35
           arch: x86_64
           profile: pixel_6
-          script: |
-            test -n "$EXPO_TOKEN" || (echo "EXPO_TOKEN is required in mobile-staging" && exit 1)
-            test -n "$EAS_PROJECT_ID" || (echo "EAS_PROJECT_ID is required in mobile-staging" && exit 1)
-            test -n "$STORE_SLUG" || (echo "MAESTRO_STORE_SLUG is required in mobile-staging" && exit 1)
-            test -n "$PRODUCT_ID" || (echo "MAESTRO_PRODUCT_ID is required in mobile-staging" && exit 1)
-            test -n "$PRODUCT_NAME" || (echo "MAESTRO_PRODUCT_NAME is required in mobile-staging" && exit 1)
-            test -n "$BUYER_PHONE" || (echo "MAESTRO_BUYER_PHONE is required in mobile-staging" && exit 1)
-            test -n "$BUYER_PASSWORD" || (echo "MAESTRO_BUYER_PASSWORD is required in mobile-staging" && exit 1)
-            test -n "$PICKUP_LABEL" || (echo "MAESTRO_PICKUP_LABEL is required in mobile-staging" && exit 1)
-            test -n "$PAYMENT_METHOD" || (echo "MAESTRO_PAYMENT_METHOD is required in mobile-staging" && exit 1)
-            npm install --global eas-cli
-            curl -Ls "https://get.maestro.mobile.dev" | bash
-            export PATH="$PATH:$HOME/.maestro/bin"
-            cd apps/mobile
-            BUILD_OUTPUT=$(eas build --platform android --profile preview --non-interactive --wait --json)
-            BUILD_ID=$(node -e '
-              const input = process.argv[1];
-              try {
-                const parsed = JSON.parse(input);
-                const id = Array.isArray(parsed) ? parsed[0]?.id : parsed?.id;
-                if (!id) throw new Error("No id");
-                console.log(id);
-              } catch {
-                const match = input.match(/"id"\s*:\s*"([a-f0-9-]+)"/i);
-                if (match) console.log(match[1]);
-                else process.exit(1);
-              }
-            ' "$BUILD_OUTPUT")
-            test -n "$BUILD_ID" || (echo "Failed to extract build ID from EAS build output" && exit 1)
-            eas build:run --platform android --id "$BUILD_ID" --non-interactive
-            adb shell mkdir -p /sdcard/Pictures
-            adb push .maestro/fixtures/payment-proof.png /sdcard/Pictures/payment-proof.png
-            adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Pictures/payment-proof.png
-            maestro test .maestro/flows/buyer-checkout-proof-order.yaml \
-              --env STORE_SLUG="$STORE_SLUG" \
-              --env PRODUCT_ID="$PRODUCT_ID" \
-              --env PRODUCT_NAME="$PRODUCT_NAME" \
-              --env BUYER_PHONE="$BUYER_PHONE" \
-              --env BUYER_PASSWORD="$BUYER_PASSWORD" \
-              --env PICKUP_LABEL="$PICKUP_LABEL" \
-              --env PAYMENT_METHOD="$PAYMENT_METHOD"
+          script: bash scripts/ci/mobile-maestro.sh
