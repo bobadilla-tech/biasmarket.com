@@ -211,6 +211,7 @@
     "noPayments": "Este pedido todavía no tiene pagos registrados.",
     "loadingProof": "Cargando comprobante privado…",
     "proofFailed": "No se pudo cargar el comprobante.",
+    "proofPdfUnsupported": "Este comprobante de pago es un PDF. La aplicación no puede mostrar comprobantes PDF.",
     "payment": "Pago",
     "privatePaymentProof": "Comprobante de pago privado",
     "paymentStatus": {
