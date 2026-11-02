@@ -29,19 +29,15 @@ describe("product image cap", () => {
     ["create", CreateProductDto, validBase],
     ["update", UpdateProductDto, {}],
   ] as const)("%s DTO", (_name, cls, base) => {
-    it("accepts exactly 6 images", async () => {
-      expect(await errorsFor(cls, { ...base, images: urls(6) })).toEqual([]);
-    });
-
     it("accepts no images", async () => {
       expect(await errorsFor(cls, { ...base })).toEqual([]);
     });
 
-    it("rejects 7 images", async () => {
-      const errors = await errorsFor(cls, { ...base, images: urls(7) });
+    it("rejects image URLs supplied outside the owned upload flow", async () => {
+      const errors = await errorsFor(cls, { ...base, images: urls(1) });
       expect(errors).toHaveLength(1);
       expect(errors[0].property).toBe("images");
-      expect(errors[0].constraints).toHaveProperty("arrayMaxSize");
+      expect(errors[0].constraints).toHaveProperty("whitelistValidation");
     });
   });
 

@@ -17,7 +17,15 @@ export class StorageService {
   // minio-init) — the authenticated streaming endpoint in order.controller.ts
   // is the only intended way to read a payment image.
   private readonly paymentBucket = requiredEnv("S3_PAYMENT_BUCKET");
-  private readonly publicUrl = requiredEnv("S3_PUBLIC_URL");
+  private readonly publicUrl = requiredEnv("S3_PUBLIC_URL").replace(/\/+$/, "");
+  private readonly trustedPublicUrls = [
+    this.publicUrl,
+    ...(process.env.S3_LEGACY_PUBLIC_URLS?.split(",") ?? [])
+      .map((value) => value.trim().replace(/\/+$/, ""))
+      .filter(Boolean),
+  ]
+    .map((value) => new URL(value))
+    .sort((left, right) => right.pathname.length - left.pathname.length);
 
   private client = new S3Client({
     region: "us-east-1",
@@ -89,23 +97,75 @@ export class StorageService {
 
   // Inverse of `upload`'s `${publicUrl}/${bucket}/${key}` URL shape.
   async deleteImage(url: string): Promise<void> {
-    const prefix = `${this.publicUrl}/`;
-    if (!url.startsWith(prefix)) {
-      throw new Error("Unsupported storage object URL");
+    await this.deleteUploadedObject(url);
+  }
+
+  async deleteStoreReferenceImage(url: string): Promise<void> {
+    await this.deleteUploadedObject(url, "store-references");
+  }
+
+  private async deleteUploadedObject(
+    url: string,
+    expectedPrefix?: string,
+  ): Promise<void> {
+    let imageUrl: URL;
+    try {
+      imageUrl = new URL(url);
+    } catch {
+      throw new Error("Image URL is outside the configured storage origin");
     }
-    const [bucket, ...keyParts] = url
-      .slice(prefix.length)
-      .replace(/[?#].*$/, "")
-      .split("/");
-    const key = keyParts.map(decodeURIComponent).join("/");
+    const matchedBase = this.trustedPublicUrls.find((base) => {
+      const objectPathPrefix = `${base.pathname.replace(/\/+$/, "")}/`;
+      return (
+        imageUrl.origin === base.origin &&
+        imageUrl.pathname.startsWith(objectPathPrefix)
+      );
+    });
+    if (!matchedBase || imageUrl.search || imageUrl.hash) {
+      throw new Error("Image URL is outside the configured storage origin");
+    }
+    const objectPathPrefix = `${matchedBase.pathname.replace(/\/+$/, "")}/`;
+
+    let objectPath: string;
+    try {
+      objectPath = decodeURIComponent(
+        imageUrl.pathname.slice(objectPathPrefix.length),
+      ).replace(/^\/+/, "");
+    } catch {
+      throw new Error("Image URL contains an invalid object path");
+    }
+
+    const [bucket, ...keyParts] = objectPath.split("/");
+    const allowedPrefixes = new Map<string, Set<string>>();
+    const addAllowedPrefixes = (bucketName: string, prefixes: string[]) => {
+      const existing = allowedPrefixes.get(bucketName) ?? new Set<string>();
+      prefixes.forEach((prefix) => existing.add(prefix));
+      allowedPrefixes.set(bucketName, existing);
+    };
+    addAllowedPrefixes(this.bucket, [
+      "products",
+      "store-banners",
+      "store-owner-avatars",
+      "store-content",
+      "store-categories",
+      "store-references",
+      "payment-qr",
+    ]);
+    addAllowedPrefixes(this.logoBucket, ["logos"]);
+    addAllowedPrefixes(this.paymentBucket, ["payments"]);
+    const prefix = keyParts[0];
     if (
-      ![this.bucket, this.logoBucket, this.paymentBucket].includes(
-        bucket ?? "",
-      ) ||
-      !key
+      !bucket ||
+      !prefix ||
+      !keyParts[1] ||
+      keyParts.some((part) => !part || part === "." || part === "..") ||
+      (expectedPrefix !== undefined && prefix !== expectedPrefix) ||
+      !allowedPrefixes.get(bucket)?.has(prefix)
     ) {
-      throw new Error("Unsupported storage object URL");
+      throw new Error("Image URL is outside an allowed storage prefix");
     }
+    const key = keyParts.join("/");
+
     await this.client.send(
       new DeleteObjectCommand({ Bucket: bucket, Key: key }),
     );

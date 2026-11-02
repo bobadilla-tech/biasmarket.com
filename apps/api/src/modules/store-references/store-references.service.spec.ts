@@ -1,5 +1,9 @@
 import { Test, type TestingModule } from "@nestjs/testing";
-import { ForbiddenException, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from "@nestjs/common";
 import { type Mock, vi } from "vitest";
 import { PrismaService } from "../../prisma/prisma.service.js";
 import { StoreReferencesService } from "./store-references.service.js";
@@ -98,6 +102,125 @@ describe("StoreReferencesService", () => {
         entityId: "ref-1",
       }),
     });
+  });
+
+  it("rejects changing privacy confirmation off while a reference stays public", async () => {
+    prisma.store.findUnique.mockResolvedValue({
+      id: "store-a",
+      ownerId: "owner-a",
+    });
+    prisma.storeReference.findFirst.mockResolvedValue({
+      id: "ref-1",
+      storeId: "store-a",
+      imageUrl: "https://cdn.test/old.jpg",
+    });
+    prisma.$queryRaw.mockResolvedValue([
+      {
+        imageUrl: "https://cdn.test/old.jpg",
+        hidden: false,
+        privacyConfirmed: true,
+      },
+    ]);
+
+    await expect(
+      service.update("ref-1", "store-a", "owner-a", {
+        privacyConfirmed: false,
+      }),
+    ).rejects.toThrow(BadRequestException);
+    expect(prisma.storeReference.update).not.toHaveBeenCalled();
+  });
+
+  it("does not allow admins to unhide a reference without privacy confirmation", async () => {
+    prisma.storeReference.findUnique.mockResolvedValue({
+      id: "ref-1",
+      storeId: "store-a",
+      hidden: true,
+      privacyConfirmed: false,
+    });
+
+    await expect(service.setHidden("ref-1", "admin-a", false)).rejects.toThrow(
+      BadRequestException,
+    );
+    expect(prisma.storeReference.update).not.toHaveBeenCalled();
+  });
+
+  it("updates visibility and replacement image fields only within the owned store", async () => {
+    prisma.store.findUnique.mockResolvedValue({
+      id: "store-a",
+      ownerId: "owner-a",
+    });
+    prisma.storeReference.findFirst.mockResolvedValue({
+      id: "ref-1",
+      storeId: "store-a",
+      imageUrl: "https://cdn.test/old.jpg",
+    });
+    prisma.storeReference.update.mockResolvedValue({
+      id: "ref-1",
+      hidden: false,
+      imageUrl: "https://cdn.test/new.jpg",
+      width: 640,
+      height: 480,
+    });
+    prisma.$queryRaw.mockResolvedValue([
+      {
+        imageUrl: "https://cdn.test/old.jpg",
+        hidden: true,
+        privacyConfirmed: true,
+      },
+    ]);
+
+    const result = await service.update("ref-1", "store-a", "owner-a", {
+      hidden: false,
+      privacyConfirmed: true,
+      imageUrl: "https://cdn.test/new.jpg",
+      width: 640,
+      height: 480,
+    });
+
+    expect(prisma.storeReference.update).toHaveBeenCalledWith({
+      where: { id: "ref-1" },
+      data: {
+        hidden: false,
+        privacyConfirmed: true,
+        imageUrl: "https://cdn.test/new.jpg",
+        width: 640,
+        height: 480,
+      },
+    });
+    expect(result).toEqual({
+      updated: {
+        id: "ref-1",
+        hidden: false,
+        imageUrl: "https://cdn.test/new.jpg",
+        width: 640,
+        height: 480,
+      },
+      previousImageUrl: "https://cdn.test/old.jpg",
+    });
+    expect(prisma.$queryRaw.mock.calls[0]).toEqual([
+      expect.any(Array),
+      "ref-1",
+      "store-a",
+    ]);
+    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        actorId: "owner-a",
+        storeId: "store-a",
+        action: "store_reference.hidden",
+        entityId: "ref-1",
+        metadata: { hidden: false },
+      }),
+    });
+  });
+
+  it("returns an empty owned list when the store has no references", async () => {
+    prisma.store.findUnique.mockResolvedValue({
+      id: "store-a",
+      ownerId: "owner-a",
+    });
+    prisma.storeReference.findMany.mockResolvedValue([]);
+
+    await expect(service.findAll("store-a", "owner-a")).resolves.toEqual([]);
   });
 
   it("filters hidden references and sorts newest first on the public API", async () => {
