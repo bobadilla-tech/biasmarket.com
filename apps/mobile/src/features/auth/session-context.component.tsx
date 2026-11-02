@@ -32,7 +32,12 @@ import {
 } from "./session-storage.js";
 import { MobileI18nProvider } from "../../i18n/mobile-i18n.js";
 import { BuyerSessionProvider, useBuyerSession } from "./session-context.js";
-import { configureMobileApiClient } from "./api-client.js";
+import {
+  configureMobileApiClient,
+  setMobileBearerToken,
+  setSessionRefreshHandler,
+  setUnauthorizedHandler,
+} from "./api-client.js";
 
 const mockRead = jest.mocked(readBuyerSession);
 const mockWrite = jest.mocked(writeBuyerSession);
@@ -78,6 +83,9 @@ describe("buyer session lifecycle", () => {
     mockRemove.mockResolvedValue(undefined);
     mockLogin.mockResolvedValue({ ok: true, sessionToken: "buyer-token" });
     configureMobileApiClient();
+    setMobileBearerToken(null);
+    setSessionRefreshHandler(undefined);
+    setUnauthorizedHandler(undefined);
   });
 
   it("deletes the persisted SecureStore session when the buyer signs out", async () => {
@@ -143,5 +151,101 @@ describe("buyer session lifecycle", () => {
       new Headers(fetchMock.mock.calls[0]?.[1]?.headers).get("Authorization"),
     ).toBe("Bearer buyer-token");
     expect(mockRemove).toHaveBeenCalledTimes(1);
+  });
+
+  it("persists a rotated token and unregisters the handler on unmount", async () => {
+    const fetchMock = jest
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ ok: true }), {
+          headers: { "X-Session-Token": "rotated-token" },
+        }),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true })))
+      .mockResolvedValue(
+        new Response(JSON.stringify({ ok: true }), {
+          headers: { "X-Session-Token": "after-unmount-token" },
+        }),
+      );
+    const view = await renderSession();
+    await waitFor(() =>
+      expect(screen.getByTestId("session-status").props.children).toBe(
+        "unauthenticated",
+      ),
+    );
+    await act(async () => {
+      fireEvent.press(screen.getByTestId("sign-in"));
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId("session-status").props.children).toBe(
+        "authenticated",
+      ),
+    );
+
+    mockRead.mockResolvedValue({ token: "buyer-token", storeSlug: "demo" });
+    await customFetch("/stores/demo/orders");
+    expect(mockWrite).toHaveBeenLastCalledWith({
+      token: "rotated-token",
+      storeSlug: "demo",
+    });
+    await customFetch("/stores/demo/orders");
+    expect(
+      new Headers(fetchMock.mock.calls[1]?.[1]?.headers).get("Authorization"),
+    ).toBe("Bearer rotated-token");
+
+    await view.unmount();
+    setMobileBearerToken("after-unmount-token");
+    await customFetch("/stores/demo/orders");
+    expect(mockWrite).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not persist a refresh that finishes after sign-out", async () => {
+    let releaseRead!: (
+      session: { token: string; storeSlug: string } | null,
+    ) => void;
+    const blockedRead = new Promise<{
+      token: string;
+      storeSlug: string;
+    } | null>((resolve) => {
+      releaseRead = resolve;
+    });
+    const fetchMock = jest.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        headers: { "X-Session-Token": "rotated-token" },
+      }),
+    );
+    await renderSession();
+    await waitFor(() =>
+      expect(screen.getByTestId("session-status").props.children).toBe(
+        "unauthenticated",
+      ),
+    );
+    await act(async () => {
+      fireEvent.press(screen.getByTestId("sign-in"));
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId("session-status").props.children).toBe(
+        "authenticated",
+      ),
+    );
+
+    mockRead.mockReturnValueOnce(blockedRead);
+    const refreshRequest = customFetch("/stores/demo/orders");
+    await act(async () => {
+      fireEvent.press(screen.getByTestId("sign-out"));
+    });
+    releaseRead({ token: "buyer-token", storeSlug: "demo" });
+    await refreshRequest;
+    await waitFor(() => expect(mockRemove).toHaveBeenCalledTimes(1));
+
+    expect(mockWrite).toHaveBeenCalledTimes(1);
+    expect(mockWrite).not.toHaveBeenCalledWith({
+      token: "rotated-token",
+      storeSlug: "demo",
+    });
+    expect(mockRemove).toHaveBeenCalledTimes(1);
+    expect(
+      new Headers(fetchMock.mock.calls[0]?.[1]?.headers).get("Authorization"),
+    ).toBe("Bearer buyer-token");
   });
 });

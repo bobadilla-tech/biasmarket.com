@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { ApiError, customerAuth, globalAccount } from "@biasmarket/types";
 import type { CustomerProfileResponseDto } from "@biasmarket/types";
 import { useBuyerSession } from "../features/auth/session-context";
+import { isSessionEndedDeleteError } from "../features/auth/account-deletion";
 import { useMobileI18n } from "../i18n/mobile-i18n";
 
 export default function AccountScreen() {
@@ -64,8 +65,16 @@ export default function AccountScreen() {
               }
               router.replace("/login");
             })
-            .catch(() => {
+            .catch((cause: unknown) => {
               setDeleting(false);
+              if (isSessionEndedDeleteError(cause)) {
+                Alert.alert(
+                  t("account.sessionEndedTitle"),
+                  t("account.sessionEnded"),
+                );
+                router.replace("/login");
+                return;
+              }
               Alert.alert(
                 t("account.deleteFailedTitle"),
                 t("account.deleteFailed"),
