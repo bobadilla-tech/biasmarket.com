@@ -309,6 +309,94 @@ describe("StoreSectionRenderer catalog pagination", () => {
     }
   });
 
+  it("offers a retry when the requested page never arrives", async () => {
+    vi.useFakeTimers();
+    const observer = stubIntersectionObserver();
+    navigation.search = "tab=productos&page=1";
+    navigation.push.mockClear();
+    try {
+      render(catalog(1, 3));
+      await act(async () => {
+        observer.callback?.([intersecting], {} as IntersectionObserver);
+        observer.callback?.([intersecting], {} as IntersectionObserver);
+      });
+      expect(navigation.push).toHaveBeenCalledTimes(1);
+      expect(screen.getByText("Cargando productos...")).toBeTruthy();
+      expect(screen.queryByRole("button", { name: /cargar más/i })).toBeNull();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(10_000);
+      });
+      const retry = screen.getByRole("button", {
+        name: "Cargar más productos",
+      });
+      fireEvent.click(retry);
+      expect(navigation.push).toHaveBeenCalledTimes(2);
+      expect(navigation.push).toHaveBeenLastCalledWith(
+        "/es/store/demo?tab=productos&page=2",
+        { scroll: false },
+      );
+      // Retrying hides the button and restarts the loading state.
+      expect(screen.queryByRole("button", { name: /cargar más/i })).toBeNull();
+      expect(screen.getByText("Cargando productos...")).toBeTruthy();
+    } finally {
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+      navigation.search = "";
+    }
+  });
+
+  it("re-enables Previous when its request stalls", async () => {
+    vi.useFakeTimers();
+    stubIntersectionObserver();
+    navigation.search = "tab=productos&page=2";
+    navigation.push.mockClear();
+    try {
+      render(catalog(2, 3));
+      const previous = screen.getByRole("button", { name: "Anterior" });
+      fireEvent.click(previous);
+      expect(navigation.push).toHaveBeenCalledWith(
+        "/es/store/demo?tab=productos",
+        { scroll: false },
+      );
+      expect((previous as HTMLButtonElement).disabled).toBe(true);
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(10_000);
+      });
+      expect((previous as HTMLButtonElement).disabled).toBe(false);
+      fireEvent.click(previous);
+      expect(navigation.push).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+      navigation.search = "";
+    }
+  });
+
+  it("clears a pending stall timer when the page arrives", async () => {
+    vi.useFakeTimers();
+    const observer = stubIntersectionObserver();
+    navigation.search = "tab=productos&page=1";
+    navigation.push.mockClear();
+    try {
+      const view = render(catalog(1, 3));
+      await act(async () => {
+        observer.callback?.([intersecting], {} as IntersectionObserver);
+      });
+      navigation.search = "tab=productos&page=2";
+      view.rerender(catalog(2, 3));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(10_000);
+      });
+      expect(screen.queryByRole("button", { name: /cargar más/i })).toBeNull();
+    } finally {
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+      navigation.search = "";
+    }
+  });
+
   it("renders no sentinel or button outside server-sorted catalogs", () => {
     stubIntersectionObserver();
     try {
