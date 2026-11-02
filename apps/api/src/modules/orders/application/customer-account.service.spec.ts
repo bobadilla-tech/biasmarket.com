@@ -431,6 +431,77 @@ describe("CustomerAccountService", () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it.each(["confirm", "change-email", "change-phone"] as const)(
+      "rejects a stale %s token for a deleted buyer account",
+      async (purpose) => {
+        const token = createCustomerAccountToken(
+          "buyer-1",
+          "test-secret",
+          purpose,
+        );
+        prisma.buyerAccount.findUnique.mockResolvedValue({
+          id: "buyer-1",
+          phone: null,
+          email: null,
+          googleSub: null,
+          passwordHash: null,
+          emailVerified: false,
+          pendingEmail: null,
+          pendingPhone: null,
+        });
+
+        await expect(service.confirmAccount(store.slug, token)).rejects.toThrow(
+          BadRequestException,
+        );
+
+        expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
+        expect(prisma.buyerAccount.updateMany).not.toHaveBeenCalled();
+        expect(prisma.order.findMany).not.toHaveBeenCalled();
+      },
+    );
+
+    it("rejects a change-email token if deletion clears the row after its read", async () => {
+      const token = createCustomerAccountToken(
+        "buyer-1",
+        "test-secret",
+        "change-email",
+      );
+      prisma.buyerAccount.findUnique.mockResolvedValue({
+        id: "buyer-1",
+        name: "Jane",
+        email: "old@example.com",
+        pendingEmail: "new@example.com",
+        phone: "+51988888888",
+        emailVerified: true,
+        passwordHash: "already-set",
+      });
+      prisma.buyerAccount.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(service.confirmAccount(store.slug, token)).rejects.toThrow(
+        BadRequestException,
+      );
+
+      expect(prisma.buyerAccount.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: "buyer-1",
+          pendingEmail: "new@example.com",
+          OR: [
+            { phone: { not: null } },
+            { email: { not: null } },
+            { googleSub: { not: null } },
+            { passwordHash: { not: null } },
+          ],
+        },
+        data: {
+          email: "new@example.com",
+          pendingEmail: null,
+          emailVerified: true,
+        },
+      });
+      expect(prisma.buyerAccount.findUniqueOrThrow).not.toHaveBeenCalled();
+      expect(prisma.order.findMany).not.toHaveBeenCalled();
+    });
+
     it("marks the buyer account verified and returns their orders for this store", async () => {
       const token = createCustomerAccountToken("buyer-1", "test-secret");
       const buyerAccount = {
@@ -518,7 +589,8 @@ describe("CustomerAccountService", () => {
         passwordHash: "already-set",
       };
       prisma.buyerAccount.findUnique.mockResolvedValue(buyerAccount);
-      prisma.buyerAccount.update.mockResolvedValue({
+      prisma.buyerAccount.updateMany.mockResolvedValue({ count: 1 });
+      prisma.buyerAccount.findUniqueOrThrow.mockResolvedValue({
         ...buyerAccount,
         email: "new@example.com",
         pendingEmail: null,
@@ -527,14 +599,24 @@ describe("CustomerAccountService", () => {
 
       const result = await service.confirmAccount(store.slug, token);
 
-      expect(prisma.buyerAccount.update).toHaveBeenCalledWith({
-        where: { id: "buyer-1" },
+      expect(prisma.buyerAccount.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: "buyer-1",
+          pendingEmail: "new@example.com",
+          OR: [
+            { phone: { not: null } },
+            { email: { not: null } },
+            { googleSub: { not: null } },
+            { passwordHash: { not: null } },
+          ],
+        },
         data: {
           email: "new@example.com",
           pendingEmail: null,
           emailVerified: true,
         },
       });
+      expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
       expect(result.purpose).toBe("change-email");
       expect(result.customer.email).toBe("new@example.com");
     });

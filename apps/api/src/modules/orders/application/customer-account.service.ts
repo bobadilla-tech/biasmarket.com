@@ -402,6 +402,15 @@ export class CustomerAccountService {
       throw new BadRequestException("Enlace inválido o expirado");
     }
 
+    if (
+      !buyerAccount.phone &&
+      !buyerAccount.email &&
+      !buyerAccount.googleSub &&
+      !buyerAccount.passwordHash
+    ) {
+      throw new BadRequestException("Enlace inválido o expirado");
+    }
+
     if (verified.purpose === "confirm" && !buyerAccount.emailVerified) {
       buyerAccount = await this.prisma.buyerAccount.update({
         where: { id: buyerAccount.id },
@@ -411,13 +420,29 @@ export class CustomerAccountService {
       verified.purpose === "change-email" &&
       buyerAccount.pendingEmail
     ) {
-      buyerAccount = await this.prisma.buyerAccount.update({
-        where: { id: buyerAccount.id },
+      const pendingEmail = buyerAccount.pendingEmail;
+      const updated = await this.prisma.buyerAccount.updateMany({
+        where: {
+          id: buyerAccount.id,
+          pendingEmail,
+          OR: [
+            { phone: { not: null } },
+            { email: { not: null } },
+            { googleSub: { not: null } },
+            { passwordHash: { not: null } },
+          ],
+        },
         data: {
-          email: buyerAccount.pendingEmail,
+          email: pendingEmail,
           pendingEmail: null,
           emailVerified: true,
         },
+      });
+      if (updated.count !== 1) {
+        throw new BadRequestException("Enlace inválido o expirado");
+      }
+      buyerAccount = await this.prisma.buyerAccount.findUniqueOrThrow({
+        where: { id: buyerAccount.id },
       });
     } else if (
       verified.purpose === "change-phone" &&
