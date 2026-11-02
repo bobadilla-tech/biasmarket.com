@@ -327,13 +327,13 @@
       "bioPlaceholder": "Merch oficial de [artista], envíos a todo el país.",
       "bioHelp": "Se muestra bajo el nombre de tu tienda y en los resultados de Google.",
       "aboutLabel": "Sobre la tienda",
-      "aboutPlaceholder": "Contá quién sos, qué vendés y por qué comprar acá. Podés usar párrafos y listas.",
+      "aboutPlaceholder": "Cuéntales quién eres, qué vendes y por qué comprar aquí. Puedes usar párrafos y listas.",
       "aboutHelp": "Markdown: títulos, listas, enlaces e imágenes.",
       "imageButton": "Agregar imagen",
       "imageUploading": "Subiendo…",
       "imageTooLong": "Esa imagen dejaría el texto por encima del límite.",
       "previewLabel": "Vista previa",
-      "previewEmpty": "Acá aparece tu texto con formato.",
+      "previewEmpty": "Aquí aparece tu texto con formato.",
       "help": "Este contenido se usa en la página pública de tu tienda y en su ficha para buscadores."
     },
     "appearance": {
