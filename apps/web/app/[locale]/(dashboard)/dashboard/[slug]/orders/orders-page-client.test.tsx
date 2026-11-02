@@ -83,8 +83,8 @@ afterEach(() => {
   searchParams.value = "";
 });
 
-function setup() {
-  findAllOrders.mockResolvedValue([order]);
+function setup(orders: OrderResponseDto[] = [order]) {
+  findAllOrders.mockResolvedValue(orders);
   findAllPayments.mockResolvedValue([]);
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: Infinity } },
@@ -149,4 +149,21 @@ test("without ?order no detail sheet is open", async () => {
   setup();
   await screen.findByRole("button", { name: "Nuevo pedido" });
   expect(screen.queryByRole("dialog")).toBeNull();
+});
+
+test("status tabs update the visible orders and count", async () => {
+  const user = userEvent.setup();
+  setup([
+    order,
+    {
+      ...order,
+      id: "order-2",
+      paymentStatus: "VERIFIED",
+      fulfillmentStatus: "COMPLETED",
+    },
+  ]);
+
+  expect(await screen.findByText("Mostrando 2 de 2")).toBeTruthy();
+  await user.click(screen.getByRole("tab", { name: "Entregados" }));
+  expect(screen.getByText("Mostrando 1 de 1")).toBeTruthy();
 });

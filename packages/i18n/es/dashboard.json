@@ -666,6 +666,10 @@
     "unknownProduct": "Producto",
     "productSummaryMore": "{product} +{count}",
     "showingCount": "Mostrando {count} de {total}",
+    "tabsAriaLabel": "Filtrar pedidos por estado",
+    "mobileOrder": "Pedido",
+    "unnamedCustomer": "Sin nombre",
+    "maskedPhone": "Teléfono ····{phone}",
     "tabs": {
       "all": "Todos",
       "pending": "Pendientes",
@@ -681,7 +685,8 @@
       "delivery": "Entrega",
       "date": "Fecha",
       "status": "Estado",
-      "actions": "Acciones"
+      "actions": "Acciones",
+      "paymentStatus": "Estado del pago"
     },
     "delivery": {
       "pickup": "Recojo",
@@ -788,6 +793,14 @@
       "PLIN": "Plin",
       "TRANSFER": "Transferencia bancaria",
       "CASH": "Efectivo"
+    },
+    "paymentStatusLabels": {
+      "PENDING_PAYMENT": "Pago pendiente",
+      "PARTIALLY_PAID": "Pago parcial",
+      "PAYMENT_SUBMITTED": "Comprobante enviado",
+      "VERIFIED": "Verificado",
+      "REJECTED": "Rechazado",
+      "CANCELLED": "Cancelado"
     },
     "confirmStatus": {
       "title": "Confirmar cambio de estado",

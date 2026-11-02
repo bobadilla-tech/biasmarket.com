@@ -226,6 +226,7 @@ export function OrdersPageClient() {
             activeTab={activeTab}
             onChange={setActiveTab}
             labels={tabLabels}
+            ariaLabel={t("tabsAriaLabel")}
           />
           <p className="text-sm text-[#8f7da8]">
             {t("showingCount", {
@@ -243,7 +244,13 @@ export function OrdersPageClient() {
           </Card>
         ) : null}
 
-        <Card className="rounded-[30px] border-[#eadcf8] bg-white py-0 shadow-sm">
+        <Card
+          id="orders-tabpanel"
+          role="tabpanel"
+          aria-labelledby={`orders-tab-${activeTab}`}
+          tabIndex={0}
+          className="overflow-hidden rounded-[30px] border-[#eadcf8] bg-white py-0 shadow-sm"
+        >
           <CardContent className="px-0">
             <OrdersTable
               orders={filteredOrders}
