@@ -3,12 +3,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const storage = new Map<string, string>();
 let failWrites = false;
 let failRemovals = false;
+let writeFailuresRemaining = 0;
 
 vi.mock("@react-native-async-storage/async-storage", () => ({
   default: {
     getItem: async (key: string) => storage.get(key) ?? null,
     setItem: async (key: string, value: string) => {
       if (failWrites) throw new Error("write failed");
+      if (writeFailuresRemaining > 0) {
+        writeFailuresRemaining--;
+        throw new Error("transient write failed");
+      }
       storage.set(key, value);
     },
     removeItem: async (key: string) => {
@@ -32,6 +37,7 @@ import {
   clearCheckoutIdempotencyKey,
   clearStoreCart,
   getCheckoutIdempotencyKey,
+  markCheckoutIdempotencyKeyDone,
   removeFromStoreCart,
   readStoreCart,
   setStoreCartQuantity,
@@ -49,6 +55,7 @@ beforeEach(() => {
   storage.clear();
   failWrites = false;
   failRemovals = false;
+  writeFailuresRemaining = 0;
 });
 
 describe("device cart storage", () => {
@@ -160,6 +167,64 @@ describe("device cart storage", () => {
       { ...item, quantity: 2 },
     ]);
     expect(changedCartKey).not.toBe(firstKey);
+  });
+
+  it("includes variantId in the checkout fingerprint", async () => {
+    const firstKey = await getCheckoutIdempotencyKey("store-a", [
+      { ...item, variantId: "red" },
+    ]);
+    const nextKey = await getCheckoutIdempotencyKey("store-a", [
+      { ...item, variantId: "blue" },
+    ]);
+    expect(nextKey).not.toBe(firstKey);
+  });
+
+  it("serializes concurrent key reads for one store", async () => {
+    const [first, second] = await Promise.all([
+      getCheckoutIdempotencyKey("store-a", [item]),
+      getCheckoutIdempotencyKey("store-a", [item]),
+    ]);
+    expect(second).toBe(first);
+  });
+
+  it("replaces old versions and done records with a new key", async () => {
+    storage.set(
+      "biasmarket:checkout-key:old-version",
+      JSON.stringify({ v: 2, id: "old", fingerprint: "same" }),
+    );
+    const oldVersionKey = await getCheckoutIdempotencyKey("old-version", [
+      item,
+    ]);
+    expect(oldVersionKey).not.toBe("old");
+
+    const completedKey = await getCheckoutIdempotencyKey("completed", [item]);
+    await markCheckoutIdempotencyKeyDone("completed", [item], completedKey);
+    const nextKey = await getCheckoutIdempotencyKey("completed", [item]);
+    expect(nextKey).not.toBe(completedKey);
+  });
+
+  it("retries a done-marker write once", async () => {
+    const key = await getCheckoutIdempotencyKey("store-a", [item]);
+    writeFailuresRemaining = 1;
+
+    await markCheckoutIdempotencyKeyDone("store-a", [item], key);
+
+    expect(
+      JSON.parse(storage.get("biasmarket:checkout-key:store-a")!).done,
+    ).toBe(true);
+    expect(writeFailuresRemaining).toBe(0);
+  });
+
+  it("keeps the done marker if cart clearing fails", async () => {
+    await addToStoreCart("store-a", item);
+    const key = await getCheckoutIdempotencyKey("store-a", [item]);
+    await markCheckoutIdempotencyKeyDone("store-a", [item], key);
+    failWrites = true;
+
+    await expect(clearStoreCart("store-a")).rejects.toThrow("write failed");
+    expect(
+      JSON.parse(storage.get("biasmarket:checkout-key:store-a")!).done,
+    ).toBe(true);
   });
 
   it("replaces malformed or incomplete checkout-key records", async () => {
