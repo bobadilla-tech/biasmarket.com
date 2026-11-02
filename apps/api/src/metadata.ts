@@ -4024,7 +4024,11 @@ export default async () => {
                   './modules/customer-auth/dto/global-account-response.dto.js'
                 ].GlobalAccountOrderDetailResponseDto,
               },
-              deleteMe: {},
+              deleteMe: {
+                type: t[
+                  './modules/customer-auth/dto/customer-auth-response.dto.js'
+                ].OkResponseDto,
+              },
               login: {
                 type: t[
                   './modules/customer-auth/dto/customer-auth-response.dto.js'

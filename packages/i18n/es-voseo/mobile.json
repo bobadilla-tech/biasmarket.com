@@ -19,6 +19,9 @@
   "checkout": {
     "yourDetails": "Tus datos",
     "permissionRequired": "Necesitamos permiso para acceder a tus imágenes.",
+    "replayMismatch": "No pudimos confirmar este pedido. Revisá Mis pedidos antes de volver a intentarlo.",
+    "orderExpired": "Esta compra venció. Revisá tu carrito e intentá de nuevo.",
+    "retryResetFailed": "No pudimos restablecer esta compra. Revisá Mis pedidos antes de volver a intentarlo.",
     "paymentConfigFailed": "No se pudieron cargar las opciones de pago. Inténtalo de nuevo antes de confirmar tu pedido.",
     "configFailed": "No se pudieron cargar las opciones de compra. Intentá de nuevo antes de confirmar tu pedido.",
     "validation": {

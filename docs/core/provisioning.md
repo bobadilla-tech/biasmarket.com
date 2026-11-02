@@ -426,6 +426,21 @@ Compose project against the production volumes: the project name is pinned by
 the first line of the compose file, and a different name silently creates new
 empty volumes instead of attaching to the production ones.
 
+## Mobile deep-link association configuration
+
+Set these runtime variables for the web deployment that serves the mobile
+association files. They are not VPS provisioning credentials:
+
+- `IOS_TEAM_ID`: the Apple Developer team identifier.
+- `IOS_BUNDLE_ID`: the iOS bundle identifier; defaults to
+  `com.biasmarket.mobile` when unset.
+- `ANDROID_APP_ID`: the Android application id.
+- `ANDROID_APP_SHA256_CERT_FINGERPRINT`: the signing certificate SHA-256
+  fingerprint in colon-separated hexadecimal form.
+
+The Apple and Android association routes return `503` until their required
+identifiers are configured. See [mobile deep links](../mobile/deep-links.md).
+
 ## Related
 
 - [deploy.md](deploy.md) for the automatic and manual deploy flow, the variable

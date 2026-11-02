@@ -36,8 +36,8 @@ export const getDeleteMeUrl = () => {
 
 export const deleteMe = async (
   options?: Parameters<typeof customFetch>[1],
-): Promise<void> => {
-  return customFetch<void>(getDeleteMeUrl(), {
+): Promise<OkResponseDto> => {
+  return customFetch<OkResponseDto>(getDeleteMeUrl(), {
     ...options,
     method: "DELETE",
   });

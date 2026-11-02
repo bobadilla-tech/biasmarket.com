@@ -45,7 +45,9 @@ import type { CartItem } from "@biasmarket/utils/cart";
 import { formatPrice } from "../../features/catalog/catalog-ui";
 import {
   clearStoreCart,
+  clearCheckoutIdempotencyKey,
   getCheckoutIdempotencyKey,
+  markCheckoutIdempotencyKeyDone,
   readStoreCart,
 } from "../../features/cart/cart-storage";
 import { useBuyerSession } from "../../features/auth/session-context";
@@ -58,6 +60,7 @@ import {
   courierFieldLabelKey,
 } from "../../features/checkout/courier-fields";
 import { checkoutViewState } from "../../features/checkout/checkout-view-state";
+import { mapCheckoutError } from "../../features/checkout/checkout-errors";
 import { useMobileI18n } from "../../i18n/mobile-i18n.js";
 
 const emptyForm: CheckoutFormInput = {
@@ -384,10 +387,21 @@ export default function CheckoutScreen() {
         },
       );
       try {
-        await clearStoreCart(storeSlug);
+        await markCheckoutIdempotencyKeyDone(storeSlug, items, idempotencyKey);
       } catch {
-        // The order already exists. Keep the buyer on its confirmation screen
-        // instead of encouraging a second submission because local cleanup failed.
+        console.warn("Could not mark a completed checkout retry key.");
+      }
+      let cartCleared = false;
+      for (let attempt = 0; attempt < 2 && !cartCleared; attempt++) {
+        try {
+          await clearStoreCart(storeSlug);
+          cartCleared = true;
+        } catch {
+          // Retry once; the order already exists and should still be shown.
+        }
+      }
+      if (!cartCleared) {
+        console.warn("Could not clear the cart after a completed checkout.");
       }
       queryClient.setQueryData(["cart", storeSlug], [] satisfies CartItem[]);
       void queryClient.invalidateQueries({
@@ -404,12 +418,25 @@ export default function CheckoutScreen() {
         },
       });
     } catch (error) {
+      const mappedError = mapCheckoutError(error);
+      if (mappedError.kind === "mismatch" || mappedError.kind === "expired") {
+        try {
+          await clearCheckoutIdempotencyKey(storeSlug);
+        } catch {
+          setSubmitError(t("checkout.retryResetFailed"));
+          return;
+        }
+      }
       setSubmitError(
-        error instanceof ApiError && error.status === 400
-          ? error.message
-          : error instanceof TypeError
-            ? t("common.connectionError")
-            : t("checkout.submitFailed"),
+        mappedError.kind === "connection"
+          ? t("common.connectionError")
+          : mappedError.kind === "mismatch"
+            ? t("checkout.replayMismatch")
+            : mappedError.kind === "expired"
+              ? t("checkout.orderExpired")
+              : mappedError.kind === "validation"
+                ? mappedError.message
+                : t("checkout.submitFailed"),
       );
     } finally {
       setSubmitting(false);

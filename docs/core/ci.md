@@ -14,6 +14,7 @@ path-filtered job that should run did not succeed
 | `cleanup-fallback.yml`                                | hourly cron, manual dispatch                                            | Runs `deploy.sh --cleanup` over SSH as a backstop for the server-side scheduled cleanup; a no-op unless a cleanup is due. See [blue-green-migrations.md](blue-green-migrations.md#scheduled-cleanup).              |
 | `dependabot-automerge.yml`                            | pull requests opened, reopened or updated                               | For Dependabot PRs only, enables auto-merge (squash) on patch and minor updates. The merge still waits for the required `CI Success` check.                                                                        |
 | `mobile-release.yml`                                  | a published release, manual dispatch                                    | Builds the mobile app for Android and iOS and attaches the outputs to the release. See [mobile-release.md](mobile-release.md).                                                                                     |
+| Mobile staging and production workflows               | staging push / manual dispatch                                          | Runs Maestro against the staging buyer flow, or builds, updates, and submits EAS binaries with GitHub environment protection. See [mobile release operations](../mobile/release.md).                               |
 | `.github/actions/deploy-ssh-setup` (composite action) | used by `cd.yml` and `cleanup-fallback.yml`                             | Writes the pinned `known_hosts`, the two restricted deploy keys and SSH keepalive settings, and exports the host and user to later steps.                                                                          |
 
 ## Jobs in `ci.yml`
@@ -98,9 +99,11 @@ executed".
   therefore `CI Success`. The floors live in each workspace's
   `vitest.config.ts`; they are set from CI-measured coverage and are not
   repeated here because the numbers change.
-- `apps/mobile` measures only the three logic files that have tests
-  (`session-storage`, `cart-storage`, `pagination`); the UI is untested, so its
-  floor means "no regression". The `types` workspace gates `lines` only (the
+- `apps/mobile` measures the tested logic files listed in
+  `apps/mobile/vitest.config.ts` (`session-storage`, `cart-storage`,
+  `pagination`); React Native components are covered separately by Jest's
+  `test:components` step in CI. The coverage floor means "no regression" for
+  the configured measured files. The `types` workspace gates `lines` only (the
   value is in `packages/types/vitest.config.ts`); generated code is deliberately
   unmeasured.
 - turbo `test:cov` has `outputs: ["coverage/**"]` so a cache hit restores
