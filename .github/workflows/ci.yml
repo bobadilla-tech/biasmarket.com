@@ -207,9 +207,11 @@ jobs:
               - 'turbo.json'
               - 'package.json'
               - '.github/workflows/ci.yml'
+              - '.github/workflows/mobile-release.yml'
               - '.prettierrc'
               - 'eslint.config.mjs'
               - 'scripts/lint-changed-files.mjs'
+              - 'scripts/ci/mobile-release-changes.sh'
             sanity:
               - 'apps/sanity/**'
               - 'pnpm-lock.yaml'
