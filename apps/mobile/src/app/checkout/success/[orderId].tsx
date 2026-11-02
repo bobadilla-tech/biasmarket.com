@@ -1,9 +1,11 @@
 import { Pressable, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useBuyerSession } from "../../../features/auth/session-context";
 import { useMobileI18n } from "../../../i18n/mobile-i18n";
 
 export default function CheckoutSuccessScreen() {
   const { t } = useMobileI18n();
+  const { status } = useBuyerSession();
   const { orderId, paymentStatus, proofSubmitted } = useLocalSearchParams<{
     orderId: string;
     paymentStatus: string;
@@ -26,17 +28,20 @@ export default function CheckoutSuccessScreen() {
       <Text className="text-sm text-white/50">
         {t("checkout.orderNumber", { id: orderId })}
       </Text>
+      {status === "authenticated" ? (
+        <Pressable
+          accessibilityRole="button"
+          className="rounded-xl border border-white/20 px-5 py-3"
+          onPress={() =>
+            router.push({ pathname: "/orders/[orderId]", params: { orderId } })
+          }
+        >
+          <Text className="font-semibold text-white">
+            {t("checkout.viewOrder")}
+          </Text>
+        </Pressable>
+      ) : null}
       <Pressable
-        accessibilityRole="button"
-        className="rounded-xl border border-white/20 px-5 py-3"
-        onPress={() =>
-          router.push({ pathname: "/orders/[orderId]", params: { orderId } })
-        }
-      >
-        <Text className="font-semibold text-white">
-          {t("checkout.viewOrder")}
-        </Text>
-      </Pressable>
       <Pressable
         accessibilityRole="button"
         className="rounded-xl bg-brand-pink px-5 py-3"
