@@ -35,6 +35,23 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Validate Maestro fixture credentials
+        env:
+          HAS_STORE_SLUG: ${{ secrets.MAESTRO_STORE_SLUG != '' }}
+          HAS_PRODUCT_ID: ${{ secrets.MAESTRO_PRODUCT_ID != '' }}
+          HAS_PRODUCT_NAME: ${{ secrets.MAESTRO_PRODUCT_NAME != '' }}
+          HAS_BUYER_PHONE: ${{ secrets.MAESTRO_BUYER_PHONE != '' }}
+          HAS_BUYER_PASSWORD: ${{ secrets.MAESTRO_BUYER_PASSWORD != '' }}
+          HAS_PICKUP_LABEL: ${{ secrets.MAESTRO_PICKUP_LABEL != '' }}
+          HAS_PAYMENT_METHOD: ${{ secrets.MAESTRO_PAYMENT_METHOD != '' }}
+        run: |
+          test "$HAS_STORE_SLUG" = true || (echo "MAESTRO_STORE_SLUG is required in mobile-staging" && exit 1)
+          test "$HAS_PRODUCT_ID" = true || (echo "MAESTRO_PRODUCT_ID is required in mobile-staging" && exit 1)
+          test "$HAS_PRODUCT_NAME" = true || (echo "MAESTRO_PRODUCT_NAME is required in mobile-staging" && exit 1)
+          test "$HAS_BUYER_PHONE" = true || (echo "MAESTRO_BUYER_PHONE is required in mobile-staging" && exit 1)
+          test "$HAS_BUYER_PASSWORD" = true || (echo "MAESTRO_BUYER_PASSWORD is required in mobile-staging" && exit 1)
+          test "$HAS_PICKUP_LABEL" = true || (echo "MAESTRO_PICKUP_LABEL is required in mobile-staging" && exit 1)
+          test "$HAS_PAYMENT_METHOD" = true || (echo "MAESTRO_PAYMENT_METHOD is required in mobile-staging" && exit 1)
       - name: Install pinned Maestro CLI
         env:
           MAESTRO_VERSION: cli-2.12.1
