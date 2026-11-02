@@ -17,7 +17,9 @@ const delivery = (...types: Array<"PICKUP" | "COURIER">) =>
   types.map((type) => ({ type }) as DeliveryMethodConfigResponseDto);
 const initial = (
   types: Array<"PICKUP" | "COURIER">,
+  selectedDeliveryMethodType: string = "PICKUP",
 ): CheckoutViewStateInput => ({
+  selectedDeliveryMethodType,
   deliveryQuery: query(delivery(...types)),
   pickupQuery: query({ points: [] }),
   paymentQuery: query([]),
@@ -40,9 +42,18 @@ test("a failed courier query does not block a pickup-only store", () => {
 });
 
 test("shows retry state when an enabled courier query fails", () => {
-  const state = initial(["PICKUP", "COURIER"]);
+  const state = initial(["PICKUP", "COURIER"], "COURIER");
   state.courierQuery = query(undefined, { isError: true });
   expect(checkoutViewState(state).configError).toBe("courier");
+});
+
+test("a failed courier query does not block pickup on a mixed-method store", () => {
+  const state = initial(["PICKUP", "COURIER"], "PICKUP");
+  state.courierQuery = query(undefined, { isError: true });
+  expect(checkoutViewState(state)).toEqual({
+    isLoading: false,
+    configError: null,
+  });
 });
 
 test("does not treat a refetch error with cached data as a configuration failure", () => {
@@ -54,7 +65,7 @@ test("does not treat a refetch error with cached data as a configuration failure
 });
 
 test("includes an enabled pending courier query in the loading gate", () => {
-  const state = initial(["COURIER"]);
+  const state = initial(["COURIER"], "COURIER");
   state.courierQuery = query(undefined, { isPending: true });
   expect(checkoutViewState(state).isLoading).toBe(true);
 });

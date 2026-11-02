@@ -191,6 +191,7 @@ export default function CheckoutScreen() {
   const paymentMethods = paymentQuery.data ?? EMPTY_PAYMENT_METHODS;
   const couriers = courierQuery.data ?? [];
   const viewState = checkoutViewState({
+    selectedDeliveryMethodType: form.deliveryMethodType,
     deliveryQuery,
     pickupQuery,
     paymentQuery,

@@ -55,6 +55,19 @@ test.each(["HOME", "AGENCY"] as const)(
       "shippingPhone",
       ...courierFieldGroups(modality).flatMap(({ fields }) => fields),
     ];
+    const requiredFields = new Set([
+      "shippingRecipientName",
+      "shippingRecipientSurnames",
+      "shippingDocumentType",
+      "shippingDocumentNumber",
+      "shippingPhone",
+      "shippingDepartment",
+      "shippingProvince",
+      "shippingDistrict",
+      ...(modality === "HOME"
+        ? ["shippingLine1", "shippingCity"]
+        : ["shippingAgencyName"]),
+    ]);
 
     for (const field of shownFields) {
       const result = schema.safeParse({
@@ -62,6 +75,17 @@ test.each(["HOME", "AGENCY"] as const)(
         courierModality: modality,
         [field]: "",
       });
+      if (requiredFields.has(field)) {
+        expect(
+          result.success,
+          `${field} should fail validation when blank`,
+        ).toBe(false);
+        if (result.success) continue;
+        expect(
+          result.error.issues.some((issue) => issue.path[0] === field),
+          `${field} should appear in validation issues`,
+        ).toBe(true);
+      }
       if (!result.success) {
         for (const issue of result.error.issues) {
           const key = String(issue.path[0]) as keyof typeof messages.en;
