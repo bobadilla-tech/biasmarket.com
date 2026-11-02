@@ -2,8 +2,9 @@
 
 ## Alcance
 
-La cuadrícula del catálogo del vendedor usa `apps/web/features/products/components/product-tile.tsx`.
-La página que la compone está en
+La cuadrícula del catálogo del vendedor usa
+`apps/web/features/products/components/product-tile.tsx`. La página que la
+compone está en
 `apps/web/app/[locale]/(dashboard)/dashboard/[slug]/products/products-page-client.tsx`.
 La descripción del producto se adapta en
 `apps/web/app/[locale]/(dashboard)/dashboard/[slug]/products/[productId]/product-detail-page-client.tsx`.
@@ -13,8 +14,8 @@ escritorio quedan fuera de este rediseño.
 
 ## Decisiones visuales y de contenido
 
-- En teléfono la cuadrícula tiene dos columnas y 12 px de separación. En
-  `md` conserva dos columnas y en `xl` usa tres.
+- En teléfono la cuadrícula tiene dos columnas y 12 px de separación. En `md`
+  conserva dos columnas y en `xl` usa tres.
 - La tarjeta ocupa el ancho de su columna; la imagen mide 150 px de alto. Si no
   hay imagen, la inicial del producto conserva ese espacio.
 - Título y descripción se limitan a dos líneas. El detalle mantiene la

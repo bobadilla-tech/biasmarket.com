@@ -23,7 +23,7 @@ Before domain verification, set these values in the VPS shared environment:
 
 Both endpoints return HTTP 503 until their certificate identifiers are
 configured, instead of publishing an association that cannot verify. After
-deploying the values, check that both endpoints return HTTP 200 with JSON and
-no redirect, then validate them with Apple's App Search API validator and
-Android Digital Asset Links tools. Finally test the same product and order URL
-on devices with and without the app installed.
+deploying the values, check that both endpoints return HTTP 200 with JSON and no
+redirect, then validate them with Apple's App Search API validator and Android
+Digital Asset Links tools. Finally test the same product and order URL on
+devices with and without the app installed.

@@ -177,8 +177,8 @@ A change to `infra/vps/Caddyfile` is not picked up by a normal deploy; see
 [caddy.md](caddy.md) for the one-time container recreate and the check that
 confirms it. After deployment, inspect one real API log line for a request that
 uses an `Idempotency-Key` and returns `X-Session-Token`; verify neither header
-value is present. Merge Caddyfile changes alone, after the other pending
-deploys have finished.
+value is present. Merge Caddyfile changes alone, after the other pending deploys
+have finished.
 
 For health, migration, rollback, and incident procedures, see
 [blue-green-migrations.md](blue-green-migrations.md) and

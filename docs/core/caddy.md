@@ -40,12 +40,12 @@ Assisted order links carry a private token in the path
 `/es|en/...` variants on the web). Both the snippet and the default logger in
 the global options block rewrite the token segment to `REDACTED` and drop the
 `Referer`, `Idempotency-Key` request header, and `X-Session-Token` response
-header before a line is written. The default logger matters:
-`reverse_proxy` runtime errors (for example "connection refused" during a
-blue/green switch) are written there and include the request URI. Keep the two
-redaction rules identical, and update both if a new route ever carries a
-credential. Caddy's JSON log fields use `request>headers` for request headers
-and `resp_headers` for response headers.
+header before a line is written. The default logger matters: `reverse_proxy`
+runtime errors (for example "connection refused" during a blue/green switch) are
+written there and include the request URI. Keep the two redaction rules
+identical, and update both if a new route ever carries a credential. Caddy's
+JSON log fields use `request>headers` for request headers and `resp_headers` for
+response headers.
 
 Changing the Caddyfile does not take effect by merging alone: the compose file
 bind-mounts the single file `./Caddyfile`, `cd.yml` rsyncs with
