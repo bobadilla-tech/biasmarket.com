@@ -18,8 +18,18 @@ vi.mock("@react-native-async-storage/async-storage", () => ({
   },
 }));
 
+vi.mock("expo-crypto", () => ({
+  getRandomValues: <T extends ArrayBufferView | null>(array: T): T => {
+    if (array) {
+      globalThis.crypto.getRandomValues(array as any);
+    }
+    return array;
+  },
+}));
+
 import {
   addToStoreCart,
+  clearCheckoutIdempotencyKey,
   clearStoreCart,
   getCheckoutIdempotencyKey,
   removeFromStoreCart,
@@ -112,6 +122,13 @@ describe("device cart storage", () => {
       { ...item, productId: "p2" },
     ]);
     expect(await clearStoreCart("store-a")).toEqual([]);
+    expect(storage.has("biasmarket:checkout-key:store-a")).toBe(false);
+  });
+
+  it("clears checkout idempotency key independently", async () => {
+    await getCheckoutIdempotencyKey("store-a", [item]);
+    expect(storage.has("biasmarket:checkout-key:store-a")).toBe(true);
+    await clearCheckoutIdempotencyKey("store-a");
     expect(storage.has("biasmarket:checkout-key:store-a")).toBe(false);
   });
 

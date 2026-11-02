@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getRandomValues } from "expo-crypto";
 import {
   addCartItem,
   type CartItem,
@@ -93,11 +94,17 @@ export function removeFromStoreCart(
 
 export function clearStoreCart(storeSlug: string): Promise<CartItem[]> {
   return updateStoreCart(storeSlug, () => []).then(async (items) => {
-    await AsyncStorage.removeItem(checkoutKeyStorageKey(storeSlug)).catch(
-      () => undefined,
-    );
+    await clearCheckoutIdempotencyKey(storeSlug);
     return items;
   });
+}
+
+export async function clearCheckoutIdempotencyKey(
+  storeSlug: string,
+): Promise<void> {
+  await AsyncStorage.removeItem(checkoutKeyStorageKey(storeSlug)).catch(
+    () => undefined,
+  );
 }
 
 export async function getCheckoutIdempotencyKey(
@@ -131,7 +138,7 @@ export async function getCheckoutIdempotencyKey(
   }
 
   const bytes = new Uint8Array(16);
-  globalThis.crypto.getRandomValues(bytes);
+  getRandomValues(bytes);
   bytes[6] = (bytes[6]! & 0x0f) | 0x40;
   bytes[8] = (bytes[8]! & 0x3f) | 0x80;
   const hex = [...bytes].map((byte) => byte.toString(16).padStart(2, "0"));
