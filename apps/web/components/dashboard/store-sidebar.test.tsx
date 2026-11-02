@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "@biasmarket/i18n";
@@ -47,6 +48,7 @@ function createMemoryStorage(): Storage {
 
 function renderSidebar() {
   vi.stubGlobal("localStorage", createMemoryStorage());
+  globalThis.sessionStorage.clear();
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -109,6 +111,7 @@ test("hides the restock badge when the count is 0", async () => {
 });
 
 test("exposes a labelled navigation with a current page and collapsed names", async () => {
+  const user = userEvent.setup();
   notificationsMock.unreadCount.mockResolvedValue({ count: 0 });
   renderSidebar();
 
@@ -120,13 +123,20 @@ test("exposes a labelled navigation with a current page and collapsed names", as
       .getByRole("link", { name: "Productos" })
       .getAttribute("aria-current"),
   ).toBe("page");
+  expect(
+    screen
+      .getByRole("button", { name: "Catálogo" })
+      .getAttribute("aria-expanded"),
+  ).toBe("true");
+  expect(screen.getByRole("link", { name: "Referencias" })).toBeDefined();
 
   const collapseButton = screen.getByRole("button", {
     name: "Contraer barra lateral",
   });
-  collapseButton.click();
-  // Collapsed links hide their text label via CSS; their names come from
-  // aria-label, asserted here because axe can't verify them under jsdom.
+  await user.click(collapseButton);
+  // The collapsed catalog opens its children in a popover so icon-only
+  // navigation still offers every destination.
+  await user.click(screen.getByRole("button", { name: "Catálogo" }));
   expect(screen.getByRole("link", { name: "Productos" })).toBeDefined();
   expect(screen.getByRole("link", { name: "Resumen" })).toBeDefined();
   expectNoA11yViolations(await axe(navigation), {

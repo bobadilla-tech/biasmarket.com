@@ -244,11 +244,13 @@
     "sections": {
       "store": "Gestión de tienda",
       "growth": "Crecimiento",
-      "settings": "Preferencias"
+      "settings": "Ajustes"
     },
     "nav": {
       "overview": "Resumen",
       "orders": "Pedidos",
+      "catalog": "Catálogo",
+      "references": "Referencias",
       "products": "Productos",
       "categories": "Categorías",
       "collections": "Colecciones",
@@ -258,8 +260,8 @@
       "customers": "Clientes",
       "analytics": "Analíticas",
       "restock": "Reposición",
+      "suggestions": "Sugerencias",
       "settings": "Configuración",
-      "preferences": "Preferencias",
       "notifications": "Notificaciones"
     },
     "soon": "Pronto",
@@ -564,8 +566,8 @@
       "GENERIC": "Notificación"
     }
   },
-  "preferences": {
-    "title": "Preferencias",
+  "suggestions": {
+    "title": "Sugerencias",
     "subtitle": "Sugerencias basadas en la actividad de tu tienda",
     "empty": "No hay sugerencias por ahora — vuelve más tarde.",
     "dismiss": "Descartar",

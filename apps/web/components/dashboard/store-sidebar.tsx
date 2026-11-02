@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   BarChart3,
   Bell,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   CreditCard,
   ExternalLink,
   FolderKanban,
@@ -37,14 +39,22 @@ type NavItem = {
   href?: string;
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   disabled?: boolean;
+  children?: { key: string; href: string; icon: NavItem["icon"] }[];
 };
 
 const primaryItems: NavItem[] = [
   { key: "overview", icon: LayoutDashboard, href: "" },
   { key: "orders", icon: ShoppingBag, href: "orders" },
-  { key: "products", icon: Package, href: "products" },
-  { key: "collections", icon: FolderKanban, href: "collections" },
-  { key: "sections", icon: Rows3, href: "sections" },
+  {
+    key: "catalog",
+    icon: Package,
+    children: [
+      { key: "products", href: "products", icon: Package },
+      { key: "collections", href: "collections", icon: FolderKanban },
+      { key: "sections", href: "sections", icon: Rows3 },
+      { key: "references", href: "references", icon: Lightbulb },
+    ],
+  },
   { key: "shipping", icon: Truck, href: "shipping" },
   { key: "payments", icon: CreditCard, href: "payments" },
 ];
@@ -52,13 +62,13 @@ const primaryItems: NavItem[] = [
 const growthItems: NavItem[] = [
   { key: "customers", icon: Users, href: "customers" },
   { key: "restock", icon: PackageSearch, href: "restock" },
+  { key: "suggestions", icon: Lightbulb, href: "suggestions" },
   { key: "analytics", icon: BarChart3, href: "analytics" },
   { key: "notifications", icon: Bell, href: "notifications" },
 ];
 
 const settingsItems: NavItem[] = [
   { key: "settings", icon: Settings, href: "settings" },
-  { key: "preferences", icon: Lightbulb, href: "preferences" },
 ];
 
 function SidebarSection({
@@ -78,6 +88,147 @@ function SidebarSection({
   collapsed: boolean;
   badges?: Record<string, number>;
 }) {
+  const catalog = items.find((item) => item.key === "catalog");
+  const catalogActive = Boolean(
+    catalog?.children?.some(
+      (child) => pathname === `/dashboard/${slug}/${child.href}`,
+    ),
+  );
+  const [catalogOpen, setCatalogOpen] = useState(catalogActive);
+  const [catalogFlyoutOpen, setCatalogFlyoutOpen] = useState(false);
+  const catalogTriggerRef = useRef<HTMLButtonElement>(null);
+  const catalogIconButtonRef = useRef<HTMLButtonElement>(null);
+  const catalogFlyoutRef = useRef<HTMLDivElement>(null);
+  const [catalogFlyoutPosition, setCatalogFlyoutPosition] = useState({
+    top: 16,
+    left: 88,
+  });
+  const catalogLinkRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
+  const catalogContentId = useId();
+
+  useEffect(() => {
+    const stored = globalThis.sessionStorage?.getItem(
+      `catalog-expanded-${slug}`,
+    );
+    setCatalogOpen(catalogActive || stored === "true");
+  }, [catalogActive, slug]);
+
+  const toggleCatalog = () => {
+    setCatalogOpen((current) => {
+      const next = !current;
+      globalThis.sessionStorage?.setItem(
+        `catalog-expanded-${slug}`,
+        String(next),
+      );
+      return next;
+    });
+  };
+
+  const openCatalogFlyout = () => {
+    const bounds = catalogIconButtonRef.current?.getBoundingClientRect();
+    if (bounds) {
+      setCatalogFlyoutPosition({
+        top: Math.max(8, Math.min(bounds.top, window.innerHeight - 280)),
+        left: Math.max(8, Math.min(bounds.right + 8, window.innerWidth - 240)),
+      });
+    }
+    setCatalogFlyoutOpen((open) => {
+      const nextOpen = !open;
+      if (nextOpen) {
+        const firstChild = catalog?.children?.[0];
+        if (firstChild) {
+          window.requestAnimationFrame?.(() =>
+            catalogLinkRefs.current[firstChild.key]?.focus(),
+          );
+        }
+      }
+      return nextOpen;
+    });
+  };
+
+  useEffect(() => {
+    if (!catalogFlyoutOpen) return;
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      const target = event.target;
+      if (
+        target instanceof Node &&
+        !catalogFlyoutRef.current?.contains(target) &&
+        !catalogIconButtonRef.current?.contains(target)
+      ) {
+        setCatalogFlyoutOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setCatalogFlyoutOpen(false);
+        catalogIconButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [catalogFlyoutOpen]);
+
+  const renderCatalogLinks = (flyout = false) =>
+    catalog?.children?.map((child) => {
+      const Icon = child.icon;
+      const href = `/dashboard/${slug}/${child.href}`;
+      const label = t(`nav.${child.key}`);
+      const active = pathname === href;
+      const childIndex =
+        catalog.children?.findIndex((entry) => entry.key === child.key) ?? 0;
+      return (
+        <Link
+          key={child.key}
+          ref={(element) => {
+            catalogLinkRefs.current[child.key] = element;
+          }}
+          href={href}
+          aria-current={active ? "page" : undefined}
+          onClick={() => {
+            if (flyout) setCatalogFlyoutOpen(false);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+              event.preventDefault();
+              const offset = event.key === "ArrowDown" ? 1 : -1;
+              const nextIndex =
+                (childIndex + offset + catalog.children!.length) %
+                catalog.children!.length;
+              catalogLinkRefs.current[
+                catalog.children![nextIndex].key
+              ]?.focus();
+            } else if (event.key === "ArrowLeft") {
+              event.preventDefault();
+              if (flyout) {
+                setCatalogFlyoutOpen(false);
+                catalogIconButtonRef.current?.focus();
+              } else {
+                setCatalogOpen(false);
+                catalogTriggerRef.current?.focus();
+              }
+            }
+          }}
+          className={cn(
+            "flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition",
+            flyout
+              ? "text-[#4f3b68] hover:bg-[#f7f1fc]"
+              : "text-sidebar-muted-foreground hover:bg-white/10 hover:text-white",
+            active &&
+              (flyout
+                ? "bg-[#f3ebff] font-semibold text-[#2d1649]"
+                : "bg-white/13 font-semibold text-white"),
+          )}
+        >
+          <Icon aria-hidden="true" className="size-4 shrink-0" />
+          <span className="truncate">{label}</span>
+        </Link>
+      );
+    });
+
   return (
     <div className="space-y-2">
       {!collapsed && (
@@ -88,6 +239,90 @@ function SidebarSection({
       <div className="space-y-1.5">
         {items.map((item) => {
           const Icon = item.icon;
+          if (item.children) {
+            const label = t("nav.catalog");
+            if (collapsed) {
+              return (
+                <button
+                  key={item.key}
+                  ref={catalogIconButtonRef}
+                  type="button"
+                  aria-label={label}
+                  aria-haspopup="dialog"
+                  aria-expanded={catalogFlyoutOpen}
+                  onClick={openCatalogFlyout}
+                  onKeyDown={(event) => {
+                    if (
+                      event.key === "ArrowDown" ||
+                      event.key === "ArrowRight"
+                    ) {
+                      event.preventDefault();
+                      setCatalogFlyoutOpen(true);
+                      const firstChild = item.children?.[0];
+                      if (firstChild) {
+                        window.requestAnimationFrame?.(() =>
+                          catalogLinkRefs.current[firstChild.key]?.focus(),
+                        );
+                      }
+                    }
+                  }}
+                  className="flex w-full items-center justify-center rounded-2xl px-0 py-2.5 text-sidebar-muted-foreground transition hover:bg-white/10 hover:text-white aria-expanded:bg-white/13 aria-expanded:text-white"
+                >
+                  <Icon aria-hidden="true" className="size-4 shrink-0" />
+                </button>
+              );
+            }
+            return (
+              <div key={item.key} className="space-y-1">
+                <button
+                  type="button"
+                  ref={catalogTriggerRef}
+                  aria-expanded={catalogOpen}
+                  aria-controls={catalogContentId}
+                  onClick={toggleCatalog}
+                  onKeyDown={(event) => {
+                    if (
+                      event.key === "ArrowDown" ||
+                      event.key === "ArrowRight"
+                    ) {
+                      event.preventDefault();
+                      setCatalogOpen(true);
+                      const firstChild = item.children?.[0];
+                      if (firstChild) {
+                        window.requestAnimationFrame(() =>
+                          catalogLinkRefs.current[firstChild.key]?.focus(),
+                        );
+                      }
+                    }
+                  }}
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition",
+                    catalogActive
+                      ? "bg-white/13 text-white"
+                      : "text-sidebar-muted-foreground hover:bg-white/10 hover:text-white",
+                  )}
+                >
+                  <Icon aria-hidden="true" className="size-4 shrink-0" />
+                  <span className="flex-1 text-left">{label}</span>
+                  <ChevronDown
+                    aria-hidden="true"
+                    className={cn(
+                      "size-4 transition-transform",
+                      catalogOpen && "rotate-180",
+                    )}
+                  />
+                </button>
+                {catalogOpen && (
+                  <div
+                    id={catalogContentId}
+                    className="ml-4 space-y-1 border-l border-white/15 pl-2"
+                  >
+                    {renderCatalogLinks()}
+                  </div>
+                )}
+              </div>
+            );
+          }
           const href =
             item.href === undefined
               ? undefined
@@ -160,6 +395,23 @@ function SidebarSection({
           );
         })}
       </div>
+      {collapsed &&
+        catalogFlyoutOpen &&
+        createPortal(
+          <div
+            ref={catalogFlyoutRef}
+            role="dialog"
+            aria-label={t("nav.catalog")}
+            className="fixed z-[60] max-h-[min(24rem,calc(100dvh-1rem))] w-56 space-y-1 overflow-y-auto rounded-xl border border-[#eadcf7] bg-white p-2 text-[#2d1649] shadow-xl"
+            style={catalogFlyoutPosition}
+          >
+            <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[#8f7da8]">
+              {t("nav.catalog")}
+            </p>
+            {renderCatalogLinks(true)}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
