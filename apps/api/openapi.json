@@ -8897,6 +8897,9 @@
             "type": "string",
             "format": "date-time"
           },
+          "proofSubmitted": {
+            "type": "boolean"
+          },
           "items": {
             "type": "array",
             "items": {
@@ -8933,6 +8936,7 @@
           "currency",
           "expiresAt",
           "createdAt",
+          "proofSubmitted",
           "items"
         ]
       },

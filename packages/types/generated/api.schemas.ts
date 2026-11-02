@@ -1656,6 +1656,7 @@ export interface CheckoutOrderResponseDto {
   currency: string;
   expiresAt: string;
   createdAt: string;
+  proofSubmitted: boolean;
   items: CheckoutOrderItemResponseDto[];
 }
 

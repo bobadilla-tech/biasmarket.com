@@ -145,6 +145,9 @@ export class CheckoutOrderResponseDto {
   @ApiProperty({ type: String, format: "date-time" })
   createdAt: string;
 
+  @ApiProperty({ type: Boolean })
+  proofSubmitted: boolean;
+
   @ApiProperty({ type: [CheckoutOrderItemResponseDto] })
   items: CheckoutOrderItemResponseDto[];
 }

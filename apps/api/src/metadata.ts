@@ -1575,6 +1575,7 @@ export default async () => {
               currency: { required: true, type: () => String },
               expiresAt: { required: true, type: () => String },
               createdAt: { required: true, type: () => String },
+              proofSubmitted: { required: true, type: () => Boolean },
               items: {
                 required: true,
                 type: () => [
