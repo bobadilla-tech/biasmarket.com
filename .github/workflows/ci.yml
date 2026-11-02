@@ -1170,7 +1170,8 @@ jobs:
       # Lints .github/workflows/*.yml (not composite actions).
       - name: Lint workflows
         run: |
-          "$RUNNER_TEMP/actionlint/actionlint"
+          # actionlint 1.7.12 predates GitHub's documented concurrency.queue key.
+          "$RUNNER_TEMP/actionlint/actionlint" -ignore 'unexpected key "queue"'
 
       # scripts/ci only: infra/vps/*.sh are production deploy scripts, any
       # fix there is behavioral and needs its own supervised change.
