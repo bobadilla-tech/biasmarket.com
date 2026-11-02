@@ -7,7 +7,7 @@ import {
 import { Test } from "@nestjs/testing";
 import type { ExecutionContext } from "@nestjs/common";
 import request from "supertest";
-import { crc32 } from "node:zlib";
+import { crc32, deflateSync } from "node:zlib";
 import { ThrottlerGuard } from "@nestjs/throttler";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthGuard } from "@thallesp/nestjs-better-auth";
@@ -106,7 +106,7 @@ describe("StoreReferencesController admin routes", () => {
     return Buffer.concat([
       Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
       pngChunk("IHDR", header),
-      pngChunk("IDAT", Buffer.from([1, 2, 3])),
+      pngChunk("IDAT", deflateSync(Buffer.alloc((1200 * 3 + 1) * 800))),
       pngChunk("IEND", Buffer.alloc(0)),
     ]);
   }
