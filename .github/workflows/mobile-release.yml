@@ -105,6 +105,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build mobile workspace dependencies
+        run: pnpm turbo run build --filter=mobile...
+
       # Android SDK/NDK come preinstalled on ubuntu-latest. Release runs are
       # scoped to the tag ref, so this mainly speeds up reruns of the same tag.
       - name: Cache Gradle
@@ -177,6 +180,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Build mobile workspace dependencies
+        run: pnpm turbo run build --filter=mobile...
 
       - name: Cache CocoaPods downloads
         uses: actions/cache@v6
