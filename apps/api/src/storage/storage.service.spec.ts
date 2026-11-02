@@ -1,65 +1,82 @@
-import { vi } from "vitest";
-
-vi.mock("../config/env.validation.js", () => ({
-  requiredEnv: (name: string) =>
-    ({
-      S3_BUCKET: "public",
-      S3_LOGO_BUCKET: "logos",
-      S3_PAYMENT_BUCKET: "payments",
-      S3_PUBLIC_URL: "https://cdn.example.com/files",
-      S3_ENDPOINT: "http://minio:9000",
-      S3_ACCESS_KEY: "key",
-      S3_SECRET_KEY: "secret",
-    })[name] ?? "",
-}));
-
+import { DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { StorageService } from "./storage.service.js";
 
 describe("StorageService.deleteImage", () => {
-  let service: StorageService;
+  const env = {
+    S3_BUCKET: process.env.S3_BUCKET,
+    S3_LOGO_BUCKET: process.env.S3_LOGO_BUCKET,
+    S3_PAYMENT_BUCKET: process.env.S3_PAYMENT_BUCKET,
+    S3_PUBLIC_URL: process.env.S3_PUBLIC_URL,
+    S3_ENDPOINT: process.env.S3_ENDPOINT,
+    S3_ACCESS_KEY: process.env.S3_ACCESS_KEY,
+    S3_SECRET_KEY: process.env.S3_SECRET_KEY,
+  };
+  let storage: StorageService;
   let send: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    service = new StorageService();
+    process.env.S3_BUCKET = "public-assets";
+    process.env.S3_LOGO_BUCKET = "store-logos";
+    process.env.S3_PAYMENT_BUCKET = "private-payments";
+    process.env.S3_PUBLIC_URL = "https://cdn.example.test/assets/";
+    process.env.S3_ENDPOINT = "https://s3.example.test";
+    process.env.S3_ACCESS_KEY = "test-access-key";
+    process.env.S3_SECRET_KEY = "test-secret-key";
+    storage = new StorageService();
     send = vi.fn().mockResolvedValue({});
-    (service as unknown as { client: { send: unknown } }).client = { send };
+    (storage as unknown as { client: { send: typeof send } }).client.send =
+      send;
   });
 
-  it.each(["public", "logos", "payments"])(
-    "deletes objects from the %s bucket under a public URL path prefix",
-    async (bucket) => {
-      await service.deleteImage(
-        `https://cdn.example.com/files/${bucket}/a/b%20c.png`,
+  afterEach(() => {
+    for (const [name, value] of Object.entries(env)) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  });
+
+  it.each([
+    ["public-assets", "store-references/ref.jpg"],
+    ["store-logos", "logos/logo.png"],
+    ["private-payments", "payments/proof.jpg"],
+  ])(
+    "deletes a URL under the configured %s bucket and prefix",
+    async (bucket, key) => {
+      await storage.deleteImage(
+        `https://cdn.example.test/assets/${bucket}/${key}`,
       );
 
-      expect(send).toHaveBeenCalledTimes(1);
-      expect(send.mock.calls[0]![0].input).toEqual({
-        Bucket: bucket,
-        Key: "a/b c.png",
-      });
+      expect(send).toHaveBeenCalledOnce();
+      expect(send.mock.calls[0]?.[0]).toBeInstanceOf(DeleteObjectCommand);
+      expect(send.mock.calls[0]?.[0].input).toEqual({ Bucket: bucket, Key: key });
     },
   );
 
-  it("ignores query strings and fragments", async () => {
-    await service.deleteImage(
-      "https://cdn.example.com/files/public/a.png?v=1#x",
-    );
-    expect(send.mock.calls[0]![0].input).toEqual({
-      Bucket: "public",
-      Key: "a.png",
-    });
+  it.each([
+    "https://attacker.example.test/assets/public-assets/store-references/ref.jpg",
+    "https://cdn.example.test/other/public-assets/store-references/ref.jpg",
+    "https://cdn.example.test/assets/public-assets/untrusted/ref.jpg",
+    "https://cdn.example.test/assets/unknown-bucket/store-references/ref.jpg",
+    "https://cdn.example.test/assets/public-assets/store-references/ref.jpg?version=1",
+    "https://cdn.example.test/assets/public-assets/products/../logos/logo.png",
+  ])("rejects an untrusted deletion URL: %s", async (url) => {
+    await expect(storage.deleteImage(url)).rejects.toThrow();
+    expect(send).not.toHaveBeenCalled();
   });
 
-  it("rejects URLs outside the configured public URL or buckets", async () => {
+  it("limits reference cleanup to reference objects within the public bucket", async () => {
+    await storage.deleteStoreReferenceImage(
+      "https://cdn.example.test/assets/public-assets/store-references/ref.jpg",
+    );
+    expect(send).toHaveBeenCalledOnce();
+    send.mockClear();
+
     await expect(
-      service.deleteImage("https://evil.example.com/files/public/a.png"),
-    ).rejects.toThrow("Unsupported storage object URL");
-    await expect(
-      service.deleteImage("https://cdn.example.com/files/other/a.png"),
-    ).rejects.toThrow("Unsupported storage object URL");
-    await expect(
-      service.deleteImage("https://cdn.example.com/files/public/"),
-    ).rejects.toThrow("Unsupported storage object URL");
+      storage.deleteStoreReferenceImage(
+        "https://cdn.example.test/assets/public-assets/products/product.jpg",
+      ),
+    ).rejects.toThrow();
     expect(send).not.toHaveBeenCalled();
   });
 });

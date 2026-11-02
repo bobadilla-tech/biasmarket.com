@@ -136,7 +136,9 @@ export class StoreReferencesController {
       });
       return serializeReference(reference);
     } catch (error) {
-      await this.storage.deleteImage(imageUrl).catch(() => undefined);
+      await this.storage
+        .deleteStoreReferenceImage(imageUrl)
+        .catch(() => undefined);
       throw error;
     }
   }
@@ -218,13 +220,15 @@ export class StoreReferencesController {
       );
       if (uploadedUrl) {
         await this.storage
-          .deleteImage(existing.imageUrl)
+          .deleteStoreReferenceImage(existing.imageUrl)
           .catch(() => undefined);
       }
       return serializeReference(updated);
     } catch (error) {
       if (uploadedUrl) {
-        await this.storage.deleteImage(uploadedUrl).catch(() => undefined);
+        await this.storage
+          .deleteStoreReferenceImage(uploadedUrl)
+          .catch(() => undefined);
       }
       throw error;
     }
@@ -242,7 +246,9 @@ export class StoreReferencesController {
       storeId,
       session.user.id,
     );
-    await this.storage.deleteImage(deleted.imageUrl).catch(() => undefined);
+    await this.storage
+      .deleteStoreReferenceImage(deleted.imageUrl)
+      .catch(() => undefined);
     return serializeReference(deleted);
   }
 

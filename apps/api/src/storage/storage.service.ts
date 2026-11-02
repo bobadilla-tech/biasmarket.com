@@ -17,7 +17,7 @@ export class StorageService {
   // minio-init) — the authenticated streaming endpoint in order.controller.ts
   // is the only intended way to read a payment image.
   private readonly paymentBucket = requiredEnv("S3_PAYMENT_BUCKET");
-  private readonly publicUrl = requiredEnv("S3_PUBLIC_URL");
+  private readonly publicUrl = requiredEnv("S3_PUBLIC_URL").replace(/\/+$/, "");
 
   private client = new S3Client({
     region: "us-east-1",
@@ -89,23 +89,76 @@ export class StorageService {
 
   // Inverse of `upload`'s `${publicUrl}/${bucket}/${key}` URL shape.
   async deleteImage(url: string): Promise<void> {
-    const prefix = `${this.publicUrl}/`;
-    if (!url.startsWith(prefix)) {
-      throw new Error("Unsupported storage object URL");
+    await this.deleteUploadedObject(url);
+  }
+
+  async deleteStoreReferenceImage(url: string): Promise<void> {
+    await this.deleteUploadedObject(url, "store-references");
+  }
+
+  private async deleteUploadedObject(
+    url: string,
+    expectedPrefix?: string,
+  ): Promise<void> {
+    let publicUrl: URL;
+    let imageUrl: URL;
+    try {
+      publicUrl = new URL(this.publicUrl);
+      imageUrl = new URL(url);
+    } catch {
+      throw new Error("Image URL is outside the configured storage origin");
     }
-    const [bucket, ...keyParts] = url
-      .slice(prefix.length)
-      .replace(/[?#].*$/, "")
-      .split("/");
-    const key = keyParts.map(decodeURIComponent).join("/");
+    const basePath = publicUrl.pathname.replace(/\/+$/, "");
+    const objectPathPrefix = `${basePath}/`;
+
     if (
-      ![this.bucket, this.logoBucket, this.paymentBucket].includes(
-        bucket ?? "",
-      ) ||
-      !key
+      imageUrl.origin !== publicUrl.origin ||
+      imageUrl.search ||
+      imageUrl.hash ||
+      !imageUrl.pathname.startsWith(objectPathPrefix)
     ) {
-      throw new Error("Unsupported storage object URL");
+      throw new Error("Image URL is outside the configured storage origin");
     }
+
+    let objectPath: string;
+    try {
+      objectPath = decodeURIComponent(
+        imageUrl.pathname.slice(objectPathPrefix.length),
+      );
+    } catch {
+      throw new Error("Image URL contains an invalid object path");
+    }
+
+    const [bucket, ...keyParts] = objectPath.split("/");
+    const allowedPrefixes = new Map<string, Set<string>>([
+      [
+        this.bucket,
+        new Set([
+          "products",
+          "store-banners",
+          "store-owner-avatars",
+          "store-content",
+          "store-categories",
+          "store-references",
+          "payment-qr",
+        ]),
+      ],
+      [this.logoBucket, new Set(["logos"])],
+      [this.paymentBucket, new Set(["payments"])],
+    ]);
+    const prefix = keyParts[0];
+    if (
+      !bucket ||
+      !prefix ||
+      !keyParts[1] ||
+      keyParts.some((part) => !part || part === "." || part === "..") ||
+      (expectedPrefix !== undefined && prefix !== expectedPrefix) ||
+      !allowedPrefixes.get(bucket)?.has(prefix)
+    ) {
+      throw new Error("Image URL is outside an allowed storage prefix");
+    }
+    const key = keyParts.join("/");
+
     await this.client.send(
       new DeleteObjectCommand({ Bucket: bucket, Key: key }),
     );
