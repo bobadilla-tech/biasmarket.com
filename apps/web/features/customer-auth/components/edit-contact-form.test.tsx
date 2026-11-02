@@ -18,6 +18,7 @@ const profile = {
     emailVerified: true,
     pendingEmail: null,
     pendingPhone: null,
+    countryCode: null,
   },
   orders: [],
 };
