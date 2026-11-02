@@ -1,5 +1,9 @@
 import { Test, type TestingModule } from "@nestjs/testing";
-import { BadRequestException, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from "@nestjs/common";
 import { afterEach, type Mock, vi } from "vitest";
 import { CreateOrderUseCase } from "./create-order.usecase.js";
 import { PrismaService } from "../../../prisma/prisma.service.js";
@@ -47,7 +51,7 @@ describe("CreateOrderUseCase", () => {
     $queryRaw: Mock;
     product: { findUnique: Mock };
     productVariant: { findUnique: Mock; update: Mock };
-    order: { create: Mock };
+    order: { create: Mock; findFirst: Mock };
     orderPayment: { create: Mock };
     whatsAppMessageTemplate: { findUnique: Mock };
   };
@@ -89,7 +93,7 @@ describe("CreateOrderUseCase", () => {
       $queryRaw: vi.fn(),
       product: { findUnique: vi.fn() },
       productVariant: { findUnique: vi.fn(), update: vi.fn() },
-      order: { create: vi.fn() },
+      order: { create: vi.fn(), findFirst: vi.fn() },
       orderPayment: { create: vi.fn() },
       whatsAppMessageTemplate: { findUnique: vi.fn() },
     };
@@ -1075,6 +1079,74 @@ describe("CreateOrderUseCase", () => {
       await expect(
         useCase.execute(slug, { ...dto, pickupPointId: point.id }),
       ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe("checkout idempotency replay", () => {
+    it("returns existing order when idempotency key and order data match", async () => {
+      const existingOrder = {
+        id: "order-replay-1",
+        storeId: store.id,
+        checkoutIdempotencyKey: "replay-key-1",
+        customerPhone: dto.customerPhone,
+        customerEmail: dto.customerEmail ?? null,
+        customerName: dto.customerName ?? null,
+        paymentMethod: dto.paymentMethod ?? null,
+        deliveryMethodType: dto.deliveryMethodType,
+        pickupPointId: dto.pickupPointId ?? null,
+        courierName: dto.courierName ?? null,
+        courierModality: dto.courierModality ?? null,
+        deliveryDetails: {},
+        items: [
+          {
+            productId: "product-1",
+            variantId: null,
+            quantity: 2,
+          },
+        ],
+        payments: [],
+      };
+      prisma.order.findFirst.mockResolvedValueOnce(existingOrder);
+
+      const result = await useCase.execute(
+        slug,
+        dto,
+        undefined,
+        undefined,
+        "replay-key-1",
+      );
+      expect(result.order).toEqual(existingOrder);
+      expect(result.whatsappUrl).toBeNull();
+    });
+
+    it("throws ConflictException when idempotency key is reused with different customer phone", async () => {
+      const existingOrder = {
+        id: "order-replay-1",
+        storeId: store.id,
+        checkoutIdempotencyKey: "replay-key-1",
+        customerPhone: "+51977777777",
+        customerEmail: dto.customerEmail ?? null,
+        customerName: dto.customerName ?? null,
+        paymentMethod: dto.paymentMethod ?? null,
+        deliveryMethodType: dto.deliveryMethodType,
+        pickupPointId: dto.pickupPointId ?? null,
+        courierName: dto.courierName ?? null,
+        courierModality: dto.courierModality ?? null,
+        deliveryDetails: {},
+        items: [
+          {
+            productId: "product-1",
+            variantId: null,
+            quantity: 2,
+          },
+        ],
+        payments: [],
+      };
+      prisma.order.findFirst.mockResolvedValueOnce(existingOrder);
+
+      await expect(
+        useCase.execute(slug, dto, undefined, undefined, "replay-key-1"),
+      ).rejects.toThrow(ConflictException);
     });
   });
 });

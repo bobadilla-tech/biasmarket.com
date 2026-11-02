@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import {
   buildWhatsAppOrderMessage,
   buildWhatsAppUrl,
@@ -23,16 +27,122 @@ export class CreateOrderUseCase {
     private customerAccounts: CustomerAccountService,
   ) {}
 
-  async findCheckoutReplay(slug: string, idempotencyKey: string) {
+  async findCheckoutReplay(
+    slug: string,
+    idempotencyKey: string,
+    dto?: CreateOrderDto,
+  ) {
     const store = await this.prisma.store.findUnique({
       where: { slug },
       select: { id: true },
     });
     if (!store) throw new NotFoundException("Tienda no encontrada");
-    return this.prisma.order.findFirst({
+    const replay = await this.prisma.order.findFirst({
       where: { storeId: store.id, checkoutIdempotencyKey: idempotencyKey },
-      include: { items: true },
+      include: { items: true, payments: true },
     });
+    if (replay && dto) {
+      this.assertMatchingCheckoutData(replay, dto);
+    }
+    return replay;
+  }
+
+  assertMatchingCheckoutData(
+    existing: {
+      customerPhone: string;
+      customerEmail: string | null;
+      customerName: string | null;
+      paymentMethod: string | null;
+      deliveryMethodType: string;
+      pickupPointId: string | null;
+      courierName: string | null;
+      courierModality: string | null;
+      deliveryDetails: unknown;
+      items: Array<{
+        productId: string;
+        variantId: string | null;
+        quantity: number;
+      }>;
+    },
+    dto: CreateOrderDto,
+  ): void {
+    const phoneMatches =
+      normalizePhone(existing.customerPhone) ===
+      normalizePhone(dto.customerPhone);
+    const emailMatches =
+      (existing.customerEmail ?? "").toLowerCase() ===
+      (dto.customerEmail ?? "").toLowerCase();
+    const nameMatches =
+      (existing.customerName ?? "") === (dto.customerName ?? "");
+    const paymentMatches =
+      (existing.paymentMethod ?? null) === (dto.paymentMethod ?? null);
+    const deliveryTypeMatches =
+      existing.deliveryMethodType === dto.deliveryMethodType;
+    const pickupPointMatches =
+      (existing.pickupPointId ?? null) === (dto.pickupPointId ?? null);
+    const courierNameMatches =
+      (existing.courierName ?? null) === (dto.courierName ?? null);
+    const courierModalityMatches =
+      (existing.courierModality ?? null) === (dto.courierModality ?? null);
+
+    if (
+      !phoneMatches ||
+      !emailMatches ||
+      !nameMatches ||
+      !paymentMatches ||
+      !deliveryTypeMatches ||
+      !pickupPointMatches ||
+      !courierNameMatches ||
+      !courierModalityMatches
+    ) {
+      throw new ConflictException(
+        "El Idempotency-Key ya fue utilizado con datos de orden diferentes",
+      );
+    }
+
+    if (existing.items.length !== dto.items.length) {
+      throw new ConflictException(
+        "El Idempotency-Key ya fue utilizado con datos de orden diferentes",
+      );
+    }
+
+    for (const item of dto.items) {
+      const match = existing.items.find(
+        (it) =>
+          it.productId === item.productId &&
+          (it.variantId ?? null) === (item.variantId ?? null) &&
+          it.quantity === item.quantity,
+      );
+      if (!match) {
+        throw new ConflictException(
+          "El Idempotency-Key ya fue utilizado con datos de orden diferentes",
+        );
+      }
+    }
+
+    if (dto.deliveryMethodType === "COURIER" && dto.shippingAddress) {
+      const details = existing.deliveryDetails as Record<string, unknown> | null;
+      const addr =
+        (details?.shippingAddress as Record<string, unknown> | null) ?? details;
+      if (
+        addr?.recipientName !== dto.shippingAddress.recipientName ||
+        normalizePhone((addr?.phone as string) ?? "") !==
+          normalizePhone(dto.shippingAddress.phone ?? "") ||
+        (addr?.documentType ?? null) !==
+          (dto.shippingAddress.documentType ?? null) ||
+        (addr?.documentNumber ?? null) !==
+          (dto.shippingAddress.documentNumber ?? null) ||
+        (addr?.line1 ?? null) !== (dto.shippingAddress.line1 ?? null) ||
+        (addr?.department ?? null) !==
+          (dto.shippingAddress.department ?? null) ||
+        (addr?.province ?? null) !== (dto.shippingAddress.province ?? null) ||
+        (addr?.district ?? null) !== (dto.shippingAddress.district ?? null)
+      ) {
+        throw new ConflictException(
+          "El Idempotency-Key ya fue utilizado con datos de orden diferentes",
+        );
+      }
+    }
   }
 
   // `proof` is the buyer's checkout-time proof-of-payment upload (already
@@ -55,9 +165,12 @@ export class CreateOrderUseCase {
     if (idempotencyKey) {
       const replay = await this.prisma.order.findFirst({
         where: { storeId: store.id, checkoutIdempotencyKey: idempotencyKey },
-        include: { items: true },
+        include: { items: true, payments: true },
       });
-      if (replay) return { order: replay, whatsappUrl: null };
+      if (replay) {
+        this.assertMatchingCheckoutData(replay, dto);
+        return { order: replay, whatsappUrl: null };
+      }
     }
 
     const pre = await validateDeliveryPreTx(this.prisma, store, dto);
@@ -104,7 +217,7 @@ export class CreateOrderUseCase {
             customerName: dto.customerName,
             checkoutIdempotencyKey: idempotencyKey ?? null,
           },
-          include: { items: true },
+          include: { items: true, payments: true },
         });
 
         // Attach the buyer's proof as a PENDING_REVIEW payment for the
@@ -114,7 +227,7 @@ export class CreateOrderUseCase {
         // notification uses the same dedup-as-an-open-notification helper
         // as the buyer account's later submit-proof endpoint.
         if (proof?.imageUrl) {
-          await tx.orderPayment.create({
+          const payment = await tx.orderPayment.create({
             data: {
               orderId: order.id,
               storeId: store.id,
@@ -126,6 +239,7 @@ export class CreateOrderUseCase {
               reviewStatus: "PENDING_REVIEW",
             },
           });
+          order.payments = [payment];
           await this.notifications.createIfNotOpen(
             {
               storeId: store.id,
@@ -150,9 +264,10 @@ export class CreateOrderUseCase {
       if (!idempotencyKey || !isIdempotencyKeyConflict(error)) throw error;
       const replay = await this.prisma.order.findFirst({
         where: { storeId: store.id, checkoutIdempotencyKey: idempotencyKey },
-        include: { items: true },
+        include: { items: true, payments: true },
       });
       if (!replay) throw error;
+      this.assertMatchingCheckoutData(replay, dto);
       return { order: replay, whatsappUrl: null };
     }
 
