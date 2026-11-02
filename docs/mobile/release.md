@@ -17,9 +17,11 @@ for release candidates and must be protected before staging QA is run.
 
 Production jobs also check that they run from `main`. The environment deployment
 branch policy and required reviewers are the release controls; the job check is
-a second guard. The OTA workflow intentionally fails with a clear message until
-`expo-updates` is added to `apps/mobile/package.json` and a compatible native
-build has been released. Do not dispatch it to test that guard in production.
+a second guard. The OTA workflow checks that `expo-updates` is declared in
+`apps/mobile/package.json`. It cannot verify that a compatible native build has
+been distributed, so the release owner must confirm that prerequisite before
+dispatching an OTA update. Do not dispatch it to test the package guard in
+production.
 
 ## One-time repository administration
 
