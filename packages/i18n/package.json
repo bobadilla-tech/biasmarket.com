@@ -7,11 +7,16 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc && tsc -p tsconfig.mobile.json",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.mobile.json --noEmit",
-    "lint": "node ../../scripts/lint-changed-files.mjs packages/i18n && eslint . --max-warnings 0"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.mobile.json --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "lint": "node ../../scripts/lint-changed-files.mjs packages/i18n && eslint . --max-warnings 0",
+    "test": "vitest run",
+    "test:cov": "vitest run --coverage"
   },
   "devDependencies": {
-    "typescript": "^7.0.2"
+    "@types/node": "24.19.2",
+    "@vitest/coverage-v8": "4.1.12",
+    "typescript": "^7.0.2",
+    "vitest": "4.1.12"
   },
   "exports": {
     "./mobile": {
