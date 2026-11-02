@@ -27,6 +27,9 @@ export class SearchProductResponseDto {
   @ApiProperty({ type: [String] })
   images: string[];
 
+  @ApiProperty()
+  shipsInternationally: boolean;
+
   @ApiProperty({ type: SearchProductStoreResponseDto })
   store: SearchProductStoreResponseDto;
 }

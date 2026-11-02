@@ -68,6 +68,7 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
         (store.defaultCurrency as ProfileFormInput["defaultCurrency"]) ??
         SUPPORTED_CURRENCIES[0],
       locale: (store.locale as ProfileFormInput["locale"]) ?? "es",
+      buyerRegister: store.buyerRegister ?? "auto",
       instagramUrl: store.instagramUrl ?? "",
       facebookUrl: store.facebookUrl ?? "",
       tiktokUrl: store.tiktokUrl ?? "",
@@ -86,6 +87,7 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
         (store.defaultCurrency as ProfileFormInput["defaultCurrency"]) ??
         SUPPORTED_CURRENCIES[0],
       locale: (store.locale as ProfileFormInput["locale"]) ?? "es",
+      buyerRegister: store.buyerRegister ?? "auto",
       instagramUrl: store.instagramUrl ?? "",
       facebookUrl: store.facebookUrl ?? "",
       tiktokUrl: store.tiktokUrl ?? "",
@@ -100,6 +102,7 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
     store.paymentInstructions,
     store.name,
     store.locale,
+    store.buyerRegister,
     store.instagramUrl,
     store.facebookUrl,
     store.tiktokUrl,
@@ -274,6 +277,20 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
             >
               <option value="es">Español (es)</option>
               <option value="en">English (en)</option>
+            </Select>
+          </Field>
+          <Field
+            id="settings-profile-buyer-register"
+            label={t("profile.buyerRegisterLabel")}
+          >
+            <Select
+              {...register("buyerRegister")}
+              className="h-12 w-full"
+              selectClassName="store-theme-input h-full rounded-2xl border border-[#e7dcf3] bg-[#fbf8fe] text-sm text-[#341b55] outline-none"
+            >
+              <option value="auto">{t("profile.registerAuto")}</option>
+              <option value="tuteo">{t("profile.registerTuteo")}</option>
+              <option value="voseo">{t("profile.registerVoseo")}</option>
             </Select>
           </Field>
         </div>

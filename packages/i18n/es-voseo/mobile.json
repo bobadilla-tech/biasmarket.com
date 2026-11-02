@@ -1,0 +1,60 @@
+{
+  "auth": {
+    "loginDescription": "Ingresá con el nombre de tu tienda, tu teléfono y tu contraseña.",
+    "loginAccountDescription": "Accedé con la tienda y el teléfono asociados a tu cuenta.",
+    "signUpLink": "Configurá una contraseña con el enlace de invitación de tu tienda",
+    "registerTitle": "Creá tu cuenta",
+    "registerDescription": "Usá el enlace de invitación que te envió tu tienda.",
+    "registerSetupDescription": "Usá el enlace de confirmación y el teléfono de tu cuenta. Iniciaremos tu sesión después de guardar la contraseña.",
+    "registrationComplete": "Tu contraseña se guardó, pero no se pudo iniciar sesión. Ingresá con tu tienda, teléfono y nueva contraseña.",
+    "accountAlreadyRegistered": "Esta cuenta ya tiene contraseña. Iniciá sesión."
+  },
+  "cart": {
+    "title": "Tu carrito",
+    "empty": "Tu carrito está vacío."
+  },
+  "search": {
+    "chooseStore": "Elegí una tienda para ver sus categorías."
+  },
+  "checkout": {
+    "yourDetails": "Tus datos",
+    "permissionRequired": "Necesitamos permiso para acceder a tus imágenes.",
+    "paymentConfigFailed": "No se pudieron cargar las opciones de pago. Inténtalo de nuevo antes de confirmar tu pedido.",
+    "validation": {
+      "customerPhone": "Ingresá tu teléfono.",
+      "customerEmail": "Ingresá un correo electrónico válido.",
+      "deliveryMethodType": "Elegí un método de entrega.",
+      "pickupPointId": "Elegí un punto de recojo.",
+      "pickupDate": "Elegí una fecha de recojo.",
+      "paymentMethod": "Elegí un método de pago.",
+      "courierName": "Elegí un courier.",
+      "courierModality": "Elegí una opción de entrega del courier.",
+      "shippingRecipientName": "Ingresá el nombre de quien recibe.",
+      "shippingDocumentType": "Elegí un tipo de documento.",
+      "shippingDocumentNumber": "Ingresá un número de documento válido.",
+      "shippingPhone": "Ingresá un teléfono de contacto.",
+      "shippingLine1": "Ingresá una dirección de entrega.",
+      "shippingCity": "Ingresá una ciudad.",
+      "shippingAgencyName": "Ingresá el nombre de la agencia."
+    },
+    "orderReceivedProofPending": "Recibimos tu pedido y el comprobante quedó pendiente de revisión por la tienda.",
+    "orderReceivedPaymentPending": "Recibimos tu pedido. Seguí las instrucciones de pago de la tienda.",
+    "orderReceived": "Recibimos tu pedido y la tienda podrá revisarlo desde su panel.",
+    "loginToFill": "Iniciá sesión para autocompletar tus datos."
+  },
+  "orders": {
+    "loginPrompt": "Iniciá sesión para ver tus pedidos.",
+    "loginToOpen": "Iniciá sesión para abrir este pedido.",
+    "loadFailed": "No pudimos cargar tus pedidos. Intentá de nuevo.",
+    "empty": "Todavía no tenés pedidos."
+  },
+  "account": {
+    "deleteTitle": "¿Eliminar tu cuenta?",
+    "deleteConfirmation": "Se eliminarán tu perfil de comprador, direcciones guardadas y credenciales. La tienda puede conservar los pedidos por motivos de transacción y entrega.",
+    "deleteFailed": "No pudimos eliminar tu cuenta. Revisá tu conexión e intentá de nuevo."
+  },
+  "ios": {
+    "NSPhotoLibraryUsageDescription": "Bias Market necesita acceso a tus fotos para adjuntar un comprobante de pago.",
+    "NSCameraUsageDescription": "Bias Market necesita acceso a tu cámara para fotografiar un comprobante de pago."
+  }
+}

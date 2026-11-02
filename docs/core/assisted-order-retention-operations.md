@@ -8,8 +8,8 @@ Never infer a legacy close date from `createdAt` or `expiresAt` alone.
 ## Run the scheduled sweep on the VPS
 
 Run as `deploy` from `/home/deploy/biasmarket`. Read the active color and image
-tag immediately before invoking the command; blue/green deploys can change
-which API container is active.
+tag immediately before invoking the command; blue/green deploys can change which
+API container is active.
 
 ```bash
 cd /home/deploy/biasmarket
@@ -28,20 +28,20 @@ IMAGE_TAG="$tag" docker compose --env-file env/shared.env exec -T "api-$color" \
 ```
 
 This executes inside the active API container, where the internal route is
-reachable. Do not call the public hostname: Caddy intentionally returns 404
-for `/internal/*`. A successful response includes the number of identities
-erased. A failed object deletion leaves a durable retry row and is retried by
-the next sweep; API logs include only the retry row ID.
+reachable. Do not call the public hostname: Caddy intentionally returns 404 for
+`/internal/*`. A successful response includes the number of identities erased. A
+failed object deletion leaves a durable retry row and is retried by the next
+sweep; API logs include only the retry row ID.
 
 ## Process a verified buyer request
 
 Verify the requester out of band first. Record the operator's stable account ID
-and the support ticket reference; both are written to the `AuditLog` entry.
-Do not put the buyer phone in shell history or the ticket reference in logs.
+and the support ticket reference; both are written to the `AuditLog` entry. Do
+not put the buyer phone in shell history or the ticket reference in logs.
 
-From the same deploy checkout, run this prompt-driven command. The phone is
-read without echo, the request body is piped over stdin, and the shared secret
-stays inside the API container:
+From the same deploy checkout, run this prompt-driven command. The phone is read
+without echo, the request body is piped over stdin, and the shared secret stays
+inside the API container:
 
 ```bash
 cd /home/deploy/biasmarket
@@ -72,15 +72,15 @@ unset buyer_phone
 
 If the response reports deferred orders, retain the ticket reference and repeat
 the request after those orders close. The API erases terminal matches and
-returns active matches as deferred. Do not copy the phone into an issue or
-audit metadata.
+returns active matches as deferred. Do not copy the phone into an issue or audit
+metadata.
 
 ## Review legacy terminal orders
 
-Older cancelled or completed assisted orders may have no trustworthy
-`closedAt`. List only the stable IDs and non-identifying dates/statuses for
-review; the query intentionally omits buyer names, phones, delivery details,
-payment notes, and media URLs:
+Older cancelled or completed assisted orders may have no trustworthy `closedAt`.
+List only the stable IDs and non-identifying dates/statuses for review; the
+query intentionally omits buyer names, phones, delivery details, payment notes,
+and media URLs:
 
 ```sql
 SELECT "id", "storeId", "createdAt", "expiresAt", "status",
@@ -95,10 +95,10 @@ ORDER BY "createdAt", "id";
 
 Use authoritative operational records to establish when each order actually
 closed. If that date cannot be established, leave `closedAt` null; the routine
-sweep will continue to exclude it. For a verified date, update only the
-reviewed order IDs in a transaction and record the operator and ticket in
-`AuditLog` before committing. Replace the example values with confirmed dates,
-stable order IDs, the operator account ID, and the incident/ticket reference:
+sweep will continue to exclude it. For a verified date, update only the reviewed
+order IDs in a transaction and record the operator and ticket in `AuditLog`
+before committing. Replace the example values with confirmed dates, stable order
+IDs, the operator account ID, and the incident/ticket reference:
 
 ```sql
 BEGIN;
@@ -142,17 +142,17 @@ FROM backfilled_assisted_closures AS backfilled;
 COMMIT;
 ```
 
-Confirm each update and audit row in the transaction before committing. Then
-run the scheduled sweep above. Never backfill all candidates with a guessed
-date.
+Confirm each update and audit row in the transaction before committing. Then run
+the scheduled sweep above. Never backfill all candidates with a guessed date.
 
 ## Retained records
 
 Erasure keeps the order, item, payment amount/status, and event history needed
 for financial integrity. It clears buyer free-text fields and payment proof
 notes, removes proof-image references in the same database transaction, and
-queues the corresponding private objects for deletion. The scheduled sweep
-(not the operator request) deletes them, so a buyer-request erasure removes
-objects at the next sweep. S3 deletion is retried until successful; rows that
-fail are retried after untried rows (`attempts` counts failures). Verify that the retry table is empty after a successful
-sweep; a non-empty queue means storage deletion still needs attention.
+queues the corresponding private objects for deletion. The scheduled sweep (not
+the operator request) deletes them, so a buyer-request erasure removes objects
+at the next sweep. S3 deletion is retried until successful; rows that fail are
+retried after untried rows (`attempts` counts failures). Verify that the retry
+table is empty after a successful sweep; a non-empty queue means storage
+deletion still needs attention.

@@ -164,9 +164,10 @@ rewrite the token segment to a placeholder before anything is written or sent:
 - **API logs and error responses:** `scrubRequestUrl`
   (`apps/api/src/common/scrub-request-url.ts`), used by the exception filter,
   replaces the token and drops the query string.
-- **API request logs:** `loggedPath` (`apps/api/src/common/logging/logger.config.ts`)
-  logs the path only (no query string) with the same token replacement, and the
-  log lines forwarded to GlitchTip go through the shared scrubber as well.
+- **API request logs:** `loggedPath`
+  (`apps/api/src/common/logging/logger.config.ts`) logs the path only (no query
+  string) with the same token replacement, and the log lines forwarded to
+  GlitchTip go through the shared scrubber as well.
 - **API error events:** `scrubSentryEvent` in `error-tracking.ts` runs on every
   error and transaction event. It scrubs the request URL, transaction name,
   tags, trace data and span descriptions, then walks the remaining string fields

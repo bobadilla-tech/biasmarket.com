@@ -10,7 +10,7 @@
 //      deleted or mis-globbed suite pass.
 // Rule 2 proves the invocation text exists, not that its job can trigger, and
 // it does not see multi-line `run: |` blocks: keep test invocations on one
-// line. Workspaces without a `test` script (db, i18n, queue, query, sanity)
+// line. Workspaces without a `test` script (db, queue, query, sanity)
 // are not required to have one.
 //
 // Usage: node scripts/ci/check-workspace-scripts.mjs [rootDir]

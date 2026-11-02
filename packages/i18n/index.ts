@@ -18,6 +18,12 @@ import storefrontEn from "./en/storefront.json" with { type: "json" };
 import storefrontEs from "./es/storefront.json" with { type: "json" };
 import couponsEn from "./en/coupons.json" with { type: "json" };
 import couponsEs from "./es/coupons.json" with { type: "json" };
+import commonEsVoseo from "./es-voseo/common.json" with { type: "json" };
+import dashboardEsVoseo from "./es-voseo/dashboard.json" with { type: "json" };
+import onboardingEsVoseo from "./es-voseo/onboarding.json" with { type: "json" };
+import storefrontEsVoseo from "./es-voseo/storefront.json" with { type: "json" };
+import { type Register } from "@biasmarket/utils/register";
+import { mergeMessages } from "./merge.js";
 
 const messages = {
   en: {
@@ -50,6 +56,29 @@ export type Locale = keyof typeof messages;
 export const locales = Object.keys(messages) as Locale[];
 export type Messages = (typeof messages)["en"];
 
-export function getMessages(locale: Locale): Messages {
-  return messages[locale];
+const esVoseo = {
+  common: commonEsVoseo,
+  dashboard: dashboardEsVoseo,
+  onboarding: onboardingEsVoseo,
+  storefront: storefrontEsVoseo,
+};
+
+const resolvedMessages = new Map<string, Messages>();
+
+export function getMessages(
+  locale: Locale,
+  register: Register = "tuteo",
+): Messages {
+  if (locale !== "es" || register === "tuteo") return messages[locale];
+
+  const cached = resolvedMessages.get(`${locale}:${register}`);
+  if (cached) return cached;
+
+  const resolved = mergeMessages(messages.es, esVoseo);
+  resolvedMessages.set(`${locale}:${register}`, resolved);
+  return resolved;
 }
+
+export { mergeMessages } from "./merge.js";
+export { resolveRegister, VOSEO_COUNTRIES } from "@biasmarket/utils/register";
+export type { Register, RegisterSetting } from "@biasmarket/utils/register";

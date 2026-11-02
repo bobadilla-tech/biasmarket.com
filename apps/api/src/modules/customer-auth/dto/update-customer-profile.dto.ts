@@ -1,4 +1,11 @@
-import { IsEmail, IsOptional, IsString, MinLength } from "class-validator";
+import {
+  IsEmail,
+  IsIn,
+  IsOptional,
+  IsString,
+  MinLength,
+} from "class-validator";
+import { COUNTRY_CODES } from "@biasmarket/utils/countries";
 
 // `email`/`phone` are staged (see `CustomerAuthService.updateProfile`), not
 // applied immediately — a confirmation link must be clicked before either
@@ -16,4 +23,8 @@ export class UpdateCustomerProfileDto {
   @IsString()
   @MinLength(1)
   phone?: string;
+
+  @IsOptional()
+  @IsIn(COUNTRY_CODES)
+  countryCode?: string | null;
 }

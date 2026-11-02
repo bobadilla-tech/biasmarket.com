@@ -1,0 +1,212 @@
+{
+  "categoriesTabSubtitle": "Explorá más de tus artistas favoritos.",
+  "selectVariant": "Seleccioná una variante",
+  "chooseOption": "Elegí una opción",
+  "chooseVariant": "Elegí una variante para {product}",
+  "cartPage": {
+    "title": "Tu carrito",
+    "empty": "Tu carrito está vacío.",
+    "mixedCurrencyWarning": "Tenés productos en distintas monedas — quitá alguno del carrito para poder pagar."
+  },
+  "checkoutPage": {
+    "buyerDetailsDescription": "Ingresá el número de celular y el nombre o apodo del comprador.",
+    "courierSelectLabel": "Seleccioná un courier",
+    "courierSelectPlaceholder": "Elegí un courier",
+    "courierSelectRequired": "Seleccioná un courier",
+    "courierModalityRequired": "Seleccioná una modalidad de envío",
+    "courierAgencyNote": "Recogé tu pedido en la agencia del courier.",
+    "courierAgencyNameRequired": "Ingresá el nombre de la agencia",
+    "courierHomeNote": "El courier entregará en tu dirección.",
+    "shippingAgencyNameRequired": "Ingresá el nombre de la agencia",
+    "shippingAddressRequired": "Ingresá una dirección de envío",
+    "shippingRecipientNameRequired": "Ingresá el nombre de quien recibe",
+    "shippingPhoneRequired": "Ingresá un teléfono de contacto",
+    "shippingPhoneInvalid": "Ingresá un teléfono válido",
+    "shippingRecipientSurnamesRequired": "Ingresá los apellidos del destinatario",
+    "shippingDocumentRequired": "Seleccioná el tipo y número de documento",
+    "shippingDepartmentRequired": "Ingresá el departamento",
+    "shippingProvinceRequired": "Ingresá la provincia",
+    "shippingDistrictRequired": "Ingresá el distrito",
+    "shippingLine1Required": "Ingresá la dirección",
+    "shippingCityRequired": "Ingresá la ciudad",
+    "pickupDateRequired": "Seleccioná una fecha de recojo",
+    "invalidEmail": "Ingresá un email válido",
+    "submitSubtext": "Adjuntá tu comprobante y confirmá el pedido.",
+    "submitSubtextCoordinate": "Te contactaremos por WhatsApp para coordinar el pago.",
+    "submitSubtextCash": "Coordiná el pago en efectivo con la tienda al recibir tu pedido.",
+    "mixedCurrencyWarning": "No podés pagar productos en distintas monedas en el mismo pedido. Quitá alguno del carrito.",
+    "orderCreatedSubtitle": "Tu pedido se ha registrado correctamente.",
+    "shareProofNotice": "Compartí tu comprobante para confirmar la compra o esperá a que la tienda te contacte.",
+    "checkEmailNotice": "Revisá tu correo para confirmar tu cuenta y seguir el estado de este pedido.",
+    "confirmationCashNote": "Pagá en efectivo al recoger o recibir tu pedido.",
+    "emptyCart": "Tu carrito está vacío.",
+    "paymentProofLabel": "Adjuntá tu comprobante",
+    "paymentProofRequired": "Adjuntá tu comprobante de pago"
+  },
+  "accountConfirmPage": {
+    "loading": "Confirmando tu cuenta...",
+    "ordersTitle": "Tus pedidos",
+    "noOrders": "Todavía no tenés pedidos.",
+    "alreadyConfirmed": "Tu cuenta ya tiene una contraseña configurada.",
+    "emailChanged": "Tu correo fue actualizado correctamente.",
+    "phoneChanged": "Tu teléfono fue actualizado correctamente.",
+    "setPassword": {
+      "titleReset": "Restablece tu contraseña",
+      "subtitleReset": "Configurá una nueva contraseña para tu cuenta.",
+      "success": "Contraseña configurada — ya podés ingresar con tu número de teléfono.",
+      "successReset": "Contraseña actualizada — ya podés ingresar con tu número de teléfono."
+    }
+  },
+  "loginPage": {
+    "phoneRequired": "Ingresá tu número de teléfono",
+    "passwordRequired": "Ingresá tu contraseña",
+    "forgotPasswordLink": "¿Olvidaste tu contraseña?",
+    "googleHint": "Si compraste con tu teléfono, ingresá con tu teléfono para ver esos pedidos."
+  },
+  "forgotPasswordPage": {
+    "subtitle": "Ingresá tu número de teléfono y, si tiene una cuenta, te enviaremos un enlace a tu correo para restablecer tu contraseña.",
+    "phoneRequired": "Ingresá tu número de teléfono",
+    "success": "Si ese teléfono tiene una cuenta, revisá tu correo para continuar."
+  },
+  "accountPage": {
+    "ordersTitle": "Tus pedidos",
+    "noOrders": "Todavía no tenés pedidos.",
+    "loggedOutBody": "Ingresá para ver tu cuenta y el historial de pedidos.",
+    "orderDetail": {
+      "notFoundBody": "Este pedido no existe o no pertenece a tu cuenta.",
+      "submitProofHint": "Subí una captura de tu transferencia/pago y la tienda la revisará.",
+      "submitProofSuccess": "Tu comprobante fue enviado — la tienda lo revisará pronto."
+    },
+    "addresses": {
+      "title": "Tus direcciones",
+      "recipientNameRequired": "Ingresá el nombre de quien recibe",
+      "phoneRequired": "Ingresá un teléfono de contacto",
+      "line1Required": "Ingresá la dirección",
+      "cityRequired": "Ingresá la ciudad"
+    },
+    "changePassword": {
+      "currentPasswordRequired": "Ingresá tu contraseña actual"
+    },
+    "editContact": {
+      "emailInvalid": "Ingresá un correo válido",
+      "phoneRequired": "Ingresá tu número de teléfono",
+      "success": "Revisá tu correo para confirmar los cambios."
+    }
+  },
+  "restockDialog": {
+    "subtitle": "Déjanos tu nombre y número de teléfono y te contactaremos por WhatsApp en cuanto vuelva a haber stock.",
+    "nameRequired": "Ingresá tu nombre",
+    "phoneRequired": "Ingresá tu número de teléfono",
+    "successBody": "Te escribiremos por WhatsApp en cuanto este producto vuelva a estar disponible."
+  },
+  "comingSoonSection": {
+    "subtitle": "Estos productos están agotados por ahora. Dejá tu número y te avisamos cuando vuelvan."
+  },
+  "myPurchases": {
+    "loggedOutTitle": "Ingresá para ver tus compras",
+    "loggedOutBody": "Ingresá con tu teléfono y contraseña, o continuá con Google. Si sos nuevo, Google registra tu cuenta de comprador en un clic.",
+    "empty": "Aún no tenés compras.",
+    "deleteConfirmation": "¿Eliminar tu cuenta de comprador? Se eliminarán tu perfil reutilizable y las direcciones guardadas. La tienda puede conservar los registros de pedidos.",
+    "deleteAccountFailed": "No pudimos eliminar tu cuenta. Intentá de nuevo.",
+    "claimErrors": {
+      "not_claimable": "Este pedido todavía no se puede guardar. Volvé a abrir tu enlace cuando el pago esté validado.",
+      "invalid": "El enlace para guardar venció o ya no es válido. Volvé a abrir tu enlace del pedido e intentá de nuevo.",
+      "failed": "No pudimos guardar tu pedido. Volvé a abrir tu enlace del pedido e intentá de nuevo.",
+      "unavailable": "Guardar con Google no está disponible por ahora. Tu enlace del pedido sigue funcionando.",
+      "fallback": "No pudimos guardar tu pedido. Volvé a abrir tu enlace del pedido e intentá de nuevo."
+    },
+    "detail": {
+      "notFound": "No encontramos este pedido en tu cuenta.",
+      "loginRequired": "Ingresá para ver este pedido.",
+      "claimed": "¡Listo! Guardamos este pedido en tu cuenta. Tu enlace original sigue funcionando."
+    }
+  },
+  "publicOrder": {
+    "metaTitle": "Tu pedido",
+    "metaDescription": "Revisá el estado de tu pedido.",
+    "noscript": "Activá JavaScript para ver tu pedido o escribile a la tienda.",
+    "loading": "Cargando tu pedido",
+    "error": {
+      "title": "No pudimos cargar tu pedido",
+      "body": "Hubo un problema al cargar tu pedido. Inténtalo de nuevo."
+    },
+    "phonePrivacyNotice": "La tienda usará tu número de teléfono para enviarte actualizaciones sobre este pedido.",
+    "banner": {
+      "pendingPayment": "Tu pedido está esperando el pago. Abajo te mostramos cómo pagar.",
+      "partiallyPaid": "Recibimos parte de tu pago. Falta completar el adelanto.",
+      "paymentSubmitted": "Recibimos tu comprobante y está en revisión.",
+      "verified": "Tu pago está confirmado. Estamos preparando tu pedido.",
+      "rejected": "No pudimos confirmar tu pago. Escribile a la tienda.",
+      "ready": "Tu pedido está listo.",
+      "completed": "Tu pedido fue entregado.",
+      "inTransit": "Tu pedido está en camino."
+    },
+    "items": "Tu pedido",
+    "payments": {
+      "proofAlt": "Tu comprobante de pago"
+    },
+    "howToPay": {
+      "rejectedNote": "Tu último pago no fue aceptado. Escribile a la tienda."
+    },
+    "notYourNumber": {
+      "summary": "¿No es tu número? Avísale a la tienda"
+    },
+    "receipt": {
+      "title": "¿Ya te llegó tu pedido?"
+    },
+    "timeline": {
+      "title": "Historial de tu pedido",
+      "teaser": "Guardá tu pedido para ver el historial completo con fechas.",
+      "fulfillment": {
+        "IN_TRANSIT": "Tu pedido va en camino",
+        "READY": "Tu pedido está listo"
+      }
+    },
+    "shipping": {
+      "packedPhoto": "Foto de tu paquete",
+      "packedPhotoAlt": "Foto del paquete de tu pedido"
+    },
+    "claim": {
+      "explainer": "Al guardar con Google usamos tu correo y tu nombre de Google para crear tu cuenta y asociar este pedido. No pedimos contraseña ni vemos tus correos. Este enlace seguirá funcionando.",
+      "inAppTitle": "Abrilo en tu navegador",
+      "inAppBody": "Google no permite iniciar sesión dentro de esta app. Copiá el enlace y abrilo en Safari o Chrome para guardar tu pedido.",
+      "saved": "Pedido guardado en tu cuenta"
+    },
+    "invite": {
+      "pago_validado": {
+        "title": "Tu pago está validado",
+        "body": "Guardá este pedido en tu cuenta de Google para verlo siempre completo, con fechas y seguimiento. Tu enlace actual seguirá funcionando."
+      },
+      "banner": {
+        "summary": "Guardá este pedido en tu cuenta"
+      },
+      "entrega": {
+        "title": "Guardá tu historial",
+        "body": "Tu pedido ya llegó. Guárdalo en tu cuenta para tener todo el historial a mano. Tu enlace actual seguirá funcionando."
+      }
+    },
+    "upload": {
+      "title": "Subí tu comprobante",
+      "selectMethod": "Elegí un método",
+      "codeHint": "Ayuda a la tienda a encontrar tu pago más rápido.",
+      "preview": "Vista previa de tu comprobante",
+      "success": "¡Listo! Recibimos tu comprobante. La tienda lo revisará pronto.",
+      "inReview": "Tenés {amount} en revisión.",
+      "waitReview": "Esperá la revisión de tu tienda antes de enviar otro comprobante.",
+      "errors": {
+        "amountInvalid": "Escribí un monto válido, por ejemplo 40.50.",
+        "methodRequired": "Elegí un método de pago.",
+        "fileRequired": "Adjuntá la captura de tu pago.",
+        "fileType": "Usá una imagen JPG o PNG.",
+        "generic": "No pudimos enviar tu comprobante. Inténtalo de nuevo."
+      }
+    },
+    "closure": {
+      "title": "Qué pasó con tu pedido",
+      "cancelledNote": "Si tenés dudas o todavía lo querés, escribile a la tienda.",
+      "expiredNote": "Si todavía querés tu pedido, escribile a la tienda para ver si puede reservarlo de nuevo.",
+      "rejectedNote": "La tienda no pudo confirmar tu pago. Escribile para resolverlo."
+    },
+    "deadline": "Tenés hasta {date} para pagar."
+  }
+}

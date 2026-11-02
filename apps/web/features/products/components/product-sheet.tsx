@@ -513,6 +513,17 @@ export function ProductSheet({
           </Field.Root>
 
           <Field.Root className="space-y-2">
+            <label className="flex items-center gap-3 text-sm font-semibold text-foreground">
+              <input
+                type="checkbox"
+                {...register("shipsInternationally")}
+                className="size-4 accent-primary"
+              />
+              {t("products.form.shipsInternationally")}
+            </label>
+          </Field.Root>
+
+          <Field.Root className="space-y-2">
             <Label
               htmlFor="product-stock"
               className="text-sm font-semibold text-foreground"

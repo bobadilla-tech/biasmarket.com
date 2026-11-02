@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { redirectSystemPath } from "./+native-intent.js";
+import { redirectSystemPath } from "../app/+native-intent.js";
 
 describe("redirectSystemPath", () => {
   it("strips /es prefix from incoming paths", () => {
