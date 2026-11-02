@@ -47,13 +47,13 @@ export function StoreThemeFrame({
       className="store-dashboard-theme flex min-h-dvh flex-col lg:flex-row"
       style={themeStyle}
     >
-      <div className="hidden lg:flex">
+      <div className="hidden min-[861px]:flex">
         <StoreSidebar slug={slug} store={store} />
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="sticky top-0 z-40 flex items-center justify-between bg-background/95 p-4 backdrop-blur lg:static lg:justify-end lg:bg-transparent lg:px-8 lg:py-4 lg:backdrop-blur-none">
-          <div className="lg:hidden">
+        <div className="sticky top-0 z-40 flex items-center justify-between bg-background/95 p-4 backdrop-blur min-[861px]:static min-[861px]:justify-end min-[861px]:bg-transparent min-[861px]:px-8 min-[861px]:py-4 min-[861px]:backdrop-blur-none">
+          <div className="min-[861px]:hidden">
             <MobileSidebar slug={slug} store={store} />
           </div>
           <NotificationsBell slug={slug} storeId={store?.id} />

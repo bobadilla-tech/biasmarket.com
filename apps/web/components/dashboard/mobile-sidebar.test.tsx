@@ -1,12 +1,19 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "@biasmarket/i18n";
 
+const pathname = vi.hoisted(() => ({ value: "/dashboard/demo/products" }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
-  usePathname: () => "/dashboard/demo/products",
+  usePathname: () => pathname.value,
   redirect: vi.fn(),
   permanentRedirect: vi.fn(),
 }));
@@ -19,8 +26,11 @@ vi.mock("@/lib/auth-client", () => ({
 }));
 
 const notificationsMock = vi.hoisted(() => ({ unreadCount: vi.fn() }));
-vi.mock("@/lib/api-client", () => ({
-  apiClient: { notifications: notificationsMock },
+vi.mock("@/features/notifications", () => ({
+  useUnreadCount: notificationsMock.unreadCount,
+}));
+vi.mock("@/features/restock", () => ({
+  useRestockCount: () => ({ data: { count: 0 } }),
 }));
 
 const { MobileSidebar } = await import("./mobile-sidebar");
@@ -42,10 +52,11 @@ function createMemoryStorage(): Storage {
 afterEach(() => {
   cleanup();
   notificationsMock.unreadCount.mockReset();
+  pathname.value = "/dashboard/demo/products";
 });
 
-test("mobile sheet renders StoreSidebar fully expanded even when the desktop collapse state is stored as collapsed", () => {
-  notificationsMock.unreadCount.mockResolvedValue({ count: 0 });
+test("mobile sheet keeps grouped navigation and closes after route changes", async () => {
+  notificationsMock.unreadCount.mockReturnValue({ data: { count: 3 } });
   vi.stubGlobal("localStorage", createMemoryStorage());
   globalThis.localStorage.setItem("store-sidebar-collapsed", "true");
 
@@ -53,7 +64,7 @@ test("mobile sheet renders StoreSidebar fully expanded even when the desktop col
     defaultOptions: { queries: { retry: false } },
   });
 
-  render(
+  const view = render(
     <NextIntlClientProvider locale="es" messages={getMessages("es")}>
       <QueryClientProvider client={queryClient}>
         <MobileSidebar slug="demo" store={null} />
@@ -73,4 +84,20 @@ test("mobile sheet renders StoreSidebar fully expanded even when the desktop col
   expect(screen.getByText("Pedidos")).toBeDefined();
   expect(screen.getByText("Productos")).toBeDefined();
   expect(screen.getByText("Cerrar sesión")).toBeDefined();
+  expect(screen.getByText("3")).toBeDefined();
+  expect(
+    screen
+      .getByRole("button", { name: "Catálogo" })
+      .getAttribute("aria-expanded"),
+  ).toBe("true");
+
+  pathname.value = "/dashboard/demo/orders";
+  view.rerender(
+    <NextIntlClientProvider locale="es" messages={getMessages("es")}>
+      <QueryClientProvider client={queryClient}>
+        <MobileSidebar slug="demo" store={null} />
+      </QueryClientProvider>
+    </NextIntlClientProvider>,
+  );
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 });

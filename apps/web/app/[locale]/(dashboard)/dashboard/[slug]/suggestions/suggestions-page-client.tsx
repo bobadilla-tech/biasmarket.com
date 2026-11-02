@@ -12,15 +12,15 @@ function dismissedStorageKey(storeId: string) {
   return `suggestions-dismissed-${storeId}`;
 }
 
-export function PreferencesPageClient() {
-  const t = useTranslations("dashboard.preferences");
+export function SuggestionsPageClient() {
+  const t = useTranslations("dashboard.suggestions");
   const tCommon = useTranslations("common");
   const { storeId, loading: storeLoading } = useDashboardStore();
-  const { data: suggestions, isPending: suggestionsLoading, error } =
-    useSuggestions(
-      storeId,
-      tCommon("networkError"),
-    );
+  const {
+    data: suggestions,
+    isPending: suggestionsLoading,
+    error,
+  } = useSuggestions(storeId, tCommon("networkError"));
 
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
 
@@ -50,16 +50,16 @@ export function PreferencesPageClient() {
     return (
       <div className="px-5 py-6 lg:px-8 lg:py-8">
         <ErrorState
-          message={error instanceof Error
-            ? error.message
-            : tCommon("networkError")}
+          message={
+            error instanceof Error ? error.message : tCommon("networkError")
+          }
         />
       </div>
     );
   }
 
-  const visibleSuggestions = (suggestions ?? []).filter((s) =>
-    !dismissedIds.includes(s.id)
+  const visibleSuggestions = (suggestions ?? []).filter(
+    (s) => !dismissedIds.includes(s.id),
   );
 
   return (
@@ -72,19 +72,19 @@ export function PreferencesPageClient() {
           </h1>
         </div>
 
-        {visibleSuggestions.length === 0
-          ? <EmptyState message={t("empty")} />
-          : (
-            <div className="space-y-4">
-              {visibleSuggestions.map((suggestion) => (
-                <SuggestionCard
-                  key={suggestion.id}
-                  suggestion={suggestion}
-                  onDismiss={handleDismiss}
-                />
-              ))}
-            </div>
-          )}
+        {visibleSuggestions.length === 0 ? (
+          <EmptyState message={t("empty")} />
+        ) : (
+          <div className="space-y-4">
+            {visibleSuggestions.map((suggestion) => (
+              <SuggestionCard
+                key={suggestion.id}
+                suggestion={suggestion}
+                onDismiss={handleDismiss}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

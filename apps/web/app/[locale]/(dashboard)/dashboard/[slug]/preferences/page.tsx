@@ -1,21 +1,11 @@
-import type { Metadata } from "next";
 import type { Locale } from "next-intl";
-import { getTranslations } from "next-intl/server";
-import { PreferencesPageClient } from "./preferences-page-client";
+import { redirect } from "@/i18n/navigation";
 
-export async function generateMetadata({
+export default async function PreferencesPage({
   params,
 }: {
-  params: Promise<{ locale: Locale }>;
-}): Promise<Metadata> {
-  const { locale } = await params;
-  const t = await getTranslations({
-    locale,
-    namespace: "dashboard.preferences",
-  });
-  return { title: t("title") };
-}
-
-export default function PreferencesPage() {
-  return <PreferencesPageClient />;
+  params: Promise<{ locale: Locale; slug: string }>;
+}) {
+  const { locale, slug } = await params;
+  redirect({ href: `/dashboard/${slug}/suggestions`, locale });
 }

@@ -36,11 +36,11 @@ export function SuggestionCard({
   // titleKey is driven by the backend's rule id (e.g. "lowStock"), not a
   // compile-time-known literal, so it can't match next-intl's strict
   // per-namespace key typing — cast to a plain dynamic-key signature.
-  const t = useTranslations("dashboard.preferences.suggestions") as (
+  const t = useTranslations("dashboard.suggestions.suggestions") as (
     key: string,
     values?: Record<string, string | number>,
   ) => string;
-  const tCommon = useTranslations("dashboard.preferences");
+  const tCommon = useTranslations("dashboard.suggestions");
   const { icon: Icon, className } = SEVERITY_STYLES[suggestion.severity];
 
   return (

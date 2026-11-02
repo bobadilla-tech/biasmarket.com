@@ -244,11 +244,13 @@
     "sections": {
       "store": "Store management",
       "growth": "Growth",
-      "settings": "Preferences"
+      "settings": "Settings"
     },
     "nav": {
       "overview": "Overview",
       "orders": "Orders",
+      "catalog": "Catalog",
+      "references": "References",
       "products": "Products",
       "categories": "Categories",
       "collections": "Collections",
@@ -258,8 +260,8 @@
       "customers": "Customers",
       "analytics": "Analytics",
       "restock": "Restock",
+      "suggestions": "Suggestions",
       "settings": "Configuration",
-      "preferences": "Preferences",
       "notifications": "Notifications"
     },
     "soon": "Soon",
@@ -564,8 +566,8 @@
       "GENERIC": "Notification"
     }
   },
-  "preferences": {
-    "title": "Preferences",
+  "suggestions": {
+    "title": "Suggestions",
     "subtitle": "Suggestions based on your store's activity",
     "empty": "No suggestions right now — check back later.",
     "dismiss": "Dismiss",
