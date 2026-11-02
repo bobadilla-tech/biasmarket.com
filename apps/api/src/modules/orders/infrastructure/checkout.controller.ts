@@ -3,6 +3,7 @@ import {
   Body,
   Headers,
   Controller,
+  Logger,
   Param,
   Post,
   Req,
@@ -94,6 +95,7 @@ export interface CheckoutOrderRow {
   expiresAt: Date;
   createdAt: Date;
   items: CheckoutOrderItemRow[];
+  payments?: Array<{ imageUrl: string | null; source?: string | null }>;
 }
 
 function toCheckoutItemDto(
@@ -120,6 +122,7 @@ export function toCheckoutOrderDto(
     requiredAmount: order.requiredAmount.toString(),
     expiresAt: order.expiresAt.toISOString(),
     createdAt: order.createdAt.toISOString(),
+    proofSubmitted: Boolean(order.payments?.some((p) => Boolean(p.imageUrl))),
     items: order.items.map(toCheckoutItemDto),
   };
 }
@@ -179,6 +182,8 @@ const REQUIRES_PROOF = (method: CreateOrderDto["paymentMethod"]): boolean =>
 
 @Controller("stores/:slug/checkout")
 export class CheckoutController {
+  private readonly logger = new Logger(CheckoutController.name);
+
   constructor(
     private createOrder: CreateOrderUseCase,
     private storage: StorageService,
@@ -210,16 +215,18 @@ export class CheckoutController {
     @Headers("idempotency-key") idempotencyKeyHeader?: string | string[],
   ): Promise<CheckoutResultResponseDto> {
     const idempotencyKey = parseIdempotencyKey(idempotencyKeyHeader);
+    const dto = await buildValidatedDto(body ?? {});
+
     if (idempotencyKey) {
       const replay = await this.createOrder.findCheckoutReplay(
         slug,
         idempotencyKey,
+        dto,
       );
       if (replay) {
         return { order: toCheckoutOrderDto(replay), whatsappUrl: null };
       }
     }
-    const dto = await buildValidatedDto(body ?? {});
 
     let configured = false;
     if (dto.paymentMethod && dto.paymentMethod !== "CASH") {
@@ -245,14 +252,33 @@ export class CheckoutController {
       );
     }
 
-    const { order, whatsappUrl } = await this.createOrder.execute(
-      slug,
-      dto,
-      proofImageUrl ? { imageUrl: proofImageUrl } : undefined,
-      this.sessionFromRequest(req),
-      idempotencyKey,
-    );
-    return { order: toCheckoutOrderDto(order), whatsappUrl };
+    try {
+      const { order, whatsappUrl } = await this.createOrder.execute(
+        slug,
+        dto,
+        proofImageUrl ? { imageUrl: proofImageUrl } : undefined,
+        this.sessionFromRequest(req),
+        idempotencyKey,
+      );
+
+      if (
+        proofImageUrl &&
+        !order.payments?.some((p) => p.imageUrl === proofImageUrl)
+      ) {
+        await this.storage.deleteImage(proofImageUrl).catch((err) => {
+          this.logger.warn(`Failed to clean up unused proof image: ${err}`);
+        });
+      }
+
+      return { order: toCheckoutOrderDto(order), whatsappUrl };
+    } catch (error) {
+      if (proofImageUrl) {
+        await this.storage.deleteImage(proofImageUrl).catch((err) => {
+          this.logger.warn(`Failed to clean up proof image on error: ${err}`);
+        });
+      }
+      throw error;
+    }
   }
 
   // Checkout is public, but a signed-in buyer's cookie is honoured to attach
