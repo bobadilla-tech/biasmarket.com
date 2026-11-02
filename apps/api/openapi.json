@@ -9079,7 +9079,7 @@
           "file": {
             "type": "string",
             "format": "binary",
-            "description": "Payment proof image. Required for configured non-cash payment methods."
+            "description": "Payment proof file (JPEG, PNG, or PDF). Required for configured non-cash payment methods."
           },
           "deliveryMethodType": {
             "type": "string",

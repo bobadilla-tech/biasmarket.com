@@ -8,7 +8,7 @@ export class CreateCheckoutRequestDto extends CreateOrderDto {
     type: "string",
     format: "binary",
     description:
-      "Payment proof image. Required for configured non-cash payment methods.",
+      "Payment proof file (JPEG, PNG, or PDF). Required for configured non-cash payment methods.",
   })
   file?: Express.Multer.File;
 }
