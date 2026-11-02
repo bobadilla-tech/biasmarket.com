@@ -6002,6 +6002,14 @@
           "locale": {
             "type": "string"
           },
+          "countryCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "buyerRegister": {
+            "enum": ["auto", "tuteo", "voseo"],
+            "type": "string"
+          },
           "ownerId": {
             "type": "string"
           },
@@ -6088,6 +6096,8 @@
           "name",
           "slug",
           "locale",
+          "countryCode",
+          "buyerRegister",
           "ownerId",
           "themeConfig",
           "logoUrl",
@@ -6141,6 +6151,14 @@
             "type": "string"
           },
           "locale": {
+            "type": "string"
+          },
+          "countryCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "buyerRegister": {
+            "enum": ["auto", "tuteo", "voseo"],
             "type": "string"
           },
           "ownerId": {
@@ -6232,6 +6250,8 @@
           "name",
           "slug",
           "locale",
+          "countryCode",
+          "buyerRegister",
           "ownerId",
           "themeConfig",
           "logoUrl",
@@ -6265,6 +6285,14 @@
           },
           "locale": {
             "type": "string"
+          },
+          "countryCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "buyerRegister": {
+            "type": "string",
+            "enum": ["auto", "tuteo", "voseo"]
           },
           "whatsappNumber": {
             "type": "string"
@@ -6776,6 +6804,14 @@
           "locale": {
             "type": "string"
           },
+          "countryCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "buyerRegister": {
+            "enum": ["auto", "tuteo", "voseo"],
+            "type": "string"
+          },
           "ownerId": {
             "type": "string"
           },
@@ -6871,6 +6907,8 @@
           "name",
           "slug",
           "locale",
+          "countryCode",
+          "buyerRegister",
           "ownerId",
           "themeConfig",
           "logoUrl",
@@ -10909,6 +10947,10 @@
           "pendingPhone": {
             "type": "string",
             "nullable": true
+          },
+          "countryCode": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -10917,7 +10959,8 @@
           "phone",
           "emailVerified",
           "pendingEmail",
-          "pendingPhone"
+          "pendingPhone",
+          "countryCode"
         ]
       },
       "CustomerProfileResponseDto": {
@@ -10949,6 +10992,10 @@
           "phone": {
             "type": "string",
             "minLength": 1
+          },
+          "countryCode": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": ["name"]
@@ -10967,9 +11014,13 @@
           "pendingPhone": {
             "type": "string",
             "nullable": true
+          },
+          "countryCode": {
+            "type": "string",
+            "nullable": true
           }
         },
-        "required": ["name", "pendingEmail", "pendingPhone"]
+        "required": ["name", "pendingEmail", "pendingPhone", "countryCode"]
       },
       "LinkedStoreResponseDto": {
         "type": "object",

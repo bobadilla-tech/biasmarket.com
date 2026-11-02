@@ -37,6 +37,10 @@ flag_management:
       paths:
         - packages/utils
       carryforward: true
+    - name: i18n
+      paths:
+        - packages/i18n
+      carryforward: true
     - name: validation
       paths:
         - packages/validation

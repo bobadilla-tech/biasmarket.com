@@ -14,6 +14,12 @@ const URL_KEY = /url|uri|target|path|referer|transaction|description/i;
 // graphs) and strips the key before the event is sent, so there is nothing to
 // scrub and walking it only risks throwing.
 const SDK_INTERNAL_KEYS = new Set(["sdkProcessingMetadata"]);
+const REDACTED_KEYS = new Set([
+  "cookie",
+  "cookies",
+  "cf-ipcountry",
+  "set-cookie",
+]);
 
 const MAX_DEPTH = 10;
 
@@ -41,6 +47,7 @@ function scrubDeep(
   depth = 0,
   seen = new WeakSet<object>(),
   key?: string,
+  redactCountryCode = false,
 ): unknown {
   if (depth > MAX_DEPTH) return "[Truncated]";
   if (typeof value === "string") {
@@ -54,7 +61,13 @@ function scrubDeep(
 
   if (Array.isArray(value)) {
     value.forEach((item, i) => {
-      const next = scrubDeep(item, depth + 1, seen);
+      const next = scrubDeep(
+        item,
+        depth + 1,
+        seen,
+        undefined,
+        redactCountryCode,
+      );
       if (next !== item) value[i] = next;
     });
     return value;
@@ -63,8 +76,24 @@ function scrubDeep(
   const record = value as Record<string, unknown>;
   for (const k of Object.keys(record)) {
     if (SDK_INTERNAL_KEYS.has(k)) continue;
+    const normalizedKey = k.toLowerCase();
+    if (
+      REDACTED_KEYS.has(normalizedKey) ||
+      (redactCountryCode && normalizedKey === "countrycode")
+    ) {
+      delete record[k];
+      continue;
+    }
     const current = record[k];
-    const next = scrubDeep(current, depth + 1, seen, k);
+    const next = scrubDeep(
+      current,
+      depth + 1,
+      seen,
+      k,
+      redactCountryCode ||
+        normalizedKey === "user" ||
+        normalizedKey === "extra",
+    );
     // Only write back a changed value: re-assigning an untouched property
     // throws on getter-only ones, which dropped every traced event.
     if (next !== current) record[k] = next;

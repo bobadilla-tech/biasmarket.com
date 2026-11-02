@@ -1,0 +1,61 @@
+{
+  "login": {
+    "invalidEmail": "Ingresá un correo electrónico válido",
+    "passwordRequired": "Ingresá tu contraseña",
+    "noAccount": "¿No tenés cuenta?",
+    "welcomeEyebrow": "TU COLECCIÓN TE ESPERA",
+    "welcomeSubtitle": "Iniciá sesión para continuar en BiasMarket",
+    "heroTitleFirst": "Encontrá tu",
+    "heroDescription": "Descubrí, coleccioná e intercambiá tus favoritos del K-pop con fans de todo el mundo.",
+    "signInRegionLabel": "Iniciá sesión en BiasMarket",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "signUpLink": "Registrate"
+  },
+  "signup": {
+    "nameRequired": "Ingresá tu nombre",
+    "invalidEmail": "Ingresá un correo electrónico válido",
+    "passwordRequired": "Ingresá tu contraseña",
+    "hasAccount": "¿Ya tenés cuenta?",
+    "checkEmailTitle": "Revisá tu correo",
+    "checkEmailBody": "Te enviamos un enlace para verificar tu cuenta. Abrilo para poder iniciar sesión."
+  },
+  "verifyEmail": {
+    "successBody": "Tu correo fue verificado. Iniciá sesión para continuar.",
+    "errorTitle": "No pudimos verificar tu cuenta",
+    "errorBody": "Este enlace de verificación no es válido o ya fue usado. Iniciá sesión y te enviaremos uno nuevo.",
+    "expiredBody": "Este enlace de verificación expiró. Iniciá sesión y te enviaremos uno nuevo."
+  },
+  "createStore": {
+    "title": "Creá tu tienda",
+    "subtitle": "Configurá lo esencial ahora y dejá espacio para más personalización a medida que tu marca crece.",
+    "empty": "Todavía no tenés ninguna tienda. Creá la primera abajo.",
+    "storesTitle": "Tus tiendas",
+    "nameHelp": "Usá el nombre público con el que te van a reconocer tus compradores.",
+    "brandingDescription": "Elegí una paleta inicial para tu storefront. Después la podés expandir.",
+    "previewDescription": "Un vistazo rápido a cómo empieza a verse la identidad de tu tienda.",
+    "confirmDelete": "¿Seguro que querés eliminar esta tienda?"
+  },
+  "authError": {
+    "nextSteps": "Qué podés hacer",
+    "existingAccount": {
+      "steps": [
+        "Ingresá con tu correo y contraseña.",
+        "¿Olvidaste la contraseña? Contáctanos y te ayudamos a recuperar el acceso.",
+        "Al ingresar, seguís usando la misma cuenta."
+      ]
+    },
+    "cancelled": {
+      "body": "No se cambió nada ni se creó ninguna cuenta. Podés intentarlo de nuevo cuando quieras.",
+      "steps": [
+        "Intentá de nuevo con Google y aceptá los permisos que muestra Google.",
+        "O ingresá con tu correo y contraseña."
+      ]
+    },
+    "googleProblem": {
+      "title": "No pudimos usar tu cuenta de Google"
+    },
+    "generic": {
+      "body": "No pudimos completar tu inicio de sesión por un problema de nuestra parte. Tu cuenta no fue modificada."
+    }
+  }
+}

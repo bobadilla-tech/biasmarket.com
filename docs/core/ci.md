@@ -57,10 +57,11 @@ path-filtered job that should run did not succeed
 | `apps/mobile`                           | own config    | yes       | `test:cov`, `mobile`            |
 | `apps/sanity`                           | studio config | yes       | none                            |
 | `packages/utils`                        | root config   | yes       | `test:cov`, `utils`             |
+| `packages/i18n`                         | own config    | yes       | `test:cov`, `i18n`              |
 | `packages/validation`                   | root config   | yes       | `test:cov`, `validation`        |
 | `packages/types`                        | root config   | yes       | `test:cov`, `types`             |
 | `packages/design-tokens`                | root config   | yes       | `test:cov`, `design-tokens`     |
-| `packages/db`, `i18n`, `queue`, `query` | root config   | yes       | none (no tests yet)             |
+| `packages/db`, `queue`, `query`         | root config   | yes       | none (no tests yet)             |
 
 Every workspace defines `lint` and `typecheck`; `pnpm turbo run lint` must
 report as many successful tasks as there are workspaces (one per directory with
