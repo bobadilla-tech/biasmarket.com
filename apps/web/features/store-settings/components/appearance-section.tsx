@@ -17,6 +17,7 @@ import { StoreLogo } from "@/components/store-logo";
 import {
   buildCustomStorePalette,
   buildStoreThemeConfig,
+  ensureContrast,
   resolveStorePalette,
   STORE_PALETTES,
 } from "@/lib/store-theme";
@@ -44,24 +45,34 @@ export function AppearanceSection({ store }: { store: DashboardStore }) {
   const [customColor, setCustomColor] = useState(
     initialIsPreset ? "#6d28d9" : initial.colors.primary,
   );
+  const [customAccent, setCustomAccent] = useState(
+    initialIsPreset ? "#f472b6" : initial.colors.accent,
+  );
 
   useEffect(() => {
     setSelectedPaletteId(initialIsPreset ? initial.id : "custom");
-    if (!initialIsPreset) setCustomColor(initial.colors.primary);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialIsPreset, initial.id, initial.colors.primary]);
+    if (!initialIsPreset) {
+      setCustomColor(initial.colors.primary);
+      setCustomAccent(initial.colors.accent);
+    }
+  }, [
+    initialIsPreset,
+    initial.id,
+    initial.colors.primary,
+    initial.colors.accent,
+  ]);
 
   useSavedFlash(saveAppearance.isSuccess, saveAppearance.reset);
 
   const selectedPalette = useMemo(() => {
     if (selectedPaletteId === "custom") {
-      return buildCustomStorePalette(customColor);
+      return buildCustomStorePalette(customColor, customAccent);
     }
     return (
       STORE_PALETTES.find((palette) => palette.id === selectedPaletteId) ??
       STORE_PALETTES[0]
     );
-  }, [selectedPaletteId, customColor]);
+  }, [selectedPaletteId, customColor, customAccent]);
 
   return (
     <SectionCard
@@ -163,19 +174,34 @@ export function AppearanceSection({ store }: { store: DashboardStore }) {
             </div>
           </PopoverTrigger>
           <PopoverContent className="w-auto">
-            <p className="mb-3 text-sm font-semibold text-[#301848]">
-              {t("appearance.customColorLabel")}
-            </p>
-            <input
-              aria-label={t("appearance.customColorLabel")}
-              type="color"
-              value={customColor}
-              onChange={(event) => {
-                setCustomColor(event.target.value);
-                setSelectedPaletteId("custom");
-              }}
-              className="h-10 w-full cursor-pointer rounded-lg border border-[#eadcf8]"
-            />
+            <div className="grid gap-3">
+              <label className="grid gap-1 text-sm font-semibold text-[#301848]">
+                {t("appearance.primaryColorLabel")}
+                <input
+                  aria-label={t("appearance.primaryColorLabel")}
+                  type="color"
+                  value={customColor}
+                  onChange={(event) => {
+                    setCustomColor(event.target.value);
+                    setSelectedPaletteId("custom");
+                  }}
+                  className="h-10 w-full cursor-pointer rounded-lg border border-[#eadcf8]"
+                />
+              </label>
+              <label className="grid gap-1 text-sm font-semibold text-[#301848]">
+                {t("appearance.secondaryColorLabel")}
+                <input
+                  aria-label={t("appearance.secondaryColorLabel")}
+                  type="color"
+                  value={customAccent}
+                  onChange={(event) => {
+                    setCustomAccent(event.target.value);
+                    setSelectedPaletteId("custom");
+                  }}
+                  className="h-10 w-full cursor-pointer rounded-lg border border-[#eadcf8]"
+                />
+              </label>
+            </div>
           </PopoverContent>
         </Popover>
       </div>
@@ -206,7 +232,7 @@ export function AppearanceSection({ store }: { store: DashboardStore }) {
                 type="button"
                 className="h-11 w-full rounded-2xl text-sm font-semibold hover:opacity-100"
                 style={{
-                  background: `linear-gradient(135deg, ${selectedPalette.colors.accent} 0%, ${selectedPalette.colors.primary} 100%)`,
+                  background: `linear-gradient(135deg, ${ensureContrast(selectedPalette.colors.accent, "#ffffff", 4.5)} 0%, ${ensureContrast(selectedPalette.colors.primary, "#ffffff", 4.5)} 100%)`,
                 }}
               >
                 {t("appearance.previewButton")}

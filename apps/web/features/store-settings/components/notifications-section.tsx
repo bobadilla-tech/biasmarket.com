@@ -54,7 +54,7 @@ export function NotificationsSection({ store }: { store: DashboardStore }) {
   const handleSave = () => {
     saveStockAlerts.mutate({
       lowStockAlertsEnabled,
-      lowStockThreshold: Math.max(0, Number(lowStockThreshold) || 0),
+      lowStockThreshold: Math.max(1, Number(lowStockThreshold) || 1),
     });
   };
 
@@ -80,7 +80,7 @@ export function NotificationsSection({ store }: { store: DashboardStore }) {
               id="settings-notifications-threshold"
               aria-label={t("notifications.thresholdLabel")}
               type="number"
-              min={0}
+              min={1}
               value={lowStockThreshold}
               onChange={(event) => setLowStockThreshold(event.target.value)}
               className="store-theme-input h-11 w-32 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
@@ -92,9 +92,10 @@ export function NotificationsSection({ store }: { store: DashboardStore }) {
           <ToggleRow
             key={notification.key}
             label={t(`notifications.items.${notification.key}.label`)}
-            description={t(
-              `notifications.items.${notification.key}.description`,
-            )}
+            description={
+              t(`notifications.items.${notification.key}.description`) +
+              (notification.locked ? ` · ${t("notifications.comingSoon")}` : "")
+            }
             enabled={notification.enabled}
             disabled={notification.locked}
             onChange={(enabled) =>

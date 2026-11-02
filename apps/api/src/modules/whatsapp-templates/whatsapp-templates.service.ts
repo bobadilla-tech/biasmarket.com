@@ -61,7 +61,9 @@ export class WhatsappTemplatesService {
     const messageType = parseType(type);
     await this.assertOwnership(storeId, userId);
 
-    const missing = getMissingRequiredTokens(messageType, dto.template);
+    const missing = dto.template.trim()
+      ? getMissingRequiredTokens(messageType, dto.template)
+      : [];
     if (missing.length > 0) {
       const missingTokens = missing.map((token) => `{{${token}}}`).join(", ");
       throw new BadRequestException(

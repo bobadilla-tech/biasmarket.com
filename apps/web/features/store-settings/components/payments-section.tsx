@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ChevronDown, ChevronUp, CreditCard, Info } from "lucide-react";
+import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { isPaymentMethodConfigured } from "@biasmarket/utils/payment-methods";
 import { Badge } from "@/components/ui/badge";
@@ -10,12 +12,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { UpsertPaymentMethodDtoMethod } from "@biasmarket/types";
 import { usePaymentMethods } from "../queries/use-payment-methods";
 import { useSavePaymentMethods } from "../mutations/use-save-payment-methods";
 import { useSavePaymentMethodDetails } from "../mutations/use-save-payment-method-details";
 import { useSaveDepositPercent } from "../mutations/use-save-deposit-percent";
+import { useSavePaymentInstructions } from "../mutations/use-save-payment-instructions";
 import { useUploadPaymentQrImage } from "../mutations/use-upload-payment-qr-image";
 import {
   transferDetailsSchema,
@@ -85,9 +89,16 @@ const EMPTY_DETAILS_ROW: DetailsFormRow = {
   qrImageUrl: "",
 };
 
-export function PaymentsSection({ storeId }: { storeId: string }) {
+export function PaymentsSection({
+  storeId,
+  initialPaymentInstructions,
+}: {
+  storeId: string;
+  initialPaymentInstructions: string;
+}) {
   const t = useTranslations("dashboard.settings");
   const tCommon = useTranslations("common");
+  const { slug, locale } = useParams<{ slug: string; locale: string }>();
   const paymentMethodLabels = {
     YAPE: t("payments.items.yape.label"),
     PLIN: t("payments.items.plin.label"),
@@ -98,6 +109,7 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
   const saveMethods = useSavePaymentMethods(storeId);
   const saveDetails = useSavePaymentMethodDetails(storeId);
   const saveDeposit = useSaveDepositPercent(storeId);
+  const saveInstructions = useSavePaymentInstructions(storeId, slug);
   const uploadQr = useUploadPaymentQrImage(storeId, tCommon("networkError"));
 
   const [enabledByMethod, setEnabledByMethod] =
@@ -122,6 +134,13 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
   const [depositError, setDepositError] = useState<
     Record<string, string | null>
   >({});
+  const [paymentInstructions, setPaymentInstructions] = useState(
+    initialPaymentInstructions,
+  );
+
+  useEffect(() => {
+    setPaymentInstructions(initialPaymentInstructions);
+  }, [initialPaymentInstructions]);
 
   useEffect(() => {
     if (!methods) return;
@@ -617,6 +636,52 @@ export function PaymentsSection({ storeId }: { storeId: string }) {
             </div>
           );
         })}
+      </div>
+
+      <div className="mt-5 rounded-2xl border border-[#f0e7f8] bg-white p-4">
+        <Field
+          id="settings-payment-instructions"
+          label={t("profile.instructionsLabel")}
+        >
+          <Textarea
+            id="settings-payment-instructions"
+            value={paymentInstructions}
+            onChange={(event) => setPaymentInstructions(event.target.value)}
+            placeholder={t("profile.instructionsPlaceholder")}
+            rows={4}
+            className="store-theme-input rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
+          />
+          <p className="mt-1 text-xs text-[#9582ad]">
+            {t("payments.instructionsHelp")}{" "}
+            <Link
+              href={`/${locale}/dashboard/${slug}/payments`}
+              className="font-semibold text-[#6b36a1] underline underline-offset-2"
+            >
+              {t("payments.reviewPaymentsLink")}
+            </Link>
+          </p>
+        </Field>
+        {saveInstructions.isError ? (
+          <p role="alert" className="mt-2 text-sm text-[#b24368]">
+            {saveInstructions.error instanceof Error
+              ? saveInstructions.error.message
+              : tCommon("networkError")}
+          </p>
+        ) : null}
+        <div className="mt-3 flex justify-end">
+          <Button
+            type="button"
+            onClick={() => saveInstructions.mutate(paymentInstructions)}
+            disabled={saveInstructions.isPending}
+            className="store-theme-primary-button h-9 rounded-xl px-4 text-xs font-semibold hover:opacity-100"
+          >
+            {saveInstructions.isSuccess
+              ? t("saved")
+              : saveInstructions.isPending
+                ? t("saving")
+                : t("save")}
+          </Button>
+        </div>
       </div>
 
       {saveMethods.isError ? (

@@ -145,14 +145,17 @@ function parseThemeConfig(value: unknown): StoreThemeConfig | null {
   };
 }
 
-export function buildCustomStorePalette(primaryHex: string): StorePalette {
+export function buildCustomStorePalette(
+  primaryHex: string,
+  accentHex?: string,
+): StorePalette {
   return {
     id: "custom",
     name: "Custom",
     description: "Your own color",
     colors: {
       primary: primaryHex,
-      accent: lighten(primaryHex, 0.25),
+      accent: accentHex ?? lighten(primaryHex, 0.25),
       surface: lighten(primaryHex, 0.92),
       text: darken(primaryHex, 0.75),
     },

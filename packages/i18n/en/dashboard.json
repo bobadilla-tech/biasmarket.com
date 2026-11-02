@@ -334,6 +334,7 @@
       "tiktokLabel": "TikTok",
       "tiktokPlaceholder": "https://tiktok.com/@yourstore",
       "twitterLabel": "X (Twitter)",
+      "optional": "optional",
       "twitterPlaceholder": "https://x.com/yourstore",
       "instructionsLabel": "Payment instructions",
       "instructionsPlaceholder": "Share the payment details or guidance you want buyers to see after checkout.",
@@ -352,6 +353,9 @@
       "imageUploading": "Uploading…",
       "imageTooLong": "That image would push the text over the limit.",
       "previewLabel": "Preview",
+      "previewShow": "Show preview",
+      "previewHide": "Hide preview",
+      "livePreviewDescription": "Updates as you edit your public store details.",
       "previewEmpty": "Your formatted text shows up here.",
       "help": "This content is used on your public store page and its search listing."
     },
@@ -361,15 +365,18 @@
       "selected": "Selected",
       "previewTitle": "Theme preview",
       "previewButton": "Primary action",
-      "help": "Apply a new palette at any time and the dashboard updates right away.",
+      "help": "Changes apply when you save. Discarding keeps the previous palette.",
       "apply": "Apply palette",
       "customLabel": "Custom",
-      "customDescription": "Set your own brand color",
-      "customColorLabel": "Pick your color"
+      "customDescription": "Set your brand's primary and secondary colors",
+      "primaryColorLabel": "Primary color",
+      "secondaryColorLabel": "Secondary color"
     },
     "payments": {
       "title": "Accepted payment methods",
       "description": "Accept payments with the methods available for your store.",
+      "instructionsHelp": "These instructions appear to buyers after checkout.",
+      "reviewPaymentsLink": "Go to Payments to review and confirm each payment.",
       "manual": "Manual",
       "items": {
         "yape": {
@@ -478,7 +485,7 @@
     },
     "notifications": {
       "title": "Notifications",
-      "description": "Choose the alerts you receive about orders and stock.",
+      "description": "Choose the alerts that help you track store activity and stock.",
       "items": {
         "newOrder": {
           "label": "New order received",
@@ -501,7 +508,8 @@
           "description": "Planned digest with store activity highlights."
         }
       },
-      "thresholdLabel": "Low stock threshold (units)"
+      "thresholdLabel": "Low stock threshold (units)",
+      "comingSoon": "Coming soon"
     },
     "whatsappMessages": {
       "title": "WhatsApp messages",
@@ -511,6 +519,14 @@
       "emptyHint": "Leave empty to keep the default message.",
       "insertVariable": "Insert {token}",
       "save": "Save message",
+      "restoreDefault": "Restore default",
+      "defaultLabel": "Default",
+      "customized": "Customized",
+      "groups": {
+        "orders": "Orders (2)",
+        "payments": "Payments (2)",
+        "tracking": "Tracking (3)"
+      },
       "saving": "Saving...",
       "saved": "Saved",
       "loading": "Loading templates...",

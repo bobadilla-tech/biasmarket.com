@@ -26,7 +26,13 @@ import { Field, SectionCard, useSavedFlash } from "./section-primitives";
 // seller can immediately type a real alt text over it.
 const IMAGE_ALT_PLACEHOLDER = "description";
 
-export function StoreContentSection({ store }: { store: DashboardStore }) {
+export function StoreContentSection({
+  store,
+  onPreviewChange,
+}: {
+  store: DashboardStore;
+  onPreviewChange?: (values: { bio: string }) => void;
+}) {
   const t = useTranslations("dashboard.settings");
   const tCommon = useTranslations("common");
   const { slug } = useParams<{ slug: string }>();
@@ -55,13 +61,16 @@ export function StoreContentSection({ store }: { store: DashboardStore }) {
       bio: store.bio ?? "",
       aboutMarkdown: store.aboutMarkdown ?? "",
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store.bio, store.aboutMarkdown, reset]);
 
   useSavedFlash(saveStoreContent.isSuccess, saveStoreContent.reset);
 
   const bioValue = watch("bio") ?? "";
   const aboutValue = watch("aboutMarkdown") ?? "";
+
+  useEffect(() => {
+    onPreviewChange?.({ bio: bioValue });
+  }, [bioValue, onPreviewChange]);
 
   const { ref: registerAboutRef, ...aboutRegister } = register("aboutMarkdown");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);

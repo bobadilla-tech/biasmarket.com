@@ -1,8 +1,10 @@
 "use client";
 
+import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { CreditCard, MessageCircle, Palette, Store, Truck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { StoreLogo } from "@/components/store-logo";
 import { useDashboardStore } from "@/features/stores";
 import {
@@ -18,13 +20,101 @@ import {
 } from "@/features/store-settings";
 import { CouriersSection } from "@/features/couriers";
 import { RegisterPreferenceSection } from "@/features/store-settings/components/register-preference-section";
+import { cn } from "@/lib/utils";
+
+const TAB_IDS = [
+  "store",
+  "payments",
+  "delivery",
+  "appearance",
+  "messages",
+] as const;
+type TabId = (typeof TAB_IDS)[number];
 
 export function SettingsPageClient() {
   const t = useTranslations("dashboard.settings");
   const tCommon = useTranslations("common");
   const { store, loading: storeLoading } = useDashboardStore();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const tablistRef = useRef<HTMLDivElement>(null);
+  const [storePreview, setStorePreview] = useState(() => ({
+    name: store?.name ?? "",
+    bio: store?.bio ?? "",
+    whatsappNumber: store?.whatsappNumber ?? "",
+    instagramUrl: store?.instagramUrl ?? "",
+    facebookUrl: store?.facebookUrl ?? "",
+    tiktokUrl: store?.tiktokUrl ?? "",
+    twitterUrl: store?.twitterUrl ?? "",
+  }));
+  useEffect(() => {
+    if (!store) return;
+    setStorePreview({
+      name: store.name ?? "",
+      bio: store.bio ?? "",
+      whatsappNumber: store.whatsappNumber ?? "",
+      instagramUrl: store.instagramUrl ?? "",
+      facebookUrl: store.facebookUrl ?? "",
+      tiktokUrl: store.tiktokUrl ?? "",
+      twitterUrl: store.twitterUrl ?? "",
+    });
+  }, [store]);
+  const updateStorePreview = useCallback(
+    (values: Partial<typeof storePreview>) => {
+      setStorePreview((current) => ({ ...current, ...values }));
+    },
+    [],
+  );
+  const requestedTab = searchParams.get("tab");
+  const activeTab: TabId = TAB_IDS.includes(requestedTab as TabId)
+    ? (requestedTab as TabId)
+    : "store";
   const { data: whatsappTemplates, isPending: whatsappLoading } =
-    useWhatsAppTemplates(store?.id);
+    useWhatsAppTemplates(activeTab === "messages" ? store?.id : undefined);
+
+  useEffect(() => {
+    if (!requestedTab || !TAB_IDS.includes(requestedTab as TabId)) {
+      router.replace(`${pathname}?tab=store`, { scroll: false });
+    }
+  }, [pathname, requestedTab, router]);
+
+  const selectTab = useCallback(
+    (tab: TabId) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("tab", tab);
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
+
+  const onTabKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const currentIndex = TAB_IDS.indexOf(activeTab);
+    let nextIndex: number | undefined;
+    if (event.key === "ArrowRight")
+      nextIndex = (currentIndex + 1) % TAB_IDS.length;
+    if (event.key === "ArrowLeft")
+      nextIndex = (currentIndex + TAB_IDS.length - 1) % TAB_IDS.length;
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = TAB_IDS.length - 1;
+    if (nextIndex === undefined) return;
+    event.preventDefault();
+    const nextTab = TAB_IDS[nextIndex];
+    selectTab(nextTab);
+    requestAnimationFrame(() =>
+      tablistRef.current
+        ?.querySelector<HTMLButtonElement>(`[data-tab="${nextTab}"]`)
+        ?.focus(),
+    );
+  };
+
+  const tabs = [
+    { id: "store", icon: Store, label: t("profile.title") },
+    { id: "payments", icon: CreditCard, label: t("payments.title") },
+    { id: "delivery", icon: Truck, label: t("delivery.title") },
+    { id: "appearance", icon: Palette, label: t("appearance.title") },
+    { id: "messages", icon: MessageCircle, label: t("whatsappMessages.title") },
+  ] as const;
 
   if (storeLoading || !store) {
     return (
@@ -35,11 +125,10 @@ export function SettingsPageClient() {
   }
 
   return (
-    <div className="min-h-screen px-5 py-6 lg:px-8 lg:py-8">
-      <div className="space-y-6">
-        <RegisterPreferenceSection />
-        <Card className="rounded-[28px] border-white/60 bg-white/55 py-0 shadow-[0_10px_35px_rgba(89,35,126,0.05)] backdrop-blur">
-          <CardContent className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="min-h-screen px-4 py-5 pb-10 sm:px-5 lg:px-8 lg:py-8">
+      <div className="mx-auto max-w-6xl space-y-5">
+        <Card className="rounded-[28px] border-white/60 bg-white/70 py-0 shadow-[0_10px_35px_rgba(89,35,126,0.05)] backdrop-blur">
+          <CardContent className="flex items-center justify-between gap-4 px-5 py-5 sm:px-7">
             <div>
               <p className="text-sm font-medium text-[#8e7ca7]">
                 {t("eyebrow")}
@@ -49,60 +138,248 @@ export function SettingsPageClient() {
               </h1>
               <p className="mt-1 text-sm text-[#8f7da8]">{t("subtitle")}</p>
             </div>
-            <div className="flex items-center gap-3">
-              <Input
-                value={t("searchPlaceholder")}
-                readOnly
-                aria-label={t("searchPlaceholder")}
-                className="hidden min-w-[250px] rounded-2xl border-[#eadcf7] bg-white text-[#a18eb8] shadow-none sm:flex"
-              />
-              <StoreLogo
-                name={store.name}
-                logoUrl={store.logoUrl ?? null}
-                size={48}
-                className="text-sm font-semibold"
-                style={{ boxShadow: "0 10px 30px var(--store-shadow)" }}
-              />
-            </div>
+            <StoreLogo
+              name={store.name}
+              logoUrl={store.logoUrl ?? null}
+              size={48}
+              className="shrink-0 text-sm font-semibold"
+              style={{ boxShadow: "0 10px 30px var(--store-shadow)" }}
+            />
           </CardContent>
         </Card>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
-          <div className="space-y-6">
-            <ProfileSection store={store} />
-            <StoreContentSection store={store} />
-            <AppearanceSection store={store} />
-            <PaymentsSection storeId={store.id} />
-            <WhatsAppMessagesSection
-              storeId={store.id}
-              templates={
-                whatsappTemplates
-                  ? {
-                      newOrder: whatsappTemplates.newOrder?.template ?? null,
-                      paymentReminder:
-                        whatsappTemplates.paymentReminder?.template ?? null,
-                      assistedOrderLink:
-                        whatsappTemplates.assistedOrderLink?.template ?? null,
-                      paymentValidated:
-                        whatsappTemplates.paymentValidated?.template ?? null,
-                      inTransit: whatsappTemplates.inTransit?.template ?? null,
-                      ready: whatsappTemplates.ready?.template ?? null,
-                      delivered: whatsappTemplates.delivered?.template ?? null,
-                    }
-                  : undefined
-              }
-              loading={whatsappLoading}
-            />
-          </div>
-
-          <div className="space-y-6">
-            <DeliverySection storeId={store.id} />
-            <CouriersSection storeId={store.id} />
-            <DefaultsSection store={store} />
-            <NotificationsSection store={store} />
-          </div>
+        <div
+          ref={tablistRef}
+          role="tablist"
+          aria-label={t("title")}
+          onKeyDown={onTabKeyDown}
+          className="flex gap-2 overflow-x-auto rounded-2xl border border-[#eadcf7] bg-white/75 p-2 shadow-sm [scrollbar-width:thin]"
+        >
+          {tabs.map(({ id, icon: Icon, label }) => (
+            <button
+              key={id}
+              id={`settings-tab-${id}`}
+              data-tab={id}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === id}
+              aria-controls={`settings-panel-${id}`}
+              tabIndex={activeTab === id ? 0 : -1}
+              onClick={() => selectTab(id)}
+              className={cn(
+                "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8a45cc]",
+                activeTab === id
+                  ? "bg-[#5c2b83] text-white shadow-sm"
+                  : "text-[#72558e] hover:bg-[#f6effb] hover:text-[#40205c]",
+              )}
+            >
+              <Icon aria-hidden="true" className="size-4" />
+              <span>{label}</span>
+            </button>
+          ))}
         </div>
+
+        <section
+          id={`settings-panel-${activeTab}`}
+          role="tabpanel"
+          aria-labelledby={`settings-tab-${activeTab}`}
+          className="min-h-[24rem] space-y-5 focus-visible:outline-none"
+        >
+          {activeTab === "store" ? (
+            <>
+              <RegisterPreferenceSection />
+              <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
+                <div className="min-w-0 space-y-5">
+                  <ProfileSection
+                    store={store}
+                    onPreviewChange={updateStorePreview}
+                  />
+                  <StoreContentSection
+                    store={store}
+                    onPreviewChange={updateStorePreview}
+                  />
+                </div>
+                <details className="group lg:hidden">
+                  <summary className="cursor-pointer list-none rounded-[28px] border border-[#eadcf7] bg-white px-5 py-4 text-sm font-semibold text-[#5b3d80] shadow-sm marker:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8a45cc] [&::-webkit-details-marker]:hidden">
+                    <span>{t("storeContent.previewLabel")}</span>
+                    <span className="float-right text-xs font-medium text-[#8f7da8] group-open:hidden">
+                      {t("storeContent.previewShow")}
+                    </span>
+                    <span className="float-right hidden text-xs font-medium text-[#8f7da8] group-open:inline">
+                      {t("storeContent.previewHide")}
+                    </span>
+                  </summary>
+                  <div className="mt-3">
+                    <StorePreviewCard
+                      store={store}
+                      preview={storePreview}
+                      labels={getStorePreviewLabels(t)}
+                    />
+                  </div>
+                </details>
+                <aside className="hidden lg:sticky lg:top-5 lg:block">
+                  <StorePreviewCard
+                    store={store}
+                    preview={storePreview}
+                    labels={getStorePreviewLabels(t)}
+                  />
+                </aside>
+              </div>
+              <DefaultsSection store={store} />
+            </>
+          ) : null}
+          {activeTab === "payments" ? (
+            <PaymentsSection
+              storeId={store.id}
+              initialPaymentInstructions={store.paymentInstructions ?? ""}
+            />
+          ) : null}
+          {activeTab === "delivery" ? (
+            <>
+              <DeliverySection storeId={store.id} />
+              <CouriersSection storeId={store.id} />
+            </>
+          ) : null}
+          {activeTab === "appearance" ? (
+            <AppearanceSection store={store} />
+          ) : null}
+          {activeTab === "messages" ? (
+            <>
+              <NotificationsSection store={store} />
+              <WhatsAppMessagesSection
+                storeId={store.id}
+                templates={
+                  whatsappTemplates
+                    ? {
+                        newOrder: whatsappTemplates.newOrder?.template ?? null,
+                        paymentReminder:
+                          whatsappTemplates.paymentReminder?.template ?? null,
+                        assistedOrderLink:
+                          whatsappTemplates.assistedOrderLink?.template ?? null,
+                        paymentValidated:
+                          whatsappTemplates.paymentValidated?.template ?? null,
+                        inTransit:
+                          whatsappTemplates.inTransit?.template ?? null,
+                        ready: whatsappTemplates.ready?.template ?? null,
+                        delivered:
+                          whatsappTemplates.delivered?.template ?? null,
+                      }
+                    : undefined
+                }
+                loading={whatsappLoading}
+              />
+            </>
+          ) : null}
+        </section>
+        {TAB_IDS.filter((id) => id !== activeTab).map((id) => (
+          <div
+            key={id}
+            id={`settings-panel-${id}`}
+            role="tabpanel"
+            aria-labelledby={`settings-tab-${id}`}
+            hidden
+          />
+        ))}
       </div>
     </div>
   );
+}
+
+type StorePreviewValues = {
+  name: string;
+  bio: string;
+  whatsappNumber: string;
+  instagramUrl: string;
+  facebookUrl: string;
+  tiktokUrl: string;
+  twitterUrl: string;
+};
+
+function StorePreviewCard({
+  store,
+  preview,
+  labels,
+}: {
+  store: NonNullable<ReturnType<typeof useDashboardStore>["store"]>;
+  preview: StorePreviewValues;
+  labels: {
+    previewLabel: string;
+    livePreviewDescription: string;
+    bannerPreviewAlt: string;
+    emptyName: string;
+    previewEmpty: string;
+  };
+}) {
+  return (
+    <Card className="overflow-hidden rounded-[28px] border-[#eadcf7] bg-white shadow-[0_16px_45px_rgba(89,35,126,0.09)]">
+      <div className="border-b border-[#eadcf7] px-5 py-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8e7ca7]">
+          {labels.previewLabel}
+        </p>
+        <p className="mt-1 text-sm text-[#8f7da8]">
+          {labels.livePreviewDescription}
+        </p>
+      </div>
+      <div className="p-4 sm:p-5">
+        {store.bannerUrl ? (
+          <img
+            src={store.bannerUrl}
+            alt={labels.bannerPreviewAlt}
+            className="mb-4 aspect-[3/1] w-full rounded-2xl object-cover"
+          />
+        ) : null}
+        <div className="flex items-center gap-3">
+          <StoreLogo
+            name={preview.name || store.name}
+            logoUrl={store.logoUrl ?? null}
+            size={56}
+            className="shrink-0 rounded-2xl text-base font-bold"
+          />
+          <h2 className="min-w-0 break-words text-lg font-bold text-[#2d1649]">
+            {preview.name || store.name || labels.emptyName}
+          </h2>
+        </div>
+        <p className="mt-4 min-h-10 whitespace-pre-wrap break-words text-sm leading-6 text-[#725d88]">
+          {preview.bio || labels.previewEmpty}
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {[
+            ["Instagram", preview.instagramUrl],
+            ["Facebook", preview.facebookUrl],
+            ["TikTok", preview.tiktokUrl],
+            ["X", preview.twitterUrl],
+          ]
+            .filter(([, url]) => Boolean(url))
+            .map(([label, url]) => (
+              <a
+                key={label}
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full border border-[#eadcf7] bg-[#fcf9ff] px-3 py-1.5 text-xs font-semibold text-[#5b3d80] hover:bg-[#f4ebfb]"
+              >
+                {label}
+              </a>
+            ))}
+        </div>
+        {preview.whatsappNumber ? (
+          <div className="mt-5 rounded-2xl bg-[#f3faef] px-4 py-3 text-sm font-semibold text-[#376b35]">
+            WhatsApp · {preview.whatsappNumber}
+          </div>
+        ) : null}
+      </div>
+    </Card>
+  );
+}
+
+function getStorePreviewLabels(
+  t: ReturnType<typeof useTranslations<"dashboard.settings">>,
+) {
+  return {
+    previewLabel: t("storeContent.previewLabel"),
+    livePreviewDescription: t("storeContent.livePreviewDescription"),
+    bannerPreviewAlt: t("profile.bannerPreviewAlt"),
+    emptyName: t("emptyName"),
+    previewEmpty: t("storeContent.previewEmpty"),
+  };
 }

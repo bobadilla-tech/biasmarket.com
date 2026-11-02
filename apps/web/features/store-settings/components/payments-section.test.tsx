@@ -2,6 +2,11 @@ import { afterEach, expect, test, vi } from "vitest";
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "../../../test-utils/render-with-providers";
 
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useParams: () => ({ slug: "test-store", locale: "es" }),
+}));
+
 const { findAllPaymentConfig } = vi.hoisted(() => ({
   findAllPaymentConfig: vi.fn(),
 }));
@@ -29,7 +34,9 @@ test("shows the setup nudge when only CASH (seeded by default) is configured", a
     { method: "CASH", enabled: true, details: {} },
   ]);
 
-  renderWithProviders(<PaymentsSection storeId="store-1" />);
+  renderWithProviders(
+    <PaymentsSection storeId="store-1" initialPaymentInstructions="" />,
+  );
 
   expect(await screen.findByText(/Configura un método de pago/i)).toBeDefined();
 });
@@ -45,7 +52,9 @@ test("hides the setup nudge once a real method (e.g. TRANSFER) is configured", a
     { method: "CASH", enabled: true, details: {} },
   ]);
 
-  renderWithProviders(<PaymentsSection storeId="store-1" />);
+  renderWithProviders(
+    <PaymentsSection storeId="store-1" initialPaymentInstructions="" />,
+  );
 
   await screen.findByText("Yape");
   expect(screen.queryByText(/Configura un método de pago/i)).toBeNull();
