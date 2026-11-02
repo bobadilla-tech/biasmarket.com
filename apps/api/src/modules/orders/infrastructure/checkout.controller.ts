@@ -207,6 +207,7 @@ export class CheckoutController {
     name: "Idempotency-Key",
     required: false,
     description: "UUID reused when retrying the same checkout submission.",
+    schema: { type: "string", format: "uuid" },
   })
   @UseInterceptors(FileInterceptor("file", { limits: CHECKOUT_UPLOAD_LIMITS }))
   @Post()
