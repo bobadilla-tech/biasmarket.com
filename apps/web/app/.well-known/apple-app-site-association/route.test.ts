@@ -29,6 +29,8 @@ describe("Apple Universal Links association", () => {
       "/*/store/*/account/orders/",
       "/*/store/*/account/orders/*",
     ]);
-    expect(components.filter((c: { exclude?: boolean }) => c.exclude)).toHaveLength(4);
+    expect(
+      components.filter((c: { exclude?: boolean }) => c.exclude),
+    ).toHaveLength(4);
   });
 });

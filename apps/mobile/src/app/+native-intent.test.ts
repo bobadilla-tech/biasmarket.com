@@ -19,9 +19,9 @@ describe("redirectSystemPath", () => {
 
   it("leaves paths without locale prefix intact", () => {
     expect(redirectSystemPath({ path: "/account" })).toBe("/account");
-    expect(
-      redirectSystemPath({ path: "/store/store-1/product/prod-2" }),
-    ).toBe("/store/store-1/product/prod-2");
+    expect(redirectSystemPath({ path: "/store/store-1/product/prod-2" })).toBe(
+      "/store/store-1/product/prod-2",
+    );
   });
 
   it("handles standalone /es and /en gracefully", () => {

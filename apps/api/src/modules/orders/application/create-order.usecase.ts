@@ -121,7 +121,10 @@ export class CreateOrderUseCase {
     }
 
     if (dto.deliveryMethodType === "COURIER" && dto.shippingAddress) {
-      const details = existing.deliveryDetails as Record<string, unknown> | null;
+      const details = existing.deliveryDetails as Record<
+        string,
+        unknown
+      > | null;
       const addr =
         (details?.shippingAddress as Record<string, unknown> | null) ?? details;
       if (

@@ -177,7 +177,7 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
   const signOut = useCallback(async () => {
     setError(null);
     await clearLocalSession();
-  }, [clearLocalSession, storeSlug]);
+  }, [clearLocalSession]);
 
   const value = useMemo(
     () => ({

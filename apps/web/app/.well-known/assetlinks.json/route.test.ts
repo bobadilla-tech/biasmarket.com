@@ -35,6 +35,8 @@ describe("Android App Links association", () => {
     const body = await response.json();
     expect(response.status).toBe(200);
     expect(body[0].target.package_name).toBe("com.biasmarket.mobile");
-    expect(body[0].target.sha256_cert_fingerprints).toEqual([VALID_FINGERPRINT]);
+    expect(body[0].target.sha256_cert_fingerprints).toEqual([
+      VALID_FINGERPRINT,
+    ]);
   });
 });

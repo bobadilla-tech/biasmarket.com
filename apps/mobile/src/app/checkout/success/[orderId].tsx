@@ -42,7 +42,6 @@ export default function CheckoutSuccessScreen() {
         </Pressable>
       ) : null}
       <Pressable
-      <Pressable
         accessibilityRole="button"
         className="rounded-xl bg-brand-pink px-5 py-3"
         onPress={() => router.replace("/")}

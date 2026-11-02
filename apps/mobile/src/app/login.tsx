@@ -20,10 +20,15 @@ export default function LoginScreen() {
     returnTo?: string;
     notice?: string;
   }>();
-  const initialSlug = (Array.isArray(params.slug) ? params.slug[0] : params.slug) ??
-    (Array.isArray(params.storeSlug) ? params.storeSlug[0] : params.storeSlug) ??
+  const initialSlug =
+    (Array.isArray(params.slug) ? params.slug[0] : params.slug) ??
+    (Array.isArray(params.storeSlug)
+      ? params.storeSlug[0]
+      : params.storeSlug) ??
     "";
-  const notice = Array.isArray(params.notice) ? params.notice[0] : params.notice;
+  const notice = Array.isArray(params.notice)
+    ? params.notice[0]
+    : params.notice;
   const { signIn, error: sessionError } = useBuyerSession();
   const [error, setError] = useState<string | null>(null);
   const {
