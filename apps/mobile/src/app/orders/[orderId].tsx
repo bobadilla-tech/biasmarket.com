@@ -208,7 +208,11 @@ function PrivatePaymentProof({
       <Text className="text-xs text-white/60">{t("orders.loadingProof")}</Text>
     );
   }
-  if (proofQuery.error || !proofQuery.data) {
+  if (
+    proofQuery.error ||
+    !proofQuery.data ||
+    !proofQuery.data.startsWith("data:image/")
+  ) {
     return (
       <Text accessibilityRole="alert" className="text-xs text-red-200">
         {t("orders.proofFailed")}
