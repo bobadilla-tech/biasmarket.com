@@ -205,6 +205,23 @@ describe("checkout controller proof cleanup", () => {
       lookupFails.controller.create("demo", BODY, FILE, REQUEST, KEY),
     ).rejects.toThrow("unknown");
     expect(lookupFails.storage.deleteImage).not.toHaveBeenCalled();
+
+    const paymentLookupFails = setup();
+    const original = new Error("unknown");
+    paymentLookupFails.createOrder.execute.mockRejectedValue(original);
+    paymentLookupFails.prisma.orderPayment.findFirst.mockRejectedValue(
+      new Error("payment lookup unavailable"),
+    );
+    await expect(
+      paymentLookupFails.controller.create("demo", BODY, FILE, REQUEST, KEY),
+    ).rejects.toBe(original);
+    expect(
+      paymentLookupFails.prisma.orderPayment.findFirst,
+    ).toHaveBeenCalledWith({
+      where: { storeId: "store-1", imageUrl: PROOF_URL },
+      select: { id: true },
+    });
+    expect(paymentLookupFails.storage.deleteImage).not.toHaveBeenCalled();
   });
 
   it("keeps the original error when cleanup deletion fails", async () => {
