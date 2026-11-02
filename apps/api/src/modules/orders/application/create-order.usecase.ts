@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import {
   buildWhatsAppOrderMessage,
   buildWhatsAppUrl,
@@ -13,6 +9,7 @@ import type { CreateOrderDto } from "../dto/create-order.dto.js";
 import { NotificationsService } from "../../notifications/notifications.service.js";
 import { CustomerAccountService } from "./customer-account.service.js";
 import { isIdempotencyKeyConflict } from "./idempotency-key.js";
+import { resolveReplay } from "./replay.js";
 import {
   lockAndValidate,
   reserveItems,
@@ -42,124 +39,9 @@ export class CreateOrderUseCase {
       include: { items: true, payments: true },
     });
     if (replay && dto) {
-      this.assertMatchingCheckoutData(replay, dto);
+      resolveReplay(replay, dto);
     }
     return replay;
-  }
-
-  assertMatchingCheckoutData(
-    existing: {
-      customerPhone: string;
-      customerEmail: string | null;
-      customerName: string | null;
-      paymentMethod: string | null;
-      paymentType: string | null;
-      deliveryMethodType: string;
-      pickupPointId: string | null;
-      courierName: string | null;
-      courierModality: string | null;
-      deliveryDetails: unknown;
-      items: Array<{
-        productId: string;
-        variantId: string | null;
-        quantity: number;
-      }>;
-    },
-    dto: CreateOrderDto,
-  ): void {
-    const phoneMatches =
-      normalizePhone(existing.customerPhone) ===
-      normalizePhone(dto.customerPhone);
-    const emailMatches =
-      (existing.customerEmail ?? "").toLowerCase() ===
-      (dto.customerEmail ?? "").toLowerCase();
-    const nameMatches =
-      (existing.customerName ?? "") === (dto.customerName ?? "");
-    const paymentMatches =
-      (existing.paymentMethod ?? null) === (dto.paymentMethod ?? null);
-    const paymentTypeMatches =
-      (existing.paymentType ?? null) === (dto.paymentType ?? null);
-    const deliveryTypeMatches =
-      existing.deliveryMethodType === dto.deliveryMethodType;
-    const pickupPointMatches =
-      (existing.pickupPointId ?? null) === (dto.pickupPointId ?? null);
-    const courierNameMatches =
-      (existing.courierName ?? null) === (dto.courierName ?? null);
-    const courierModalityMatches =
-      (existing.courierModality ?? null) === (dto.courierModality ?? null);
-
-    if (
-      !phoneMatches ||
-      !emailMatches ||
-      !nameMatches ||
-      !paymentMatches ||
-      !paymentTypeMatches ||
-      !deliveryTypeMatches ||
-      !pickupPointMatches ||
-      !courierNameMatches ||
-      !courierModalityMatches
-    ) {
-      throw new ConflictException(
-        "El Idempotency-Key ya fue utilizado con datos de orden diferentes",
-      );
-    }
-
-    if (existing.items.length !== dto.items.length) {
-      throw new ConflictException(
-        "El Idempotency-Key ya fue utilizado con datos de orden diferentes",
-      );
-    }
-
-    const unmatchedItems = [...existing.items];
-    for (const item of dto.items) {
-      const matchIndex = unmatchedItems.findIndex(
-        (it) =>
-          it.productId === item.productId &&
-          (it.variantId ?? null) === (item.variantId ?? null) &&
-          it.quantity === item.quantity,
-      );
-      if (matchIndex === -1) {
-        throw new ConflictException(
-          "El Idempotency-Key ya fue utilizado con datos de orden diferentes",
-        );
-      }
-      unmatchedItems.splice(matchIndex, 1);
-    }
-
-    if (dto.deliveryMethodType === "COURIER" && dto.shippingAddress) {
-      const details = existing.deliveryDetails as Record<
-        string,
-        unknown
-      > | null;
-      const addr =
-        (details?.shippingAddress as Record<string, unknown> | null) ?? details;
-      if (
-        addr?.recipientName !== dto.shippingAddress.recipientName ||
-        normalizePhone((addr?.phone as string) ?? "") !==
-          normalizePhone(dto.shippingAddress.phone ?? "") ||
-        (addr?.documentType ?? null) !==
-          (dto.shippingAddress.documentType ?? null) ||
-        (addr?.documentNumber ?? null) !==
-          (dto.shippingAddress.documentNumber ?? null) ||
-        (addr?.line1 ?? null) !== (dto.shippingAddress.line1 ?? null) ||
-        (addr?.line2 ?? null) !== (dto.shippingAddress.line2 ?? null) ||
-        (addr?.city ?? null) !== (dto.shippingAddress.city ?? null) ||
-        (addr?.reference ?? null) !== (dto.shippingAddress.reference ?? null) ||
-        (addr?.recipientSurnames ?? null) !==
-          (dto.shippingAddress.recipientSurnames ?? null) ||
-        (addr?.agencyName ?? null) !==
-          (dto.shippingAddress.agencyName ?? null) ||
-        (addr?.department ?? null) !==
-          (dto.shippingAddress.department ?? null) ||
-        (addr?.region ?? null) !== (dto.shippingAddress.region ?? null) ||
-        (addr?.province ?? null) !== (dto.shippingAddress.province ?? null) ||
-        (addr?.district ?? null) !== (dto.shippingAddress.district ?? null)
-      ) {
-        throw new ConflictException(
-          "El Idempotency-Key ya fue utilizado con datos de orden diferentes",
-        );
-      }
-    }
   }
 
   // `proof` is the buyer's checkout-time proof-of-payment upload (already
@@ -185,8 +67,7 @@ export class CreateOrderUseCase {
         include: { items: true, payments: true },
       });
       if (replay) {
-        this.assertMatchingCheckoutData(replay, dto);
-        return { order: replay, whatsappUrl: null };
+        return { order: resolveReplay(replay, dto), whatsappUrl: null };
       }
     }
 
@@ -285,8 +166,7 @@ export class CreateOrderUseCase {
         include: { items: true, payments: true },
       });
       if (!replay) throw error;
-      this.assertMatchingCheckoutData(replay, dto);
-      return { order: replay, whatsappUrl: null };
+      return { order: resolveReplay(replay, dto), whatsappUrl: null };
     }
 
     const {
