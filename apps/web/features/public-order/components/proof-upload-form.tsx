@@ -21,9 +21,11 @@ import { submittableCents } from "../lib/order-state";
 export function ProofUploadForm({
   token,
   order,
+  onSuccess,
 }: {
   token: string;
   order: PublicOrderResponseDto;
+  onSuccess?: () => void;
 }) {
   const t = useTranslations("storefront.publicOrder.upload");
   const tMethods = useTranslations("storefront.checkoutPage");
@@ -90,6 +92,7 @@ export function ProofUploadForm({
     try {
       await mutation.mutateAsync(values);
       setSent(true);
+      onSuccess?.();
       reset({
         amount: (maxCents / 100).toFixed(2),
         method: undefined,
