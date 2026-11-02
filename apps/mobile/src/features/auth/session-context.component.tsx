@@ -78,6 +78,7 @@ async function renderSession() {
 describe("buyer session lifecycle", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockRead.mockReset();
     mockRead.mockResolvedValue(null);
     mockWrite.mockResolvedValue(undefined);
     mockRemove.mockResolvedValue(undefined);
@@ -247,5 +248,49 @@ describe("buyer session lifecycle", () => {
     expect(
       new Headers(fetchMock.mock.calls[0]?.[1]?.headers).get("Authorization"),
     ).toBe("Bearer buyer-token");
+  });
+
+  it("does not persist a refresh that finishes after provider unmount", async () => {
+    let releaseRead!: (
+      session: { token: string; storeSlug: string } | null,
+    ) => void;
+    const blockedRead = new Promise<{
+      token: string;
+      storeSlug: string;
+    } | null>((resolve) => {
+      releaseRead = resolve;
+    });
+    jest.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        headers: { "X-Session-Token": "rotated-token" },
+      }),
+    );
+    const view = await renderSession();
+    await waitFor(() =>
+      expect(screen.getByTestId("session-status").props.children).toBe(
+        "unauthenticated",
+      ),
+    );
+    await act(async () => {
+      fireEvent.press(screen.getByTestId("sign-in"));
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId("session-status").props.children).toBe(
+        "authenticated",
+      ),
+    );
+
+    mockRead.mockReturnValueOnce(blockedRead);
+    const refreshRequest = customFetch("/stores/demo/orders");
+    await waitFor(() => expect(mockRead).toHaveBeenCalledTimes(2));
+    await view.unmount();
+    releaseRead({ token: "buyer-token", storeSlug: "demo" });
+    await refreshRequest;
+
+    expect(mockWrite).toHaveBeenCalledTimes(1);
+    expect(mockWrite).not.toHaveBeenCalledWith({
+      token: "rotated-token",
+      storeSlug: "demo",
+    });
   });
 });

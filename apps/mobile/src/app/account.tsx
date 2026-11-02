@@ -72,7 +72,6 @@ export default function AccountScreen() {
                   t("account.sessionEndedTitle"),
                   t("account.sessionEnded"),
                 );
-                router.replace("/login");
                 return;
               }
               Alert.alert(
