@@ -146,7 +146,7 @@ export default function ProductDetailScreen() {
                 locale={locale}
                 t={t}
                 variant={variant}
-                disabled={unavailable}
+                disabled={unavailable || cart.isSaving}
                 onAdd={() =>
                   cart.add({
                     productId: product.id,
