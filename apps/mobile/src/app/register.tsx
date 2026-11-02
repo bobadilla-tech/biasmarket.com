@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
-import { Controller, useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { z } from "zod";
@@ -20,9 +20,13 @@ const registerFormSchema = customerRegisterSchema.extend({
 type RegisterForm = z.infer<typeof registerFormSchema>;
 
 export default function RegisterScreen() {
-  const params = useLocalSearchParams<{ slug?: string; token?: string }>();
-  const router = useRouter();
+  const params = useLocalSearchParams<{
+    slug?: string;
+    token?: string;
+    returnTo?: string;
+  }>();
   const { t } = useMobileI18n();
+  const router = useRouter();
   const { register, error: sessionError } = useBuyerSession();
   const [error, setError] = useState<string | null>(null);
   const token = Array.isArray(params.token) ? params.token[0] : params.token;
@@ -51,7 +55,14 @@ export default function RegisterScreen() {
         values.phone.trim(),
         values.password,
       );
-      router.replace("/");
+      if (params.returnTo === "checkout") {
+        router.replace({
+          pathname: "/checkout/[storeSlug]",
+          params: { storeSlug: values.storeSlug.trim() },
+        });
+      } else {
+        router.replace("/");
+      }
     } catch (cause) {
       if (
         cause instanceof Error &&
@@ -62,6 +73,7 @@ export default function RegisterScreen() {
           params: {
             slug: values.storeSlug.trim(),
             notice: "registration-complete",
+            returnTo: params.returnTo,
           },
         });
         return;
@@ -72,6 +84,7 @@ export default function RegisterScreen() {
           params: {
             slug: values.storeSlug.trim(),
             notice: "account-already-registered",
+            returnTo: params.returnTo,
           },
         });
         return;
@@ -139,7 +152,13 @@ export default function RegisterScreen() {
           {isSubmitting ? t("auth.saving") : t("auth.registerButton")}
         </Text>
       </Pressable>
-      <Link href="/login" className="text-center font-medium text-white">
+      <Link
+        href={{
+          pathname: "/login",
+          params: { storeSlug: slug, returnTo: params.returnTo },
+        }}
+        className="text-center font-medium text-white"
+      >
         {t("auth.alreadyHavePassword")}
       </Link>
     </ScrollView>
@@ -183,13 +202,11 @@ function RegisterField({
       />
       {error ? (
         <Text accessibilityRole="alert" className="text-sm text-red-300">
-          {error
-            ? t(
-                error === "passwordsDontMatch"
-                  ? "auth.passwordMismatch"
-                  : "auth.requiredField",
-              )
-            : null}
+          {name === "password" && error.includes("8")
+            ? t("auth.passwordLength")
+            : name === "confirmPassword" && error === "passwordsDontMatch"
+              ? t("auth.passwordMismatch")
+              : t("auth.requiredField")}
         </Text>
       ) : null}
     </View>

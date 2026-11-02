@@ -22,6 +22,7 @@ import { StorageService } from "../../../storage/storage.service.js";
 import { PaymentConfigService } from "../../payment-config/payment-config.service.js";
 import { CreateOrderUseCase } from "../application/create-order.usecase.js";
 import { CheckoutController } from "./checkout.controller.js";
+import { PrismaService } from "../../../prisma/prisma.service.js";
 
 const MB = 1024 * 1024;
 
@@ -47,6 +48,12 @@ describe("checkout upload limits", () => {
       controllers: [CheckoutController],
       providers: [
         {
+          provide: PrismaService,
+          useValue: {
+            orderPayment: { findFirst: vi.fn().mockResolvedValue(null) },
+          },
+        },
+        {
           provide: CreateOrderUseCase,
           useValue: {
             execute: vi
@@ -58,6 +65,7 @@ describe("checkout upload limits", () => {
           provide: StorageService,
           useValue: {
             uploadPaymentImage: vi.fn().mockResolvedValue("https://img/x"),
+            deleteImage: vi.fn().mockResolvedValue(undefined),
           },
         },
         {

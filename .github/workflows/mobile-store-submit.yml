@@ -1,0 +1,63 @@
+name: Mobile store submission
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "Store to submit to"
+        required: true
+        type: choice
+        options: [ios, android, all]
+      ios_build_id:
+        description: "EAS build ID for iOS (required for ios or all)"
+        required: false
+        type: string
+      android_build_id:
+        description: "EAS build ID for Android (required for android or all)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  submit:
+    name: Submit production build to stores
+    runs-on: ubuntu-latest
+    environment: mobile-production
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
+      PLATFORM: ${{ inputs.platform }}
+      IOS_BUILD_ID: ${{ inputs.ios_build_id }}
+      ANDROID_BUILD_ID: ${{ inputs.android_build_id }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+        with:
+          version: 10.11.0
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Submit selected production binaries
+        run: |
+          test -n "$EXPO_TOKEN" || (echo "EXPO_TOKEN is required in mobile-production" && exit 1)
+          test -n "$EAS_PROJECT_ID" || (echo "EAS_PROJECT_ID is required in mobile-production" && exit 1)
+          npm install --global eas-cli
+          cd apps/mobile
+          if [ "$PLATFORM" = "android" ] || [ "$PLATFORM" = "all" ]; then
+            test -n "$ANDROID_BUILD_ID" || (echo "android_build_id is required when submitting to Android" && exit 1)
+          fi
+          if [ "$PLATFORM" = "ios" ] || [ "$PLATFORM" = "all" ]; then
+            test -n "$IOS_BUILD_ID" || (echo "ios_build_id is required when submitting to iOS" && exit 1)
+            eas submit --platform ios --profile production --id "$IOS_BUILD_ID" --non-interactive
+          fi
+          if [ "$PLATFORM" = "android" ] || [ "$PLATFORM" = "all" ]; then
+            eas submit --platform android --profile production --id "$ANDROID_BUILD_ID" --non-interactive
+          fi

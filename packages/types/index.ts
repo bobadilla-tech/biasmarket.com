@@ -1,4 +1,9 @@
-export { ApiError, configureApiClient, customFetch } from "./http.js";
+export {
+  ApiError,
+  configureApiClient,
+  customFetch,
+  customFetchBlob,
+} from "./http.js";
 export type { RequestOptions } from "./http.js";
 
 // Response/request DTO types, generated from apps/api's committed

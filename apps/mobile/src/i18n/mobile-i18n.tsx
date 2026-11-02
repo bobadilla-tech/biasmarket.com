@@ -1,31 +1,56 @@
-import { type Locale } from "@biasmarket/i18n";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import type { Locale } from "@biasmarket/i18n";
 import { getMobileMessages } from "@biasmarket/i18n/mobile";
 import {
   createContext,
-  type PropsWithChildren,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
+  type PropsWithChildren,
 } from "react";
 
+const LANGUAGE_KEY = "biasmarket.mobile.locale";
 const MobileI18nContext = createContext<{
   locale: Locale;
   setLocale: (locale: Locale) => void;
 } | null>(null);
 
 function getSystemLocale(): Locale {
-  return Intl.DateTimeFormat()
-    .resolvedOptions()
-    .locale.toLowerCase()
-    .startsWith("es")
-    ? "es"
-    : "en";
+  const locale = Intl.DateTimeFormat().resolvedOptions().locale.toLowerCase();
+  return locale.startsWith("es") ? "es" : "en";
 }
 
 export function MobileI18nProvider({ children }: PropsWithChildren) {
-  const [locale, setLocale] = useState<Locale>(getSystemLocale);
-  const value = useMemo(() => ({ locale, setLocale }), [locale]);
+  const [locale, setLocaleState] = useState<Locale>(getSystemLocale);
+  const userSelectedLocale = useRef(false);
+
+  useEffect(() => {
+    let active = true;
+    void AsyncStorage.getItem(LANGUAGE_KEY)
+      .then((stored) => {
+        if (
+          active &&
+          !userSelectedLocale.current &&
+          (stored === "en" || stored === "es")
+        ) {
+          setLocaleState(stored);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const setLocale = useCallback((nextLocale: Locale) => {
+    userSelectedLocale.current = true;
+    setLocaleState(nextLocale);
+    void AsyncStorage.setItem(LANGUAGE_KEY, nextLocale).catch(() => undefined);
+  }, []);
+  const value = useMemo(() => ({ locale, setLocale }), [locale, setLocale]);
 
   return (
     <MobileI18nContext.Provider value={value}>

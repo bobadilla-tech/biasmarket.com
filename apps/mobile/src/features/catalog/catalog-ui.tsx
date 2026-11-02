@@ -1,9 +1,9 @@
 import { Image } from "expo-image";
 import {
   Pressable,
-  type StyleProp,
   Text,
   View,
+  type StyleProp,
   type ViewStyle,
 } from "react-native";
 import type {
@@ -12,7 +12,7 @@ import type {
   SearchProductResponseDto,
 } from "@biasmarket/types";
 import type { Locale } from "@biasmarket/i18n";
-import { useMobileI18n } from "../../i18n/mobile-i18n";
+import { useMobileI18n } from "../../i18n/mobile-i18n.js";
 
 export function StoreImage({
   uri,

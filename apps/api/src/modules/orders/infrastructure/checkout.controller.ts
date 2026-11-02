@@ -1,7 +1,9 @@
 import {
   BadRequestException,
   Body,
+  Headers,
   Controller,
+  Logger,
   Param,
   Post,
   Req,
@@ -12,7 +14,7 @@ import {
 import { FileInterceptor } from "@nestjs/platform-express";
 import type { Request } from "express";
 import { verifyCustomerSessionToken } from "@biasmarket/utils/customer-account-token";
-import { ApiBody, ApiConsumes } from "@nestjs/swagger";
+import { ApiBody, ApiConsumes, ApiHeader } from "@nestjs/swagger";
 import { Public } from "@thallesp/nestjs-better-auth";
 import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
 import { plainToInstance } from "class-transformer";
@@ -25,12 +27,14 @@ import { pickPublicOrderFields } from "./order.controller.js";
 import { requiredEnv } from "../../../config/env.validation.js";
 import { extractCustomerSessionToken } from "../../customer-auth/customer-session-token.js";
 import { PaymentConfigService } from "../../payment-config/payment-config.service.js";
+import { PrismaService } from "../../../prisma/prisma.service.js";
 import type {
   CheckoutOrderItemResponseDto,
   CheckoutOrderResponseDto,
   CheckoutResultResponseDto,
 } from "../dto/checkout-response.dto.js";
 import { CHECKOUT_UPLOAD_LIMITS } from "../../../common/upload-limits.js";
+import { parseIdempotencyKey } from "../application/idempotency-key.js";
 import {
   PROOF_UPLOAD_MIME_TYPES,
   UploadedFileValidationPipe,
@@ -92,6 +96,7 @@ export interface CheckoutOrderRow {
   expiresAt: Date;
   createdAt: Date;
   items: CheckoutOrderItemRow[];
+  payments?: Array<{ imageUrl: string | null; source?: string | null }>;
 }
 
 function toCheckoutItemDto(
@@ -107,8 +112,9 @@ function toCheckoutItemDto(
 export function toCheckoutOrderDto(
   order: CheckoutOrderRow,
 ): CheckoutOrderResponseDto {
+  const { payments, ...orderWithoutPayments } = order;
   return {
-    ...pickPublicOrderFields(order),
+    ...pickPublicOrderFields(orderWithoutPayments),
     deliveryDetails: order.deliveryDetails as Record<string, unknown> | null,
     pickupDate: order.pickupDate?.toISOString() ?? null,
     retainedAmount: order.retainedAmount?.toString() ?? null,
@@ -118,6 +124,7 @@ export function toCheckoutOrderDto(
     requiredAmount: order.requiredAmount.toString(),
     expiresAt: order.expiresAt.toISOString(),
     createdAt: order.createdAt.toISOString(),
+    proofSubmitted: Boolean(payments?.some((p) => Boolean(p.imageUrl))),
     items: order.items.map(toCheckoutItemDto),
   };
 }
@@ -177,8 +184,11 @@ const REQUIRES_PROOF = (method: CreateOrderDto["paymentMethod"]): boolean =>
 
 @Controller("stores/:slug/checkout")
 export class CheckoutController {
+  private readonly logger = new Logger(CheckoutController.name);
+
   constructor(
     private createOrder: CreateOrderUseCase,
+    private prisma: PrismaService,
     private storage: StorageService,
     private paymentConfig: PaymentConfigService,
   ) {}
@@ -193,6 +203,11 @@ export class CheckoutController {
   // marks non-primitive properties as application/json-encoded under
   // multipart/form-data, which matches that transport.
   @ApiBody({ type: CreateOrderDto })
+  @ApiHeader({
+    name: "Idempotency-Key",
+    required: false,
+    description: "UUID reused when retrying the same checkout submission.",
+  })
   @UseInterceptors(FileInterceptor("file", { limits: CHECKOUT_UPLOAD_LIMITS }))
   @Post()
   async create(
@@ -200,8 +215,25 @@ export class CheckoutController {
     @Body() body: Record<string, unknown>,
     @UploadedFile(CHECKOUT_PROOF_PIPE) file: ValidatedUploadedFile | undefined,
     @Req() req: Request,
+    @Headers("idempotency-key") idempotencyKeyHeader?: string | string[],
   ): Promise<CheckoutResultResponseDto> {
+    const idempotencyKey = parseIdempotencyKey(idempotencyKeyHeader);
     const dto = await buildValidatedDto(body ?? {});
+
+    if (idempotencyKey) {
+      const replay = await this.createOrder.findCheckoutReplay(
+        slug,
+        idempotencyKey,
+        dto,
+      );
+      if (replay) {
+        return {
+          order: toCheckoutOrderDto(replay),
+          buyerAccountLinked: this.orderBelongsToSession(replay, req),
+          whatsappUrl: null,
+        };
+      }
+    }
 
     let configured = false;
     if (dto.paymentMethod && dto.paymentMethod !== "CASH") {
@@ -227,13 +259,47 @@ export class CheckoutController {
       );
     }
 
-    const { order, whatsappUrl } = await this.createOrder.execute(
-      slug,
-      dto,
-      proofImageUrl ? { imageUrl: proofImageUrl } : undefined,
-      this.sessionFromRequest(req),
-    );
-    return { order: toCheckoutOrderDto(order), whatsappUrl };
+    try {
+      const { order, whatsappUrl } = await this.createOrder.execute(
+        slug,
+        dto,
+        proofImageUrl ? { imageUrl: proofImageUrl } : undefined,
+        this.sessionFromRequest(req),
+        idempotencyKey,
+      );
+
+      if (
+        proofImageUrl &&
+        !order.payments?.some((p) => p.imageUrl === proofImageUrl)
+      ) {
+        await this.storage?.deleteImage?.(proofImageUrl)?.catch((err) => {
+          this.logger.warn(`Failed to clean up unused proof image: ${err}`);
+        });
+      }
+
+      return {
+        order: toCheckoutOrderDto(order),
+        buyerAccountLinked: this.orderBelongsToSession(order, req),
+        whatsappUrl,
+      };
+    } catch (error) {
+      if (proofImageUrl) {
+        try {
+          const payment = await this.prisma.orderPayment.findFirst({
+            where: { imageUrl: proofImageUrl },
+            select: { id: true },
+          });
+          if (!payment) {
+            await this.storage?.deleteImage?.(proofImageUrl);
+          }
+        } catch (cleanupError) {
+          this.logger.warn(
+            `Failed to verify proof image ownership after checkout error; preserving it: ${cleanupError}`,
+          );
+        }
+      }
+      throw error;
+    }
   }
 
   // Checkout is public, but a signed-in buyer's cookie is honoured to attach
@@ -250,5 +316,13 @@ export class CheckoutController {
         requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET"),
       ) ?? undefined
     );
+  }
+
+  private orderBelongsToSession(
+    order: CheckoutOrderRow,
+    req: Request,
+  ): boolean {
+    const session = this.sessionFromRequest(req);
+    return Boolean(session && order.buyerAccountId === session.buyerAccountId);
   }
 }

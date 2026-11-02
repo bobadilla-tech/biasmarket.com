@@ -30,6 +30,19 @@ export const me = async (
   });
 };
 
+export const getDeleteMeUrl = () => {
+  return `/account/me`;
+};
+
+export const deleteMe = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<void> => {
+  return customFetch<void>(getDeleteMeUrl(), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
 export const getOrdersUrl = () => {
   return `/account/orders`;
 };

@@ -491,6 +491,10 @@
     "storeAccount": "Cuenta en la tienda",
     "pendingBalance": "Pendiente: {currency} {amount}",
     "signOut": "Cerrar sesión",
+    "deleteAccount": "Eliminar cuenta",
+    "deletingAccount": "Eliminando cuenta…",
+    "deleteConfirmation": "¿Eliminar tu cuenta de comprador? Se eliminarán tu perfil reutilizable y las direcciones guardadas. La tienda puede conservar los registros de pedidos.",
+    "deleteAccountFailed": "No pudimos eliminar tu cuenta. Inténtalo de nuevo.",
     "claimErrors": {
       "already_claimed": "Este pedido ya fue guardado en otra cuenta. Si crees que es un error, escríbele a la tienda.",
       "not_claimable": "Este pedido todavía no se puede guardar. Vuelve a abrir tu enlace cuando el pago esté validado.",

@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { ApiError, customerAuth } from "@biasmarket/types";
+import { ApiError, customerAuth, globalAccount } from "@biasmarket/types";
 import type { CustomerProfileResponseDto } from "@biasmarket/types";
 import { useBuyerSession } from "../features/auth/session-context";
 import { useMobileI18n } from "../i18n/mobile-i18n";
 
-export default function HomeScreen() {
+export default function AccountScreen() {
   const router = useRouter();
   const { locale, setLocale, t } = useMobileI18n();
   const { status, storeSlug, signOut, error: sessionError } = useBuyerSession();
+  const [deleting, setDeleting] = useState(false);
   const [profile, setProfile] = useState<CustomerProfileResponseDto | null>(
     null,
   );
@@ -22,7 +23,6 @@ export default function HomeScreen() {
   useEffect(() => {
     if (status !== "authenticated" || !storeSlug) return;
     let active = true;
-
     void customerAuth
       .me(storeSlug)
       .then((data) => {
@@ -33,7 +33,6 @@ export default function HomeScreen() {
         if (cause instanceof ApiError && cause.status === 401) return;
         setError(t("common.connectionError"));
       });
-
     return () => {
       active = false;
     };
@@ -47,11 +46,41 @@ export default function HomeScreen() {
     );
   }
 
+  const deleteAccount = () => {
+    Alert.alert(t("account.deleteTitle"), t("account.deleteConfirmation"), [
+      { text: t("common.back"), style: "cancel" },
+      {
+        text: t("account.deleteAction"),
+        style: "destructive",
+        onPress: () => {
+          setDeleting(true);
+          void globalAccount
+            .deleteMe()
+            .then(async () => {
+              try {
+                await signOut();
+              } catch {
+                // Ignore local sign-out failure since account is already deleted remotely.
+              }
+              router.replace("/login");
+            })
+            .catch(() => {
+              setDeleting(false);
+              Alert.alert(
+                t("account.deleteFailedTitle"),
+                t("account.deleteFailed"),
+              );
+            });
+        },
+      },
+    ]);
+  };
+
   return (
     <View className="flex-1 justify-center gap-4 bg-brand-ink px-6">
-      <Pressable accessibilityRole="button" onPress={() => router.replace("/")}>
+      <Pressable accessibilityRole="button" onPress={() => router.back()}>
         <Text className="font-semibold text-brand-pink">
-          ‹ {t("common.backToDiscover")}
+          ‹ {t("common.back")}
         </Text>
       </Pressable>
       <Text className="text-3xl font-bold text-brand-pink">
@@ -66,6 +95,15 @@ export default function HomeScreen() {
         {t("checkout.storeLabel", { slug: storeSlug ?? "" })}
         {profile ? ` · ${profile.customer.phone}` : ""}
       </Text>
+      <Pressable
+        accessibilityRole="button"
+        className="rounded-xl border border-white/15 px-5 py-3"
+        onPress={() => router.push("/orders")}
+      >
+        <Text className="text-center font-semibold text-white">
+          {t("auth.myOrders")}
+        </Text>
+      </Pressable>
       {error || sessionError ? (
         <Text accessibilityRole="alert" className="text-sm text-red-300">
           {error || (sessionError ? t(sessionError) : null)}
@@ -92,14 +130,25 @@ export default function HomeScreen() {
       <Pressable
         accessibilityRole="button"
         className="rounded-xl bg-brand-pink px-5 py-3"
-        onPress={() => {
+        onPress={() =>
           void signOut()
             .then(() => router.replace("/login"))
-            .catch(() => undefined);
-        }}
+            .catch(() => undefined)
+        }
       >
         <Text className="text-center font-semibold text-brand-ink">
           {t("auth.signOut")}
+        </Text>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ disabled: deleting }}
+        disabled={deleting}
+        className="rounded-xl border border-red-300/40 px-5 py-3"
+        onPress={deleteAccount}
+      >
+        <Text className="text-center font-semibold text-red-200">
+          {deleting ? t("account.deleting") : t("account.deleteAction")}
         </Text>
       </Pressable>
     </View>

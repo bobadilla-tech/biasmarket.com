@@ -145,6 +145,9 @@ export class CheckoutOrderResponseDto {
   @ApiProperty({ type: String, format: "date-time" })
   createdAt: string;
 
+  @ApiProperty({ type: Boolean })
+  proofSubmitted: boolean;
+
   @ApiProperty({ type: [CheckoutOrderItemResponseDto] })
   items: CheckoutOrderItemResponseDto[];
 }
@@ -152,6 +155,12 @@ export class CheckoutOrderResponseDto {
 export class CheckoutResultResponseDto {
   @ApiProperty({ type: CheckoutOrderResponseDto })
   order: CheckoutOrderResponseDto;
+
+  @ApiProperty({
+    description:
+      "Whether the order is linked to the buyer session on this request.",
+  })
+  buyerAccountLinked: boolean;
 
   @ApiProperty({ type: String, nullable: true })
   whatsappUrl: string | null;

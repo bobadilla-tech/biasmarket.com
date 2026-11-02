@@ -1575,6 +1575,7 @@ export default async () => {
               currency: { required: true, type: () => String },
               expiresAt: { required: true, type: () => String },
               createdAt: { required: true, type: () => String },
+              proofSubmitted: { required: true, type: () => Boolean },
               items: {
                 required: true,
                 type: () => [
@@ -1590,6 +1591,7 @@ export default async () => {
                   t['./modules/orders/dto/checkout-response.dto.js']
                     .CheckoutOrderResponseDto,
               },
+              buyerAccountLinked: { required: true, type: () => Boolean },
               whatsappUrl: {
                 required: true,
                 type: () => String,
@@ -3984,6 +3986,7 @@ export default async () => {
                   './modules/customer-auth/dto/global-account-response.dto.js'
                 ].GlobalAccountOrderDetailResponseDto,
               },
+              deleteMe: {},
               login: {
                 type: t[
                   './modules/customer-auth/dto/customer-auth-response.dto.js'

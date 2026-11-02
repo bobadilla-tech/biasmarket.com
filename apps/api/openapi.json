@@ -2444,6 +2444,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "UUID reused when retrying the same checkout submission.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -4596,6 +4605,21 @@
                 }
               }
             }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": ["GlobalAccount"]
+      },
+      "delete": {
+        "operationId": "GlobalAccountController_deleteMe",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
           }
         },
         "security": [
@@ -8873,6 +8897,9 @@
             "type": "string",
             "format": "date-time"
           },
+          "proofSubmitted": {
+            "type": "boolean"
+          },
           "items": {
             "type": "array",
             "items": {
@@ -8909,6 +8936,7 @@
           "currency",
           "expiresAt",
           "createdAt",
+          "proofSubmitted",
           "items"
         ]
       },
@@ -9025,12 +9053,16 @@
           "order": {
             "$ref": "#/components/schemas/CheckoutOrderResponseDto"
           },
+          "buyerAccountLinked": {
+            "type": "boolean",
+            "description": "Whether the order is linked to the buyer session on this request."
+          },
           "whatsappUrl": {
             "type": "string",
             "nullable": true
           }
         },
-        "required": ["order", "whatsappUrl"]
+        "required": ["order", "buyerAccountLinked", "whatsappUrl"]
       },
       "ConfirmAccountCustomerResponseDto": {
         "type": "object",

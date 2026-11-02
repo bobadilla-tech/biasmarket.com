@@ -17,13 +17,13 @@ import { useStoreCart } from "../../../features/cart/use-store-cart";
 import { useMobileI18n } from "../../../i18n/mobile-i18n";
 
 export default function ProductDetailScreen() {
+  const { locale, t } = useMobileI18n();
   const { storeSlug, productId } = useLocalSearchParams<{
     storeSlug: string;
     productId: string;
   }>();
   const router = useRouter();
   const cart = useStoreCart(storeSlug);
-  const { locale, t } = useMobileI18n();
   const productQuery = useQuery({
     queryKey: ["catalog", "product", storeSlug, productId],
     queryFn: () => stores.findPublicProduct(storeSlug, productId),
@@ -71,9 +71,9 @@ export default function ProductDetailScreen() {
         </Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`${t("catalog.openCart", {
+          accessibilityLabel={t("catalog.openCart", {
             count: cartCount(cart.items),
-          })}`}
+          })}
           onPress={() =>
             router.push({
               pathname: "/cart/[storeSlug]",
@@ -114,9 +114,7 @@ export default function ProductDetailScreen() {
             {formatPrice(product.price, product.currency, locale)}
           </Text>
           <Text
-            className={`text-sm font-semibold ${
-              unavailable ? "text-red-300" : "text-emerald-300"
-            }`}
+            className={`text-sm font-semibold ${unavailable ? "text-red-300" : "text-emerald-300"}`}
           >
             {product.discontinued
               ? t("common.discontinued")
@@ -145,6 +143,8 @@ export default function ProductDetailScreen() {
                 key={variant.id}
                 basePrice={product.price}
                 currency={product.currency}
+                locale={locale}
+                t={t}
                 variant={variant}
                 disabled={unavailable || cart.isSaving}
                 onAdd={() =>
@@ -167,9 +167,7 @@ export default function ProductDetailScreen() {
           <Pressable
             accessibilityRole="button"
             disabled={unavailable || cart.isSaving}
-            className={`rounded-xl px-5 py-4 ${
-              unavailable ? "bg-white/15" : "bg-brand-pink"
-            }`}
+            className={`rounded-xl px-5 py-4 ${unavailable ? "bg-white/15" : "bg-brand-pink"}`}
             onPress={() =>
               cart.add({
                 productId: product.id,
@@ -214,25 +212,28 @@ export default function ProductDetailScreen() {
 
 function VariantRow({
   currency,
+  locale,
+  t,
   basePrice,
   variant,
   onAdd,
   disabled,
 }: {
   currency: string;
+  locale: "en" | "es";
+  t: (key: string, values?: Record<string, string | number>) => string;
   basePrice: string;
   variant: PublicProductVariantResponseDto;
   onAdd: () => void;
   disabled: boolean;
 }) {
-  const { locale, t } = useMobileI18n();
-  const soldOut =
-    disabled ||
-    (variant.stock !== null && variant.stock - variant.reserved <= 0);
   const attributes = Object.entries(variant.attributes)
     .map(([key, value]) => `${key}: ${String(value)}`)
     .join(" · ");
   const price = variant.priceOverride ?? basePrice;
+  const soldOut =
+    disabled ||
+    (variant.stock !== null && variant.stock - variant.reserved <= 0);
 
   return (
     <View className="flex-row items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
@@ -266,9 +267,7 @@ function VariantRow({
         <Pressable
           accessibilityRole="button"
           disabled={soldOut}
-          className={`rounded-lg px-3 py-2 ${
-            soldOut ? "bg-white/15" : "bg-brand-pink"
-          }`}
+          className={`rounded-lg px-3 py-2 ${soldOut ? "bg-white/15" : "bg-brand-pink"}`}
           onPress={onAdd}
         >
           <Text className="text-xs font-bold text-brand-ink">

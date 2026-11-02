@@ -35,5 +35,10 @@ export function isIdempotencyKeyConflict(err: unknown): boolean {
     return false;
   }
   const meta = JSON.stringify(err.meta ?? {});
-  return meta.includes("idempotencyKey") || meta.includes(UNIQUE_INDEX_NAME);
+  return (
+    meta.includes("idempotencyKey") ||
+    meta.includes(UNIQUE_INDEX_NAME) ||
+    meta.includes("checkoutIdempotencyKey") ||
+    meta.includes("Order_storeId_checkoutIdempotencyKey_key")
+  );
 }

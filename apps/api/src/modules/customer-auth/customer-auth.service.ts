@@ -111,7 +111,13 @@ export class CustomerAuthService {
     const buyerAccount = await this.prisma.buyerAccount.findUnique({
       where: { id: verified.buyerAccountId },
     });
-    if (!buyerAccount) {
+    if (
+      !buyerAccount ||
+      (!buyerAccount.phone &&
+        !buyerAccount.email &&
+        !buyerAccount.googleSub &&
+        !buyerAccount.passwordHash)
+    ) {
       throw new BadRequestException("Enlace inválido o expirado");
     }
 
@@ -131,8 +137,16 @@ export class CustomerAuthService {
     }
 
     const passwordHash = await hashPassword(password);
-    await this.prisma.buyerAccount.update({
-      where: { id: buyerAccount.id },
+    const { count } = await this.prisma.buyerAccount.updateMany({
+      where: {
+        id: buyerAccount.id,
+        OR: [
+          { phone: { not: null } },
+          { email: { not: null } },
+          { googleSub: { not: null } },
+          { passwordHash: { not: null } },
+        ],
+      },
       data:
         verified.purpose === "confirm"
           ? {
@@ -142,6 +156,9 @@ export class CustomerAuthService {
             }
           : { passwordHash, passwordVersion: { increment: 1 } },
     });
+    if (count === 0) {
+      throw new BadRequestException("Enlace inválido o expirado");
+    }
 
     return { ok: true };
   }
@@ -609,6 +626,42 @@ export class CustomerAuthService {
         name: link.store.name,
       })),
     };
+  }
+
+  async deleteGlobalAccount(buyerAccountId: string): Promise<{ ok: true }> {
+    await this.prisma.$transaction(async (tx) => {
+      const account = await tx.buyerAccount.findUnique({
+        where: { id: buyerAccountId },
+        select: { id: true },
+      });
+      if (!account) return;
+
+      // Keep store order rows as merchant transaction records, but detach
+      // them from the reusable buyer identity. Saved addresses and device
+      // tokens are buyer-owned and are removed with the credentials.
+      await tx.order.updateMany({
+        where: { buyerAccountId },
+        data: { buyerAccountId: null },
+      });
+      await tx.address.deleteMany({ where: { buyerAccountId } });
+      await tx.customerStoreLink.deleteMany({ where: { buyerAccountId } });
+      await tx.buyerAccount.update({
+        where: { id: buyerAccountId },
+        data: {
+          phone: null,
+          passwordHash: null,
+          passwordVersion: { increment: 1 },
+          email: null,
+          emailVerified: false,
+          googleSub: null,
+          pendingEmail: null,
+          pendingPhone: null,
+          name: null,
+        },
+      });
+    });
+
+    return { ok: true };
   }
 
   // Raw scan by `buyerAccountId` rather than joining through

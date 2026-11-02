@@ -17,7 +17,11 @@
     "@tanstack/react-query": "^5.104.1",
     "expo": "~57.0.27",
     "expo-constants": "~57.0.21",
+    "expo-crypto": "^57.0.4",
+    "expo-file-system": "~57.0.7",
     "expo-image": "~57.0.5",
+    "expo-image-manipulator": "~57.0.21",
+    "expo-image-picker": "~57.0.20",
     "expo-linking": "~57.0.12",
     "expo-router": "~57.0.25",
     "expo-secure-store": "~57.0.4",
@@ -38,15 +42,20 @@
   "devDependencies": {
     "@babel/eslint-parser": "^7.29.7",
     "@babel/plugin-transform-react-jsx": "7.29.7",
+    "@jest/globals": "^30.5.2",
+    "@testing-library/react-native": "^14.1.0",
+    "@types/jest": "^30.0.0",
     "@types/react": "^19.2.18",
+    "@vitest/coverage-v8": "^4.1.11",
     "babel-preset-expo": "57.0.16",
     "eslint": "^9.39.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.12.0",
+    "jest": "^30.5.2",
+    "jest-expo": "~57.0.6",
     "tailwindcss": "^3.4.17",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.11",
-    "@vitest/coverage-v8": "^4.1.11"
+    "vitest": "^4.1.11"
   },
   "scripts": {
     "dev": "expo start --go",
@@ -56,6 +65,7 @@
     "lint": "node ../../scripts/lint-changed-files.mjs apps/mobile && eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:components": "jest --config jest.config.cjs --runInBand",
     "test:cov": "vitest run --coverage"
   }
 }

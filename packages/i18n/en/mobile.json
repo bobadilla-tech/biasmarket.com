@@ -1,5 +1,7 @@
 {
   "common": {
+    "brandName": "Bias Market",
+    "brandMonogram": "B",
     "back": "Back",
     "loadingCart": "Loading cart…",
     "loadingProduct": "Loading product…",
@@ -86,8 +88,7 @@
     "description": "Description",
     "availableCount": "{count} available",
     "keepBrowsing": "Keep browsing",
-    "saving": "Saving…",
-    "notAvailable": "Unavailable"
+    "saving": "Saving…"
   },
   "cart": {
     "title": "Your cart",
@@ -128,6 +129,8 @@
     "agency": "Agency",
     "recipientName": "Recipient's first name",
     "surnames": "Last name",
+    "documentType": "Document type",
+    "documentNumber": "Document number",
     "contactPhone": "Contact phone",
     "address": "Address",
     "city": "City",
@@ -147,9 +150,11 @@
     "proofReady": "Proof ready: {filename}",
     "proofInstructions": "Attach an image of your payment receipt. It will be compressed before upload.",
     "permissionRequired": "We need permission to access your photos.",
+    "proofRecoveryFailed": "The selected receipt could not be recovered. Please select it again.",
     "proofLoadFailed": "Could not load the payment receipt.",
     "storeInvalid": "The store is invalid.",
     "submitFailed": "Could not complete your purchase.",
+    "paymentConfigFailed": "Payment options could not be loaded. Try again before placing your order.",
     "proofCompressFailed": "Could not compress the payment receipt below 5 MB.",
     "confirmOrder": "Place order",
     "submitting": "Submitting order…",
@@ -165,6 +170,8 @@
       "courierName": "Choose a courier.",
       "courierModality": "Choose a courier delivery option.",
       "shippingRecipientName": "Enter the recipient's name.",
+      "shippingDocumentType": "Choose a document type.",
+      "shippingDocumentNumber": "Enter a valid document number.",
       "shippingPhone": "Enter a contact phone number.",
       "shippingLine1": "Enter a delivery address.",
       "shippingCity": "Enter a city.",
@@ -204,6 +211,7 @@
     "noPayments": "No payments have been recorded for this order yet.",
     "loadingProof": "Loading private receipt…",
     "proofFailed": "Could not load the payment receipt.",
+    "proofPdfUnsupported": "This payment receipt is a PDF. The app cannot display PDF receipts.",
     "payment": "Payment",
     "privatePaymentProof": "Private payment receipt",
     "paymentStatus": {
@@ -224,10 +232,13 @@
   "account": {
     "buyerAccount": "Buyer account",
     "language": "App language",
-    "greeting": "Hello, {name}"
-  },
-  "notifications": {
-    "defaultChannel": "Order updates"
+    "greeting": "Hello, {name}",
+    "deleteAction": "Delete account",
+    "deleting": "Deleting account…",
+    "deleteTitle": "Delete your account?",
+    "deleteConfirmation": "Your buyer profile, saved addresses, and sign-in credentials will be deleted. Store order records may be retained for transaction and fulfillment requirements.",
+    "deleteFailedTitle": "Account not deleted",
+    "deleteFailed": "We could not delete your account. Check your connection and try again."
   },
   "ios": {
     "NSPhotoLibraryUsageDescription": "Bias Market needs access to your photos so you can attach a payment receipt.",

@@ -20,9 +20,13 @@ Scan the QR code with Expo Go on an Android device. Routes live in `src/app/`
 | `/login`                         | `login.tsx`                           | Buyer login                         |
 | `/register`                      | `register.tsx`                        | Invitation-based account setup      |
 | `/account`                       | `account.tsx`                         | Buyer session summary, language     |
+| `/checkout/:storeSlug`           | `checkout/[storeSlug].tsx`            | Delivery, payment, order submission |
+| `/checkout/success/:orderId`     | `checkout/success/[orderId].tsx`      | Order confirmation                  |
+| `/orders`                        | `orders/index.tsx`                    | Buyer order history                 |
+| `/orders/:orderId`               | `orders/[orderId].tsx`                | Buyer order detail                  |
 
-Checkout, order submission, and order tracking are not built in the app: the
-cart screen is local-only and no screen calls an order endpoint.
+The cart screen opens `/checkout/:storeSlug`, and checkout submits the order.
+Order tracking is not built in the app.
 
 The discover screen shows featured stores, recent products, and the public store
 directory. Search supports product name and category filters, loads additional
@@ -33,10 +37,24 @@ The API base defaults to `https://api.biasmarket.com/api`. Set
 `EXPO_PUBLIC_API_URL` to a complete API base URL (including `/api`) when using a
 development server.
 
+Buyer sessions are stored in Expo SecureStore. Login uses a store slug, phone,
+and password. Account setup uses the confirmation token from the buyer's
+invitation, then signs in with the phone and password to establish the native
+session. A successful login survives app restarts; logout removes the stored
+bearer token and store context.
+
 The buyer cart is stored locally with AsyncStorage. Each store has a separate
 cart key, matching the web storefront's per-store cart behavior. Quantity and
 currency calculations live in `@biasmarket/utils/cart`, shared with the web cart
 so the two clients use the same rules.
+
+Authenticated buyers can view their order history and order details from the
+account screen. Private payment proof images are fetched through the buyer
+session API and rendered from memory; the public image URL is never sent to the
+image cache. Signing out clears cached buyer and proof data.
+
+Buyers can delete their account from the account screen. Historical store
+orders remain available to the store with the buyer account link removed.
 
 Buyer authentication uses Expo SecureStore. Login and invitation-based account
 setup support English and Spanish using the shared `packages/i18n` catalogs; the
