@@ -51,11 +51,13 @@ jobs:
           test -n "$EAS_PROJECT_ID" || (echo "EAS_PROJECT_ID is required in mobile-production" && exit 1)
           npm install --global eas-cli
           cd apps/mobile
+          if [ "$PLATFORM" = "android" ] || [ "$PLATFORM" = "all" ]; then
+            test -n "$ANDROID_BUILD_ID" || (echo "android_build_id is required when submitting to Android" && exit 1)
+          fi
           if [ "$PLATFORM" = "ios" ] || [ "$PLATFORM" = "all" ]; then
             test -n "$IOS_BUILD_ID" || (echo "ios_build_id is required when submitting to iOS" && exit 1)
             eas submit --platform ios --profile production --id "$IOS_BUILD_ID" --non-interactive
           fi
           if [ "$PLATFORM" = "android" ] || [ "$PLATFORM" = "all" ]; then
-            test -n "$ANDROID_BUILD_ID" || (echo "android_build_id is required when submitting to Android" && exit 1)
             eas submit --platform android --profile production --id "$ANDROID_BUILD_ID" --non-interactive
           fi
