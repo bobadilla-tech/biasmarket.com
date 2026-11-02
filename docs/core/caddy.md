@@ -59,6 +59,12 @@ point `reverse_proxy` at a dead upstream, request `/api/public/orders/SECRET`,
 `/es/store/x/pedido/SECRET?x=1` and a request with `Referer: .../pedido/SECRET`,
 and assert `SECRET` is absent from `docker logs`.
 
+## Next.js middleware-probe filter
+
+The `biasmarket.com` site rejects requests carrying `x-middleware-subrequest` in Caddy before the web upstream is reached. This internal header is not part of a legitimate browser request; dropping it at the edge also keeps scanner traffic out of the Next.js logs.
+
+The app currently pins Next.js `16.3.8` in `apps/web/package.json`. The [CVE-2025-29927 advisory](https://github.com/advisories/GHSA-f82v-jwr5-mffw) lists affected releases through patched versions in the 12.x–15.x lines; Next.js 16 is outside the affected ranges. The Caddy matcher is defense in depth for these probes.
+
 ## Related
 
 - [deploy.md](deploy.md) for how a Caddyfile change ships and the deploy flow.
