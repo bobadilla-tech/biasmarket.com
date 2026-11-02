@@ -2,6 +2,7 @@ import { Test, type TestingModule } from "@nestjs/testing";
 import {
   BadRequestException,
   ConflictException,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -31,7 +32,8 @@ describe("CustomerAuthService", () => {
       update: Mock;
       updateMany: Mock;
     };
-    customerStoreLink: { upsert: Mock };
+    customerStoreLink: { upsert: Mock; deleteMany: Mock };
+    address: { deleteMany: Mock };
     store: { findUnique: Mock };
     order: { findMany: Mock; findFirst: Mock; updateMany: Mock };
     auditLog: { create: Mock };
@@ -61,7 +63,8 @@ describe("CustomerAuthService", () => {
         update: vi.fn(),
         updateMany: vi.fn(),
       },
-      customerStoreLink: { upsert: vi.fn() },
+      customerStoreLink: { upsert: vi.fn(), deleteMany: vi.fn() },
+      address: { deleteMany: vi.fn() },
       store: { findUnique: vi.fn().mockResolvedValue(store) },
       order: {
         findMany: vi.fn(),
@@ -133,6 +136,26 @@ describe("CustomerAuthService", () => {
         service.register("my-store", "not-a-token", "super-secret-1"),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
+    });
+
+    it("rejects a reset token after the account has been erased", async () => {
+      const token = createCustomerAccountToken(
+        "buyer-1",
+        "test-secret",
+        "reset",
+      );
+      prisma.buyerAccount.findUnique.mockResolvedValue({
+        id: "buyer-1",
+        phone: null,
+        email: null,
+        googleSub: null,
+        passwordHash: null,
+      });
+
+      await expect(
+        service.resetPasswordGlobal(token, "super-secret-1"),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.buyerAccount.updateMany).not.toHaveBeenCalled();
     });
 
     it("rejects when the token's buyer account no longer exists", async () => {
@@ -1460,6 +1483,70 @@ describe("CustomerAuthService", () => {
           paidPercentage: 0,
         }),
       ]);
+    });
+  });
+
+  describe("deleteGlobalAccount", () => {
+    it("treats an unknown account as success without issuing writes", async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.deleteGlobalAccount("missing-buyer"),
+      ).resolves.toEqual({
+        ok: true,
+      });
+
+      expect(prisma.order.updateMany).not.toHaveBeenCalled();
+      expect(prisma.address.deleteMany).not.toHaveBeenCalled();
+      expect(prisma.customerStoreLink.deleteMany).not.toHaveBeenCalled();
+      expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
+    });
+
+    it("detaches orders, deletes reusable links and addresses, and clears credentials", async () => {
+      const logger = vi.spyOn(Logger.prototype, "log");
+      prisma.buyerAccount.findUnique.mockResolvedValue({ id: "buyer-1" });
+
+      await expect(service.deleteGlobalAccount("buyer-1")).resolves.toEqual({
+        ok: true,
+      });
+
+      expect(prisma.order.updateMany).toHaveBeenCalledWith({
+        where: { buyerAccountId: "buyer-1" },
+        data: { buyerAccountId: null },
+      });
+      expect(prisma.address.deleteMany).toHaveBeenCalledWith({
+        where: { buyerAccountId: "buyer-1" },
+      });
+      expect(prisma.customerStoreLink.deleteMany).toHaveBeenCalledWith({
+        where: { buyerAccountId: "buyer-1" },
+      });
+      expect(prisma.buyerAccount.update).toHaveBeenCalledWith({
+        where: { id: "buyer-1" },
+        data: {
+          phone: null,
+          passwordHash: null,
+          passwordVersion: { increment: 1 },
+          email: null,
+          emailVerified: false,
+          googleSub: null,
+          pendingEmail: null,
+          pendingPhone: null,
+          name: null,
+        },
+      });
+
+      const deletionLog = logger.mock.calls.find(
+        ([message]) =>
+          typeof message === "object" &&
+          message !== null &&
+          "event" in message &&
+          message.event === "buyer-account-deleted",
+      );
+      expect(deletionLog).toEqual([
+        { event: "buyer-account-deleted", buyerAccountId: "buyer-1" },
+      ]);
+      expect(JSON.stringify(deletionLog)).not.toContain("@example.com");
+      logger.mockRestore();
     });
   });
 });

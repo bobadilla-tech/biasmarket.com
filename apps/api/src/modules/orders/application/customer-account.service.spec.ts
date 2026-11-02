@@ -431,6 +431,34 @@ describe("CustomerAccountService", () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it.each(["confirm", "change-email", "change-phone"] as const)(
+      "rejects a stale %s token for a deleted buyer account",
+      async (purpose) => {
+        const token = createCustomerAccountToken(
+          "buyer-1",
+          "test-secret",
+          purpose,
+        );
+        prisma.buyerAccount.findUnique.mockResolvedValue({
+          id: "buyer-1",
+          phone: null,
+          email: null,
+          googleSub: null,
+          passwordHash: null,
+          emailVerified: false,
+          pendingEmail: null,
+          pendingPhone: null,
+        });
+
+        await expect(service.confirmAccount(store.slug, token)).rejects.toThrow(
+          BadRequestException,
+        );
+
+        expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
+        expect(prisma.order.findMany).not.toHaveBeenCalled();
+      },
+    );
+
     it("marks the buyer account verified and returns their orders for this store", async () => {
       const token = createCustomerAccountToken("buyer-1", "test-secret");
       const buyerAccount = {

@@ -77,12 +77,18 @@ export class GlobalAccountController {
 
   @Public()
   @ApiBearerAuth("bearer")
-  @UseGuards(CustomerSessionGuard, OriginGuard)
+  @UseGuards(CustomerSessionGuard, OriginGuard, ThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @Delete("me")
-  deleteMe(
+  async deleteMe(
     @CustomerSession() session: { buyerAccountId: string },
+    @Res({ passthrough: true }) res: Response,
   ): Promise<{ ok: true }> {
-    return this.customerAuth.deleteGlobalAccount(session.buyerAccountId);
+    const result = await this.customerAuth.deleteGlobalAccount(
+      session.buyerAccountId,
+    );
+    res.clearCookie(CUSTOMER_SESSION_COOKIE, { path: "/" });
+    return result;
   }
 
   // Global (no-store) phone + password login, for the My purchases page. Same

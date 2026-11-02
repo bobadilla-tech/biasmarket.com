@@ -637,8 +637,8 @@ export class CustomerAuthService {
       if (!account) return;
 
       // Keep store order rows as merchant transaction records, but detach
-      // them from the reusable buyer identity. Saved addresses and device
-      // tokens are buyer-owned and are removed with the credentials.
+      // them from the reusable buyer identity. Saved addresses and per-store
+      // links are buyer-owned and are removed with the credentials.
       await tx.order.updateMany({
         where: { buyerAccountId },
         data: { buyerAccountId: null },
@@ -660,6 +660,8 @@ export class CustomerAuthService {
         },
       });
     });
+
+    this.logger.log({ event: "buyer-account-deleted", buyerAccountId });
 
     return { ok: true };
   }

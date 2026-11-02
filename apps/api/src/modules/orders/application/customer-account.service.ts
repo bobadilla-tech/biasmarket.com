@@ -402,6 +402,15 @@ export class CustomerAccountService {
       throw new BadRequestException("Enlace inválido o expirado");
     }
 
+    if (
+      !buyerAccount.phone &&
+      !buyerAccount.email &&
+      !buyerAccount.googleSub &&
+      !buyerAccount.passwordHash
+    ) {
+      throw new BadRequestException("Enlace inválido o expirado");
+    }
+
     if (verified.purpose === "confirm" && !buyerAccount.emailVerified) {
       buyerAccount = await this.prisma.buyerAccount.update({
         where: { id: buyerAccount.id },
