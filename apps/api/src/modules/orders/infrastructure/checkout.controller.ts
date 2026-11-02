@@ -27,6 +27,7 @@ import { pickPublicOrderFields } from "./order.controller.js";
 import { requiredEnv } from "../../../config/env.validation.js";
 import { extractCustomerSessionToken } from "../../customer-auth/customer-session-token.js";
 import { PaymentConfigService } from "../../payment-config/payment-config.service.js";
+import { PrismaService } from "../../../prisma/prisma.service.js";
 import type {
   CheckoutOrderItemResponseDto,
   CheckoutOrderResponseDto,
@@ -187,6 +188,7 @@ export class CheckoutController {
 
   constructor(
     private createOrder: CreateOrderUseCase,
+    private prisma: PrismaService,
     private storage: StorageService,
     private paymentConfig: PaymentConfigService,
   ) {}
@@ -225,7 +227,11 @@ export class CheckoutController {
         dto,
       );
       if (replay) {
-        return { order: toCheckoutOrderDto(replay), whatsappUrl: null };
+        return {
+          order: toCheckoutOrderDto(replay),
+          buyerAccountLinked: this.orderBelongsToSession(replay, req),
+          whatsappUrl: null,
+        };
       }
     }
 
@@ -271,12 +277,26 @@ export class CheckoutController {
         });
       }
 
-      return { order: toCheckoutOrderDto(order), whatsappUrl };
+      return {
+        order: toCheckoutOrderDto(order),
+        buyerAccountLinked: this.orderBelongsToSession(order, req),
+        whatsappUrl,
+      };
     } catch (error) {
       if (proofImageUrl) {
-        await this.storage?.deleteImage?.(proofImageUrl)?.catch((err) => {
-          this.logger.warn(`Failed to clean up proof image on error: ${err}`);
-        });
+        try {
+          const payment = await this.prisma.orderPayment.findFirst({
+            where: { imageUrl: proofImageUrl },
+            select: { id: true },
+          });
+          if (!payment) {
+            await this.storage?.deleteImage?.(proofImageUrl);
+          }
+        } catch (cleanupError) {
+          this.logger.warn(
+            `Failed to verify proof image ownership after checkout error; preserving it: ${cleanupError}`,
+          );
+        }
       }
       throw error;
     }
@@ -296,5 +316,13 @@ export class CheckoutController {
         requiredEnv("CUSTOMER_ACCOUNT_TOKEN_SECRET"),
       ) ?? undefined
     );
+  }
+
+  private orderBelongsToSession(
+    order: CheckoutOrderRow,
+    req: Request,
+  ): boolean {
+    const session = this.sessionFromRequest(req);
+    return Boolean(session && order.buyerAccountId === session.buyerAccountId);
   }
 }

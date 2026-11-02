@@ -1746,6 +1746,8 @@ export interface CreateOrderDto {
 
 export interface CheckoutResultResponseDto {
   order: CheckoutOrderResponseDto;
+  /** Whether the order is linked to the buyer session on this request. */
+  buyerAccountLinked: boolean;
   /** @nullable */
   whatsappUrl: string | null;
 }

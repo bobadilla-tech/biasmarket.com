@@ -44,7 +44,6 @@ import {
 import type { CartItem } from "@biasmarket/utils/cart";
 import { formatPrice } from "../../features/catalog/catalog-ui";
 import {
-  clearCheckoutIdempotencyKey,
   clearStoreCart,
   getCheckoutIdempotencyKey,
   readStoreCart,
@@ -368,7 +367,6 @@ export default function CheckoutScreen() {
         // The order already exists. Keep the buyer on its confirmation screen
         // instead of encouraging a second submission because local cleanup failed.
       }
-      await clearCheckoutIdempotencyKey(storeSlug).catch(() => undefined);
       queryClient.setQueryData(["cart", storeSlug], [] satisfies CartItem[]);
       void queryClient.invalidateQueries({
         queryKey: ["buyer", storeSlug, "orders"],
@@ -379,6 +377,8 @@ export default function CheckoutScreen() {
           orderId: result.order.id,
           paymentStatus: result.order.paymentStatus,
           proofSubmitted: String(result.order.proofSubmitted),
+          buyerAccountLinked: String(result.buyerAccountLinked),
+          storeSlug,
         },
       });
     } catch (error) {

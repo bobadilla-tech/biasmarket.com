@@ -6,10 +6,18 @@ import { useMobileI18n } from "../../../i18n/mobile-i18n";
 export default function CheckoutSuccessScreen() {
   const { t } = useMobileI18n();
   const { status } = useBuyerSession();
-  const { orderId, paymentStatus, proofSubmitted } = useLocalSearchParams<{
+  const {
+    orderId,
+    paymentStatus,
+    proofSubmitted,
+    buyerAccountLinked,
+    storeSlug,
+  } = useLocalSearchParams<{
     orderId: string;
     paymentStatus: string;
     proofSubmitted: string;
+    buyerAccountLinked: string;
+    storeSlug: string;
   }>();
   const router = useRouter();
 
@@ -28,12 +36,15 @@ export default function CheckoutSuccessScreen() {
       <Text className="text-sm text-white/50">
         {t("checkout.orderNumber", { id: orderId })}
       </Text>
-      {status === "authenticated" ? (
+      {status === "authenticated" && buyerAccountLinked === "true" ? (
         <Pressable
           accessibilityRole="button"
           className="rounded-xl border border-white/20 px-5 py-3"
           onPress={() =>
-            router.push({ pathname: "/orders/[orderId]", params: { orderId } })
+            router.push({
+              pathname: "/orders/[orderId]",
+              params: { orderId, storeSlug },
+            })
           }
         >
           <Text className="font-semibold text-white">

@@ -9053,12 +9053,16 @@
           "order": {
             "$ref": "#/components/schemas/CheckoutOrderResponseDto"
           },
+          "buyerAccountLinked": {
+            "type": "boolean",
+            "description": "Whether the order is linked to the buyer session on this request."
+          },
           "whatsappUrl": {
             "type": "string",
             "nullable": true
           }
         },
-        "required": ["order", "whatsappUrl"]
+        "required": ["order", "buyerAccountLinked", "whatsappUrl"]
       },
       "ConfirmAccountCustomerResponseDto": {
         "type": "object",

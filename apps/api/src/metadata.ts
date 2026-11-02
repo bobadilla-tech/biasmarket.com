@@ -1591,6 +1591,7 @@ export default async () => {
                   t['./modules/orders/dto/checkout-response.dto.js']
                     .CheckoutOrderResponseDto,
               },
+              buyerAccountLinked: { required: true, type: () => Boolean },
               whatsappUrl: {
                 required: true,
                 type: () => String,
