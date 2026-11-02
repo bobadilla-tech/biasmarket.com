@@ -104,7 +104,13 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
           return false;
         }
         const session = await readBuyerSession();
-        if (!session) return false;
+        if (
+          !session ||
+          generation !== sessionGeneration.current ||
+          !isCurrentMobileAuthorization(authorization)
+        ) {
+          return false;
+        }
         await writeBuyerSession({ ...session, token });
         return true;
       });
@@ -143,6 +149,7 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
 
     return () => {
       active = false;
+      sessionGeneration.current += 1;
       setUnauthorizedHandler(undefined);
       setSessionRefreshHandler(undefined);
     };

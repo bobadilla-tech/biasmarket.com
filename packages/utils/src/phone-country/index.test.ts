@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_PHONE_COUNTRY,
+  countryForBuyerPhone,
+  countryForInternational,
   formatPhone,
   maskPhone,
   normalizePhone,
@@ -160,6 +162,54 @@ describe("validatePhone", () => {
   it("hides short national numbers and unknown prefixes", () => {
     expect(maskPhone("+51 98765")).toBe("+51 ***");
     expect(maskPhone("+44 20 7946 0958")).toBe("***");
+  });
+
+  it("accepts the new Central American dial codes with eight-digit numbers", () => {
+    for (const [dialCode, country] of [
+      ["+502", "GT"],
+      ["+503", "SV"],
+      ["+504", "HN"],
+      ["+505", "NI"],
+      ["+506", "CR"],
+    ]) {
+      const parsed = parsePhoneValue(`${dialCode}12345678`);
+      expect(parsed.country.iso).toBe(country);
+      expect(parsed.nationalNumber).toBe("12345678");
+      expect(validatePhone(`${dialCode}12345678`).ok).toBe(true);
+    }
+  });
+
+  it("leaves +50 numbers on the existing default-country fallback", () => {
+    expect(parsePhoneValue("+5012345678")).toEqual({
+      country: DEFAULT_PHONE_COUNTRY,
+      nationalNumber: "5012345678",
+    });
+    expect(validatePhone("+5012345678")).toEqual({
+      ok: false,
+      message: "Prefijo no soportado",
+    });
+  });
+});
+
+describe("countryForBuyerPhone", () => {
+  it("requires an explicit international prefix and ignores +1", () => {
+    expect(countryForBuyerPhone("987654321")).toBeNull();
+    expect(countryForBuyerPhone("51987654321")).toBeNull();
+    expect(countryForBuyerPhone("+1 202 555 0123")).toBeNull();
+    expect(countryForBuyerPhone("001 202 555 0123")).toBeNull();
+  });
+
+  it("returns a country for supported international numbers", () => {
+    expect(countryForBuyerPhone("+54 911 1234 5678")).toBe("AR");
+    expect(countryForBuyerPhone("00598 99123456")).toBe("UY");
+    expect(countryForBuyerPhone("+506 1234 5678")).toBe("CR");
+  });
+});
+
+describe("countryForInternational", () => {
+  it("returns the first matching country by longest dial code", () => {
+    expect(countryForInternational("+50612345678")?.iso).toBe("CR");
+    expect(countryForInternational("+5012345678")).toBeNull();
   });
 });
 

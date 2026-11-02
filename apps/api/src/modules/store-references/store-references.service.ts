@@ -20,7 +20,7 @@ export class StoreReferencesService {
     });
     if (!store) throw new NotFoundException("Tienda no encontrada");
     if (store.ownerId !== userId)
-      throw new ForbiddenException("No sos dueño de esta tienda");
+      throw new ForbiddenException("No eres propietario de esta tienda");
   }
 
   async findAll(storeId: string, userId: string) {

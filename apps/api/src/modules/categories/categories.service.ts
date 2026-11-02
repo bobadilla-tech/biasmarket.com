@@ -33,7 +33,7 @@ export class CategoriesService {
     });
     if (!store) throw new NotFoundException("Store no encontrada");
     if (store.ownerId !== userId) {
-      throw new ForbiddenException("No sos dueño de esta store");
+      throw new ForbiddenException("No eres propietario de esta tienda");
     }
     return store;
   }

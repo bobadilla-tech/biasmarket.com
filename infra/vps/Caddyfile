@@ -16,6 +16,8 @@
 				request>uri regexp (/public/orders/)[^/?#]+ ${1}REDACTED
 				request>uri regexp (/pedido/)[^/?#]+ ${1}REDACTED
 				request>headers>Referer delete
+				request>headers>Idempotency-Key delete
+				resp_headers>X-Session-Token delete
 			}
 		}
 	}
@@ -41,6 +43,8 @@
 				request>uri regexp (/public/orders/)[^/?#]+ ${1}REDACTED
 				request>uri regexp (/pedido/)[^/?#]+ ${1}REDACTED
 				request>headers>Referer delete
+				request>headers>Idempotency-Key delete
+				resp_headers>X-Session-Token delete
 			}
 		}
 	}
@@ -92,6 +96,14 @@ biasmarket.com {
 	@phpProbe path_regexp phpProbe `(?i)\.php(?:[./]|$)`
 	handle @phpProbe {
 		respond 404
+	}
+
+
+	# This is an internal Next.js header and should never be sent by public clients.
+	# Reject probes before proxying so they cannot pollute web logs.
+	@nextMiddlewareProbe header x-middleware-subrequest *
+	handle @nextMiddlewareProbe {
+		respond 400
 	}
 
 	import /etc/caddy/active/web.caddy

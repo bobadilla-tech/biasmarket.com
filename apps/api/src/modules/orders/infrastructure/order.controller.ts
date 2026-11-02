@@ -295,8 +295,12 @@ interface OrderStatusRow {
 }
 
 function toOrderProductDto(product: OrderProductRow): OrderProductResponseDto {
+  // Prisma includes the current Product row, which may contain fields that
+  // are not part of this historical order response contract.
+  const { shipsInternationally: _shipsInternationally, ...orderProduct } =
+    product as OrderProductRow & { shipsInternationally?: boolean };
   return {
-    ...product,
+    ...orderProduct,
     price: product.price.toString(),
     availableUntil: product.availableUntil?.toISOString() ?? null,
     discontinued: product.discontinued,

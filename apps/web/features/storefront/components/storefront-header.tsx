@@ -62,7 +62,7 @@ export function StorefrontHeader({
               <img
                 src={logoUrl}
                 alt=""
-                className="size-9 shrink-0 rounded-lg object-cover"
+                className="size-9 shrink-0 rounded-lg border border-(--store-border) bg-white p-1 object-contain shadow-sm"
               />
             ) : (
               <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-(--store-surface) text-xs font-bold text-(--store-primary-text)">

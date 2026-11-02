@@ -53,6 +53,11 @@ import {
   compressPaymentProof,
   proofSelectionErrorKey,
 } from "../../features/checkout/proof-image";
+import {
+  courierFieldGroups,
+  courierFieldLabelKey,
+} from "../../features/checkout/courier-fields";
+import { checkoutViewState } from "../../features/checkout/checkout-view-state";
 import { useMobileI18n } from "../../i18n/mobile-i18n.js";
 
 const emptyForm: CheckoutFormInput = {
@@ -185,6 +190,23 @@ export default function CheckoutScreen() {
   const weekday = pickupQuery.data?.weekday ?? new Date().getDay();
   const paymentMethods = paymentQuery.data ?? EMPTY_PAYMENT_METHODS;
   const couriers = courierQuery.data ?? [];
+  const viewState = checkoutViewState({
+    selectedDeliveryMethodType: form.deliveryMethodType,
+    deliveryQuery,
+    pickupQuery,
+    paymentQuery,
+    courierQuery,
+  });
+  const configErrorQuery =
+    viewState.configError === "delivery"
+      ? deliveryQuery
+      : viewState.configError === "payment"
+        ? paymentQuery
+        : viewState.configError === "pickup"
+          ? pickupQuery
+          : viewState.configError === "courier"
+            ? courierQuery
+            : undefined;
   const unavailableManualMethods = useMemo(
     () =>
       new Set(
@@ -394,12 +416,7 @@ export default function CheckoutScreen() {
     }
   }
 
-  if (
-    cartQuery.isPending ||
-    deliveryQuery.isPending ||
-    pickupQuery.isPending ||
-    paymentQuery.isPending
-  ) {
+  if (cartQuery.isPending || viewState.isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-brand-ink">
         <ActivityIndicator color="#f2b4c7" />
@@ -408,15 +425,15 @@ export default function CheckoutScreen() {
     );
   }
 
-  if (paymentQuery.isError) {
+  if (viewState.configError && configErrorQuery) {
     return (
       <View className="flex-1 items-center justify-center gap-4 bg-brand-ink px-6">
         <Text accessibilityRole="alert" className="text-center text-red-200">
-          {t("checkout.paymentConfigFailed")}
+          {t("checkout.configFailed")}
         </Text>
         <Pressable
           accessibilityRole="button"
-          onPress={() => void paymentQuery.refetch()}
+          onPress={() => void configErrorQuery.refetch()}
         >
           <Text className="font-semibold text-brand-pink">
             {t("common.retry")}
@@ -615,57 +632,16 @@ export default function CheckoutScreen() {
                 value={form.shippingPhone}
                 onChangeText={(value) => setField("shippingPhone", value)}
               />
-              {form.courierModality === "HOME" ? (
-                <>
+              {courierFieldGroups(form.courierModality).flatMap((group) =>
+                group.fields.map((field) => (
                   <Field
-                    label={t("checkout.address")}
-                    value={form.shippingLine1}
-                    onChangeText={(value) => setField("shippingLine1", value)}
+                    key={field}
+                    label={t(`checkout.${courierFieldLabelKey(field)}`)}
+                    value={form[field]}
+                    onChangeText={(value) => setField(field, value)}
                   />
-                  <Field
-                    label={t("checkout.city")}
-                    value={form.shippingCity}
-                    onChangeText={(value) => setField("shippingCity", value)}
-                  />
-                  <Field
-                    label={t("checkout.district")}
-                    value={form.shippingDistrict}
-                    onChangeText={(value) =>
-                      setField("shippingDistrict", value)
-                    }
-                  />
-                  <Field
-                    label={t("checkout.province")}
-                    value={form.shippingProvince}
-                    onChangeText={(value) =>
-                      setField("shippingProvince", value)
-                    }
-                  />
-                  <Field
-                    label={t("checkout.department")}
-                    value={form.shippingDepartment}
-                    onChangeText={(value) =>
-                      setField("shippingDepartment", value)
-                    }
-                  />
-                  <Field
-                    label={t("checkout.reference")}
-                    value={form.shippingReference}
-                    onChangeText={(value) =>
-                      setField("shippingReference", value)
-                    }
-                  />
-                </>
-              ) : null}
-              {form.courierModality === "AGENCY" ? (
-                <Field
-                  label={t("checkout.agencyName")}
-                  value={form.shippingAgencyName}
-                  onChangeText={(value) =>
-                    setField("shippingAgencyName", value)
-                  }
-                />
-              ) : null}
+                )),
+              )}
             </>
           ) : null}
         </Section>
@@ -787,7 +763,7 @@ export default function CheckoutScreen() {
             submitting ||
             loadingProof ||
             items.length === 0 ||
-            paymentQuery.isError
+            Boolean(viewState.configError)
           }
           className="rounded-xl bg-brand-pink px-5 py-4 disabled:opacity-50"
           onPress={() => void submitCheckout()}

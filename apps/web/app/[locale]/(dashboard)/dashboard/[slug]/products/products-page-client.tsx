@@ -381,6 +381,7 @@ export function ProductsPageClient() {
             stock: "",
             categoryId: "",
             availability: "AVAILABLE",
+            shipsInternationally: false,
           }}
           initialVariants={[]}
           existingImages={[]}
@@ -411,6 +412,7 @@ export function ProductsPageClient() {
             stock: editingStock,
             categoryId: editingProduct?.categories?.[0]?.category?.id ?? "",
             availability: editingAvailability,
+            shipsInternationally: editingProduct?.shipsInternationally ?? true,
           }}
           initialVariants={editingProduct?.variants ?? []}
           existingImages={editingProduct?.images ?? []}
