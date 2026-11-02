@@ -305,6 +305,9 @@ export class PublicProductWithVariantsResponseDto {
   @ApiProperty()
   discontinued: boolean;
 
+  @ApiProperty()
+  shipsInternationally: boolean;
+
   @ApiProperty({ type: String, format: "date-time", nullable: true })
   deletedAt: string | null;
 

@@ -127,6 +127,7 @@ interface PublicProductRow {
   status: "DRAFT" | "PUBLISHED";
   soldOut: boolean;
   discontinued: boolean;
+  shipsInternationally: boolean;
   deletedAt: Date | null;
   createdAt: Date;
   variants: VariantRow[];
