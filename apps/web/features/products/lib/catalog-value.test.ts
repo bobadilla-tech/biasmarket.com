@@ -17,6 +17,7 @@ function product(
     status: "PUBLISHED",
     soldOut: false,
     discontinued: false,
+    shipsInternationally: true,
     deletedAt: null,
     createdAt: "2026-08-01T00:00:00.000Z",
     variants: [],

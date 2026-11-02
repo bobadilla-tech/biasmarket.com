@@ -14,4 +14,7 @@ staging API. The payment-proof image in `fixtures/` is synthetic QA data.
 
 The release workflow builds the EAS preview APK, installs it in the Android
 emulator, and runs this flow on pushes to `mobile-release`. It intentionally
-fails before building if the staging fixture credentials are absent.
+fails before building if the staging fixture credentials are absent. It installs
+the pinned Maestro CLI release (`cli-2.12.1`) and verifies its SHA-256 checksum
+before use. Fixture values are passed with Maestro's `--env` arguments, and the
+workflow does not upload Maestro output artifacts.

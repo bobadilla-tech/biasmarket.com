@@ -49,18 +49,19 @@ path-filtered job that should run did not succeed
 
 ## Per-workspace matrix
 
-| Workspace                               | lint          | typecheck | tests + coverage (Codecov flag) |
-| --------------------------------------- | ------------- | --------- | ------------------------------- |
-| `apps/api`                              | root config   | yes       | `test:cov`, `api`               |
-| `apps/web`                              | own config    | yes       | `test:cov`, `web`               |
-| `apps/workers`                          | root config   | yes       | `test:cov`, `workers`           |
-| `apps/mobile`                           | own config    | yes       | `test:cov`, `mobile`            |
-| `apps/sanity`                           | studio config | yes       | none                            |
-| `packages/utils`                        | root config   | yes       | `test:cov`, `utils`             |
-| `packages/validation`                   | root config   | yes       | `test:cov`, `validation`        |
-| `packages/types`                        | root config   | yes       | `test:cov`, `types`             |
-| `packages/design-tokens`                | root config   | yes       | `test:cov`, `design-tokens`     |
-| `packages/db`, `i18n`, `queue`, `query` | root config   | yes       | none (no tests yet)             |
+| Workspace                       | lint          | typecheck | tests + coverage (Codecov flag) |
+| ------------------------------- | ------------- | --------- | ------------------------------- |
+| `apps/api`                      | root config   | yes       | `test:cov`, `api`               |
+| `apps/web`                      | own config    | yes       | `test:cov`, `web`               |
+| `apps/workers`                  | root config   | yes       | `test:cov`, `workers`           |
+| `apps/mobile`                   | own config    | yes       | `test:cov`, `mobile`            |
+| `apps/sanity`                   | studio config | yes       | none                            |
+| `packages/utils`                | root config   | yes       | `test:cov`, `utils`             |
+| `packages/i18n`                 | own config    | yes       | `test:cov`, `i18n`              |
+| `packages/validation`           | root config   | yes       | `test:cov`, `validation`        |
+| `packages/types`                | root config   | yes       | `test:cov`, `types`             |
+| `packages/design-tokens`        | root config   | yes       | `test:cov`, `design-tokens`     |
+| `packages/db`, `queue`, `query` | root config   | yes       | none (no tests yet)             |
 
 Every workspace defines `lint` and `typecheck`; `pnpm turbo run lint` must
 report as many successful tasks as there are workspaces (one per directory with
@@ -79,8 +80,8 @@ executed".
   trailing commas, 80 columns); no workspace carries its own. Generated files
   are listed in `.prettierignore`.
 - `web` and `mobile` keep local configs that import `baseRules` and `parserFor`
-  from the root config and add react-hooks (`exhaustive-deps` is a warning, so no
-  `--max-warnings 0`). `sanity` keeps `@sanity/eslint-config-studio`.
+  from the root config and add react-hooks (`exhaustive-deps` is a warning, so
+  no `--max-warnings 0`). `sanity` keeps `@sanity/eslint-config-studio`.
 - Backend and package lint =
   `node ../../scripts/lint-changed-files.mjs <dir> && eslint . --max-warnings 0`.
   The first half is the Prettier check on files changed against `BASE_REF`
@@ -205,7 +206,8 @@ A new path-filtered job must be added in seven places, in one PR: (1) the
 (7) `package_names`/`package_keys` in `scripts/ci/check-ci-success.sh`. A typo
 in a filter key makes the script fail on every run and blocks CD. The always-run
 `hygiene` job has no changed output; it only has `HYGIENE_RESULT`. Add
-`.prettierrc`, `eslint.config.mjs` and `scripts/lint-changed-files.mjs` to package filters.
+`.prettierrc`, `eslint.config.mjs` and `scripts/lint-changed-files.mjs` to
+package filters.
 
 Two things are special-cased and do not follow the list above exactly: the `e2e`
 job's result is checked against an expectation derived from the event type and

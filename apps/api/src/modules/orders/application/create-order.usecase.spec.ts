@@ -2,8 +2,10 @@ import { Test, type TestingModule } from "@nestjs/testing";
 import {
   BadRequestException,
   ConflictException,
+  GoneException,
   NotFoundException,
 } from "@nestjs/common";
+import { Prisma } from "@biasmarket/db";
 import { afterEach, type Mock, vi } from "vitest";
 import { CreateOrderUseCase } from "./create-order.usecase.js";
 import { PrismaService } from "../../../prisma/prisma.service.js";
@@ -1095,9 +1097,13 @@ describe("CreateOrderUseCase", () => {
         paymentType: null,
         deliveryMethodType: dto.deliveryMethodType,
         pickupPointId: null,
+        pickupDate: null,
         courierName: null,
         courierModality: null,
         deliveryDetails: {},
+        status: "ACTIVE",
+        paymentStatus: "PENDING_PAYMENT",
+        expiresAt: new Date("2026-12-03T00:00:00.000Z"),
         items: [
           {
             productId: "product-1",
@@ -1132,9 +1138,13 @@ describe("CreateOrderUseCase", () => {
         paymentType: null,
         deliveryMethodType: dto.deliveryMethodType,
         pickupPointId: null,
+        pickupDate: null,
         courierName: null,
         courierModality: null,
         deliveryDetails: {},
+        status: "ACTIVE",
+        paymentStatus: "PENDING_PAYMENT",
+        expiresAt: new Date("2026-12-03T00:00:00.000Z"),
         items: [
           {
             productId: "product-1",
@@ -1151,98 +1161,159 @@ describe("CreateOrderUseCase", () => {
       ).rejects.toThrow(ConflictException);
     });
 
-    it("rejects a replay when the payment type changes", () => {
-      expect(() =>
-        useCase.assertMatchingCheckoutData(
-          {
-            customerPhone: dto.customerPhone,
-            customerEmail: null,
-            customerName: dto.customerName,
-            paymentMethod: null,
-            paymentType: "FULL",
-            deliveryMethodType: "PICKUP",
-            pickupPointId: null,
-            courierName: null,
-            courierModality: null,
-            deliveryDetails: {},
-            items: [{ productId: "product-1", variantId: null, quantity: 2 }],
+    it.each([
+      ["array target", { target: ["idempotencyKey"] }],
+      [
+        "constraint string",
+        { target: "Order_storeId_checkoutIdempotencyKey_key" },
+      ],
+      [
+        "nested driver adapter target",
+        {
+          driverAdapterError: {
+            cause: { constraint: { fields: ['"idempotencyKey"'] } },
           },
-          { ...dto, paymentType: "PARTIAL" },
-        ),
-      ).toThrow(ConflictException);
+        },
+      ],
+    ])(
+      "replays the winner for a concurrent P2002 (%s)",
+      async (_label, meta) => {
+        const winner = {
+          id: "order-winner",
+          customerPhone: dto.customerPhone,
+          customerEmail: null,
+          customerName: dto.customerName ?? null,
+          paymentMethod: null,
+          paymentType: null,
+          deliveryMethodType: dto.deliveryMethodType,
+          pickupPointId: null,
+          pickupDate: null,
+          courierName: null,
+          courierModality: null,
+          deliveryDetails: {},
+          status: "ACTIVE",
+          paymentStatus: "PENDING_PAYMENT",
+          expiresAt: new Date("2026-12-03T00:00:00.000Z"),
+          items: [{ productId: "product-1", variantId: null, quantity: 2 }],
+          payments: [],
+        };
+        const conflict = new Prisma.PrismaClientKnownRequestError("unique", {
+          code: "P2002",
+          clientVersion: "test",
+          meta,
+        });
+        prisma.order.findFirst
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce(winner);
+        prisma.$transaction.mockRejectedValue(conflict);
+
+        const result = await useCase.execute(
+          slug,
+          dto,
+          undefined,
+          undefined,
+          "replay-key-1",
+        );
+        expect(result.order).toBe(winner);
+        expect(result.whatsappUrl).toBeNull();
+        expect(prisma.order.findFirst).toHaveBeenCalledTimes(2);
+      },
+    );
+
+    it("returns 409 for a payload mismatch even when the concurrent winner is cancelled", async () => {
+      const winner = {
+        id: "order-winner",
+        customerPhone: "+51977777777",
+        customerEmail: null,
+        customerName: dto.customerName ?? null,
+        paymentMethod: null,
+        paymentType: null,
+        deliveryMethodType: dto.deliveryMethodType,
+        pickupPointId: null,
+        pickupDate: null,
+        courierName: null,
+        courierModality: null,
+        deliveryDetails: {},
+        status: "CANCELLED",
+        paymentStatus: "CANCELLED",
+        expiresAt: new Date("2026-12-03T00:00:00.000Z"),
+        items: [{ productId: "product-1", variantId: null, quantity: 2 }],
+        payments: [],
+      };
+      prisma.order.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(winner);
+      prisma.$transaction.mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError("unique", {
+          code: "P2002",
+          clientVersion: "test",
+          meta: { target: ["checkoutIdempotencyKey"] },
+        }),
+      );
+
+      await expect(
+        useCase.execute(slug, dto, undefined, undefined, "replay-key-1"),
+      ).rejects.toThrow(ConflictException);
     });
 
-    it("matches repeated items as distinct order lines", () => {
-      expect(() =>
-        useCase.assertMatchingCheckoutData(
-          {
-            customerPhone: dto.customerPhone,
-            customerEmail: null,
-            customerName: dto.customerName,
-            paymentMethod: null,
-            paymentType: null,
-            deliveryMethodType: "PICKUP",
-            pickupPointId: null,
-            courierName: null,
-            courierModality: null,
-            deliveryDetails: {},
-            items: [
-              { productId: "product-1", variantId: null, quantity: 2 },
-              { productId: "product-2", variantId: null, quantity: 1 },
-            ],
-          },
-          {
-            ...dto,
-            items: [
-              { productId: "product-1", quantity: 2 },
-              { productId: "product-1", quantity: 2 },
-            ],
-          },
-        ),
-      ).toThrow(ConflictException);
+    it("returns 410 when the concurrent winner is cancelled", async () => {
+      const winner = {
+        id: "order-winner",
+        customerPhone: dto.customerPhone,
+        customerEmail: null,
+        customerName: dto.customerName ?? null,
+        paymentMethod: null,
+        paymentType: null,
+        deliveryMethodType: dto.deliveryMethodType,
+        pickupPointId: null,
+        pickupDate: null,
+        courierName: null,
+        courierModality: null,
+        deliveryDetails: {},
+        status: "CANCELLED",
+        paymentStatus: "CANCELLED",
+        expiresAt: new Date("2026-12-03T00:00:00.000Z"),
+        items: [{ productId: "product-1", variantId: null, quantity: 2 }],
+        payments: [],
+      };
+      prisma.order.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(winner);
+      prisma.$transaction.mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError("unique", {
+          code: "P2002",
+          clientVersion: "test",
+          meta: { target: ["checkoutIdempotencyKey"] },
+        }),
+      );
+
+      await expect(
+        useCase.execute(slug, dto, undefined, undefined, "replay-key-1"),
+      ).rejects.toThrow(GoneException);
     });
 
-    it("rejects a replay when a non-primary courier field changes", () => {
-      expect(() =>
-        useCase.assertMatchingCheckoutData(
-          {
-            customerPhone: dto.customerPhone,
-            customerEmail: null,
-            customerName: dto.customerName,
-            paymentMethod: null,
-            paymentType: null,
-            deliveryMethodType: "COURIER",
-            pickupPointId: null,
-            courierName: "Olva",
-            courierModality: "HOME",
-            deliveryDetails: {
-              shippingAddress: {
-                recipientName: "Jane",
-                phone: dto.customerPhone,
-                line1: "1 Main St",
-                city: "Lima",
-                line2: "Apt 1",
-                recipientSurnames: "Doe",
-              },
-            },
-            items: [{ productId: "product-1", variantId: null, quantity: 2 }],
-          },
-          {
-            ...dto,
-            deliveryMethodType: "COURIER",
-            courierName: "Olva",
-            courierModality: "HOME",
-            shippingAddress: {
-              recipientName: "Jane",
-              phone: dto.customerPhone,
-              line1: "1 Main St",
-              city: "Lima",
-              line2: "Apt 2",
-              recipientSurnames: "Doe",
-            },
-          },
-        ),
-      ).toThrow(ConflictException);
+    it.each([
+      { target: ["accessTokenHash"] },
+      { target: ["checkoutIdempotencyKey"] },
+    ])("rethrows unrelated or unresolved P2002 errors", async (meta) => {
+      const conflict = new Prisma.PrismaClientKnownRequestError("unique", {
+        code: "P2002",
+        clientVersion: "test",
+        meta,
+      });
+      if (meta.target[0] === "checkoutIdempotencyKey") {
+        prisma.order.findFirst
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce(null);
+      }
+      prisma.$transaction.mockRejectedValue(conflict);
+
+      await expect(
+        useCase.execute(slug, dto, undefined, undefined, "replay-key-1"),
+      ).rejects.toBe(conflict);
+      expect(prisma.order.findFirst).toHaveBeenCalledTimes(
+        meta.target[0] === "checkoutIdempotencyKey" ? 2 : 1,
+      );
     });
   });
 });

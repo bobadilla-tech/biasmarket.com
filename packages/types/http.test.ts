@@ -135,6 +135,43 @@ test("401 without a bearer token does not clear a session", async () => {
   expect(cleanup).not.toHaveBeenCalled();
 });
 
+test("rotated session response headers reach onSessionRefresh", async () => {
+  const refresh = vi.fn(async () => undefined);
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      async (): Promise<Response> =>
+        new Response(JSON.stringify({ ok: true }), {
+          headers: { "X-Session-Token": "rotated-token" },
+        }),
+    ),
+  );
+  configureApiClient({
+    baseUrl,
+    getAuthHeader: () => ({ Authorization: "Bearer current-token" }),
+    onSessionRefresh: refresh,
+  });
+
+  await expect(customFetch("/stores/demo/orders")).resolves.toEqual({
+    ok: true,
+  });
+  expect(refresh).toHaveBeenCalledWith("Bearer current-token", "rotated-token");
+});
+
+test("binary 401 without a bearer token does not clear a session", async () => {
+  const cleanup = vi.fn(async () => undefined);
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (): Promise<Response> => new Response(null, { status: 401 })),
+  );
+  configureApiClient({ baseUrl, onUnauthorized: cleanup });
+
+  await expect(customFetchBlob("/private-proof")).rejects.toMatchObject({
+    status: 401,
+  });
+  expect(cleanup).not.toHaveBeenCalled();
+});
+
 test("binary fetch sends the bearer token and returns the private image bytes", async () => {
   const fetchFn = vi.fn(
     async (): Promise<Response> =>

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { Test, type TestingModule } from "@nestjs/testing";
-import type { INestApplication } from "@nestjs/common";
+import { ValidationPipe, type INestApplication } from "@nestjs/common";
 import { PrismaService } from "../src/prisma/prisma.service.js";
 import request from "supertest";
 import { readdirSync, readFileSync } from "node:fs";
@@ -76,6 +76,9 @@ describe("customer account + customer auth (e2e)", () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+    );
     await app.init();
     prisma = moduleFixture.get(PrismaService);
     await cleanupBuyerTestData(prisma, [customerPhone, crossStorePhone]);
@@ -296,7 +299,7 @@ describe("customer account + customer auth (e2e)", () => {
         .patch(`/stores/${storeSlug}/account/me`)
         .set("Cookie", customerSessionCookie)
         .set("Origin", "http://localhost:3001")
-        .send({ name: "E2E Customer Updated" })
+        .send({ name: "E2E Customer Updated", countryCode: "AR" })
         .expect(200);
       assertMatchesSchema(
         updateRes.body,
@@ -304,6 +307,26 @@ describe("customer account + customer auth (e2e)", () => {
         openapi.components,
       );
       expect(updateRes.body.name).toBe("E2E Customer Updated");
+      expect(updateRes.body.countryCode).toBe("AR");
+
+      await request(app.getHttpServer())
+        .patch(`/stores/${storeSlug}/account/me`)
+        .set("Cookie", customerSessionCookie)
+        .set("Origin", "http://localhost:3001")
+        .send({ name: "E2E Customer Updated", countryCode: "XX" })
+        .expect(400);
+
+      const updatedMe = await request(app.getHttpServer())
+        .get(`/stores/${storeSlug}/account/me`)
+        .set("Cookie", customerSessionCookie)
+        .expect(200);
+      expect(updatedMe.body.customer.countryCode).toBe("AR");
+
+      const sellerCustomer = await request(app.getHttpServer())
+        .get(`/stores/${storeId}/customers/${customerId}`)
+        .set("Cookie", sellerSessionCookie)
+        .expect(200);
+      expect(sellerCustomer.body.customer).not.toHaveProperty("countryCode");
 
       // CustomerAuth.changePassword — the real point of Batch 5's spec-bug
       // fix: this route has no `@Param("slug")` in the method signature, only
@@ -814,6 +837,12 @@ describe("customer account + customer auth (e2e)", () => {
         globalMeRes.body.stores.map((s: { slug: string }) => s.slug).sort(),
       ).toEqual([storeSlug, storeBSlug].sort());
 
+      // Deletion also clears buyer-owned profile data introduced after this
+      // test was originally written.
+      await prisma.buyerAccount.update({
+        where: { id: crossStoreBuyerAccountId },
+        data: { countryCode: "AR" },
+      });
       await prisma.buyerAccount.update({
         where: { id: crossStoreBuyerAccountId },
         data: {
@@ -877,6 +906,7 @@ describe("customer account + customer auth (e2e)", () => {
         pendingEmail: null,
         pendingPhone: null,
         name: null,
+        countryCode: null,
       });
       expect(deletedAccount.passwordVersion).toBeGreaterThan(0);
 

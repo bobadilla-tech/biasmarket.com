@@ -178,22 +178,22 @@ as the api (it reads the same `SENTRY_DSN`).
 }
 ```
 
-- **What a line has:** `method`, the path without its query string (order
-  tokens replaced by `:token`), `statusCode`, `responseTime`, a `requestId`
-  (echoed as the `x-request-id` response header), and `storeId`/`storeSlug` when
-  the route has one. Health probes are not logged. 5xx is `error`, 4xx `warn`.
+- **What a line has:** `method`, the path without its query string (order tokens
+  replaced by `:token`), `statusCode`, `responseTime`, a `requestId` (echoed as
+  the `x-request-id` response header), and `storeId`/`storeSlug` when the route
+  has one. Health probes are not logged. 5xx is `error`, 4xx `warn`.
 - **Where to read them:** `docker compose logs --tail 100 api-<color>` for the
   last few minutes on the VPS (capped at 5 files of 10 MB per container). For
   history, GlitchTip's **Logs** view: with `SENTRY_DSN` set, lines at `info` and
   above are also sent there, so they survive a deploy (the container and its
   local logs are deleted on every blue/green switch) and are searchable next to
   errors and traces.
-- **How long:** set on the GlitchTip server, not here.
-  `GLITCHTIP_LOG_HOT_DAYS` (default 7, kept in Postgres) and
-  `GLITCHTIP_LOG_RETENTION_DAYS` (default 90 in total).
-- **Level:** `LOG_LEVEL` (default `info`) sets what the process emits to
-  stdout. Only `info` and above are forwarded to GlitchTip, and Nest's boot
-  chatter (`InstanceLoader`, `RoutesResolver`, ...) stays local.
+- **How long:** set on the GlitchTip server, not here. `GLITCHTIP_LOG_HOT_DAYS`
+  (default 7, kept in Postgres) and `GLITCHTIP_LOG_RETENTION_DAYS` (default 90
+  in total).
+- **Level:** `LOG_LEVEL` (default `info`) sets what the process emits to stdout.
+  Only `info` and above are forwarded to GlitchTip, and Nest's boot chatter
+  (`InstanceLoader`, `RoutesResolver`, ...) stays local.
 - **Failed jobs (workers):** every processor extends `ObservedProcessor`
   (`apps/workers/src/common/observed-processor.ts`). A failed attempt that will
   be retried is logged at `warn`; the final failure is logged at `error` (with
@@ -203,7 +203,8 @@ as the api (it reads the same `SENTRY_DSN`).
   `WorkerHost`.
 - **Adding a log line:** use Nest's `Logger` as usual. Never put a token, a
   password or a query string in the message; the scrubbers only know the paths
-  listed in [incident-response.md](incident-response.md#error-tracking-and-redaction).
+  listed in
+  [incident-response.md](incident-response.md#error-tracking-and-redaction).
 
 ## Restore
 

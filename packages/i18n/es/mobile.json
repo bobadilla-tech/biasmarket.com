@@ -155,11 +155,13 @@
     "storeInvalid": "La tienda no es válida.",
     "submitFailed": "No se pudo completar la compra.",
     "paymentConfigFailed": "No se pudieron cargar las opciones de pago. Inténtalo de nuevo antes de confirmar tu pedido.",
+    "configFailed": "No se pudieron cargar las opciones de compra. Inténtalo de nuevo antes de confirmar tu pedido.",
     "proofCompressFailed": "No se pudo comprimir el comprobante por debajo de 5 MB.",
     "confirmOrder": "Confirmar pedido",
     "submitting": "Enviando pedido…",
     "items": "{count} productos",
     "validation": {
+      "customerName": "Ingresa tu nombre.",
       "customerPhone": "Ingresa tu teléfono.",
       "customerEmail": "Ingresa un correo electrónico válido.",
       "deliveryMethodType": "Elige un método de entrega.",
@@ -170,9 +172,13 @@
       "courierName": "Elige un courier.",
       "courierModality": "Elige una opción de entrega del courier.",
       "shippingRecipientName": "Ingresa el nombre de quien recibe.",
+      "shippingRecipientSurnames": "Ingresa los apellidos de quien recibe.",
       "shippingDocumentType": "Elige un tipo de documento.",
       "shippingDocumentNumber": "Ingresa un número de documento válido.",
       "shippingPhone": "Ingresa un teléfono de contacto.",
+      "shippingDepartment": "Ingresa un departamento.",
+      "shippingProvince": "Ingresa una provincia.",
+      "shippingDistrict": "Ingresa un distrito.",
       "shippingLine1": "Ingresa una dirección de entrega.",
       "shippingCity": "Ingresa una ciudad.",
       "shippingAgencyName": "Ingresa el nombre de la agencia."
@@ -238,7 +244,9 @@
     "deleteTitle": "¿Eliminar tu cuenta?",
     "deleteConfirmation": "Se eliminarán tu perfil de comprador, direcciones guardadas y credenciales. La tienda puede conservar los pedidos por motivos de transacción y entrega.",
     "deleteFailedTitle": "No se eliminó la cuenta",
-    "deleteFailed": "No pudimos eliminar tu cuenta. Revisa tu conexión e inténtalo de nuevo."
+    "deleteFailed": "No pudimos eliminar tu cuenta. Revisa tu conexión e inténtalo de nuevo.",
+    "sessionEndedTitle": "Tu sesión terminó",
+    "sessionEnded": "Inicia sesión para revisar tu cuenta."
   },
   "ios": {
     "NSPhotoLibraryUsageDescription": "Bias Market necesita acceso a tus fotos para adjuntar un comprobante de pago.",

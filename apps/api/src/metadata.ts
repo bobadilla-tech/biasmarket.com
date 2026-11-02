@@ -99,6 +99,15 @@ export default async () => {
             UpdateStoreDto: {
               name: { required: false, type: () => String },
               locale: { required: false, type: () => String },
+              countryCode: {
+                required: false,
+                type: () => String,
+                nullable: true,
+              },
+              buyerRegister: {
+                required: false,
+                enum: ['auto', 'tuteo', 'voseo'],
+              },
               whatsappNumber: { required: false, type: () => String },
               instagramUrl: {
                 required: false,
@@ -187,6 +196,15 @@ export default async () => {
               name: { required: true, type: () => String },
               slug: { required: true, type: () => String },
               locale: { required: true, type: () => String },
+              countryCode: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              buyerRegister: {
+                required: true,
+                enum: ['auto', 'tuteo', 'voseo'],
+              },
               ownerId: { required: true, type: () => String },
               themeConfig: {
                 required: true,
@@ -366,6 +384,7 @@ export default async () => {
               status: { required: true, enum: ['DRAFT', 'PUBLISHED'] },
               soldOut: { required: true, type: () => Boolean },
               discontinued: { required: true, type: () => Boolean },
+              shipsInternationally: { required: true, type: () => Boolean },
               deletedAt: { required: true, type: () => String, nullable: true },
               createdAt: { required: true, type: () => String },
               variants: {
@@ -538,6 +557,7 @@ export default async () => {
               price: { required: true, type: () => Number },
               soldOut: { required: false, type: () => Boolean },
               discontinued: { required: false, type: () => Boolean },
+              shipsInternationally: { required: false, type: () => Boolean },
               images: { required: false, type: () => [String] },
               availableUntil: { required: false, type: () => String },
               currency: { required: false, type: () => String },
@@ -562,6 +582,7 @@ export default async () => {
               price: { required: false, type: () => Number },
               soldOut: { required: false, type: () => Boolean },
               discontinued: { required: false, type: () => Boolean },
+              shipsInternationally: { required: false, type: () => Boolean },
               images: { required: false, type: () => [String] },
               availableUntil: { required: false, type: () => String },
               currency: { required: false, type: () => String },
@@ -656,6 +677,7 @@ export default async () => {
               status: { required: true, enum: ['DRAFT', 'PUBLISHED'] },
               soldOut: { required: true, type: () => Boolean },
               discontinued: { required: true, type: () => Boolean },
+              shipsInternationally: { required: true, type: () => Boolean },
               deletedAt: { required: true, type: () => String, nullable: true },
               createdAt: { required: true, type: () => String },
             },
@@ -698,6 +720,7 @@ export default async () => {
               price: { required: true, type: () => String },
               currency: { required: true, type: () => String },
               images: { required: true, type: () => [String] },
+              shipsInternationally: { required: true, type: () => Boolean },
               store: {
                 required: true,
                 type: () =>
@@ -2712,6 +2735,11 @@ export default async () => {
               name: { required: true, type: () => String, minLength: 1 },
               email: { required: false, type: () => String, format: 'email' },
               phone: { required: false, type: () => String, minLength: 1 },
+              countryCode: {
+                required: false,
+                type: () => String,
+                nullable: true,
+              },
             },
           },
         ],
@@ -2745,6 +2773,11 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
+              countryCode: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
             },
             CustomerProfileResponseDto: {
               customer: {
@@ -2769,6 +2802,11 @@ export default async () => {
                 nullable: true,
               },
               pendingPhone: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              countryCode: {
                 required: true,
                 type: () => String,
                 nullable: true,

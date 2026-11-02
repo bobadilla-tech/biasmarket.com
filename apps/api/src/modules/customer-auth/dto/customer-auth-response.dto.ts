@@ -44,6 +44,9 @@ export class CustomerProfileCustomerResponseDto {
 
   @ApiProperty({ type: String, nullable: true })
   pendingPhone: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  countryCode: string | null;
 }
 
 // `me`'s shape (`CustomerAuthService.getProfile`).
@@ -65,4 +68,7 @@ export class UpdateCustomerProfileResponseDto {
 
   @ApiProperty({ type: String, nullable: true })
   pendingPhone: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  countryCode: string | null;
 }
