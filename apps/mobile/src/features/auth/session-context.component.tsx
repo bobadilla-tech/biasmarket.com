@@ -64,7 +64,6 @@ async function renderSession(
     defaultOptions: { queries: { retry: false } },
   }),
 ) {
-
   return render(
     <MobileI18nProvider>
       <QueryClientProvider client={queryClient}>
