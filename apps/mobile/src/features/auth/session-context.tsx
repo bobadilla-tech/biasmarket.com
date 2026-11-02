@@ -165,7 +165,11 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
       }
       // The current registration endpoint sets the password but doesn't issue
       // a session token, so log in immediately to establish the mobile session.
-      await signIn(slug, phone, password);
+      try {
+        await signIn(slug, phone, password);
+      } catch {
+        throw new Error("auth.registrationCompleteSignInFailed");
+      }
     },
     [signIn, t],
   );

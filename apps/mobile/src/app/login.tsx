@@ -16,8 +16,14 @@ export default function LoginScreen() {
   const { t } = useMobileI18n();
   const params = useLocalSearchParams<{
     storeSlug?: string;
+    slug?: string;
     returnTo?: string;
+    notice?: string;
   }>();
+  const initialSlug = (Array.isArray(params.slug) ? params.slug[0] : params.slug) ??
+    (Array.isArray(params.storeSlug) ? params.storeSlug[0] : params.storeSlug) ??
+    "";
+  const notice = Array.isArray(params.notice) ? params.notice[0] : params.notice;
   const { signIn, error: sessionError } = useBuyerSession();
   const [error, setError] = useState<string | null>(null);
   const {
@@ -29,7 +35,7 @@ export default function LoginScreen() {
       customerLoginSchema.extend({ storeSlug: z.string().min(1) }),
     ),
     defaultValues: {
-      storeSlug: params.storeSlug ?? "",
+      storeSlug: initialSlug,
       phone: "",
       password: "",
     },
@@ -64,6 +70,16 @@ export default function LoginScreen() {
       <Text className="text-sm text-white/80">
         {t("auth.loginAccountDescription")}
       </Text>
+      {notice === "registration-complete" ||
+      notice === "account-already-registered" ? (
+        <Text accessibilityRole="alert" className="text-sm text-emerald-200">
+          {t(
+            notice === "registration-complete"
+              ? "auth.registrationComplete"
+              : "auth.accountAlreadyRegistered",
+          )}
+        </Text>
+      ) : null}
       <LoginField
         control={control}
         name="storeSlug"
