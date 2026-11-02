@@ -16,6 +16,8 @@ import {
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { ReferenceEditDialog } from "@/features/references/components/reference-edit-dialog";
+import { ReferencePublishDialog } from "@/features/references/components/reference-publish-dialog";
 import { useDashboardStore } from "@/features/stores";
 import { referencesApi } from "@/features/references/api/references.api";
 import { apiClient } from "@/lib/api-client";
@@ -60,12 +62,7 @@ export function ReferencesPageClient() {
   const [privacyConfirmed, setPrivacyConfirmed] = useState(false);
   const [createHidden, setCreateHidden] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editFile, setEditFile] = useState<File | null>(null);
-  const [editCaption, setEditCaption] = useState("");
-  const [editTakenAt, setEditTakenAt] = useState("");
-  const [editPrivacyConfirmed, setEditPrivacyConfirmed] = useState(false);
   const [publishingId, setPublishingId] = useState<string | null>(null);
-  const [publishPrivacyConfirmed, setPublishPrivacyConfirmed] = useState(false);
   const [sort, setSort] = useState<"recientes" | "antiguas">("recientes");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -73,8 +70,6 @@ export function ReferencesPageClient() {
   const [deletingIds, setDeletingIds] = useState<Set<string>>(() => new Set());
   const deletingIdsRef = useRef(new Set<string>());
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const editDialogRef = useRef<HTMLDialogElement>(null);
-  const publishDialogRef = useRef<HTMLDialogElement>(null);
   const items = useMemo(
     () =>
       [...(query.data ?? [])].sort((a, b) => {
@@ -104,20 +99,6 @@ export function ReferencesPageClient() {
     if (!selectedItem && dialog.open) dialog.close();
     if (selectedId && !selectedItem) setSelectedId(null);
   }, [selectedId, selectedItem]);
-
-  useEffect(() => {
-    const dialog = editDialogRef.current;
-    if (!dialog) return;
-    if (editingItem && !dialog.open) dialog.showModal();
-    if (!editingItem && dialog.open) dialog.close();
-  }, [editingItem]);
-
-  useEffect(() => {
-    const dialog = publishDialogRef.current;
-    if (!dialog) return;
-    if (publishingItem && !dialog.open) dialog.showModal();
-    if (!publishingItem && dialog.open) dialog.close();
-  }, [publishingItem]);
 
   function moveSelection(offset: number) {
     if (!items.length || selectedIndex < 0) return;
@@ -165,37 +146,30 @@ export function ReferencesPageClient() {
 
   function openEdit(item: (typeof items)[number]) {
     setEditingId(item.id);
-    setEditFile(null);
-    setEditCaption(item.caption ?? "");
-    const date = new Date(item.takenAt);
-    date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-    setEditTakenAt(date.toISOString().slice(0, 16));
-    setEditPrivacyConfirmed(false);
     setError(null);
   }
 
-  async function saveEdit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!storeId || !editingItem || busy || (editFile && !editPrivacyConfirmed))
-      return;
+  async function saveEdit(formValues: {
+    referenceId: string;
+    takenAt: string;
+    caption: string;
+    file?: File;
+  }) {
+    if (!storeId || busy) return;
     setBusy(true);
     setError(null);
     try {
       const values: Parameters<typeof referencesApi.update>[2] = {
-        takenAt: new Date(editTakenAt).toISOString(),
-        caption: editCaption.trim(),
+        takenAt: new Date(formValues.takenAt).toISOString(),
+        caption: formValues.caption,
       };
-      if (editFile) {
-        const image = await createImageBitmap(editFile);
-        values.file = editFile;
-        values.width = image.width;
-        values.height = image.height;
+      if (formValues.file) {
+        values.file = formValues.file;
         values.privacyConfirmed = true;
-        image.close();
       }
       await referencesApi.update(
         storeId,
-        editingItem.id,
+        formValues.referenceId,
         values,
         tc("networkError"),
       );
@@ -229,12 +203,11 @@ export function ReferencesPageClient() {
   }
 
   function requestPublish(itemId: string) {
-    setPublishPrivacyConfirmed(false);
     setPublishingId(itemId);
   }
 
   async function confirmPublish() {
-    if (!publishingId || !publishPrivacyConfirmed) return;
+    if (!publishingId) return;
     await setHidden(publishingId, false);
   }
 
@@ -480,181 +453,20 @@ export function ReferencesPageClient() {
           {t("empty")}
         </p>
       )}
-      <dialog
-        ref={editDialogRef}
-        aria-labelledby="reference-edit-title"
+      <ReferenceEditDialog
+        item={editingItem}
+        busy={busy}
+        error={error}
         onCancel={() => setEditingId(null)}
-        className="max-h-[90dvh] w-[min(36rem,calc(100vw-2rem))] overflow-y-auto rounded-2xl border bg-background p-0 text-foreground shadow-xl backdrop:bg-black/50"
-      >
-        {editingItem ? (
-          <form
-            onSubmit={(event) => void saveEdit(event)}
-            className="space-y-5 p-5 sm:p-6"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 id="reference-edit-title" className="text-lg font-semibold">
-                  {t("editTitle")}
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {t("editDescription")}
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label={t("closeViewer")}
-                onClick={() => setEditingId(null)}
-              >
-                <X className="size-4" />
-              </Button>
-            </div>
-            <label className="grid min-w-0 gap-1.5 text-sm font-medium">
-              {t("date")}
-              <input
-                type="datetime-local"
-                required
-                value={editTakenAt}
-                disabled={busy}
-                onChange={(event) => setEditTakenAt(event.target.value)}
-                className="h-11 min-w-0 rounded-md border bg-background px-3"
-              />
-            </label>
-            <label className="grid min-w-0 gap-1.5 text-sm font-medium">
-              {t("caption")}
-              <input
-                maxLength={240}
-                value={editCaption}
-                disabled={busy}
-                onChange={(event) => setEditCaption(event.target.value)}
-                className="h-11 min-w-0 rounded-md border bg-background px-3"
-              />
-            </label>
-            <label className="grid min-w-0 gap-1.5 text-sm font-medium">
-              {t("replaceImage")}
-              <input
-                type="file"
-                accept="image/jpeg,image/png"
-                disabled={busy}
-                onChange={(event) => {
-                  setEditFile(event.target.files?.[0] ?? null);
-                  setEditPrivacyConfirmed(false);
-                  event.currentTarget.value = "";
-                }}
-                className="max-w-full text-sm"
-              />
-            </label>
-            {editFile ? (
-              <label className="flex items-start gap-3 rounded-lg bg-muted p-3 text-sm">
-                <input
-                  type="checkbox"
-                  checked={editPrivacyConfirmed}
-                  disabled={busy}
-                  onChange={(event) =>
-                    setEditPrivacyConfirmed(event.target.checked)
-                  }
-                  className="mt-1 size-4 shrink-0"
-                />
-                <span>{t("privacyNotice")}</span>
-              </label>
-            ) : null}
-            {error ? (
-              <p role="alert" className="text-sm text-destructive">
-                {error}
-              </p>
-            ) : null}
-            <div className="flex flex-wrap justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="min-h-11"
-                disabled={busy}
-                onClick={() => setEditingId(null)}
-              >
-                {t("cancel")}
-              </Button>
-              <Button
-                type="submit"
-                className="min-h-11"
-                disabled={busy || Boolean(editFile && !editPrivacyConfirmed)}
-              >
-                {busy ? t("saving") : t("save")}
-              </Button>
-            </div>
-          </form>
-        ) : null}
-      </dialog>
-
-      <dialog
-        ref={publishDialogRef}
-        aria-labelledby="reference-publish-title"
+        onSave={saveEdit}
+      />
+      <ReferencePublishDialog
+        item={publishingItem}
+        busy={busy}
+        error={error}
         onCancel={() => setPublishingId(null)}
-        className="w-[min(30rem,calc(100vw-2rem))] rounded-2xl border bg-background p-0 text-foreground shadow-xl backdrop:bg-black/50"
-      >
-        {publishingItem ? (
-          <div className="space-y-5 p-5 sm:p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2
-                  id="reference-publish-title"
-                  className="text-lg font-semibold"
-                >
-                  {t("publishTitle")}
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {t("publishDescription")}
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label={t("closeViewer")}
-                onClick={() => setPublishingId(null)}
-              >
-                <X className="size-4" />
-              </Button>
-            </div>
-            <label className="flex items-start gap-3 rounded-lg bg-muted p-3 text-sm">
-              <input
-                type="checkbox"
-                checked={publishPrivacyConfirmed}
-                disabled={busy}
-                onChange={(event) =>
-                  setPublishPrivacyConfirmed(event.target.checked)
-                }
-                className="mt-1 size-4 shrink-0"
-              />
-              <span>{t("privacyNotice")}</span>
-            </label>
-            {error ? (
-              <p role="alert" className="text-sm text-destructive">
-                {error}
-              </p>
-            ) : null}
-            <div className="flex flex-wrap justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="min-h-11"
-                disabled={busy}
-                onClick={() => setPublishingId(null)}
-              >
-                {t("cancel")}
-              </Button>
-              <Button
-                type="button"
-                className="min-h-11"
-                disabled={busy || !publishPrivacyConfirmed}
-                onClick={() => void confirmPublish()}
-              >
-                {busy ? t("saving") : t("publish")}
-              </Button>
-            </div>
-          </div>
-        ) : null}
-      </dialog>
+        onConfirm={() => void confirmPublish()}
+      />
       <dialog
         ref={dialogRef}
         aria-label={
