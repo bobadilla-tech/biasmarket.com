@@ -24,6 +24,7 @@ export async function register() {
   const Sentry = await import("@sentry/node");
   const { scrubOrDrop } = await import("@biasmarket/utils/sentry-scrub");
   const { tracesSampler } = await import("@biasmarket/utils/traces-sampler");
+  const { isClosedRscPrefetchNoise } = await import("./lib/sentry-noise");
   const warn = (message: string) => console.warn("[sentry]", message);
   Sentry.init({
     dsn,
@@ -32,7 +33,8 @@ export async function register() {
     tracesSampler,
     // The private order link (`/pedido/:token`) must not reach the tracker
     // through a request path, span or exception message either.
-    beforeSend: (event) => scrubOrDrop(event, warn),
+    beforeSend: (event) =>
+      isClosedRscPrefetchNoise(event) ? null : scrubOrDrop(event, warn),
     beforeSendTransaction: (event) => scrubOrDrop(event, warn),
   });
 }

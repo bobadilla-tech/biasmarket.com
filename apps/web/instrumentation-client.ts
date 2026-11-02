@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/react";
 import { scrubOrDrop, scrubSentryEvent } from "@biasmarket/utils/sentry-scrub";
+import { isObscuraBootstrapNoise } from "./lib/sentry-noise";
 
 // Client-side error tracking (GlitchTip). Runs in the browser before React
 // hydrates — sets up the global window error / unhandledrejection handlers so
@@ -19,7 +20,8 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
     ignoreErrors: [/reading 'startTime'/, /reportAllChanges/],
     // The private order link (`/pedido/:token`, `/public/orders/:token`) must
     // never reach the tracker through a URL, breadcrumb or transaction name.
-    beforeSend: (event) => scrubOrDrop(event, warn),
+    beforeSend: (event) =>
+      isObscuraBootstrapNoise(event) ? null : scrubOrDrop(event, warn),
     beforeSendTransaction: (event) => scrubOrDrop(event, warn),
     beforeBreadcrumb: (breadcrumb) => scrubSentryEvent(breadcrumb),
   });
