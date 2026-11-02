@@ -36,6 +36,9 @@ test("exposes an accessible tab list and moves selection with arrow keys", () =>
   expect(allTab.getAttribute("aria-selected")).toBe("true");
 
   fireEvent.keyDown(allTab, { key: "ArrowRight" });
+  expect(document.activeElement).toBe(
+    screen.getByRole("tab", { name: "Pendientes" }),
+  );
   expect(
     screen.getByRole("tab", { name: "Pendientes" }).getAttribute("tabindex"),
   ).toBe("0");

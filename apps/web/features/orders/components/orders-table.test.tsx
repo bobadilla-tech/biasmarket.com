@@ -137,7 +137,22 @@ test("shows a masked phone or an explicit unnamed-customer fallback", () => {
   );
 
   expect(screen.getAllByText("Teléfono ····4321").length).toBeGreaterThan(0);
-  expect(screen.getAllByText("Sin nombre").length).toBeGreaterThan(0);
+  const unnamed = screen.getAllByText("Sin nombre");
+  expect(unnamed.length).toBeGreaterThan(0);
+  expect(
+    unnamed.some(
+      (element) =>
+        element.tagName === "DD" && element.className.includes("italic"),
+    ),
+  ).toBe(true);
+  fireEvent.click(screen.getAllByRole("button", { name: "Pedido #RDER-2" })[0]);
+  const expandedFallbacks = screen
+    .getAllByText("Sin nombre")
+    .filter((element) => element.tagName === "DD");
+  expect(expandedFallbacks.length).toBe(2);
+  expect(
+    expandedFallbacks.every((element) => element.className.includes("italic")),
+  ).toBe(true);
 });
 
 test("the mobile View action opens the order without toggling its summary", () => {
@@ -160,4 +175,30 @@ test("the mobile View action opens the order without toggling its summary", () =
   fireEvent.click(screen.getAllByRole("button", { name: "Ver" })[0]);
   expect(onView).toHaveBeenCalledWith(baseOrder);
   expect(disclosure.getAttribute("aria-expanded")).toBe("false");
+});
+
+test("shows and runs the next fulfillment action on the mobile card", () => {
+  const onAdvance = vi.fn();
+  const order = {
+    ...baseOrder,
+    paymentStatus: "VERIFIED",
+    fulfillmentStatus: "ORDERING",
+    pendingAmount: 0,
+  } as OrderResponseDto;
+  renderWithProviders(
+    <OrdersTable
+      orders={[order]}
+      pendingOrderIds={new Set()}
+      fulfillmentLabels={{ IN_TRANSIT: "En camino" }}
+      onApprove={noop}
+      onReject={noop}
+      onAdvance={onAdvance}
+      onView={noop}
+    />,
+  );
+
+  fireEvent.click(
+    screen.getAllByRole("button", { name: "Marcar En camino" })[0],
+  );
+  expect(onAdvance).toHaveBeenCalledWith(order);
 });

@@ -158,6 +158,7 @@ test("status tabs update the visible orders and count", async () => {
     {
       ...order,
       id: "order-2",
+      customerName: "Sam Delivered",
       paymentStatus: "VERIFIED",
       fulfillmentStatus: "COMPLETED",
     },
@@ -166,4 +167,6 @@ test("status tabs update the visible orders and count", async () => {
   expect(await screen.findByText("Mostrando 2 de 2")).toBeTruthy();
   await user.click(screen.getByRole("tab", { name: "Entregados" }));
   expect(screen.getByText("Mostrando 1 de 1")).toBeTruthy();
+  expect(screen.getAllByText("Sam Delivered").length).toBeGreaterThan(0);
+  expect(screen.queryAllByText("Jane Buyer")).toHaveLength(0);
 });

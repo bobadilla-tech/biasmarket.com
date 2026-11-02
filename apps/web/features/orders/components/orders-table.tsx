@@ -18,6 +18,20 @@ import { NEXT_FULFILLMENT } from "../lib/order-status";
 import type { OrderResponseDto } from "@biasmarket/types";
 import { OrderStatusBadge } from "./order-status-badge";
 import { paymentMethodLabels } from "../lib/payment-method-labels";
+import { cn } from "@/lib/utils";
+
+function formatOrderTotal(amount: string, currency: string, locale: string) {
+  const numericAmount = Number(amount);
+  if (!Number.isFinite(numericAmount)) return `${amount} ${currency}`;
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+    }).format(numericAmount);
+  } catch {
+    return `${amount} ${currency}`;
+  }
+}
 
 export function OrdersTable({
   orders,
@@ -103,6 +117,9 @@ export function OrdersTable({
               : order.customerPhone
                 ? t("maskedPhone", { phone: order.customerPhone.slice(-4) })
                 : t("unnamedCustomer");
+            const hasMobileCustomerIdentity = Boolean(
+              customerName || order.customerPhone,
+            );
             const product = getProductSummary(order, t);
             const delivery = getDeliveryLabel(order, t);
             const date = order.createdAt
@@ -135,7 +152,14 @@ export function OrdersTable({
                           <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#8f7da8]">
                             {t("columns.customer")}
                           </dt>
-                          <dd className="mt-0.5 truncate text-sm font-semibold text-[#2d1649]">
+                          <dd
+                            className={cn(
+                              "mt-0.5 truncate text-sm",
+                              hasMobileCustomerIdentity
+                                ? "font-semibold text-[#2d1649]"
+                                : "italic text-[#8f7da8]",
+                            )}
+                          >
                             {mobileCustomer}
                           </dd>
                         </div>
@@ -154,7 +178,11 @@ export function OrdersTable({
                             </dt>
                             <dd className="mt-0.5 min-w-0 break-words text-lg font-bold tabular-nums text-[var(--store-accent)]">
                               {order.currency && order.totalAmount
-                                ? `${order.totalAmount} ${order.currency}`
+                                ? formatOrderTotal(
+                                    order.totalAmount,
+                                    order.currency,
+                                    locale,
+                                  )
                                 : "—"}
                             </dd>
                           </div>
@@ -192,6 +220,20 @@ export function OrdersTable({
                               {t("view")}
                             </Button>
                           </div>
+                          {!isPending &&
+                            order.paymentStatus === "VERIFIED" &&
+                            next && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => onAdvance(order)}
+                                className="min-h-9 rounded-full border-[#eadcf7] bg-white px-3 text-xs font-semibold text-[#2d1649] shadow-none hover:bg-[#fcf9ff]"
+                              >
+                                {t("markAs", {
+                                  status: fulfillmentLabels[next],
+                                })}
+                              </Button>
+                            )}
                         </div>
                       </dl>
                     </article>
@@ -339,7 +381,13 @@ export function OrdersTable({
                           <dt className="text-xs font-semibold uppercase tracking-wide text-[#8f7da8]">
                             {t("columns.number")}
                           </dt>
-                          <dd className="font-semibold text-[#2d1649]">
+                          <dd
+                            className={
+                              hasMobileCustomerIdentity
+                                ? "font-semibold text-[#2d1649]"
+                                : "italic text-[#8f7da8]"
+                            }
+                          >
                             {number}
                           </dd>
                         </div>
@@ -347,7 +395,13 @@ export function OrdersTable({
                           <dt className="text-xs font-semibold uppercase tracking-wide text-[#8f7da8]">
                             {t("columns.customer")}
                           </dt>
-                          <dd className="font-semibold text-[#2d1649]">
+                          <dd
+                            className={
+                              hasMobileCustomerIdentity
+                                ? "font-semibold text-[#2d1649]"
+                                : "italic text-[#8f7da8]"
+                            }
+                          >
                             {mobileCustomer}
                           </dd>
                         </div>

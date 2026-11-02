@@ -39,9 +39,17 @@ export function OrdersTabs({
     window.addEventListener("resize", updateOverflow);
     const element = scrollRef.current;
     element?.addEventListener("scroll", updateOverflow, { passive: true });
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(updateOverflow);
+    Object.values(tabRefs.current).forEach((tab) => {
+      if (tab) observer?.observe(tab);
+    });
     return () => {
       window.removeEventListener("resize", updateOverflow);
       element?.removeEventListener("scroll", updateOverflow);
+      observer?.disconnect();
     };
   }, [updateOverflow]);
 
