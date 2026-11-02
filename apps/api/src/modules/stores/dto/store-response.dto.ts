@@ -18,6 +18,12 @@ export class StoreResponseDto {
   @ApiProperty()
   locale: string;
 
+  @ApiProperty({ type: String, nullable: true })
+  countryCode: string | null;
+
+  @ApiProperty({ enum: ["auto", "tuteo", "voseo"] })
+  buyerRegister: "auto" | "tuteo" | "voseo";
+
   @ApiProperty()
   ownerId: string;
 

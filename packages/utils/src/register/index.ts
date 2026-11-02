@@ -1,4 +1,5 @@
 import { parseCountry } from "../geo/index.js";
+import type { CountryCode } from "../countries/index.js";
 
 export const REGISTERS = ["tuteo", "voseo"] as const;
 export type Register = (typeof REGISTERS)[number];
@@ -29,3 +30,16 @@ export function resolveRegister(input: {
   const country = parseCountry(input.country);
   return country && VOSEO_COUNTRIES.has(country) ? "voseo" : "tuteo";
 }
+
+export function resolveStoreCountry(
+  store: { countryCode?: string | null },
+  owner?: { countryCode?: string | null } | null,
+): CountryCode {
+  return (
+    parseCountry(store.countryCode) ?? parseCountry(owner?.countryCode) ?? "PE"
+  );
+}
+
+export type StoreCountrySource = {
+  countryCode?: string | null;
+};

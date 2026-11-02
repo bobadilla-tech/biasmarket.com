@@ -68,12 +68,18 @@ export class StoresService {
       throw new BadRequestException("This slug is not avaible");
     }
 
+    const owner = await this.prisma.user.findUnique({
+      where: { id: ownerId },
+      select: { countryCode: true },
+    });
+
     return this.prisma.$transaction(async (tx) => {
       const store = await tx.store.create({
         data: {
           name: dto.name,
           slug,
           ownerId,
+          countryCode: owner?.countryCode ?? null,
           themeConfig: (dto.themeConfig ?? {}) as Prisma.InputJsonValue,
           paymentInstructions: "",
           whatsappNumber: dto.whatsappNumber,

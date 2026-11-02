@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { resolveRegister, VOSEO_COUNTRIES } from "./index.js";
+import {
+  resolveRegister,
+  resolveStoreCountry,
+  VOSEO_COUNTRIES,
+} from "./index.js";
 
 describe("resolveRegister", () => {
   it.each([...VOSEO_COUNTRIES])("uses voseo for auto country %s", (country) => {
@@ -34,4 +38,16 @@ describe("resolveRegister", () => {
       expect(resolveRegister({ locale: "es", country })).toBe("tuteo");
     },
   );
+});
+
+describe("resolveStoreCountry", () => {
+  it("prefers store country, then owner country, then Peru", () => {
+    expect(
+      resolveStoreCountry({ countryCode: "AR" }, { countryCode: "PE" }),
+    ).toBe("AR");
+    expect(
+      resolveStoreCountry({ countryCode: null }, { countryCode: "UY" }),
+    ).toBe("UY");
+    expect(resolveStoreCountry({ countryCode: "bad" }, null)).toBe("PE");
+  });
 });

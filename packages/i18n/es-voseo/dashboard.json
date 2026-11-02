@@ -1,8 +1,14 @@
 {
   "settings": {
+    "accountRegister": {
+      "description": "Elegí el registro del español que se usa en tu panel.",
+      "auto": "Automático según tu país",
+      "error": "No se pudo guardar la preferencia. Probá de nuevo."
+    },
     "subtitle": "Define la primera experiencia de administración de tu tienda con una vista más pulida.",
     "emptyName": "Tu tienda",
     "profile": {
+      "buyerRegisterLabel": "Tratamiento para tus compradores",
       "description": "Actualiza lo esencial de tu marca y cómo te contactan los compradores.",
       "publicOwnerProfileHelp": "El nombre y la foto son opcionales. La foto aparece en el encabezado solo cuando defines un nombre público. Tu perfil personal permanece privado.",
       "publicOwnerHelp": "Este nombre aparece en tu tienda y no cambia tu nombre de cuenta.",

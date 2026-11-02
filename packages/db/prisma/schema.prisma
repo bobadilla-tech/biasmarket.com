@@ -15,6 +15,8 @@ model User {
   image         String?
   role          String    @default("seller")
   locale        String    @default("es")
+  countryCode   String?
+  uiRegister    String    @default("auto")
   banned        Boolean?  @default(false)
   banReason     String?
   banExpires    DateTime?
@@ -78,6 +80,8 @@ model Store {
   name                  String
   slug                  String    @unique
   locale                String    @default("es")
+  countryCode           String?
+  buyerRegister         String    @default("auto")
   ownerId               String
   themeConfig           Json
   logoUrl               String?
@@ -760,6 +764,7 @@ model BuyerAccount {
   pendingEmail    String?
   pendingPhone    String?
   name            String?
+  countryCode     String?
   createdAt       DateTime @default(now())
 
   stores    CustomerStoreLink[]

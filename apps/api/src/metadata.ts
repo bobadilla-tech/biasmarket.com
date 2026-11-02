@@ -99,6 +99,15 @@ export default async () => {
             UpdateStoreDto: {
               name: { required: false, type: () => String },
               locale: { required: false, type: () => String },
+              countryCode: {
+                required: false,
+                type: () => String,
+                nullable: true,
+              },
+              buyerRegister: {
+                required: false,
+                enum: ['auto', 'tuteo', 'voseo'],
+              },
               whatsappNumber: { required: false, type: () => String },
               instagramUrl: {
                 required: false,
@@ -187,6 +196,15 @@ export default async () => {
               name: { required: true, type: () => String },
               slug: { required: true, type: () => String },
               locale: { required: true, type: () => String },
+              countryCode: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
+              buyerRegister: {
+                required: true,
+                enum: ['auto', 'tuteo', 'voseo'],
+              },
               ownerId: { required: true, type: () => String },
               themeConfig: {
                 required: true,
