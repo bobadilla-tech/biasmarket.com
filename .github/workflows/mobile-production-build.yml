@@ -12,28 +12,34 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     environment: mobile-production
-    env:
-      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-      EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
+    concurrency:
+      group: mobile-production-build
+      cancel-in-progress: false
+      queue: max
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
         with:
-          version: 10
+          version: 10.11.0
       - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Validate EAS credentials
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
         run: |
           test -n "$EXPO_TOKEN" || (echo "EXPO_TOKEN is required in mobile-production" && exit 1)
           test -n "$EAS_PROJECT_ID" || (echo "EAS_PROJECT_ID is required in mobile-production" && exit 1)
       - name: Build iOS and Android
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
         run: |
-          npm install --global eas-cli
           cd apps/mobile
-          eas build --platform all --profile production --non-interactive --wait
+          pnpm dlx eas-cli build --platform all --profile production --non-interactive --wait
