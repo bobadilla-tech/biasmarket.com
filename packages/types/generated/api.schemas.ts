@@ -3526,6 +3526,7 @@ export type StoreReferencesControllercreateBody = {
    * @maximum 12000
    */
   height: number;
+  /** Required unless hidden is true. */
   privacyConfirmed?: boolean;
 };
 
@@ -3534,7 +3535,9 @@ export type StoreReferencesControllerupdateBody = {
   takenAt?: string;
   /** @maxLength 240 */
   caption?: string;
+  /** Setting this to false requires privacyConfirmed: true. */
   hidden?: boolean;
+  /** Required when publishing, replacing the image, or keeping a reference public. */
   privacyConfirmed?: boolean;
   /**
    * @minimum 1
