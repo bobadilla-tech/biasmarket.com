@@ -81,7 +81,11 @@ describe("checkout idempotency race (e2e)", () => {
     const store = await request(app.getHttpServer())
       .post("/api/stores")
       .set("Cookie", sessionCookie)
-      .send({ name: "Replay race", slug: storeSlug })
+      .send({
+        name: "Replay race",
+        slug: storeSlug,
+        whatsappNumber: "+51999000000",
+      })
       .expect(201);
     storeId = store.body.id;
     const product = await request(app.getHttpServer())
