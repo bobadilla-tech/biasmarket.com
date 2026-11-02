@@ -137,8 +137,16 @@ export class CustomerAuthService {
     }
 
     const passwordHash = await hashPassword(password);
-    await this.prisma.buyerAccount.update({
-      where: { id: buyerAccount.id },
+    const { count } = await this.prisma.buyerAccount.updateMany({
+      where: {
+        id: buyerAccount.id,
+        OR: [
+          { phone: { not: null } },
+          { email: { not: null } },
+          { googleSub: { not: null } },
+          { passwordHash: { not: null } },
+        ],
+      },
       data:
         verified.purpose === "confirm"
           ? {
@@ -148,6 +156,9 @@ export class CustomerAuthService {
             }
           : { passwordHash, passwordVersion: { increment: 1 } },
     });
+    if (count === 0) {
+      throw new BadRequestException("Enlace inválido o expirado");
+    }
 
     return { ok: true };
   }

@@ -101,6 +101,7 @@ describe("CustomerAuthService", () => {
         email: "buyer@example.com",
         passwordHash: null,
       });
+      prisma.buyerAccount.updateMany.mockResolvedValue({ count: 1 });
 
       const result = await service.register(
         "my-store",
@@ -109,8 +110,16 @@ describe("CustomerAuthService", () => {
       );
 
       expect(result).toEqual({ ok: true });
-      expect(prisma.buyerAccount.update).toHaveBeenCalledWith({
-        where: { id: "buyer-1" },
+      expect(prisma.buyerAccount.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: "buyer-1",
+          OR: [
+            { phone: { not: null } },
+            { email: { not: null } },
+            { googleSub: { not: null } },
+            { passwordHash: { not: null } },
+          ],
+        },
         data: {
           passwordHash: expect.any(String),
           emailVerified: true,
@@ -166,6 +175,7 @@ describe("CustomerAuthService", () => {
         id: "buyer-1",
         passwordHash: "already-set",
       });
+      prisma.buyerAccount.updateMany.mockResolvedValue({ count: 1 });
 
       const result = await service.register(
         "my-store",
@@ -174,8 +184,16 @@ describe("CustomerAuthService", () => {
       );
 
       expect(result).toEqual({ ok: true });
-      expect(prisma.buyerAccount.update).toHaveBeenCalledWith({
-        where: { id: "buyer-1" },
+      expect(prisma.buyerAccount.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: "buyer-1",
+          OR: [
+            { phone: { not: null } },
+            { email: { not: null } },
+            { googleSub: { not: null } },
+            { passwordHash: { not: null } },
+          ],
+        },
         data: {
           passwordHash: expect.any(String),
           passwordVersion: { increment: 1 },
@@ -192,6 +210,25 @@ describe("CustomerAuthService", () => {
 
       await expect(
         service.register("my-store", token, "super-secret-1"),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.buyerAccount.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("does not restore a password when the account is erased during hashing", async () => {
+      const token = createCustomerAccountToken(
+        "buyer-1",
+        "test-secret",
+        "reset",
+      );
+      prisma.buyerAccount.findUnique.mockResolvedValue({
+        id: "buyer-1",
+        email: "buyer@example.com",
+        passwordHash: null,
+      });
+      prisma.buyerAccount.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(
+        service.resetPasswordGlobal(token, "super-secret-1"),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
     });
@@ -213,7 +250,7 @@ describe("CustomerAuthService", () => {
       await expect(
         service.register("my-store", token, "super-secret-1"),
       ).rejects.toBeInstanceOf(BadRequestException);
-      expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
+      expect(prisma.buyerAccount.updateMany).not.toHaveBeenCalled();
     });
   });
 
@@ -989,14 +1026,23 @@ describe("CustomerAuthService", () => {
         id: "buyer-1",
         passwordHash: "old",
       });
+      prisma.buyerAccount.updateMany.mockResolvedValue({ count: 1 });
 
       await expect(
         service.resetPasswordGlobal(token, "super-secret-1"),
       ).resolves.toEqual({ ok: true });
 
       expect(prisma.store.findUnique).not.toHaveBeenCalled();
-      expect(prisma.buyerAccount.update).toHaveBeenCalledWith({
-        where: { id: "buyer-1" },
+      expect(prisma.buyerAccount.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: "buyer-1",
+          OR: [
+            { phone: { not: null } },
+            { email: { not: null } },
+            { googleSub: { not: null } },
+            { passwordHash: { not: null } },
+          ],
+        },
         data: {
           passwordHash: expect.any(String),
           passwordVersion: { increment: 1 },
