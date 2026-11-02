@@ -152,9 +152,6 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
     async (slug: string, phone: string, password: string) => {
       const generation = ++sessionGeneration.current;
       setError(null);
-      queryClient.removeQueries({ queryKey: ["buyer"] });
-      queryClient.removeQueries({ queryKey: ["buyer-order"] });
-      queryClient.removeQueries({ queryKey: ["private-payment-proof"] });
       const response = await customerAuth.login(
         slug,
         { phone, password },
@@ -174,6 +171,9 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
       if (generation !== sessionGeneration.current) {
         throw new Error(t("auth.sessionChanged"));
       }
+      queryClient.removeQueries({ queryKey: ["buyer"] });
+      queryClient.removeQueries({ queryKey: ["buyer-order"] });
+      queryClient.removeQueries({ queryKey: ["private-payment-proof"] });
       setMobileBearerToken(token);
       setStoreSlug(slug);
       setStatus("authenticated");

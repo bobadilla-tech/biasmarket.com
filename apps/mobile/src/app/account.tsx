@@ -1,14 +1,20 @@
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { ApiError, customerAuth, globalAccount } from "@biasmarket/types";
 import type { CustomerProfileResponseDto } from "@biasmarket/types";
 import { useBuyerSession } from "../features/auth/session-context";
-import { isSessionEndedDeleteError } from "../features/auth/account-deletion";
+import {
+  clearBuyerCheckoutQueries,
+  clearBuyerCheckoutState,
+  isSessionEndedDeleteError,
+} from "../features/auth/account-deletion";
 import { useMobileI18n } from "../i18n/mobile-i18n";
 
 export default function AccountScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { locale, setLocale, t } = useMobileI18n();
   const { status, storeSlug, signOut, error: sessionError } = useBuyerSession();
   const [deleting, setDeleting] = useState(false);
@@ -58,6 +64,14 @@ export default function AccountScreen() {
           void globalAccount
             .deleteMe()
             .then(async () => {
+              try {
+                await clearBuyerCheckoutState();
+              } catch {
+                console.warn(
+                  "Could not clear local checkout data after deletion.",
+                );
+              }
+              clearBuyerCheckoutQueries(queryClient);
               try {
                 await signOut();
               } catch {
