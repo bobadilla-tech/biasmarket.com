@@ -1,6 +1,13 @@
 "use client";
 
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
@@ -205,6 +212,13 @@ export function StoreSectionRenderer({
   );
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const isLoadingMoreRef = useRef(false);
+  // The server and the hydration pass must render the sentinel; browsers
+  // without IntersectionObserver switch to the manual button after hydrating.
+  const observerSupported = useSyncExternalStore(
+    () => () => {},
+    () => typeof IntersectionObserver !== "undefined",
+    () => true,
+  );
   const catalogLoadSentinelRef = useRef<HTMLDivElement>(null);
   const catalogQueryKey = new URLSearchParams(searchString);
   catalogQueryKey.delete("page");
@@ -276,7 +290,13 @@ export function StoreSectionRenderer({
     }
 
     const sentinel = catalogLoadSentinelRef.current;
-    if (!sentinel || typeof IntersectionObserver === "undefined") return;
+    if (
+      !sentinel ||
+      !observerSupported ||
+      typeof IntersectionObserver === "undefined"
+    ) {
+      return;
+    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -300,6 +320,7 @@ export function StoreSectionRenderer({
     currentPage,
     loadedCatalog,
     loadedCatalogPage,
+    observerSupported,
     pathname,
     router,
     searchString,
@@ -673,7 +694,7 @@ export function StoreSectionRenderer({
                     {serverSorted &&
                       loadedCatalogPage * catalogPagination.limit <
                         catalogPagination.total &&
-                      (typeof IntersectionObserver === "undefined" ? (
+                      (!observerSupported ? (
                         <button
                           type="button"
                           disabled={isLoadingMore}

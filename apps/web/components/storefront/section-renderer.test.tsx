@@ -1,5 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
+import { hydrateRoot } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { getMessages } from "@biasmarket/i18n";
 import {
@@ -200,6 +202,160 @@ describe("mergeCatalogPages", () => {
 });
 
 describe("StoreSectionRenderer catalog pagination", () => {
+  const noSections: RenderableSection[] = [];
+
+  function stubIntersectionObserver() {
+    const state = {
+      callback: undefined as IntersectionObserverCallback | undefined,
+      observe: vi.fn(),
+    };
+    class Mock {
+      constructor(callback: IntersectionObserverCallback) {
+        state.callback = callback;
+      }
+      observe = state.observe;
+      disconnect = vi.fn();
+      unobserve = vi.fn();
+      takeRecords = vi.fn(() => []);
+      root = null;
+      rootMargin = "";
+      thresholds = [0];
+    }
+    vi.stubGlobal("IntersectionObserver", Mock);
+    return state;
+  }
+
+  function catalog(page: number, total: number, limit = 1) {
+    return (
+      <NextIntlClientProvider locale="es" messages={getMessages("es")}>
+        <StoreSectionRenderer
+          slug="demo"
+          sections={noSections}
+          catalogControls
+          serverSorted
+          catalogPagination={{ page, limit, total }}
+        />
+      </NextIntlClientProvider>
+    );
+  }
+
+  const intersecting = { isIntersecting: true } as IntersectionObserverEntry;
+
+  it("ignores entries that are not intersecting", async () => {
+    const observer = stubIntersectionObserver();
+    navigation.search = "tab=productos&page=1";
+    navigation.push.mockClear();
+    try {
+      render(catalog(1, 2));
+      expect(observer.observe).toHaveBeenCalled();
+      await act(async () => {
+        observer.callback?.(
+          [{ isIntersecting: false } as IntersectionObserverEntry],
+          {} as IntersectionObserver,
+        );
+      });
+      expect(navigation.push).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+      navigation.search = "";
+    }
+  });
+
+  it("falls back to a next-page button when IntersectionObserver is missing", () => {
+    vi.stubGlobal("IntersectionObserver", undefined);
+    navigation.search = "tab=productos&page=1";
+    navigation.push.mockClear();
+    try {
+      render(catalog(1, 2));
+      expect(screen.queryByRole("status")).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+      expect(navigation.push).toHaveBeenCalledWith(
+        "/es/store/demo?tab=productos&page=2",
+        { scroll: false },
+      );
+    } finally {
+      vi.unstubAllGlobals();
+      navigation.search = "";
+    }
+  });
+
+  it("requests page 3 after page 2 results are retained", async () => {
+    const observer = stubIntersectionObserver();
+    navigation.search = "tab=productos&page=1";
+    navigation.push.mockClear();
+    try {
+      const view = render(catalog(1, 3));
+      await act(async () => {
+        observer.callback?.([intersecting], {} as IntersectionObserver);
+      });
+      expect(navigation.push).toHaveBeenLastCalledWith(
+        "/es/store/demo?tab=productos&page=2",
+        { scroll: false },
+      );
+
+      navigation.search = "tab=productos&page=2";
+      view.rerender(catalog(2, 3));
+      await act(async () => {
+        observer.callback?.([intersecting], {} as IntersectionObserver);
+      });
+      expect(navigation.push).toHaveBeenLastCalledWith(
+        "/es/store/demo?tab=productos&page=3",
+        { scroll: false },
+      );
+      expect(navigation.push).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.unstubAllGlobals();
+      navigation.search = "";
+    }
+  });
+
+  it("renders no sentinel or button outside server-sorted catalogs", () => {
+    stubIntersectionObserver();
+    try {
+      render(
+        <NextIntlClientProvider locale="es" messages={getMessages("es")}>
+          <StoreSectionRenderer
+            slug="demo"
+            sections={noSections}
+            catalogControls
+            catalogPagination={{ page: 1, limit: 1, total: 2 }}
+          />
+        </NextIntlClientProvider>,
+      );
+      expect(screen.queryByRole("status")).toBeNull();
+      expect(screen.queryByRole("button", { name: "Siguiente" })).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("hydrates the server markup without a mismatch when IntersectionObserver is missing", async () => {
+    vi.stubGlobal("IntersectionObserver", undefined);
+    navigation.search = "tab=productos&page=1";
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    try {
+      container.innerHTML = renderToString(catalog(1, 2));
+      expect(container.querySelector('[role="status"]')).not.toBeNull();
+      expect(container.textContent).not.toContain("Siguiente");
+
+      let root: ReturnType<typeof hydrateRoot> | undefined;
+      await act(async () => {
+        root = hydrateRoot(container, catalog(1, 2));
+      });
+      expect(errors).not.toHaveBeenCalled();
+      // After hydrating, unsupported browsers get the manual button.
+      expect(container.textContent).toContain("Siguiente");
+      await act(async () => root?.unmount());
+    } finally {
+      errors.mockRestore();
+      container.remove();
+      vi.unstubAllGlobals();
+      navigation.search = "";
+    }
+  });
+
   it("automatically requests the next page once and preserves catalog filters", async () => {
     let intersectionCallback: IntersectionObserverCallback | undefined;
     const observe = vi.fn();
