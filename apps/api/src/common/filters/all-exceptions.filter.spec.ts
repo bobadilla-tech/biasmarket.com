@@ -1,4 +1,9 @@
-import { type ArgumentsHost, BadRequestException } from "@nestjs/common";
+import {
+  type ArgumentsHost,
+  BadRequestException,
+  ConflictException,
+  GoneException,
+} from "@nestjs/common";
 import { vi } from "vitest";
 import { DuplicateOperationCodeException } from "../../modules/orders/domain/duplicate-operation-code.exception.js";
 import { DuplicateIdempotencyKeyException } from "../../modules/orders/domain/duplicate-idempotency-key.exception.js";
@@ -54,4 +59,25 @@ describe("AllExceptionsFilter", () => {
     expect(status).toHaveBeenCalledWith(400);
     expect(body).toMatchObject({ statusCode: 400, message: "Monto inválido" });
   });
+
+  it.each([
+    {
+      exception: new ConflictException("Payload differs"),
+      expectedStatus: 409,
+    },
+    {
+      exception: new GoneException("Order is no longer available"),
+      expectedStatus: 410,
+    },
+  ])(
+    "preserves checkout replay status $expectedStatus without exposing an order id",
+    ({ exception, expectedStatus }) => {
+      const { status, body } = run(exception);
+
+      expect(status).toHaveBeenCalledWith(expectedStatus);
+      expect(body).toMatchObject({ statusCode: expectedStatus });
+      expect(JSON.stringify(body)).not.toContain("order-1");
+      expect(body).not.toHaveProperty("orderId");
+    },
+  );
 });

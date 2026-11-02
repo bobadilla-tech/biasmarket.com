@@ -95,8 +95,10 @@ test("shows validation errors when submitted empty", async () => {
   fireEvent.click(screen.getByRole("button", { name: /ingresar/i }));
 
   await waitFor(() => {
-    expect(screen.getByText("Ingresá un email válido")).toBeDefined();
-    expect(screen.getByText("Ingresá tu contraseña")).toBeDefined();
+    expect(
+      screen.getByText("Ingresa un correo electrónico válido"),
+    ).toBeDefined();
+    expect(screen.getByText("Ingresa tu contraseña")).toBeDefined();
   });
   expect(signInEmail).not.toHaveBeenCalled();
 });

@@ -17,6 +17,15 @@ export interface CreateStoreDto {
   themeConfig?: CreateStoreDtoThemeConfig;
 }
 
+export type StoreResponseDtoBuyerRegister =
+  (typeof StoreResponseDtoBuyerRegister)[keyof typeof StoreResponseDtoBuyerRegister];
+
+export const StoreResponseDtoBuyerRegister = {
+  auto: "auto",
+  tuteo: "tuteo",
+  voseo: "voseo",
+} as const;
+
 export type StoreResponseDtoThemeConfig = { [key: string]: unknown };
 
 export interface StoreResponseDto {
@@ -24,6 +33,9 @@ export interface StoreResponseDto {
   name: string;
   slug: string;
   locale: string;
+  /** @nullable */
+  countryCode: string | null;
+  buyerRegister: StoreResponseDtoBuyerRegister;
   ownerId: string;
   themeConfig: StoreResponseDtoThemeConfig;
   /** @nullable */
@@ -60,6 +72,15 @@ export interface StoreResponseDto {
   createdAt: string;
 }
 
+export type StoreWithOwnerResponseDtoBuyerRegister =
+  (typeof StoreWithOwnerResponseDtoBuyerRegister)[keyof typeof StoreWithOwnerResponseDtoBuyerRegister];
+
+export const StoreWithOwnerResponseDtoBuyerRegister = {
+  auto: "auto",
+  tuteo: "tuteo",
+  voseo: "voseo",
+} as const;
+
 export type StoreWithOwnerResponseDtoThemeConfig = { [key: string]: unknown };
 
 export interface StoreOwnerResponseDto {
@@ -74,6 +95,9 @@ export interface StoreWithOwnerResponseDto {
   name: string;
   slug: string;
   locale: string;
+  /** @nullable */
+  countryCode: string | null;
+  buyerRegister: StoreWithOwnerResponseDtoBuyerRegister;
   ownerId: string;
   themeConfig: StoreWithOwnerResponseDtoThemeConfig;
   /** @nullable */
@@ -111,11 +135,23 @@ export interface StoreWithOwnerResponseDto {
   owner: StoreOwnerResponseDto;
 }
 
+export type UpdateStoreDtoBuyerRegister =
+  (typeof UpdateStoreDtoBuyerRegister)[keyof typeof UpdateStoreDtoBuyerRegister];
+
+export const UpdateStoreDtoBuyerRegister = {
+  auto: "auto",
+  tuteo: "tuteo",
+  voseo: "voseo",
+} as const;
+
 export type UpdateStoreDtoThemeConfig = { [key: string]: unknown };
 
 export interface UpdateStoreDto {
   name?: string;
   locale?: string;
+  /** @nullable */
+  countryCode?: string | null;
+  buyerRegister?: UpdateStoreDtoBuyerRegister;
   whatsappNumber?: string;
   /** @nullable */
   instagramUrl?: string | null;
@@ -248,6 +284,7 @@ export interface PublicProductWithVariantsResponseDto {
   status: PublicProductWithVariantsResponseDtoStatus;
   soldOut: boolean;
   discontinued: boolean;
+  shipsInternationally: boolean;
   /** @nullable */
   deletedAt: string | null;
   createdAt: string;
@@ -269,6 +306,15 @@ export interface StorefrontCatalogRequestDto {
   slug: string;
   query?: StorefrontCatalogRequestDtoQuery;
 }
+
+export type StorePublicDetailResponseDtoBuyerRegister =
+  (typeof StorePublicDetailResponseDtoBuyerRegister)[keyof typeof StorePublicDetailResponseDtoBuyerRegister];
+
+export const StorePublicDetailResponseDtoBuyerRegister = {
+  auto: "auto",
+  tuteo: "tuteo",
+  voseo: "voseo",
+} as const;
 
 export type StorePublicDetailResponseDtoThemeConfig = {
   [key: string]: unknown;
@@ -323,6 +369,9 @@ export interface StorePublicDetailResponseDto {
   name: string;
   slug: string;
   locale: string;
+  /** @nullable */
+  countryCode: string | null;
+  buyerRegister: StorePublicDetailResponseDtoBuyerRegister;
   ownerId: string;
   themeConfig: StorePublicDetailResponseDtoThemeConfig;
   /** @nullable */
@@ -414,6 +463,7 @@ export interface CreateProductDto {
   price: number;
   soldOut?: boolean;
   discontinued?: boolean;
+  shipsInternationally?: boolean;
   availableUntil?: string;
   currency?: string;
   /** @minimum 0 */
@@ -459,6 +509,7 @@ export interface ProductWithVariantsResponseDto {
   status: ProductWithVariantsResponseDtoStatus;
   soldOut: boolean;
   discontinued: boolean;
+  shipsInternationally: boolean;
   /** @nullable */
   deletedAt: string | null;
   createdAt: string;
@@ -497,6 +548,7 @@ export interface ProductDetailResponseDto {
   status: ProductDetailResponseDtoStatus;
   soldOut: boolean;
   discontinued: boolean;
+  shipsInternationally: boolean;
   /** @nullable */
   deletedAt: string | null;
   createdAt: string;
@@ -517,6 +569,7 @@ export interface UpdateProductDto {
   price?: number;
   soldOut?: boolean;
   discontinued?: boolean;
+  shipsInternationally?: boolean;
   availableUntil?: string;
   currency?: string;
 }
@@ -542,6 +595,7 @@ export interface ProductResponseDto {
   status: ProductResponseDtoStatus;
   soldOut: boolean;
   discontinued: boolean;
+  shipsInternationally: boolean;
   /** @nullable */
   deletedAt: string | null;
   createdAt: string;
@@ -581,6 +635,7 @@ export interface SearchProductResponseDto {
   price: string;
   currency: string;
   images: string[];
+  shipsInternationally: boolean;
   store: SearchProductStoreResponseDto;
 }
 
@@ -2758,6 +2813,8 @@ export interface CustomerProfileCustomerResponseDto {
   pendingEmail: string | null;
   /** @nullable */
   pendingPhone: string | null;
+  /** @nullable */
+  countryCode: string | null;
 }
 
 export interface CustomerProfileResponseDto {
@@ -2771,6 +2828,8 @@ export interface UpdateCustomerProfileDto {
   email?: string;
   /** @minLength 1 */
   phone?: string;
+  /** @nullable */
+  countryCode?: string | null;
 }
 
 export interface UpdateCustomerProfileResponseDto {
@@ -2780,6 +2839,8 @@ export interface UpdateCustomerProfileResponseDto {
   pendingEmail: string | null;
   /** @nullable */
   pendingPhone: string | null;
+  /** @nullable */
+  countryCode: string | null;
 }
 
 export interface LinkedStoreResponseDto {

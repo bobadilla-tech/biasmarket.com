@@ -12,6 +12,8 @@ import {
 } from "class-validator";
 import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
 import { IsSafeMarkdown } from "../../../common/is-safe-markdown.validator.js";
+import { COUNTRY_CODES } from "@biasmarket/utils/countries";
+import { REGISTER_SETTINGS } from "@biasmarket/utils/register";
 
 export class UpdateStoreDto {
   @IsOptional()
@@ -21,6 +23,14 @@ export class UpdateStoreDto {
   @IsOptional()
   @IsIn(["es", "en"])
   locale?: string;
+
+  @IsOptional()
+  @IsIn(COUNTRY_CODES)
+  countryCode?: string | null;
+
+  @IsOptional()
+  @IsIn(REGISTER_SETTINGS)
+  buyerRegister?: (typeof REGISTER_SETTINGS)[number];
 
   @IsOptional()
   @IsString()

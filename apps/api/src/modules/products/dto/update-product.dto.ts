@@ -40,6 +40,10 @@ export class UpdateProductDto {
   @IsBoolean()
   discontinued?: boolean;
 
+  @IsOptional()
+  @IsBoolean()
+  shipsInternationally?: boolean;
+
   // The swagger plugin only reads literal `@ArrayMaxSize` arguments, so the
   // cap is declared explicitly for the OpenAPI schema.
   @ApiPropertyOptional({ type: [String], maxItems: MAX_PRODUCT_IMAGES })

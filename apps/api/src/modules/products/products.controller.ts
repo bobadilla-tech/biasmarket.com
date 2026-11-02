@@ -60,6 +60,7 @@ type ProductRow = {
   status: "DRAFT" | "PUBLISHED";
   soldOut: boolean;
   discontinued: boolean;
+  shipsInternationally: boolean;
   deletedAt: Date | null;
   createdAt: Date;
 };
@@ -89,6 +90,7 @@ function toProductDto(product: ProductRow): ProductResponseDto {
     status: product.status,
     soldOut: product.soldOut,
     discontinued: product.discontinued,
+    shipsInternationally: product.shipsInternationally,
     deletedAt: product.deletedAt?.toISOString() ?? null,
     createdAt: product.createdAt.toISOString(),
   };

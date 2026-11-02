@@ -2,9 +2,13 @@ import { betterAuth } from "better-auth";
 import { admin } from "better-auth/plugins/admin";
 import { bearer } from "better-auth/plugins/bearer";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { Logger } from "@nestjs/common";
+import { z } from "zod";
 import type { Auth } from "@thallesp/nestjs-better-auth";
 import { escapeHtml } from "@biasmarket/utils/strings";
+import { parseCountry } from "@biasmarket/utils/geo";
+import { REGISTER_SETTINGS } from "@biasmarket/utils/register";
 import { PrismaService } from "../prisma/prisma.service.js";
 import type { MailerService } from "../mailer/mailer.service.js";
 import { discardUnverifiedCredentials } from "./google-link-cleanup.js";
@@ -38,8 +42,9 @@ function buildVerificationEmailHtml(url: string): string {
 export const createAuth = (
   prisma: PrismaService,
   mailer: MailerService,
-): Auth =>
-  betterAuth({
+): Auth => {
+  let auth: Auth;
+  auth = betterAuth({
     url: process.env.BETTER_AUTH_URL,
     secret: process.env.BETTER_AUTH_SECRET,
     database: prismaAdapter(prisma, { provider: "postgresql" }),
@@ -125,8 +130,47 @@ export const createAuth = (
         adminRoles: ["admin"],
       }),
     ],
+    hooks: {
+      before: createAuthMiddleware(async (ctx) => {
+        if (
+          ctx.path !== "/update-user" ||
+          !ctx.body ||
+          typeof ctx.body !== "object"
+        ) {
+          return;
+        }
+
+        const body = ctx.body as Record<string, unknown>;
+        if (!("countryCode" in body) && !("uiRegister" in body)) return;
+
+        const session = await auth.api.getSession({ headers: ctx.headers });
+        if (session?.session.impersonatedBy) {
+          throw new APIError("FORBIDDEN", {
+            message:
+              "Register preferences cannot be changed while impersonating a user",
+          });
+        }
+      }),
+    },
     user: {
       additionalFields: {
+        countryCode: {
+          type: "string",
+          required: false,
+          input: true,
+          validator: {
+            input: z.string().refine((value) => parseCountry(value) === value, {
+              message: "countryCode must be an uppercase ISO alpha-2 code",
+            }),
+          },
+        },
+        uiRegister: {
+          type: "string",
+          required: false,
+          defaultValue: "auto",
+          input: true,
+          validator: { input: z.enum(REGISTER_SETTINGS) },
+        },
         // Expose the coupon-granted plan/expiry on the session so the
         // frontend can show premium status (e.g. "You're premium until …").
         // Read-only from the client's perspective — always updated server-side
@@ -197,3 +241,5 @@ export const createAuth = (
       },
     },
   });
+  return auth;
+};
