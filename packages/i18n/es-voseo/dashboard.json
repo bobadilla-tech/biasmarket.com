@@ -27,12 +27,16 @@
       "customColorLabel": "Elegí tu color"
     },
     "payments": {
+      "description": "Aceptá pagos con los métodos disponibles para tu tienda.",
       "items": {
         "transfer": {
           "description": "Usá las instrucciones de pago para compartir la cuenta."
         }
       },
       "setupNudgeDescription": "Al configurar los datos reales de un método (Yape, Plin o transferencia), Bias Market puede vincular cada abono con su pedido y mantener el estado sincronizado mientras lo revisás. Tu tienda funciona igual sin esto — podés seguir coordinando todos los pedidos por WhatsApp, nada se bloquea."
+    },
+    "notifications": {
+      "description": "Configurá las alertas que recibís sobre pedidos y stock."
     },
     "delivery": {
       "availabilitySheetDescription": "Elegí los días en que este punto recibe pedidos. También podés desactivarlo temporalmente.",
