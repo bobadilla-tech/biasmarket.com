@@ -58,6 +58,7 @@ describe("checkout upload limits", () => {
           provide: StorageService,
           useValue: {
             uploadPaymentImage: vi.fn().mockResolvedValue("https://img/x"),
+            deleteImage: vi.fn().mockResolvedValue(undefined),
           },
         },
         {

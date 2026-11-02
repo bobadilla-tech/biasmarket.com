@@ -265,7 +265,7 @@ export class CheckoutController {
         proofImageUrl &&
         !order.payments?.some((p) => p.imageUrl === proofImageUrl)
       ) {
-        await this.storage.deleteImage(proofImageUrl).catch((err) => {
+        await this.storage?.deleteImage?.(proofImageUrl)?.catch((err) => {
           this.logger.warn(`Failed to clean up unused proof image: ${err}`);
         });
       }
@@ -273,7 +273,7 @@ export class CheckoutController {
       return { order: toCheckoutOrderDto(order), whatsappUrl };
     } catch (error) {
       if (proofImageUrl) {
-        await this.storage.deleteImage(proofImageUrl).catch((err) => {
+        await this.storage?.deleteImage?.(proofImageUrl)?.catch((err) => {
           this.logger.warn(`Failed to clean up proof image on error: ${err}`);
         });
       }
