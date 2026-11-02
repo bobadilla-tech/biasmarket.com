@@ -98,6 +98,14 @@ biasmarket.com {
 		respond 404
 	}
 
+
+	# This is an internal Next.js header and should never be sent by public clients.
+	# Reject probes before proxying so they cannot pollute web logs.
+	@nextMiddlewareProbe header x-middleware-subrequest *
+	handle @nextMiddlewareProbe {
+		respond 400
+	}
+
 	import /etc/caddy/active/web.caddy
 }
 
