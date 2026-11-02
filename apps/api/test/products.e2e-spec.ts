@@ -198,7 +198,7 @@ describe("products (e2e)", () => {
     );
   });
 
-  it("rejects 7 images on create (POST) and update (PATCH) with 400, accepts 6", async () => {
+  it("rejects client-supplied images on create and update", async () => {
     const urls = (n: number) =>
       Array.from(
         { length: n },
@@ -227,21 +227,21 @@ describe("products (e2e)", () => {
         price: 5,
         currency: "USD",
         stock: 1,
-        images: urls(6),
       })
       .expect(201);
     const capProductId = created.body.id as string;
+    expect(created.body.images).toEqual([]);
 
     try {
       await request(app.getHttpServer())
         .patch(`/stores/${storeId}/products/${capProductId}`)
         .set("Cookie", sessionCookie)
-        .send({ images: urls(7) })
+        .send({ images: urls(6) })
         .expect(400);
       const row = await prisma.product.findUniqueOrThrow({
         where: { id: capProductId },
       });
-      expect(row.images).toHaveLength(6);
+      expect(row.images).toEqual([]);
     } finally {
       await prisma.productVariant.deleteMany({
         where: { productId: capProductId },
