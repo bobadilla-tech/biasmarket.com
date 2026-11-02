@@ -1553,6 +1553,7 @@ describe("CustomerAuthService", () => {
       expect(prisma.buyerAccount.update).toHaveBeenCalledWith({
         where: { id: "buyer-1" },
         data: {
+          countryCode: null,
           phone: null,
           passwordHash: null,
           passwordVersion: { increment: 1 },
