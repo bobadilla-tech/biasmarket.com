@@ -99,15 +99,13 @@ describe("checkout idempotency race (e2e)", () => {
       .patch(`/api/stores/${storeId}/products/${productId}/publish`)
       .set("Cookie", sessionCookie)
       .expect(200);
-    await prisma.deliveryMethodConfig.create({
-      data: { storeId, type: "PICKUP", details: { estimatedCost: 0 } },
+    await prisma.deliveryMethodConfig.update({
+      where: { storeId_type: { storeId, type: "PICKUP" } },
+      data: { details: { estimatedCost: 0 } },
     });
-    await prisma.paymentMethodConfig.create({
-      data: {
-        storeId,
-        method: "YAPE",
-        details: { phoneNumber: "999000000" },
-      },
+    await prisma.paymentMethodConfig.update({
+      where: { storeId_method: { storeId, method: "YAPE" } },
+      data: { details: { phoneNumber: "999000000" } },
     });
   });
 
