@@ -188,6 +188,14 @@ export default function ProductDetailScreen() {
             </Text>
           </Pressable>
         ) : null}
+        {cart.error ? (
+          <Text
+            accessibilityRole="alert"
+            className="text-center text-sm text-red-200"
+          >
+            {t("cart.saveFailed")}
+          </Text>
+        ) : null}
         <Pressable
           accessibilityRole="button"
           className="rounded-xl bg-brand-pink px-5 py-3"
@@ -223,6 +231,9 @@ function VariantRow({
     .map(([key, value]) => `${key}: ${String(value)}`)
     .join(" · ");
   const price = variant.priceOverride ?? basePrice;
+  const soldOut =
+    disabled ||
+    (variant.stock !== null && variant.stock - variant.reserved <= 0);
 
   return (
     <View className="flex-row items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
@@ -255,11 +266,8 @@ function VariantRow({
         ) : null}
         <Pressable
           accessibilityRole="button"
-          disabled={
-            disabled ||
-            (variant.stock !== null && variant.stock - variant.reserved <= 0)
-          }
-          className={`rounded-lg px-3 py-2 ${disabled ? "bg-white/15" : "bg-brand-pink"}`}
+          disabled={soldOut}
+          className={`rounded-lg px-3 py-2 ${soldOut ? "bg-white/15" : "bg-brand-pink"}`}
           onPress={onAdd}
         >
           <Text className="text-xs font-bold text-brand-ink">
