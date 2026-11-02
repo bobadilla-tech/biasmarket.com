@@ -590,6 +590,25 @@ export default function CheckoutScreen() {
                   setField("shippingRecipientSurnames", value)
                 }
               />
+              <Text className="font-medium text-white">
+                {t("checkout.documentType")}
+              </Text>
+              {(["DNI", "CE", "RUC", "PASSPORT"] as const).map((type) => (
+                <Choice
+                  key={type}
+                  label={type}
+                  selected={form.shippingDocumentType === type}
+                  onPress={() => setField("shippingDocumentType", type)}
+                />
+              ))}
+              <Field
+                label={t("checkout.documentNumber")}
+                keyboardType="default"
+                value={form.shippingDocumentNumber}
+                onChangeText={(value) =>
+                  setField("shippingDocumentNumber", value)
+                }
+              />
               <Field
                 label={t("checkout.contactPhone")}
                 keyboardType="phone-pad"
