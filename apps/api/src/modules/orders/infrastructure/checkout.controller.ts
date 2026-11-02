@@ -23,6 +23,7 @@ import { validate } from "class-validator";
 import { isPaymentMethodConfigured } from "@biasmarket/utils/payment-methods";
 import { CreateOrderUseCase } from "../application/create-order.usecase.js";
 import { CreateOrderDto } from "../dto/create-order.dto.js";
+import { CreateCheckoutRequestDto } from "../dto/create-checkout-request.dto.js";
 import { StorageService } from "../../../storage/storage.service.js";
 import { pickPublicOrderFields } from "./order.controller.js";
 import { requiredEnv } from "../../../config/env.validation.js";
@@ -203,12 +204,10 @@ export class CheckoutController {
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @ApiConsumes("multipart/form-data")
-  // The body schema reuses CreateOrderDto so the committed OpenAPI keeps
-  // documenting the full checkout contract. The DTO's `items`/`shippingAddress`
-  // arrive as JSON-string form fields (parsed in buildValidatedDto); swagger
-  // marks non-primitive properties as application/json-encoded under
-  // multipart/form-data, which matches that transport.
-  @ApiBody({ type: CreateOrderDto })
+  // The body schema reuses the order fields and adds the optional multipart
+  // proof image. The DTO's `items`/`shippingAddress` arrive as JSON-string form
+  // fields (parsed in buildValidatedDto).
+  @ApiBody({ type: CreateCheckoutRequestDto })
   @ApiHeader({
     name: "Idempotency-Key",
     required: false,

@@ -9076,6 +9076,11 @@
       "CreateOrderDto": {
         "type": "object",
         "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "description": "Payment proof file (JPEG, PNG, or PDF). Required for configured non-cash payment methods."
+          },
           "deliveryMethodType": {
             "type": "string",
             "enum": ["PICKUP", "COURIER"]
