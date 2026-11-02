@@ -546,28 +546,31 @@ describe("storefront empty states", () => {
         thresholds = [];
       },
     );
-    withMessages(
-      <StoreSectionRenderer
-        slug="tienda"
-        sections={[]}
-        catalogControls
-        serverSorted
-        catalogPagination={{ page: 1, limit: 24, total: 60 }}
-      />,
-    );
-
-    expect(observerCallbacks.length).toBeGreaterThan(0);
-    act(() => {
-      observerCallbacks.at(-1)?.(
-        [{ isIntersecting: true } as IntersectionObserverEntry],
-        {} as IntersectionObserver,
+    try {
+      withMessages(
+        <StoreSectionRenderer
+          slug="tienda"
+          sections={[]}
+          catalogControls
+          serverSorted
+          catalogPagination={{ page: 1, limit: 24, total: 60 }}
+        />,
       );
-    });
-    expect(navigation.push).toHaveBeenCalledWith(
-      "/es/store/tienda?tab=productos&page=2",
-      { scroll: false },
-    );
-    vi.unstubAllGlobals();
+
+      expect(observerCallbacks.length).toBeGreaterThan(0);
+      act(() => {
+        observerCallbacks.at(-1)?.(
+          [{ isIntersecting: true } as IntersectionObserverEntry],
+          {} as IntersectionObserver,
+        );
+      });
+      expect(navigation.push).toHaveBeenCalledWith(
+        "/es/store/tienda?tab=productos&page=2",
+        { scroll: false },
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("keeps legacy text blocks in the accessible About tab", () => {
