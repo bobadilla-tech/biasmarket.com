@@ -208,6 +208,13 @@ function PrivatePaymentProof({
       <Text className="text-xs text-white/60">{t("orders.loadingProof")}</Text>
     );
   }
+  if (proofQuery.data?.startsWith("data:application/pdf")) {
+    return (
+      <Text className="text-xs text-white/60">
+        {t("orders.proofPdfUnsupported")}
+      </Text>
+    );
+  }
   if (
     proofQuery.error ||
     !proofQuery.data ||

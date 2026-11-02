@@ -211,6 +211,7 @@
     "noPayments": "No payments have been recorded for this order yet.",
     "loadingProof": "Loading private receipt…",
     "proofFailed": "Could not load the payment receipt.",
+    "proofPdfUnsupported": "This payment receipt is a PDF. The app cannot display PDF receipts.",
     "payment": "Payment",
     "privatePaymentProof": "Private payment receipt",
     "paymentStatus": {
