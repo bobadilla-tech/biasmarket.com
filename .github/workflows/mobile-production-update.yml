@@ -15,6 +15,7 @@ jobs:
   update:
     name: Publish OTA update to production
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     timeout-minutes: 90
     environment: mobile-production
     concurrency:
@@ -35,6 +36,8 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Confirm OTA support is installed
+        run: bash scripts/ci/check-mobile-ota-ready.sh
       - name: Publish JavaScript update
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -43,5 +46,4 @@ jobs:
         run: |
           test -n "$EXPO_TOKEN" || (echo "EXPO_TOKEN is required in mobile-production" && exit 1)
           test -n "$EAS_PROJECT_ID" || (echo "EAS_PROJECT_ID is required in mobile-production" && exit 1)
-          cd apps/mobile
-          pnpm dlx eas-cli update --channel production --message "$UPDATE_MESSAGE" --non-interactive
+          pnpm --filter mobile exec eas update --channel production --environment production --message "$UPDATE_MESSAGE" --non-interactive
