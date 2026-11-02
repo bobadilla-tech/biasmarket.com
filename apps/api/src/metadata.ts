@@ -366,6 +366,7 @@ export default async () => {
               status: { required: true, enum: ['DRAFT', 'PUBLISHED'] },
               soldOut: { required: true, type: () => Boolean },
               discontinued: { required: true, type: () => Boolean },
+              shipsInternationally: { required: true, type: () => Boolean },
               deletedAt: { required: true, type: () => String, nullable: true },
               createdAt: { required: true, type: () => String },
               variants: {
@@ -538,6 +539,7 @@ export default async () => {
               price: { required: true, type: () => Number },
               soldOut: { required: false, type: () => Boolean },
               discontinued: { required: false, type: () => Boolean },
+              shipsInternationally: { required: false, type: () => Boolean },
               images: { required: false, type: () => [String] },
               availableUntil: { required: false, type: () => String },
               currency: { required: false, type: () => String },
@@ -562,6 +564,7 @@ export default async () => {
               price: { required: false, type: () => Number },
               soldOut: { required: false, type: () => Boolean },
               discontinued: { required: false, type: () => Boolean },
+              shipsInternationally: { required: false, type: () => Boolean },
               images: { required: false, type: () => [String] },
               availableUntil: { required: false, type: () => String },
               currency: { required: false, type: () => String },
@@ -656,6 +659,7 @@ export default async () => {
               status: { required: true, enum: ['DRAFT', 'PUBLISHED'] },
               soldOut: { required: true, type: () => Boolean },
               discontinued: { required: true, type: () => Boolean },
+              shipsInternationally: { required: true, type: () => Boolean },
               deletedAt: { required: true, type: () => String, nullable: true },
               createdAt: { required: true, type: () => String },
             },
@@ -698,6 +702,7 @@ export default async () => {
               price: { required: true, type: () => String },
               currency: { required: true, type: () => String },
               images: { required: true, type: () => [String] },
+              shipsInternationally: { required: true, type: () => Boolean },
               store: {
                 required: true,
                 type: () =>

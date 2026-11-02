@@ -145,19 +145,20 @@ model Store {
 }
 
 model Product {
-  id             String        @id @default(cuid())
-  storeId        String
-  name           String
-  description    String        @default("")
-  price          Decimal       @db.Decimal(10, 2)
-  currency       String        @default("PEN")
-  images         String[]      @default([])
-  availableUntil DateTime?
-  status         ProductStatus @default(DRAFT)
-  soldOut        Boolean       @default(false)
-  discontinued   Boolean       @default(false)
-  deletedAt      DateTime?
-  createdAt      DateTime      @default(now())
+  id                   String        @id @default(cuid())
+  storeId              String
+  name                 String
+  description          String        @default("")
+  price                Decimal       @db.Decimal(10, 2)
+  currency             String        @default("PEN")
+  images               String[]      @default([])
+  availableUntil       DateTime?
+  status               ProductStatus @default(DRAFT)
+  soldOut              Boolean       @default(false)
+  discontinued         Boolean       @default(false)
+  shipsInternationally Boolean       @default(true)
+  deletedAt            DateTime?
+  createdAt            DateTime      @default(now())
 
   store           Store               @relation(fields: [storeId], references: [id])
   variants        ProductVariant[]

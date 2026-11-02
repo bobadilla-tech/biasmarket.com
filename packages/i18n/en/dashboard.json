@@ -39,6 +39,7 @@
       "priceBaseHelp": "Only used when a variant has no price of its own.",
       "currencyLabel": "Currency",
       "availabilityLabel": "Availability",
+      "shipsInternationally": "Ships internationally",
       "stockLabel": "Stock",
       "stockPlaceholder": "Optional",
       "stockHelp": "Leave empty for unlimited stock.",

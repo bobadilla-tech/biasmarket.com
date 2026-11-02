@@ -10,6 +10,7 @@ const PRODUCT_SELECT = {
   price: true,
   currency: true,
   images: true,
+  shipsInternationally: true,
   store: { select: { name: true, slug: true } },
 } as const;
 

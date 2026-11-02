@@ -34,6 +34,7 @@ export function useUpdateProduct(storeId: string | undefined) {
       stock: string;
       categoryId: string;
       availability: "AVAILABLE" | "OUT_OF_STOCK" | "DISCONTINUED";
+      shipsInternationally: boolean;
       imageFiles: File[];
       existingImages: string[];
       variants: VariantDraft[];
@@ -53,6 +54,7 @@ export function useUpdateProduct(storeId: string | undefined) {
           currency: input.currency,
           soldOut,
           discontinued,
+          shipsInternationally: input.shipsInternationally,
           categoryIds: input.categoryId ? [input.categoryId] : [],
         },
         { fallbackErrorMessage: input.fallbackErrorMessage },

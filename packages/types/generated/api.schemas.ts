@@ -248,6 +248,7 @@ export interface PublicProductWithVariantsResponseDto {
   status: PublicProductWithVariantsResponseDtoStatus;
   soldOut: boolean;
   discontinued: boolean;
+  shipsInternationally: boolean;
   /** @nullable */
   deletedAt: string | null;
   createdAt: string;
@@ -414,6 +415,7 @@ export interface CreateProductDto {
   price: number;
   soldOut?: boolean;
   discontinued?: boolean;
+  shipsInternationally?: boolean;
   availableUntil?: string;
   currency?: string;
   /** @minimum 0 */
@@ -459,6 +461,7 @@ export interface ProductWithVariantsResponseDto {
   status: ProductWithVariantsResponseDtoStatus;
   soldOut: boolean;
   discontinued: boolean;
+  shipsInternationally: boolean;
   /** @nullable */
   deletedAt: string | null;
   createdAt: string;
@@ -497,6 +500,7 @@ export interface ProductDetailResponseDto {
   status: ProductDetailResponseDtoStatus;
   soldOut: boolean;
   discontinued: boolean;
+  shipsInternationally: boolean;
   /** @nullable */
   deletedAt: string | null;
   createdAt: string;
@@ -517,6 +521,7 @@ export interface UpdateProductDto {
   price?: number;
   soldOut?: boolean;
   discontinued?: boolean;
+  shipsInternationally?: boolean;
   availableUntil?: string;
   currency?: string;
 }
@@ -542,6 +547,7 @@ export interface ProductResponseDto {
   status: ProductResponseDtoStatus;
   soldOut: boolean;
   discontinued: boolean;
+  shipsInternationally: boolean;
   /** @nullable */
   deletedAt: string | null;
   createdAt: string;
@@ -581,6 +587,7 @@ export interface SearchProductResponseDto {
   price: string;
   currency: string;
   images: string[];
+  shipsInternationally: boolean;
   store: SearchProductStoreResponseDto;
 }
 

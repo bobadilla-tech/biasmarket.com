@@ -6572,6 +6572,9 @@
           "discontinued": {
             "type": "boolean"
           },
+          "shipsInternationally": {
+            "type": "boolean"
+          },
           "deletedAt": {
             "type": "string",
             "nullable": true,
@@ -6606,6 +6609,7 @@
           "status",
           "soldOut",
           "discontinued",
+          "shipsInternationally",
           "deletedAt",
           "createdAt",
           "variants",
@@ -7030,6 +7034,9 @@
           "discontinued": {
             "type": "boolean"
           },
+          "shipsInternationally": {
+            "type": "boolean"
+          },
           "availableUntil": {
             "type": "string"
           },
@@ -7140,6 +7147,9 @@
           "discontinued": {
             "type": "boolean"
           },
+          "shipsInternationally": {
+            "type": "boolean"
+          },
           "deletedAt": {
             "type": "string",
             "nullable": true,
@@ -7168,6 +7178,7 @@
           "status",
           "soldOut",
           "discontinued",
+          "shipsInternationally",
           "deletedAt",
           "createdAt",
           "variants"
@@ -7242,6 +7253,9 @@
           "discontinued": {
             "type": "boolean"
           },
+          "shipsInternationally": {
+            "type": "boolean"
+          },
           "deletedAt": {
             "type": "string",
             "nullable": true,
@@ -7283,6 +7297,7 @@
           "status",
           "soldOut",
           "discontinued",
+          "shipsInternationally",
           "deletedAt",
           "createdAt",
           "variants",
@@ -7321,6 +7336,9 @@
             "type": "boolean"
           },
           "discontinued": {
+            "type": "boolean"
+          },
+          "shipsInternationally": {
             "type": "boolean"
           },
           "availableUntil": {
@@ -7373,6 +7391,9 @@
           "discontinued": {
             "type": "boolean"
           },
+          "shipsInternationally": {
+            "type": "boolean"
+          },
           "deletedAt": {
             "type": "string",
             "nullable": true,
@@ -7395,6 +7416,7 @@
           "status",
           "soldOut",
           "discontinued",
+          "shipsInternationally",
           "deletedAt",
           "createdAt"
         ]
@@ -7474,11 +7496,22 @@
               "type": "string"
             }
           },
+          "shipsInternationally": {
+            "type": "boolean"
+          },
           "store": {
             "$ref": "#/components/schemas/SearchProductStoreResponseDto"
           }
         },
-        "required": ["id", "name", "price", "currency", "images", "store"]
+        "required": [
+          "id",
+          "name",
+          "price",
+          "currency",
+          "images",
+          "shipsInternationally",
+          "store"
+        ]
       },
       "ProductSearchResultResponseDto": {
         "type": "object",
