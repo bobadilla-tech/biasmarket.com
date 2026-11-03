@@ -233,6 +233,8 @@ describe("PaymentConfigService", () => {
     it("saves only changed fields and payment instructions in one transaction", async () => {
       prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
       transaction.store.findUnique.mockResolvedValue({
+        id: storeId,
+        ownerId,
         paymentInstructions: "old",
       });
       transaction.paymentMethodConfig.findMany.mockResolvedValue([
@@ -276,6 +278,8 @@ describe("PaymentConfigService", () => {
     it("rejects stale payment edits before writing any changes", async () => {
       prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
       transaction.store.findUnique.mockResolvedValue({
+        id: storeId,
+        ownerId,
         paymentInstructions: "old",
       });
       transaction.paymentMethodConfig.findMany.mockResolvedValue([

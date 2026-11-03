@@ -50,7 +50,9 @@
       "setupNudgeDescription": "Al configurar los datos reales de un método (Yape, Plin o transferencia), Bias Market puede vincular cada abono con su pedido y mantener el estado sincronizado mientras lo revisás. Tu tienda funciona igual sin esto — podés seguir coordinando todos los pedidos por WhatsApp, nada se bloquea."
     },
     "notifications": {
-      "description": "Configurá las alertas que recibís sobre pedidos y stock."
+      "description": "Configurá las alertas que recibís sobre pedidos y stock.",
+      "thresholdLabel": "Umbral de stock bajo (unidades)",
+      "thresholdInvalid": "Ingresá un número entero igual o mayor que cero."
     },
     "delivery": {
       "availabilitySheetDescription": "Elegí los días en que este punto recibe pedidos. También podés desactivarlo temporalmente.",

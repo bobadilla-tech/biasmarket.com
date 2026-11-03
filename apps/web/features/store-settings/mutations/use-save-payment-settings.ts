@@ -20,7 +20,9 @@ export function useSavePaymentSettings(
     ) => settingsApi.savePaymentSettings(storeId as string, input),
     onSuccess: async (result) => {
       if (!storeId) return;
-      const response = result as { store?: Partial<DashboardStore> };
+      const response = result as unknown as {
+        store?: Partial<DashboardStore>;
+      };
       if (response.store) updateStoreCache(slug, response.store);
       await Promise.all([
         queryClient.invalidateQueries({
