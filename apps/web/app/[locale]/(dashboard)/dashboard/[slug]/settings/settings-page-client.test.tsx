@@ -29,7 +29,16 @@ vi.mock("@/features/store-settings", () => ({
   NotificationsSection: () => null,
   PaymentsSection: () => null,
   ProfileSection: () => null,
-  StoreContentSection: () => null,
+  StoreContentSection: ({
+    onPreviewChange,
+  }: {
+    onPreviewChange?: (values: { bio: string }) => void;
+  }) => (
+    <input
+      aria-label="Bio"
+      onChange={(event) => onPreviewChange?.({ bio: event.target.value })}
+    />
+  ),
   useWhatsAppTemplates: () => ({ data: undefined, isPending: false }),
   WhatsAppMessagesSection: () => null,
 }));
@@ -69,6 +78,20 @@ test("renders five accessible tabs and updates the URL when changing sections", 
   expect(
     screen.getByRole("tabpanel", { name: "Métodos de pago aceptados" }),
   ).toBeTruthy();
+});
+
+test("wires the store-content bio draft into the live preview", () => {
+  render(
+    <NextIntlClientProvider locale="es" messages={getMessages("es")}>
+      <SettingsPageClient />
+    </NextIntlClientProvider>,
+  );
+
+  fireEvent.change(screen.getByRole("textbox", { name: "Bio" }), {
+    target: { value: "Draft bio" },
+  });
+
+  expect(screen.getByText("Draft bio")).toBeTruthy();
 });
 
 test("keeps a visited tab mounted and advances focus for consecutive arrow keys", () => {

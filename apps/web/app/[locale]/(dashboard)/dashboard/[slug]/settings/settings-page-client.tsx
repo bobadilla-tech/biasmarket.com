@@ -293,7 +293,7 @@ function SettingsPageContent() {
           ))}
         </div>
 
-        {TAB_IDS.filter((tab) => visitedTabs.has(tab)).map((tab) => (
+        {TAB_IDS.map((tab) => (
           <section
             key={tab}
             id={`settings-panel-${tab}`}
@@ -302,90 +302,97 @@ function SettingsPageContent() {
             hidden={activeTab !== tab}
             className="min-h-[24rem] space-y-5 focus-visible:outline-none"
           >
-            {tab === "store" ? (
+            {visitedTabs.has(tab) ? (
               <>
-                <RegisterPreferenceSection />
-                <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
-                  <div className="min-w-0 space-y-5">
-                    <ProfileSection
-                      store={store}
-                      onPreviewChange={updateStorePreview}
-                    />
-                    <StoreContentSection
-                      store={store}
-                      onPreviewChange={updateStorePreview}
-                    />
-                  </div>
-                  <details className="group lg:hidden">
-                    <summary className="cursor-pointer list-none rounded-[28px] border border-[#eadcf7] bg-white px-5 py-4 text-sm font-semibold text-[#5b3d80] shadow-sm marker:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8a45cc] [&::-webkit-details-marker]:hidden">
-                      <span>{t("storeContent.previewLabel")}</span>
-                      <span className="float-right text-xs font-medium text-[#8f7da8] group-open:hidden">
-                        {t("storeContent.previewShow")}
-                      </span>
-                      <span className="float-right hidden text-xs font-medium text-[#8f7da8] group-open:inline">
-                        {t("storeContent.previewHide")}
-                      </span>
-                    </summary>
-                    <div className="mt-3">
-                      <StorePreviewCard
-                        store={store}
-                        preview={storePreview}
-                        labels={getStorePreviewLabels(t)}
-                      />
+                {tab === "store" ? (
+                  <>
+                    <RegisterPreferenceSection />
+                    <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
+                      <div className="min-w-0 space-y-5">
+                        <ProfileSection
+                          store={store}
+                          onPreviewChange={updateStorePreview}
+                        />
+                        <StoreContentSection
+                          store={store}
+                          onPreviewChange={updateStorePreview}
+                        />
+                      </div>
+                      <details className="group lg:hidden">
+                        <summary className="cursor-pointer list-none rounded-[28px] border border-[#eadcf7] bg-white px-5 py-4 text-sm font-semibold text-[#5b3d80] shadow-sm marker:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8a45cc] [&::-webkit-details-marker]:hidden">
+                          <span>{t("storeContent.previewLabel")}</span>
+                          <span className="float-right text-xs font-medium text-[#8f7da8] group-open:hidden">
+                            {t("storeContent.previewShow")}
+                          </span>
+                          <span className="float-right hidden text-xs font-medium text-[#8f7da8] group-open:inline">
+                            {t("storeContent.previewHide")}
+                          </span>
+                        </summary>
+                        <div className="mt-3">
+                          <StorePreviewCard
+                            store={store}
+                            preview={storePreview}
+                            labels={getStorePreviewLabels(t)}
+                          />
+                        </div>
+                      </details>
+                      <aside className="hidden lg:sticky lg:top-5 lg:block">
+                        <StorePreviewCard
+                          store={store}
+                          preview={storePreview}
+                          labels={getStorePreviewLabels(t)}
+                        />
+                      </aside>
                     </div>
-                  </details>
-                  <aside className="hidden lg:sticky lg:top-5 lg:block">
-                    <StorePreviewCard
-                      store={store}
-                      preview={storePreview}
-                      labels={getStorePreviewLabels(t)}
+                    <DefaultsSection store={store} />
+                  </>
+                ) : null}
+                {tab === "payments" ? (
+                  <PaymentsSection
+                    storeId={store.id}
+                    initialPaymentInstructions={store.paymentInstructions ?? ""}
+                  />
+                ) : null}
+                {tab === "delivery" ? (
+                  <>
+                    <DeliverySection storeId={store.id} />
+                    <CouriersSection storeId={store.id} />
+                  </>
+                ) : null}
+                {tab === "appearance" ? (
+                  <AppearanceSection store={store} />
+                ) : null}
+                {tab === "messages" ? (
+                  <>
+                    <NotificationsSection store={store} />
+                    <WhatsAppMessagesSection
+                      storeId={store.id}
+                      templates={
+                        whatsappTemplates
+                          ? {
+                              newOrder:
+                                whatsappTemplates.newOrder?.template ?? null,
+                              paymentReminder:
+                                whatsappTemplates.paymentReminder?.template ??
+                                null,
+                              assistedOrderLink:
+                                whatsappTemplates.assistedOrderLink?.template ??
+                                null,
+                              paymentValidated:
+                                whatsappTemplates.paymentValidated?.template ??
+                                null,
+                              inTransit:
+                                whatsappTemplates.inTransit?.template ?? null,
+                              ready: whatsappTemplates.ready?.template ?? null,
+                              delivered:
+                                whatsappTemplates.delivered?.template ?? null,
+                            }
+                          : undefined
+                      }
+                      loading={whatsappLoading}
                     />
-                  </aside>
-                </div>
-                <DefaultsSection store={store} />
-              </>
-            ) : null}
-            {tab === "payments" ? (
-              <PaymentsSection
-                storeId={store.id}
-                initialPaymentInstructions={store.paymentInstructions ?? ""}
-              />
-            ) : null}
-            {tab === "delivery" ? (
-              <>
-                <DeliverySection storeId={store.id} />
-                <CouriersSection storeId={store.id} />
-              </>
-            ) : null}
-            {tab === "appearance" ? <AppearanceSection store={store} /> : null}
-            {tab === "messages" ? (
-              <>
-                <NotificationsSection store={store} />
-                <WhatsAppMessagesSection
-                  storeId={store.id}
-                  templates={
-                    whatsappTemplates
-                      ? {
-                          newOrder:
-                            whatsappTemplates.newOrder?.template ?? null,
-                          paymentReminder:
-                            whatsappTemplates.paymentReminder?.template ?? null,
-                          assistedOrderLink:
-                            whatsappTemplates.assistedOrderLink?.template ??
-                            null,
-                          paymentValidated:
-                            whatsappTemplates.paymentValidated?.template ??
-                            null,
-                          inTransit:
-                            whatsappTemplates.inTransit?.template ?? null,
-                          ready: whatsappTemplates.ready?.template ?? null,
-                          delivered:
-                            whatsappTemplates.delivered?.template ?? null,
-                        }
-                      : undefined
-                  }
-                  loading={whatsappLoading}
-                />
+                  </>
+                ) : null}
               </>
             ) : null}
           </section>

@@ -2,6 +2,7 @@ import { afterEach, expect, test, vi } from "vitest";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { renderWithProviders } from "../../../test-utils/render-with-providers";
 import { withSettingsDraftActions } from "../../../test-utils/settings-draft-test-actions";
+import { dashboardStoreKeys } from "@/features/stores";
 
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
@@ -39,7 +40,6 @@ test("loads saved payment instructions into the editor", async () => {
       initialPaymentInstructions="Pagar al recibir"
     />,
   );
-
   expect(await screen.findByLabelText("Instrucciones de pago")).toHaveProperty(
     "value",
     "Pagar al recibir",
@@ -49,12 +49,18 @@ test("loads saved payment instructions into the editor", async () => {
 test("saves the edited payment instructions", async () => {
   findAllPaymentConfig.mockResolvedValue([]);
 
-  renderWithProviders(
+  const { queryClient } = renderWithProviders(
     withSettingsDraftActions(
       <PaymentsSection storeId="store-1" initialPaymentInstructions="" />,
       "payments",
     ),
   );
+  queryClient.setQueryData(dashboardStoreKeys.bySlug("test-store"), {
+    id: "store-1",
+    slug: "test-store",
+    paymentInstructions: "",
+  });
+  updateStore.mockResolvedValue({ paymentInstructions: "Transferir al 999" });
 
   const editor = await screen.findByLabelText("Instrucciones de pago");
   fireEvent.change(editor, { target: { value: "Transferir al 999" } });
@@ -65,6 +71,9 @@ test("saves the edited payment instructions", async () => {
       paymentInstructions: "Transferir al 999",
     }),
   );
+  expect(
+    queryClient.getQueryData(dashboardStoreKeys.bySlug("test-store")),
+  ).toMatchObject({ paymentInstructions: "Transferir al 999" });
 });
 
 test("shows the setup nudge when only CASH (seeded by default) is configured", async () => {

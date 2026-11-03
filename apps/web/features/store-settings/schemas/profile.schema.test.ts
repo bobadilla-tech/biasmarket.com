@@ -27,6 +27,7 @@ test("does not include payment instructions in the profile payload", () => {
   const result = profileFormSchema.safeParse({
     name: "My Store",
     whatsappNumber: "+51987654321",
+    paymentInstructions: "Transfer 999",
     defaultCurrency: "PEN",
     locale: "es",
     buyerRegister: "auto",

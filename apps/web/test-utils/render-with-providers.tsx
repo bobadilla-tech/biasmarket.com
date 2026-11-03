@@ -12,9 +12,10 @@ export function renderWithProviders(
     defaultOptions: { queries: { retry: false, gcTime: Infinity } },
   });
 
-  return render(
+  const rendered = render(
     <NextIntlClientProvider locale={locale} messages={getMessages(locale)}>
       <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
     </NextIntlClientProvider>,
   );
+  return { ...rendered, queryClient };
 }
