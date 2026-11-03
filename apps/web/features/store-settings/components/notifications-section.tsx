@@ -32,6 +32,11 @@ export function NotificationsSection({ store }: { store: DashboardStore }) {
   const [lowStockThreshold, setLowStockThreshold] = useState(
     String(store.lowStockThreshold ?? 5),
   );
+  const parsedThreshold = Number(lowStockThreshold);
+  const thresholdIsValid =
+    lowStockThreshold.trim().length > 0 &&
+    Number.isInteger(parsedThreshold) &&
+    parsedThreshold >= 0;
 
   // Local-only placeholders for notification channels that don't have a
   // backend setting yet — orderDelivered/weeklySummary stay permanently
@@ -51,11 +56,23 @@ export function NotificationsSection({ store }: { store: DashboardStore }) {
   useSavedFlash(saveStockAlerts.isSuccess, saveStockAlerts.reset);
 
   const saveDraft = useCallback(async () => {
+    if (lowStockAlertsEnabled && !thresholdIsValid) {
+      throw new Error(t("notifications.thresholdInvalid"));
+    }
     await saveStockAlerts.mutateAsync({
       lowStockAlertsEnabled,
-      lowStockThreshold: Math.max(0, Number(lowStockThreshold) || 0),
+      lowStockThreshold: lowStockAlertsEnabled
+        ? parsedThreshold
+        : (store.lowStockThreshold ?? 5),
     });
-  }, [lowStockAlertsEnabled, lowStockThreshold, saveStockAlerts]);
+  }, [
+    lowStockAlertsEnabled,
+    parsedThreshold,
+    saveStockAlerts,
+    store.lowStockThreshold,
+    t,
+    thresholdIsValid,
+  ]);
   const discardDraft = useCallback(() => {
     setLowStockAlertsEnabled(store.lowStockAlertsEnabled ?? true);
     setLowStockThreshold(String(store.lowStockThreshold ?? 5));
@@ -66,6 +83,8 @@ export function NotificationsSection({ store }: { store: DashboardStore }) {
     dirty:
       lowStockAlertsEnabled !== (store.lowStockAlertsEnabled ?? true) ||
       lowStockThreshold !== String(store.lowStockThreshold ?? 5),
+    valid: !lowStockAlertsEnabled || thresholdIsValid,
+    validationError: t("notifications.thresholdInvalid"),
     save: saveDraft,
     discard: discardDraft,
   });
@@ -97,6 +116,11 @@ export function NotificationsSection({ store }: { store: DashboardStore }) {
               onChange={(event) => setLowStockThreshold(event.target.value)}
               className="store-theme-input h-11 w-32 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
             />
+            {!thresholdIsValid ? (
+              <p role="alert" className="mt-1 text-xs text-[#b24368]">
+                {t("notifications.thresholdInvalid")}
+              </p>
+            ) : null}
           </Field>
         ) : null}
 

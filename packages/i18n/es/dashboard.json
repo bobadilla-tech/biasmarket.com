@@ -525,6 +525,7 @@
         }
       },
       "thresholdLabel": "Umbral de stock bajo (unidades)",
+      "thresholdInvalid": "Ingresa un número entero igual o mayor que cero.",
       "comingSoon": "Próximamente"
     },
     "whatsappMessages": {

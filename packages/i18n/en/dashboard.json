@@ -525,6 +525,7 @@
         }
       },
       "thresholdLabel": "Low stock threshold (units)",
+      "thresholdInvalid": "Enter a whole number of zero or more.",
       "comingSoon": "Coming soon"
     },
     "whatsappMessages": {
