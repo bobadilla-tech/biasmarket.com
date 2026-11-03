@@ -5,7 +5,6 @@ test("accepts a valid profile payload", () => {
   const result = profileFormSchema.safeParse({
     name: "My Store",
     whatsappNumber: "+51987654321",
-    paymentInstructions: "Bank transfer to account X",
     defaultCurrency: "PEN",
     locale: "es",
     buyerRegister: "auto",
@@ -17,7 +16,6 @@ test("rejects an empty name", () => {
   const result = profileFormSchema.safeParse({
     name: "",
     whatsappNumber: "+51987654321",
-    paymentInstructions: "",
     defaultCurrency: "PEN",
     locale: "es",
     buyerRegister: "auto",
@@ -25,23 +23,24 @@ test("rejects an empty name", () => {
   expect(result.success).toBe(false);
 });
 
-test("allows empty payment instructions", () => {
+test("does not include payment instructions in the profile payload", () => {
   const result = profileFormSchema.safeParse({
     name: "My Store",
     whatsappNumber: "+51987654321",
-    paymentInstructions: "",
     defaultCurrency: "PEN",
     locale: "es",
     buyerRegister: "auto",
   });
   expect(result.success).toBe(true);
+  if (result.success) {
+    expect(result.data).not.toHaveProperty("paymentInstructions");
+  }
 });
 
 test("accepts valid locale and social link URLs", () => {
   const result = profileFormSchema.safeParse({
     name: "My Store",
     whatsappNumber: "+51987654321",
-    paymentInstructions: "",
     defaultCurrency: "PEN",
     locale: "en",
     buyerRegister: "voseo",
@@ -57,7 +56,6 @@ test("rejects invalid social link URL", () => {
   const result = profileFormSchema.safeParse({
     name: "My Store",
     whatsappNumber: "+51987654321",
-    paymentInstructions: "",
     defaultCurrency: "PEN",
     instagramUrl: "not-a-url",
   });
@@ -68,7 +66,6 @@ test("validates public location and owner name up to 60 characters", () => {
   const base = {
     name: "My Store",
     whatsappNumber: "+51987654321",
-    paymentInstructions: "",
     defaultCurrency: "PEN",
     locale: "es",
     buyerRegister: "auto",
@@ -90,7 +87,6 @@ test("allows saving the public profile without a WhatsApp number", () => {
   const result = profileFormSchema.safeParse({
     name: "My Store",
     whatsappNumber: "",
-    paymentInstructions: "",
     defaultCurrency: "PEN",
     locale: "es",
     buyerRegister: "auto",
