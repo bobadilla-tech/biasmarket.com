@@ -76,7 +76,6 @@ export function ProfileSection({
     defaultValues: {
       name: store.name ?? "",
       whatsappNumber: store.whatsappNumber ?? "",
-      paymentInstructions: store.paymentInstructions ?? "",
       defaultCurrency:
         (store.defaultCurrency as ProfileFormInput["defaultCurrency"]) ??
         SUPPORTED_CURRENCIES[0],
@@ -95,7 +94,6 @@ export function ProfileSection({
     reset({
       name: store.name ?? "",
       whatsappNumber: store.whatsappNumber ?? "",
-      paymentInstructions: store.paymentInstructions ?? "",
       defaultCurrency:
         (store.defaultCurrency as ProfileFormInput["defaultCurrency"]) ??
         SUPPORTED_CURRENCIES[0],
@@ -111,7 +109,6 @@ export function ProfileSection({
   }, [
     store.whatsappNumber,
     store.defaultCurrency,
-    store.paymentInstructions,
     store.name,
     store.locale,
     store.buyerRegister,

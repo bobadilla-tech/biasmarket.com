@@ -61,3 +61,34 @@ test("renders five accessible tabs and updates the URL when changing sections", 
     { scroll: false },
   );
 });
+
+test("keeps a visited tab mounted and advances focus for consecutive arrow keys", () => {
+  render(
+    <NextIntlClientProvider locale="es" messages={getMessages("es")}>
+      <SettingsPageClient />
+    </NextIntlClientProvider>,
+  );
+
+  const storeTab = screen.getByRole("tab", { name: "Perfil de la tienda" });
+  fireEvent.click(
+    screen.getByRole("tab", { name: "Métodos de pago aceptados" }),
+  );
+
+  const storePanel = document.getElementById("settings-panel-store");
+  expect(storePanel?.hasAttribute("hidden")).toBe(true);
+  expect(storePanel?.isConnected).toBe(true);
+
+  const paymentTab = screen.getByRole("tab", {
+    name: "Métodos de pago aceptados",
+  });
+  fireEvent.keyDown(paymentTab, { key: "ArrowRight" });
+  expect(document.activeElement).toBe(
+    screen.getByRole("tab", { name: "Entrega" }),
+  );
+  fireEvent.keyDown(document.activeElement!, { key: "ArrowRight" });
+  expect(push).toHaveBeenLastCalledWith(
+    "/es/dashboard/demo/settings?tab=appearance",
+    { scroll: false },
+  );
+  expect(storeTab.isConnected).toBe(true);
+});

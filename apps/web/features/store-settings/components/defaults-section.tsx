@@ -27,7 +27,11 @@ export function DefaultsSection({ store }: { store: DashboardStore }) {
     <SectionCard
       icon={Eye}
       title={t("defaults.visibilityToggleLabel")}
-      description={t("defaults.visibilityToggleDescriptionPublic")}
+      description={
+        isPublic
+          ? t("defaults.visibilityToggleDescriptionPublic")
+          : t("defaults.visibilityToggleDescriptionPrivate")
+      }
     >
       <div className="space-y-3">
         <ToggleRow

@@ -54,7 +54,7 @@ export function NotificationsSection({ store }: { store: DashboardStore }) {
   const handleSave = () => {
     saveStockAlerts.mutate({
       lowStockAlertsEnabled,
-      lowStockThreshold: Math.max(1, Number(lowStockThreshold) || 1),
+      lowStockThreshold: Math.max(0, Number(lowStockThreshold) || 0),
     });
   };
 
@@ -80,7 +80,7 @@ export function NotificationsSection({ store }: { store: DashboardStore }) {
               id="settings-notifications-threshold"
               aria-label={t("notifications.thresholdLabel")}
               type="number"
-              min={1}
+              min={0}
               value={lowStockThreshold}
               onChange={(event) => setLowStockThreshold(event.target.value)}
               className="store-theme-input h-11 w-32 rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"

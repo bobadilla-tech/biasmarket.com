@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronDown, ChevronUp, CreditCard, Info } from "lucide-react";
@@ -138,8 +138,14 @@ export function PaymentsSection({
     initialPaymentInstructions,
   );
 
+  const syncedInstructionsRef = useRef(initialPaymentInstructions);
   useEffect(() => {
-    setPaymentInstructions(initialPaymentInstructions);
+    const previous = syncedInstructionsRef.current;
+    if (initialPaymentInstructions === previous) return;
+    syncedInstructionsRef.current = initialPaymentInstructions;
+    setPaymentInstructions((draft) =>
+      draft === previous ? initialPaymentInstructions : draft,
+    );
   }, [initialPaymentInstructions]);
 
   useEffect(() => {
@@ -675,7 +681,8 @@ export function PaymentsSection({
             disabled={saveInstructions.isPending}
             className="store-theme-primary-button h-9 rounded-xl px-4 text-xs font-semibold hover:opacity-100"
           >
-            {saveInstructions.isSuccess
+            {saveInstructions.isSuccess &&
+            saveInstructions.variables === paymentInstructions
               ? t("saved")
               : saveInstructions.isPending
                 ? t("saving")

@@ -123,24 +123,24 @@ function MessageTemplateEditor({
 }) {
   const t = useTranslations("dashboard.settings.whatsappMessages");
   const saveTemplate = useSaveWhatsAppTemplate(storeId, type);
-  const [text, setText] = useState(
-    initialTemplate ?? WHATSAPP_DEFAULT_TEMPLATES[type],
-  );
+  const savedTemplate = initialTemplate || WHATSAPP_DEFAULT_TEMPLATES[type];
+  const [text, setText] = useState(savedTemplate);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    setText(initialTemplate ?? WHATSAPP_DEFAULT_TEMPLATES[type]);
+    setText(initialTemplate || WHATSAPP_DEFAULT_TEMPLATES[type]);
   }, [initialTemplate, type]);
 
   useSavedFlash(saveTemplate.isSuccess, saveTemplate.reset);
 
-  const hasCustomTemplate = text !== WHATSAPP_DEFAULT_TEMPLATES[type];
+  const draftIsCustom = text !== WHATSAPP_DEFAULT_TEMPLATES[type];
+  const savedIsCustom = savedTemplate !== WHATSAPP_DEFAULT_TEMPLATES[type];
   const missing = useMemo(
     () => getMissingRequiredTokens(type, text),
     [type, text],
   );
 
-  const preview = buildPreview(type, text);
+  const preview = buildPreview(type, draftIsCustom ? text : undefined);
 
   const insertToken = (token: string) => {
     const textarea = textareaRef.current;
@@ -175,7 +175,7 @@ function MessageTemplateEditor({
           </span>
         </span>
         <Badge className="shrink-0 rounded-full bg-white text-[#72558e]">
-          {hasCustomTemplate ? t("customized") : t("defaultLabel")}
+          {savedIsCustom ? t("customized") : t("defaultLabel")}
         </Badge>
       </button>
 
@@ -251,8 +251,11 @@ function MessageTemplateEditor({
               {t("restoreDefault")}
             </Button>
             <Button
-              onClick={() => saveTemplate.mutate(hasCustomTemplate ? text : "")}
-              disabled={missing.length > 0 || saveTemplate.isPending}
+              onClick={() => saveTemplate.mutate(draftIsCustom ? text : "")}
+              disabled={
+                (text.trim().length > 0 && missing.length > 0) ||
+                saveTemplate.isPending
+              }
               className="store-theme-primary-button h-9 rounded-full px-4 text-xs font-semibold hover:opacity-100"
             >
               {saveTemplate.isSuccess

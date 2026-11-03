@@ -56,29 +56,19 @@ export function SettingsPageClient() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const tablistRef = useRef<HTMLDivElement>(null);
+  const storePreviewSeeded = useRef(false);
   const [storePreview, setStorePreview] = useState(initialStorePreview);
   useEffect(() => {
-    if (!storeId) return;
-    setStorePreview((current) => {
-      const unchanged =
-        current.name === previewName &&
-        current.bio === previewBio &&
-        current.whatsappNumber === previewWhatsapp &&
-        current.instagramUrl === previewInstagram &&
-        current.facebookUrl === previewFacebook &&
-        current.tiktokUrl === previewTiktok &&
-        current.twitterUrl === previewTwitter;
-      return unchanged
-        ? current
-        : {
-            name: previewName,
-            bio: previewBio,
-            whatsappNumber: previewWhatsapp,
-            instagramUrl: previewInstagram,
-            facebookUrl: previewFacebook,
-            tiktokUrl: previewTiktok,
-            twitterUrl: previewTwitter,
-          };
+    if (!storeId || storePreviewSeeded.current) return;
+    storePreviewSeeded.current = true;
+    setStorePreview({
+      name: previewName,
+      bio: previewBio,
+      whatsappNumber: previewWhatsapp,
+      instagramUrl: previewInstagram,
+      facebookUrl: previewFacebook,
+      tiktokUrl: previewTiktok,
+      twitterUrl: previewTwitter,
     });
   }, [
     storeId,
@@ -100,6 +90,14 @@ export function SettingsPageClient() {
   const activeTab: TabId = TAB_IDS.includes(requestedTab as TabId)
     ? (requestedTab as TabId)
     : "store";
+  const [visitedTabs, setVisitedTabs] = useState<Set<TabId>>(
+    () => new Set([activeTab]),
+  );
+  useEffect(() => {
+    setVisitedTabs((visited) =>
+      visited.has(activeTab) ? visited : new Set([...visited, activeTab]),
+    );
+  }, [activeTab]);
   const { data: whatsappTemplates, isPending: whatsappLoading } =
     useWhatsAppTemplates(activeTab === "messages" ? store?.id : undefined);
 
@@ -111,6 +109,9 @@ export function SettingsPageClient() {
 
   const selectTab = useCallback(
     (tab: TabId) => {
+      setVisitedTabs((visited) =>
+        visited.has(tab) ? visited : new Set([...visited, tab]),
+      );
       const params = new URLSearchParams(searchParams.toString());
       params.set("tab", tab);
       router.push(`${pathname}?${params.toString()}`, { scroll: false });
@@ -119,7 +120,10 @@ export function SettingsPageClient() {
   );
 
   const onTabKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    const currentIndex = TAB_IDS.indexOf(activeTab);
+    const focusedTab = (event.target as HTMLElement).closest<HTMLElement>(
+      "[data-tab]",
+    )?.dataset.tab;
+    const currentIndex = TAB_IDS.indexOf((focusedTab ?? activeTab) as TabId);
     let nextIndex: number | undefined;
     if (event.key === "ArrowRight")
       nextIndex = (currentIndex + 1) % TAB_IDS.length;
@@ -131,11 +135,9 @@ export function SettingsPageClient() {
     event.preventDefault();
     const nextTab = TAB_IDS[nextIndex];
     selectTab(nextTab);
-    requestAnimationFrame(() =>
-      tablistRef.current
-        ?.querySelector<HTMLButtonElement>(`[data-tab="${nextTab}"]`)
-        ?.focus(),
-    );
+    tablistRef.current
+      ?.querySelector<HTMLButtonElement>(`[data-tab="${nextTab}"]`)
+      ?.focus();
   };
 
   const tabs = [
@@ -209,106 +211,102 @@ export function SettingsPageClient() {
           ))}
         </div>
 
-        <section
-          id={`settings-panel-${activeTab}`}
-          role="tabpanel"
-          aria-labelledby={`settings-tab-${activeTab}`}
-          className="min-h-[24rem] space-y-5 focus-visible:outline-none"
-        >
-          {activeTab === "store" ? (
-            <>
-              <RegisterPreferenceSection />
-              <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
-                <div className="min-w-0 space-y-5">
-                  <ProfileSection
-                    store={store}
-                    onPreviewChange={updateStorePreview}
-                  />
-                  <StoreContentSection
-                    store={store}
-                    onPreviewChange={updateStorePreview}
-                  />
-                </div>
-                <details className="group lg:hidden">
-                  <summary className="cursor-pointer list-none rounded-[28px] border border-[#eadcf7] bg-white px-5 py-4 text-sm font-semibold text-[#5b3d80] shadow-sm marker:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8a45cc] [&::-webkit-details-marker]:hidden">
-                    <span>{t("storeContent.previewLabel")}</span>
-                    <span className="float-right text-xs font-medium text-[#8f7da8] group-open:hidden">
-                      {t("storeContent.previewShow")}
-                    </span>
-                    <span className="float-right hidden text-xs font-medium text-[#8f7da8] group-open:inline">
-                      {t("storeContent.previewHide")}
-                    </span>
-                  </summary>
-                  <div className="mt-3">
+        {TAB_IDS.filter((tab) => visitedTabs.has(tab)).map((tab) => (
+          <section
+            key={tab}
+            id={`settings-panel-${tab}`}
+            role="tabpanel"
+            aria-labelledby={`settings-tab-${tab}`}
+            hidden={activeTab !== tab}
+            className="min-h-[24rem] space-y-5 focus-visible:outline-none"
+          >
+            {tab === "store" ? (
+              <>
+                <RegisterPreferenceSection />
+                <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
+                  <div className="min-w-0 space-y-5">
+                    <ProfileSection
+                      store={store}
+                      onPreviewChange={updateStorePreview}
+                    />
+                    <StoreContentSection
+                      store={store}
+                      onPreviewChange={updateStorePreview}
+                    />
+                  </div>
+                  <details className="group lg:hidden">
+                    <summary className="cursor-pointer list-none rounded-[28px] border border-[#eadcf7] bg-white px-5 py-4 text-sm font-semibold text-[#5b3d80] shadow-sm marker:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8a45cc] [&::-webkit-details-marker]:hidden">
+                      <span>{t("storeContent.previewLabel")}</span>
+                      <span className="float-right text-xs font-medium text-[#8f7da8] group-open:hidden">
+                        {t("storeContent.previewShow")}
+                      </span>
+                      <span className="float-right hidden text-xs font-medium text-[#8f7da8] group-open:inline">
+                        {t("storeContent.previewHide")}
+                      </span>
+                    </summary>
+                    <div className="mt-3">
+                      <StorePreviewCard
+                        store={store}
+                        preview={storePreview}
+                        labels={getStorePreviewLabels(t)}
+                      />
+                    </div>
+                  </details>
+                  <aside className="hidden lg:sticky lg:top-5 lg:block">
                     <StorePreviewCard
                       store={store}
                       preview={storePreview}
                       labels={getStorePreviewLabels(t)}
                     />
-                  </div>
-                </details>
-                <aside className="hidden lg:sticky lg:top-5 lg:block">
-                  <StorePreviewCard
-                    store={store}
-                    preview={storePreview}
-                    labels={getStorePreviewLabels(t)}
-                  />
-                </aside>
-              </div>
-              <DefaultsSection store={store} />
-            </>
-          ) : null}
-          {activeTab === "payments" ? (
-            <PaymentsSection
-              storeId={store.id}
-              initialPaymentInstructions={store.paymentInstructions ?? ""}
-            />
-          ) : null}
-          {activeTab === "delivery" ? (
-            <>
-              <DeliverySection storeId={store.id} />
-              <CouriersSection storeId={store.id} />
-            </>
-          ) : null}
-          {activeTab === "appearance" ? (
-            <AppearanceSection store={store} />
-          ) : null}
-          {activeTab === "messages" ? (
-            <>
-              <NotificationsSection store={store} />
-              <WhatsAppMessagesSection
+                  </aside>
+                </div>
+                <DefaultsSection store={store} />
+              </>
+            ) : null}
+            {tab === "payments" ? (
+              <PaymentsSection
                 storeId={store.id}
-                templates={
-                  whatsappTemplates
-                    ? {
-                        newOrder: whatsappTemplates.newOrder?.template ?? null,
-                        paymentReminder:
-                          whatsappTemplates.paymentReminder?.template ?? null,
-                        assistedOrderLink:
-                          whatsappTemplates.assistedOrderLink?.template ?? null,
-                        paymentValidated:
-                          whatsappTemplates.paymentValidated?.template ?? null,
-                        inTransit:
-                          whatsappTemplates.inTransit?.template ?? null,
-                        ready: whatsappTemplates.ready?.template ?? null,
-                        delivered:
-                          whatsappTemplates.delivered?.template ?? null,
-                      }
-                    : undefined
-                }
-                loading={whatsappLoading}
+                initialPaymentInstructions={store.paymentInstructions ?? ""}
               />
-            </>
-          ) : null}
-        </section>
-        {TAB_IDS.filter((id) => id !== activeTab).map((id) => (
-          <div
-            key={id}
-            id={`settings-panel-${id}`}
-            role="tabpanel"
-            aria-labelledby={`settings-tab-${id}`}
-            hidden
-          />
+            ) : null}
+            {tab === "delivery" ? (
+              <>
+                <DeliverySection storeId={store.id} />
+                <CouriersSection storeId={store.id} />
+              </>
+            ) : null}
+            {tab === "appearance" ? <AppearanceSection store={store} /> : null}
+            {tab === "messages" ? (
+              <>
+                <NotificationsSection store={store} />
+                <WhatsAppMessagesSection
+                  storeId={store.id}
+                  templates={
+                    whatsappTemplates
+                      ? {
+                          newOrder:
+                            whatsappTemplates.newOrder?.template ?? null,
+                          paymentReminder:
+                            whatsappTemplates.paymentReminder?.template ?? null,
+                          assistedOrderLink:
+                            whatsappTemplates.assistedOrderLink?.template ??
+                            null,
+                          paymentValidated:
+                            whatsappTemplates.paymentValidated?.template ??
+                            null,
+                          inTransit:
+                            whatsappTemplates.inTransit?.template ?? null,
+                          ready: whatsappTemplates.ready?.template ?? null,
+                          delivered:
+                            whatsappTemplates.delivered?.template ?? null,
+                        }
+                      : undefined
+                  }
+                  loading={whatsappLoading}
+                />
+              </>
+            ) : null}
+          </section>
         ))}
       </div>
     </div>
@@ -360,13 +358,13 @@ function StorePreviewCard({
         ) : null}
         <div className="flex items-center gap-3">
           <StoreLogo
-            name={preview.name || store.name}
+            name={preview.name}
             logoUrl={store.logoUrl ?? null}
             size={56}
             className="shrink-0 rounded-2xl text-base font-bold"
           />
           <h2 className="min-w-0 break-words text-lg font-bold text-[#2d1649]">
-            {preview.name || store.name || labels.emptyName}
+            {preview.name || labels.emptyName}
           </h2>
         </div>
         <p className="mt-4 min-h-10 whitespace-pre-wrap break-words text-sm leading-6 text-[#725d88]">
