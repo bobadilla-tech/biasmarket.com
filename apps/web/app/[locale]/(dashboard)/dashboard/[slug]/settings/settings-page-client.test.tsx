@@ -3,15 +3,18 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "@biasmarket/i18n";
 
-const { push, replace } = vi.hoisted(() => ({
-  push: vi.fn(),
+const { push, replace, searchParams } = vi.hoisted(() => ({
+  push: vi.fn((url: string) => {
+    searchParams.value = new URLSearchParams(url.split("?")[1] ?? "");
+  }),
   replace: vi.fn(),
+  searchParams: { value: new URLSearchParams("tab=store") },
 }));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/es/dashboard/demo/settings",
   useRouter: () => ({ push, replace }),
-  useSearchParams: () => new URLSearchParams("tab=store"),
+  useSearchParams: () => searchParams.value,
 }));
 vi.mock("@/features/stores", () => ({
   useDashboardStore: () => ({
@@ -38,7 +41,10 @@ vi.mock(
 
 const { SettingsPageClient } = await import("./settings-page-client");
 
-afterEach(() => vi.clearAllMocks());
+afterEach(() => {
+  vi.clearAllMocks();
+  searchParams.value = new URLSearchParams("tab=store");
+});
 
 test("renders five accessible tabs and updates the URL when changing sections", () => {
   render(
@@ -60,6 +66,9 @@ test("renders five accessible tabs and updates the URL when changing sections", 
     "/es/dashboard/demo/settings?tab=payments",
     { scroll: false },
   );
+  expect(
+    screen.getByRole("tabpanel", { name: "Métodos de pago aceptados" }),
+  ).toBeTruthy();
 });
 
 test("keeps a visited tab mounted and advances focus for consecutive arrow keys", () => {

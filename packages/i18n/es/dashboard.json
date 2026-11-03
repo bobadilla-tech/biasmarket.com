@@ -376,6 +376,7 @@
       "title": "Métodos de pago aceptados",
       "description": "Acepta pagos con los métodos disponibles para tu tienda.",
       "instructionsHelp": "Estas instrucciones aparecen al comprador después del checkout.",
+      "saveInstructions": "Guardar instrucciones de pago",
       "reviewPaymentsLink": "Ve a Pagos para revisar y confirmar cada abono.",
       "manual": "Manual",
       "items": {

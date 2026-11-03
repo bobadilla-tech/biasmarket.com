@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { screen } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { renderWithProviders } from "../../../test-utils/render-with-providers";
 
 vi.mock("next/navigation", async (importOriginal) => ({
@@ -7,8 +7,9 @@ vi.mock("next/navigation", async (importOriginal) => ({
   useParams: () => ({ slug: "test-store", locale: "es" }),
 }));
 
-const { findAllPaymentConfig } = vi.hoisted(() => ({
+const { findAllPaymentConfig, updateStore } = vi.hoisted(() => ({
   findAllPaymentConfig: vi.fn(),
+  updateStore: vi.fn(),
 }));
 
 vi.mock("@/lib/api-client", () => ({
@@ -17,6 +18,7 @@ vi.mock("@/lib/api-client", () => ({
       findAll: findAllPaymentConfig,
       upsert: vi.fn(),
     },
+    stores: { update: updateStore },
   },
 }));
 
@@ -24,6 +26,43 @@ const { PaymentsSection } = await import("./payments-section");
 
 afterEach(() => {
   vi.clearAllMocks();
+  updateStore.mockResolvedValue({});
+});
+
+test("loads saved payment instructions into the editor", async () => {
+  findAllPaymentConfig.mockResolvedValue([]);
+
+  renderWithProviders(
+    <PaymentsSection
+      storeId="store-1"
+      initialPaymentInstructions="Pagar al recibir"
+    />,
+  );
+
+  expect(await screen.findByLabelText("Instrucciones de pago")).toHaveProperty(
+    "value",
+    "Pagar al recibir",
+  );
+});
+
+test("saves the edited payment instructions", async () => {
+  findAllPaymentConfig.mockResolvedValue([]);
+
+  renderWithProviders(
+    <PaymentsSection storeId="store-1" initialPaymentInstructions="" />,
+  );
+
+  const editor = await screen.findByLabelText("Instrucciones de pago");
+  fireEvent.change(editor, { target: { value: "Transferir al 999" } });
+  fireEvent.click(
+    screen.getByRole("button", { name: "Guardar instrucciones de pago" }),
+  );
+
+  await waitFor(() =>
+    expect(updateStore).toHaveBeenCalledWith("store-1", {
+      paymentInstructions: "Transferir al 999",
+    }),
+  );
 });
 
 test("shows the setup nudge when only CASH (seeded by default) is configured", async () => {

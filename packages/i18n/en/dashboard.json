@@ -376,6 +376,7 @@
       "title": "Accepted payment methods",
       "description": "Accept payments with the methods available for your store.",
       "instructionsHelp": "These instructions appear to buyers after checkout.",
+      "saveInstructions": "Save payment instructions",
       "reviewPaymentsLink": "Go to Payments to review and confirm each payment.",
       "manual": "Manual",
       "items": {

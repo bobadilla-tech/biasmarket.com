@@ -6,6 +6,8 @@ import Link from "next/link";
 import { ChevronDown, ChevronUp, CreditCard, Info } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { isPaymentMethodConfigured } from "@biasmarket/utils/payment-methods";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +27,7 @@ import {
   transferDetailsSchema,
   walletDetailsSchema,
 } from "../schemas/payment-details.schema";
+import { paymentInstructionsSchema } from "../schemas/payment-instructions.schema";
 import { Field, SectionCard, useSavedFlash } from "./section-primitives";
 
 const PAYMENT_METHODS = [
@@ -134,19 +137,32 @@ export function PaymentsSection({
   const [depositError, setDepositError] = useState<
     Record<string, string | null>
   >({});
-  const [paymentInstructions, setPaymentInstructions] = useState(
-    initialPaymentInstructions,
-  );
+  const {
+    register: registerPaymentInstructions,
+    handleSubmit: handlePaymentInstructionsSubmit,
+    reset: resetPaymentInstructions,
+    watch: watchPaymentInstructions,
+  } = useForm({
+    resolver: zodResolver(paymentInstructionsSchema),
+    defaultValues: { paymentInstructions: initialPaymentInstructions },
+  });
+  const paymentInstructions =
+    watchPaymentInstructions("paymentInstructions") ?? "";
 
   const syncedInstructionsRef = useRef(initialPaymentInstructions);
   useEffect(() => {
     const previous = syncedInstructionsRef.current;
     if (initialPaymentInstructions === previous) return;
     syncedInstructionsRef.current = initialPaymentInstructions;
-    setPaymentInstructions((draft) =>
-      draft === previous ? initialPaymentInstructions : draft,
+    resetPaymentInstructions(
+      { paymentInstructions: initialPaymentInstructions },
+      { keepValues: paymentInstructions !== previous },
     );
-  }, [initialPaymentInstructions]);
+  }, [
+    initialPaymentInstructions,
+    paymentInstructions,
+    resetPaymentInstructions,
+  ]);
 
   useEffect(() => {
     if (!methods) return;
@@ -651,8 +667,7 @@ export function PaymentsSection({
         >
           <Textarea
             id="settings-payment-instructions"
-            value={paymentInstructions}
-            onChange={(event) => setPaymentInstructions(event.target.value)}
+            {...registerPaymentInstructions("paymentInstructions")}
             placeholder={t("profile.instructionsPlaceholder")}
             rows={4}
             className="store-theme-input rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
@@ -677,7 +692,11 @@ export function PaymentsSection({
         <div className="mt-3 flex justify-end">
           <Button
             type="button"
-            onClick={() => saveInstructions.mutate(paymentInstructions)}
+            aria-label={t("payments.saveInstructions")}
+            onClick={handlePaymentInstructionsSubmit(
+              ({ paymentInstructions: value }) =>
+                saveInstructions.mutate(value),
+            )}
             disabled={saveInstructions.isPending}
             className="store-theme-primary-button h-9 rounded-xl px-4 text-xs font-semibold hover:opacity-100"
           >

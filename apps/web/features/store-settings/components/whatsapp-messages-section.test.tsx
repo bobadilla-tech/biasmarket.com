@@ -87,8 +87,36 @@ test("saving the assisted-order template writes only that key into the templates
   );
 });
 
+test("restoring the assisted-order default saves an empty override", async () => {
+  upsert.mockResolvedValue({ type: "ASSISTED_ORDER_LINK", template: null });
+  renderSection(new QueryClient());
+
+  fireEvent.click(screen.getByText("Mensaje de enlace de pedido asistido"));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Restaurar predeterminado" }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: /^Guardar/ }));
+
+  await waitFor(() =>
+    expect(upsert).toHaveBeenCalledWith("store-1", "ASSISTED_ORDER_LINK", {
+      template: "",
+    }),
+  );
+});
+
 test("renders one editor per buyer notice, with a live preview that has no link", () => {
   renderSection(new QueryClient());
+
+  const titles = [
+    "Aviso al comprador: pago validado",
+    "Aviso al comprador: pedido en camino",
+    "Aviso al comprador: pedido listo",
+    "Aviso al comprador: pedido entregado",
+  ];
+  for (const title of titles) {
+    fireEvent.click(screen.getByText(title));
+    expect(screen.getByLabelText(title)).toBeDefined();
+  }
 
   fireEvent.click(screen.getByText("Aviso al comprador: pedido en camino"));
   const editor = screen.getByLabelText("Aviso al comprador: pedido en camino");
