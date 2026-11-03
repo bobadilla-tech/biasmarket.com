@@ -28,14 +28,17 @@ const templates = {
   delivered: null,
 };
 
-function renderSection(queryClient: QueryClient) {
+function renderSection(
+  queryClient: QueryClient,
+  sectionTemplates: Record<keyof typeof templates, string | null> = templates,
+) {
   return render(
     <NextIntlClientProvider locale="es" messages={getMessages("es")}>
       <QueryClientProvider client={queryClient}>
         {withSettingsDraftActions(
           <WhatsAppMessagesSection
             storeId="store-1"
-            templates={templates}
+            templates={sectionTemplates}
             loading={false}
           />,
           "messages",
@@ -93,7 +96,10 @@ test("saving the assisted-order template writes only that key into the templates
 
 test("restoring the assisted-order default saves an empty override", async () => {
   upsert.mockResolvedValue({ type: "ASSISTED_ORDER_LINK", template: null });
-  renderSection(new QueryClient());
+  renderSection(new QueryClient(), {
+    ...templates,
+    assistedOrderLink: "Custom {{link}}",
+  });
 
   fireEvent.click(screen.getByText("Mensaje de enlace de pedido asistido"));
   fireEvent.click(
