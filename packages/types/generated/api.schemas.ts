@@ -2355,6 +2355,48 @@ export interface UpsertPaymentMethodDto {
   details?: PaymentMethodDetailsDto;
 }
 
+export type PaymentSettingsMethodChangeDtoMethod =
+  (typeof PaymentSettingsMethodChangeDtoMethod)[keyof typeof PaymentSettingsMethodChangeDtoMethod];
+
+export const PaymentSettingsMethodChangeDtoMethod = {
+  YAPE: "YAPE",
+  PLIN: "PLIN",
+  TRANSFER: "TRANSFER",
+  CASH: "CASH",
+} as const;
+
+export type PaymentSettingsMethodChangeDtoDetails = { [key: string]: unknown };
+
+export type PaymentSettingsMethodChangeDtoExpectedDetails = {
+  [key: string]: unknown;
+};
+
+export interface PaymentSettingsMethodChangeDto {
+  method: PaymentSettingsMethodChangeDtoMethod;
+  enabled?: boolean;
+  expectedEnabled?: boolean;
+  details?: PaymentSettingsMethodChangeDtoDetails;
+  expectedDetails?: PaymentSettingsMethodChangeDtoExpectedDetails;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  depositPercent?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  expectedDepositPercent?: number;
+}
+
+export interface SavePaymentSettingsDto {
+  methods: PaymentSettingsMethodChangeDto[];
+  /** @maxLength 1000 */
+  paymentInstructions?: string;
+  /** @maxLength 1000 */
+  expectedPaymentInstructions?: string;
+}
+
 export type DeliveryMethodConfigResponseDtoType =
   (typeof DeliveryMethodConfigResponseDtoType)[keyof typeof DeliveryMethodConfigResponseDtoType];
 

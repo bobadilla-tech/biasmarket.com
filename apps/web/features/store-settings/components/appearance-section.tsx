@@ -116,6 +116,7 @@ export function AppearanceSection({ store }: { store: DashboardStore }) {
             type="button"
             variant="outline"
             onClick={() => setSelectedPaletteId(palette.id)}
+            disabled={saveAppearance.isPending}
             className={cn(
               "h-auto flex-col items-stretch rounded-3xl p-4 text-left shadow-none",
               selectedPaletteId === palette.id
@@ -158,6 +159,7 @@ export function AppearanceSection({ store }: { store: DashboardStore }) {
           <PopoverTrigger
             type="button"
             onClick={() => setSelectedPaletteId("custom")}
+            disabled={saveAppearance.isPending}
             className={cn(
               "h-auto flex-col items-stretch rounded-3xl border p-4 text-left shadow-none",
               selectedPaletteId === "custom"
@@ -210,6 +212,7 @@ export function AppearanceSection({ store }: { store: DashboardStore }) {
                   aria-label={t("appearance.primaryColorLabel")}
                   type="color"
                   value={customColor}
+                  disabled={saveAppearance.isPending}
                   onChange={(event) => {
                     setCustomColor(event.target.value);
                     setSelectedPaletteId("custom");
@@ -223,6 +226,7 @@ export function AppearanceSection({ store }: { store: DashboardStore }) {
                   aria-label={t("appearance.secondaryColorLabel")}
                   type="color"
                   value={customAccent}
+                  disabled={saveAppearance.isPending}
                   onChange={(event) => {
                     setCustomAccent(event.target.value);
                     setSelectedPaletteId("custom");

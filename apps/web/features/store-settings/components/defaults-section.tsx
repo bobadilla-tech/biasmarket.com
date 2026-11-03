@@ -57,6 +57,7 @@ export function DefaultsSection({ store }: { store: DashboardStore }) {
           }
           enabled={isPublic}
           onChange={setIsPublic}
+          disabled={saveVisibility.isPending}
         />
       </div>
 

@@ -3026,6 +3026,37 @@
         "tags": ["PaymentConfig"]
       }
     },
+    "/stores/{storeId}/payment-methods/settings": {
+      "post": {
+        "operationId": "PaymentConfigController_saveSettings",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavePaymentSettingsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": ["PaymentConfig"]
+      }
+    },
     "/stores/{storeId}/payment-methods/{method}/qr-image": {
       "post": {
         "operationId": "PaymentConfigController_uploadQrImage",
@@ -9886,6 +9917,60 @@
           "depositPercent",
           "createdAt"
         ]
+      },
+      "PaymentSettingsMethodChangeDto": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": ["YAPE", "PLIN", "TRANSFER", "CASH"]
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "expectedEnabled": {
+            "type": "boolean"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "expectedDetails": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "depositPercent": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "expectedDepositPercent": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": ["method"]
+      },
+      "SavePaymentSettingsDto": {
+        "type": "object",
+        "properties": {
+          "methods": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentSettingsMethodChangeDto"
+            }
+          },
+          "paymentInstructions": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "expectedPaymentInstructions": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "required": ["methods"]
       },
       "PaymentMethodDetailsDto": {
         "type": "object",

@@ -57,9 +57,10 @@ export function StoreContentSection({
     getValues,
     trigger,
     setValue,
-    formState: { errors, isDirty },
+    formState: { errors, isDirty, isValid },
   } = useForm<StoreContentFormInput>({
     resolver: zodResolver(storeContentFormSchema),
+    mode: "onChange",
     defaultValues: defaults,
   });
 
@@ -135,13 +136,15 @@ export function StoreContentSection({
     if (!(await trigger())) throw new Error(t("saveBar.validationError"));
     const values = getValues();
     await saveStoreContent.mutateAsync(values);
-    reset(values);
+    reset(values, { keepValues: true });
   }, [getValues, reset, saveStoreContent, t, trigger]);
   const discardDraft = useCallback(() => reset(), [reset]);
   useSettingsDraftParticipant({
     id: "store-content",
     tab: "store",
     dirty: isDirty,
+    valid: isValid,
+    validationError: t("saveBar.validationError"),
     save: saveDraft,
     discard: discardDraft,
   });

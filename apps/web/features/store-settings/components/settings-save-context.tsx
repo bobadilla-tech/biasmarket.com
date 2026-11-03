@@ -8,6 +8,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useLayoutEffect,
 } from "react";
 
 export type SettingsTabId =
@@ -116,7 +117,9 @@ export function SettingsDraftProvider({
     const results = await Promise.allSettled(
       dirty.map(async (participant) => {
         await participant.save();
-        cleanAfterSave.current.add(participant.id);
+        const latest = participants.current.get(participant.id);
+        if (latest?.dirty) cleanAfterSave.current.delete(participant.id);
+        else cleanAfterSave.current.add(participant.id);
       }),
     );
     const failures: string[] = [];
@@ -177,7 +180,7 @@ export function useSettingsDraftParticipant(
   const register = context?.register ?? noopRegister;
   const unregister = context?.unregister ?? noopUnregister;
   const { id, tab, dirty, valid, validationError, save, discard } = participant;
-  useEffect(() => {
+  useLayoutEffect(() => {
     register({ id, tab, dirty, valid, validationError, save, discard });
   }, [register, id, tab, dirty, valid, validationError, save, discard]);
   useEffect(() => () => unregister(id), [unregister, id]);

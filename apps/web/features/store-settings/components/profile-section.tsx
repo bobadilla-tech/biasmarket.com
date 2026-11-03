@@ -71,9 +71,10 @@ export function ProfileSection({
     reset,
     getValues,
     trigger,
-    formState: { errors, isDirty },
+    formState: { errors, isDirty, isValid },
   } = useForm<ProfileFormInput>({
     resolver: zodResolver(profileFormSchema),
+    mode: "onChange",
     defaultValues: {
       name: store.name ?? "",
       whatsappNumber: store.whatsappNumber ?? "",
@@ -159,13 +160,15 @@ export function ProfileSection({
     if (!(await trigger())) throw new Error(t("saveBar.validationError"));
     const values = getValues();
     await saveProfile.mutateAsync(values);
-    reset(values);
+    reset(values, { keepValues: true });
   }, [getValues, reset, saveProfile, t, trigger]);
   const discardDraft = useCallback(() => reset(), [reset]);
   useSettingsDraftParticipant({
     id: "profile",
     tab: "store",
     dirty: isDirty,
+    valid: isValid,
+    validationError: t("saveBar.validationError"),
     save: saveDraft,
     discard: discardDraft,
   });

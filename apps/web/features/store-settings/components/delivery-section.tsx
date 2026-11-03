@@ -196,6 +196,8 @@ export function DeliverySection({ storeId }: { storeId: string }) {
               ?.estimatedCost ?? 0,
           ) ||
         JSON.stringify(pickupPoints) !== JSON.stringify(data?.points ?? [])),
+    valid: newPointLabel.trim().length === 0,
+    validationError: t("delivery.addPickupPointBeforeSaving"),
     save: saveDraft,
     discard: discardDraft,
   });

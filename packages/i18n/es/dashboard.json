@@ -446,6 +446,7 @@
       "pickupPointsLabel": "Puntos de recojo",
       "pickupPointPlaceholder": "Nombre del punto (ej. Alameda 28 de Julio)",
       "addPickupPoint": "Agregar nuevo punto",
+      "addPickupPointBeforeSaving": "Agrega el punto de recojo o borra su nombre antes de guardar.",
       "removePickupPoint": "Eliminar punto",
       "noPickupPoints": "Todavía no agregaste puntos de recojo.",
       "editAvailability": "Disponibilidad",

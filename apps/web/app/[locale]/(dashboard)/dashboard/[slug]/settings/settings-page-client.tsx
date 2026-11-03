@@ -78,6 +78,11 @@ function SettingsPageContent() {
     errors: saveErrors,
   } = useSettingsDraftContext();
   const [pendingTab, setPendingTab] = useState<TabId | null>(null);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(
+    null,
+  );
+  const leaveDialogRef = useRef<HTMLDivElement>(null);
+  const leaveCancelRef = useRef<HTMLButtonElement>(null);
   const storePreviewSeeded = useRef(false);
   const [storePreview, setStorePreview] = useState(initialStorePreview);
   useEffect(() => {
@@ -161,10 +166,18 @@ function SettingsPageContent() {
 
   const continueToPendingTab = useCallback(
     async (shouldSave: boolean) => {
-      if (!pendingTab) return;
+      if (!pendingTab && !pendingNavigation) return;
       if (shouldSave && !(await saveTab(activeTab))) return;
       if (!shouldSave) discardTab(activeTab);
+      if (pendingNavigation) {
+        const destination = pendingNavigation;
+        setPendingNavigation(null);
+        setPendingTab(null);
+        router.push(destination);
+        return;
+      }
       const nextTab = pendingTab;
+      if (!nextTab) return;
       setPendingTab(null);
       setVisitedTabs((visited) => new Set([...visited, nextTab]));
       const params = new URLSearchParams(searchParams.toString());
@@ -176,6 +189,7 @@ function SettingsPageContent() {
       discardTab,
       pathname,
       pendingTab,
+      pendingNavigation,
       router,
       saveTab,
       searchParams,
@@ -191,6 +205,65 @@ function SettingsPageContent() {
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [activeTab, tabIsDirty]);
+
+  useEffect(() => {
+    const onDocumentClick = (event: MouseEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      )
+        return;
+      if (!(event.target instanceof Element)) return;
+      const link = event.target.closest<HTMLAnchorElement>("a[href]");
+      if (!link || link.target === "_blank" || link.hasAttribute("download"))
+        return;
+      const destination = new URL(link.href, window.location.href);
+      if (
+        destination.origin !== window.location.origin ||
+        destination.pathname === pathname ||
+        !tabIsDirty(activeTab)
+      )
+        return;
+      event.preventDefault();
+      setPendingTab(null);
+      setPendingNavigation(
+        `${destination.pathname}${destination.search}${destination.hash}`,
+      );
+    };
+    document.addEventListener("click", onDocumentClick, true);
+    return () => document.removeEventListener("click", onDocumentClick, true);
+  }, [activeTab, pathname, tabIsDirty]);
+
+  useEffect(() => {
+    if (!pendingTab && !pendingNavigation) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    leaveCancelRef.current?.focus();
+    const trapFocus = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const focusable = leaveDialogRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), a[href], input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", trapFocus);
+    return () => {
+      document.removeEventListener("keydown", trapFocus);
+      previouslyFocused?.focus();
+    };
+  }, [pendingTab, pendingNavigation]);
 
   const onTabKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const focusedTab = (event.target as HTMLElement).closest<HTMLElement>(
@@ -415,7 +488,7 @@ function SettingsPageContent() {
           errors: t("saveBar.errors"),
         }}
       />
-      {pendingTab ? (
+      {pendingTab || pendingNavigation ? (
         <div
           className="fixed inset-0 z-50 grid place-items-center bg-[#251632]/40 p-4"
           role="presentation"
@@ -424,6 +497,7 @@ function SettingsPageContent() {
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="settings-unsaved-title"
+            ref={leaveDialogRef}
             className="w-full max-w-md rounded-3xl border border-[#eadcf7] bg-white p-6 shadow-2xl"
           >
             <h2
@@ -438,7 +512,11 @@ function SettingsPageContent() {
             <div className="mt-6 flex flex-wrap justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setPendingTab(null)}
+                ref={leaveCancelRef}
+                onClick={() => {
+                  setPendingTab(null);
+                  setPendingNavigation(null);
+                }}
                 className="h-10 rounded-xl border border-[#eadcf7] px-4 text-sm font-semibold text-[#72558e]"
               >
                 {t("saveBar.cancel")}

@@ -9,6 +9,7 @@ import type {
   PaymentConfigControllerfindAllParams,
   PaymentConfigControlleruploadQrImageBody,
   PaymentMethodConfigResponseDto,
+  SavePaymentSettingsDto,
   UpsertPaymentMethodDto,
 } from "../api.schemas.js";
 
@@ -61,6 +62,23 @@ export const upsert = async (
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(upsertPaymentMethodDto),
+  });
+};
+
+export const getSaveSettingsUrl = (storeId: string) => {
+  return `/stores/${storeId}/payment-methods/settings`;
+};
+
+export const saveSettings = async (
+  storeId: string,
+  savePaymentSettingsDto: SavePaymentSettingsDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<void> => {
+  return customFetch<void>(getSaveSettingsUrl(storeId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(savePaymentSettingsDto),
   });
 };
 

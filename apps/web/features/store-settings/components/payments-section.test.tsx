@@ -9,9 +9,9 @@ vi.mock("next/navigation", async (importOriginal) => ({
   useParams: () => ({ slug: "test-store", locale: "es" }),
 }));
 
-const { findAllPaymentConfig, updateStore } = vi.hoisted(() => ({
+const { findAllPaymentConfig, savePaymentSettings } = vi.hoisted(() => ({
   findAllPaymentConfig: vi.fn(),
-  updateStore: vi.fn(),
+  savePaymentSettings: vi.fn(),
 }));
 
 vi.mock("@/lib/api-client", () => ({
@@ -19,8 +19,9 @@ vi.mock("@/lib/api-client", () => ({
     paymentConfig: {
       findAll: findAllPaymentConfig,
       upsert: vi.fn(),
+      saveSettings: savePaymentSettings,
     },
-    stores: { update: updateStore },
+    stores: { update: vi.fn() },
   },
 }));
 
@@ -28,7 +29,7 @@ const { PaymentsSection } = await import("./payments-section");
 
 afterEach(() => {
   vi.clearAllMocks();
-  updateStore.mockResolvedValue({});
+  savePaymentSettings.mockResolvedValue({ store: {} });
 });
 
 test("loads saved payment instructions into the editor", async () => {
@@ -60,15 +61,19 @@ test("saves the edited payment instructions", async () => {
     slug: "test-store",
     paymentInstructions: "",
   });
-  updateStore.mockResolvedValue({ paymentInstructions: "Transferir al 999" });
+  savePaymentSettings.mockResolvedValue({
+    store: { paymentInstructions: "Transferir al 999" },
+  });
 
   const editor = await screen.findByLabelText("Instrucciones de pago");
   fireEvent.change(editor, { target: { value: "Transferir al 999" } });
   fireEvent.click(screen.getByRole("button", { name: "Save tab" }));
 
   await waitFor(() =>
-    expect(updateStore).toHaveBeenCalledWith("store-1", {
+    expect(savePaymentSettings).toHaveBeenCalledWith("store-1", {
+      methods: [],
       paymentInstructions: "Transferir al 999",
+      expectedPaymentInstructions: "",
     }),
   );
   expect(

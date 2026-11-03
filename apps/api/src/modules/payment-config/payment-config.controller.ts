@@ -20,6 +20,7 @@ import {
   UpsertPaymentMethodDto,
 } from "./dto/upsert-payment-method.dto.js";
 import type { PaymentMethodConfigResponseDto } from "./dto/payment-method-response.dto.js";
+import { SavePaymentSettingsDto } from "./dto/save-payment-settings.dto.js";
 import {
   IMAGE_UPLOAD_MIME_TYPES,
   UploadedFileValidationPipe,
@@ -72,6 +73,15 @@ export class PaymentConfigController {
         ? await this.paymentConfig.findEnabledForStore(storeId, session.user.id)
         : await this.paymentConfig.findAllForStore(storeId, session.user.id);
     return rows.map(toPaymentMethodDto);
+  }
+
+  @Post("settings")
+  async saveSettings(
+    @Param("storeId") storeId: string,
+    @Session() session: UserSession,
+    @Body() dto: SavePaymentSettingsDto,
+  ) {
+    return this.paymentConfig.saveSettings(storeId, session.user.id, dto);
   }
 
   @Post()

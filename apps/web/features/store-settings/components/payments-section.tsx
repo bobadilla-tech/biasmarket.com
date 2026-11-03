@@ -18,10 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { UpsertPaymentMethodDtoMethod } from "@biasmarket/types";
 import { usePaymentMethods } from "../queries/use-payment-methods";
-import { useSavePaymentMethods } from "../mutations/use-save-payment-methods";
-import { useSavePaymentMethodDetails } from "../mutations/use-save-payment-method-details";
-import { useSaveDepositPercent } from "../mutations/use-save-deposit-percent";
-import { useSavePaymentInstructions } from "../mutations/use-save-payment-instructions";
+import { useSavePaymentSettings } from "../mutations/use-save-payment-settings";
 import { useUploadPaymentQrImage } from "../mutations/use-upload-payment-qr-image";
 import {
   transferDetailsSchema,
@@ -110,10 +107,7 @@ export function PaymentsSection({
     CASH: t("payments.items.cash.label"),
   };
   const { data: methods } = usePaymentMethods(storeId);
-  const saveMethods = useSavePaymentMethods(storeId);
-  const saveDetails = useSavePaymentMethodDetails(storeId);
-  const saveDeposit = useSaveDepositPercent(storeId);
-  const saveInstructions = useSavePaymentInstructions(storeId, slug);
+  const savePaymentSettings = useSavePaymentSettings(storeId, slug);
   const uploadQr = useUploadPaymentQrImage(storeId, tCommon("networkError"));
 
   const [enabledByMethod, setEnabledByMethod] =
@@ -145,6 +139,7 @@ export function PaymentsSection({
     watchPaymentInstructions("paymentInstructions") ?? "";
 
   const syncedInstructionsRef = useRef(initialPaymentInstructions);
+  const methodsInitialized = useRef(false);
   const [savedDraftSignature, setSavedDraftSignature] = useState("");
   useEffect(() => {
     const previous = syncedInstructionsRef.current;
@@ -154,6 +149,16 @@ export function PaymentsSection({
       { paymentInstructions: initialPaymentInstructions },
       { keepValues: paymentInstructions !== previous },
     );
+    setSavedDraftSignature((signature) => {
+      try {
+        return JSON.stringify({
+          ...JSON.parse(signature),
+          instructions: initialPaymentInstructions,
+        });
+      } catch {
+        return signature;
+      }
+    });
   }, [
     initialPaymentInstructions,
     paymentInstructions,
@@ -161,7 +166,8 @@ export function PaymentsSection({
   ]);
 
   useEffect(() => {
-    if (!methods) return;
+    if (!methods || methodsInitialized.current) return;
+    methodsInitialized.current = true;
     const nextEnabled = { ...DEFAULT_ENABLED };
     const nextDetails = {
       TRANSFER: EMPTY_DETAILS_ROW,
@@ -208,7 +214,7 @@ export function PaymentsSection({
     );
   }, [methods, initialPaymentInstructions]);
 
-  useSavedFlash(saveMethods.isSuccess, saveMethods.reset);
+  useSavedFlash(savePaymentSettings.isSuccess, savePaymentSettings.reset);
 
   function updateDetailField(
     method: MethodWithDetails,
@@ -249,6 +255,49 @@ export function PaymentsSection({
     deposits: depositPercents,
     instructions: paymentInstructions,
   });
+  const detailsAreValid = METHODS_WITH_DETAILS.every((method) => {
+    const row = detailsForm[method];
+    const savedDetails = methods?.find((item) => item.method === method)
+      ?.details as Record<string, unknown> | undefined;
+    const savedRow: DetailsFormRow = {
+      bankName:
+        typeof savedDetails?.bankName === "string" ? savedDetails.bankName : "",
+      accountNumber:
+        typeof savedDetails?.accountNumber === "string"
+          ? savedDetails.accountNumber
+          : "",
+      accountHolder:
+        typeof savedDetails?.accountHolder === "string"
+          ? savedDetails.accountHolder
+          : "",
+      accountType:
+        typeof savedDetails?.accountType === "string"
+          ? savedDetails.accountType
+          : "",
+      phoneNumber:
+        typeof savedDetails?.phoneNumber === "string"
+          ? savedDetails.phoneNumber
+          : "",
+      qrImageUrl:
+        typeof savedDetails?.qrImageUrl === "string"
+          ? savedDetails.qrImageUrl
+          : "",
+    };
+    if (JSON.stringify(row) === JSON.stringify(savedRow)) return true;
+    const schema =
+      method === "TRANSFER" ? transferDetailsSchema : walletDetailsSchema;
+    return schema.safeParse({
+      ...row,
+      accountType: row.accountType || undefined,
+      qrImageUrl: row.qrImageUrl || undefined,
+    }).success;
+  });
+  const depositsAreValid = Object.values(depositPercents).every(
+    (value) => value >= 1 && value <= 100,
+  );
+  const instructionsAreValid = paymentInstructionsSchema.safeParse({
+    paymentInstructions,
+  }).success;
   const saveDraft = useCallback(async () => {
     if (!(await triggerPaymentInstructions())) {
       throw new Error(t("saveBar.validationError"));
@@ -300,6 +349,8 @@ export function PaymentsSection({
     const depositValues = paymentMethods.map((method) => ({
       method,
       depositPercent: depositPercents[method] ?? 100,
+      savedDepositPercent:
+        methods?.find((row) => row.method === method)?.depositPercent ?? 100,
     }));
     if (
       depositValues.some(
@@ -308,12 +359,56 @@ export function PaymentsSection({
     ) {
       throw new Error(t("payments.depositPercent.invalid"));
     }
-    await saveMethods.mutateAsync(enabledByMethod);
-    for (const item of parsedDetails) await saveDetails.mutateAsync(item);
-    for (const item of depositValues) await saveDeposit.mutateAsync(item);
     const instructions = getPaymentInstructionValues().paymentInstructions;
-    await saveInstructions.mutateAsync(instructions);
-    resetPaymentInstructions({ paymentInstructions: instructions });
+    const changes = new Map<
+      UpsertPaymentMethodDtoMethod,
+      Record<string, unknown>
+    >();
+    const getChange = (method: UpsertPaymentMethodDtoMethod) => {
+      const change = changes.get(method) ?? { method };
+      changes.set(method, change);
+      return change;
+    };
+    for (const method of paymentMethods) {
+      const savedEnabled =
+        methods?.find((row) => row.method === method)?.enabled ??
+        DEFAULT_ENABLED[method];
+      if (enabledByMethod[method] !== savedEnabled) {
+        Object.assign(getChange(method), {
+          enabled: enabledByMethod[method],
+          expectedEnabled: savedEnabled,
+        });
+      }
+    }
+    for (const item of parsedDetails) {
+      const savedDetails = (methods?.find((row) => row.method === item.method)
+        ?.details ?? {}) as Record<string, unknown>;
+      Object.assign(getChange(item.method), {
+        details: item.details,
+        expectedDetails: savedDetails,
+      });
+    }
+    for (const item of depositValues) {
+      if (item.depositPercent !== item.savedDepositPercent) {
+        Object.assign(getChange(item.method), {
+          depositPercent: item.depositPercent,
+          expectedDepositPercent: item.savedDepositPercent,
+        });
+      }
+    }
+    await savePaymentSettings.mutateAsync({
+      methods: [...changes.values()] as Parameters<
+        typeof savePaymentSettings.mutateAsync
+      >[0]["methods"],
+      ...(instructions !== initialPaymentInstructions && {
+        paymentInstructions: instructions,
+        expectedPaymentInstructions: initialPaymentInstructions,
+      }),
+    });
+    resetPaymentInstructions(
+      { paymentInstructions: instructions },
+      { keepValues: true },
+    );
     setSavedDraftSignature(draftSignature);
   }, [
     detailsForm,
@@ -323,10 +418,8 @@ export function PaymentsSection({
     getPaymentInstructionValues,
     methods,
     resetPaymentInstructions,
-    saveDetails,
-    saveDeposit,
-    saveInstructions,
-    saveMethods,
+    initialPaymentInstructions,
+    savePaymentSettings,
     t,
     triggerPaymentInstructions,
   ]);
@@ -385,6 +478,8 @@ export function PaymentsSection({
     dirty:
       Boolean(methods) &&
       (draftSignature !== savedDraftSignature || instructionsDirty),
+    valid: detailsAreValid && depositsAreValid && instructionsAreValid,
+    validationError: t("saveBar.validationError"),
     save: saveDraft,
     discard: discardDraft,
   });
@@ -717,20 +812,13 @@ export function PaymentsSection({
             </Link>
           </p>
         </Field>
-        {saveInstructions.isError ? (
-          <p role="alert" className="mt-2 text-sm text-[#b24368]">
-            {saveInstructions.error instanceof Error
-              ? saveInstructions.error.message
-              : tCommon("networkError")}
-          </p>
-        ) : null}
       </div>
 
-      {saveMethods.isError ? (
+      {savePaymentSettings.isError ? (
         <p className="mt-4 text-sm text-[#b24368]">
-          {saveMethods.error instanceof Error
-            ? saveMethods.error.message
-            : String(saveMethods.error)}
+          {savePaymentSettings.error instanceof Error
+            ? savePaymentSettings.error.message
+            : tCommon("networkError")}
         </p>
       ) : null}
 

@@ -446,6 +446,7 @@
       "pickupPointsLabel": "Pickup points",
       "pickupPointPlaceholder": "Point name (e.g. Alameda 28 de Julio)",
       "addPickupPoint": "Add new point",
+      "addPickupPointBeforeSaving": "Add the pickup point or clear its name before saving.",
       "removePickupPoint": "Remove point",
       "noPickupPoints": "You haven't added any pickup points yet.",
       "editAvailability": "Availability",

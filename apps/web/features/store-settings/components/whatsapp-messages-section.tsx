@@ -216,6 +216,7 @@ function MessageTemplateEditor({
             aria-label={title}
             value={text}
             onChange={(event) => setText(event.target.value)}
+            disabled={saveTemplate.isPending}
             rows={6}
             maxLength={1000}
             placeholder={t("emptyHint")}
@@ -230,6 +231,7 @@ function MessageTemplateEditor({
               <button
                 key={token}
                 type="button"
+                disabled={saveTemplate.isPending}
                 aria-label={t("insertVariable", { token: `{{${token}}}` })}
                 onClick={() => insertToken(token)}
                 className="inline-flex items-center gap-1 rounded-full border border-[#eadcf7] bg-white px-2.5 py-1 font-mono text-[11px] text-[#8f7da8] transition-colors hover:border-[#d8c6ee] hover:text-[#5a3d82]"
@@ -250,7 +252,7 @@ function MessageTemplateEditor({
             </p>
           ) : null}
 
-          {missing.length > 0 ? (
+          {text.trim().length > 0 && missing.length > 0 ? (
             <p className="mt-3 text-sm text-[#b24368]">
               {t("missingTokens", {
                 tokens: missing.map((token) => `{{${token}}}`).join(", "),
@@ -279,6 +281,7 @@ function MessageTemplateEditor({
             <Button
               type="button"
               variant="ghost"
+              disabled={saveTemplate.isPending}
               onClick={() => setText(WHATSAPP_DEFAULT_TEMPLATES[type])}
               className="mr-auto h-9 rounded-full px-3 text-xs"
             >
