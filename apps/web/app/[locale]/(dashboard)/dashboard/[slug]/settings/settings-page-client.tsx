@@ -71,6 +71,7 @@ function SettingsPageContent() {
   const tablistRef = useRef<HTMLDivElement>(null);
   const {
     isDirty: tabIsDirty,
+    canSave: tabCanSave,
     save: saveTab,
     discard: discardTab,
     isSaving,
@@ -393,6 +394,7 @@ function SettingsPageContent() {
       <SettingsSaveBar
         activeTab={activeTab}
         dirty={tabIsDirty(activeTab)}
+        canSave={tabCanSave(activeTab)}
         saving={isSaving}
         errors={saveErrors}
         onSave={() => void saveTab(activeTab)}
@@ -444,7 +446,7 @@ function SettingsPageContent() {
               <button
                 type="button"
                 onClick={() => void continueToPendingTab(true)}
-                disabled={isSaving}
+                disabled={isSaving || !tabCanSave(activeTab)}
                 className="store-theme-primary-button h-10 rounded-xl px-4 text-sm font-semibold"
               >
                 {t("saveBar.saveAndContinue")}
@@ -460,6 +462,7 @@ function SettingsPageContent() {
 function SettingsSaveBar({
   activeTab,
   dirty,
+  canSave,
   saving,
   errors,
   onSave,
@@ -468,6 +471,7 @@ function SettingsSaveBar({
 }: {
   activeTab: SettingsTabId;
   dirty: boolean;
+  canSave: boolean;
   saving: boolean;
   errors: string[];
   onSave: () => void;
@@ -497,7 +501,7 @@ function SettingsSaveBar({
           <button
             type="button"
             onClick={onDiscard}
-            disabled={!dirty || saving}
+            disabled={!dirty || !canSave || saving}
             className="h-10 rounded-xl border border-[#eadcf7] px-4 text-sm font-semibold text-[#72558e] disabled:opacity-45"
           >
             {labels.discard}
@@ -505,7 +509,7 @@ function SettingsSaveBar({
           <button
             type="button"
             onClick={onSave}
-            disabled={!dirty || saving}
+            disabled={!dirty || !canSave || saving}
             className="store-theme-primary-button h-10 rounded-xl px-4 text-sm font-semibold disabled:opacity-50"
           >
             {saving ? labels.saving : labels.save}
