@@ -586,7 +586,7 @@ function SettingsSaveBar({
           <button
             type="button"
             onClick={onDiscard}
-            disabled={!dirty || !canSave || saving}
+            disabled={!dirty || saving}
             className="h-10 rounded-xl border border-[#eadcf7] px-4 text-sm font-semibold text-[#72558e] disabled:opacity-45"
           >
             {labels.discard}

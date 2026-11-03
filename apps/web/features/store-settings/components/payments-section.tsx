@@ -139,6 +139,8 @@ export function PaymentsSection({
     watchPaymentInstructions("paymentInstructions") ?? "";
 
   const syncedInstructionsRef = useRef(initialPaymentInstructions);
+  const latestInstructionsRef = useRef(initialPaymentInstructions);
+  latestInstructionsRef.current = initialPaymentInstructions;
   const methodsInitialized = useRef(false);
   const [savedDraftSignature, setSavedDraftSignature] = useState("");
   useEffect(() => {
@@ -209,10 +211,10 @@ export function PaymentsSection({
         enabled: nextEnabled,
         details: nextDetails,
         deposits: nextDeposit,
-        instructions: initialPaymentInstructions,
+        instructions: latestInstructionsRef.current,
       }),
     );
-  }, [methods, initialPaymentInstructions]);
+  }, [methods]);
 
   useSavedFlash(savePaymentSettings.isSuccess, savePaymentSettings.reset);
 
