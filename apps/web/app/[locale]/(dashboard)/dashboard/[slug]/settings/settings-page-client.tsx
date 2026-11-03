@@ -35,31 +35,61 @@ export function SettingsPageClient() {
   const t = useTranslations("dashboard.settings");
   const tCommon = useTranslations("common");
   const { store, loading: storeLoading } = useDashboardStore();
+  const storeId = store?.id;
+  const previewName = store?.name ?? "";
+  const previewBio = store?.bio ?? "";
+  const previewWhatsapp = store?.whatsappNumber ?? "";
+  const previewInstagram = store?.instagramUrl ?? "";
+  const previewFacebook = store?.facebookUrl ?? "";
+  const previewTiktok = store?.tiktokUrl ?? "";
+  const previewTwitter = store?.twitterUrl ?? "";
+  const initialStorePreview = {
+    name: previewName,
+    bio: previewBio,
+    whatsappNumber: previewWhatsapp,
+    instagramUrl: previewInstagram,
+    facebookUrl: previewFacebook,
+    tiktokUrl: previewTiktok,
+    twitterUrl: previewTwitter,
+  };
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const tablistRef = useRef<HTMLDivElement>(null);
-  const [storePreview, setStorePreview] = useState(() => ({
-    name: store?.name ?? "",
-    bio: store?.bio ?? "",
-    whatsappNumber: store?.whatsappNumber ?? "",
-    instagramUrl: store?.instagramUrl ?? "",
-    facebookUrl: store?.facebookUrl ?? "",
-    tiktokUrl: store?.tiktokUrl ?? "",
-    twitterUrl: store?.twitterUrl ?? "",
-  }));
+  const [storePreview, setStorePreview] = useState(initialStorePreview);
   useEffect(() => {
-    if (!store) return;
-    setStorePreview({
-      name: store.name ?? "",
-      bio: store.bio ?? "",
-      whatsappNumber: store.whatsappNumber ?? "",
-      instagramUrl: store.instagramUrl ?? "",
-      facebookUrl: store.facebookUrl ?? "",
-      tiktokUrl: store.tiktokUrl ?? "",
-      twitterUrl: store.twitterUrl ?? "",
+    if (!storeId) return;
+    setStorePreview((current) => {
+      const unchanged =
+        current.name === previewName &&
+        current.bio === previewBio &&
+        current.whatsappNumber === previewWhatsapp &&
+        current.instagramUrl === previewInstagram &&
+        current.facebookUrl === previewFacebook &&
+        current.tiktokUrl === previewTiktok &&
+        current.twitterUrl === previewTwitter;
+      return unchanged
+        ? current
+        : {
+            name: previewName,
+            bio: previewBio,
+            whatsappNumber: previewWhatsapp,
+            instagramUrl: previewInstagram,
+            facebookUrl: previewFacebook,
+            tiktokUrl: previewTiktok,
+            twitterUrl: previewTwitter,
+          };
     });
-  }, [store]);
+  }, [
+    storeId,
+    previewName,
+    previewBio,
+    previewWhatsapp,
+    previewInstagram,
+    previewFacebook,
+    previewTiktok,
+    previewTwitter,
+  ]);
   const updateStorePreview = useCallback(
     (values: Partial<typeof storePreview>) => {
       setStorePreview((current) => ({ ...current, ...values }));
