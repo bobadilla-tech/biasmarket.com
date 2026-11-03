@@ -527,6 +527,7 @@
       "comingSoon": "Próximamente"
     },
     "whatsappMessages": {
+      "templateTooLong": "Mantén cada mensaje dentro de 1.000 caracteres.",
       "title": "Mensajes de WhatsApp",
       "description": "Personaliza el texto de los mensajes que tu tienda envía y recibe por WhatsApp.",
       "previewLabel": "Vista previa con datos de ejemplo",

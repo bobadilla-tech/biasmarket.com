@@ -527,6 +527,7 @@
       "comingSoon": "Coming soon"
     },
     "whatsappMessages": {
+      "templateTooLong": "Keep each message within 1,000 characters.",
       "title": "WhatsApp messages",
       "description": "Customize the wording of the messages your store sends and receives over WhatsApp.",
       "previewLabel": "Preview with sample data",

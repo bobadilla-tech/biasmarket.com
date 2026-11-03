@@ -64,6 +64,7 @@
       "visibilityToggleDescriptionPrivate": "Tu tienda está oculta del inicio y del directorio de búsqueda — los compradores igual pueden acceder por su link directo."
     },
     "whatsappMessages": {
+      "templateTooLong": "Mantené cada mensaje dentro de 1.000 caracteres.",
       "description": "Personalizá el texto de los mensajes que tu tienda envía y recibe por WhatsApp.",
       "newOrder": {
         "description": "Lo recibís en tu WhatsApp cuando un comprador hace un pedido. Variables requeridas: la referencia del pedido y los productos."

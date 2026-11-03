@@ -144,6 +144,9 @@ function MessageTemplateEditor({
 
   const preview = buildPreview(type, draftIsCustom ? text : undefined);
   const saveDraft = useCallback(async () => {
+    if (text.length > 1000) {
+      throw new Error(t("templateTooLong"));
+    }
     if (text.trim().length > 0 && missing.length > 0) {
       throw new Error(t("missingTokens", { tokens: missing.join(", ") }));
     }
@@ -157,6 +160,12 @@ function MessageTemplateEditor({
     id: `whatsapp-${type}`,
     tab: "messages",
     dirty: text !== savedTemplate,
+    valid:
+      text.length <= 1000 && (text.trim().length === 0 || missing.length === 0),
+    validationError:
+      text.length > 1000
+        ? t("templateTooLong")
+        : t("missingTokens", { tokens: missing.join(", ") }),
     save: saveDraft,
     discard: discardDraft,
   });
@@ -167,6 +176,7 @@ function MessageTemplateEditor({
     const end = textarea?.selectionEnd ?? text.length;
     const insertion = `{{${token}}}`;
     const next = `${text.slice(0, start)}${insertion}${text.slice(end)}`;
+    if (next.length > 1000) return;
     setText(next);
     requestAnimationFrame(() => {
       textarea?.focus();
@@ -234,6 +244,11 @@ function MessageTemplateEditor({
           <p className="mt-1 text-right text-xs tabular-nums text-[#9582ad]">
             {text.length}/1000
           </p>
+          {text.length > 1000 ? (
+            <p role="alert" className="mt-1 text-xs text-[#b24368]">
+              {t("templateTooLong")}
+            </p>
+          ) : null}
 
           {missing.length > 0 ? (
             <p className="mt-3 text-sm text-[#b24368]">

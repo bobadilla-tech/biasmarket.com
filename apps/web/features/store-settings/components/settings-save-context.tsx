@@ -17,6 +17,8 @@ export type SettingsDraftParticipant = {
   id: string;
   tab: SettingsTabId;
   dirty: boolean;
+  valid?: boolean;
+  validationError?: string;
   save: () => Promise<void>;
   discard: () => void;
 };
@@ -25,6 +27,7 @@ type SettingsDraftContextValue = {
   register: (participant: SettingsDraftParticipant) => void;
   unregister: (id: string) => void;
   isDirty: (tab: SettingsTabId) => boolean;
+  canSave: (tab: SettingsTabId) => boolean;
   save: (tab: SettingsTabId) => Promise<boolean>;
   discard: (tab: SettingsTabId) => void;
   isSaving: boolean;
@@ -51,7 +54,11 @@ export function SettingsDraftProvider({
   const register = useCallback((participant: SettingsDraftParticipant) => {
     const previous = participants.current.get(participant.id);
     participants.current.set(participant.id, participant);
-    if (previous?.dirty !== participant.dirty) {
+    if (
+      previous?.dirty !== participant.dirty ||
+      previous?.valid !== participant.valid ||
+      previous?.validationError !== participant.validationError
+    ) {
       if (!participant.dirty) cleanAfterSave.current.delete(participant.id);
       setRevision((value) => value + 1);
     }
@@ -73,6 +80,18 @@ export function SettingsDraftProvider({
     },
     [revision],
   );
+  const canSave = useCallback(
+    (tab: SettingsTabId) => {
+      void revision;
+      return ![...participants.current.values()].some(
+        (participant) =>
+          participant.tab === tab &&
+          participant.dirty &&
+          participant.valid === false,
+      );
+    },
+    [revision],
+  );
   const save = useCallback(async (tab: SettingsTabId) => {
     setIsSaving(true);
     setErrors([]);
@@ -82,6 +101,18 @@ export function SettingsDraftProvider({
         participant.dirty &&
         !cleanAfterSave.current.has(participant.id),
     );
+    const invalid = dirty.filter((participant) => participant.valid === false);
+    if (invalid.length > 0) {
+      setErrors(
+        invalid.map(
+          (participant) =>
+            participant.validationError ??
+            `Revisa ${participant.id} antes de guardar.`,
+        ),
+      );
+      setIsSaving(false);
+      return false;
+    }
     const results = await Promise.allSettled(
       dirty.map(async (participant) => {
         await participant.save();
@@ -114,8 +145,17 @@ export function SettingsDraftProvider({
   }, []);
 
   const value = useMemo(
-    () => ({ register, unregister, isDirty, save, discard, isSaving, errors }),
-    [register, unregister, isDirty, save, discard, isSaving, errors],
+    () => ({
+      register,
+      unregister,
+      isDirty,
+      canSave,
+      save,
+      discard,
+      isSaving,
+      errors,
+    }),
+    [register, unregister, isDirty, canSave, save, discard, isSaving, errors],
   );
   return (
     <SettingsDraftContext.Provider value={value}>
@@ -136,9 +176,9 @@ export function useSettingsDraftParticipant(
   const context = useContext(SettingsDraftContext);
   const register = context?.register ?? noopRegister;
   const unregister = context?.unregister ?? noopUnregister;
-  const { id, tab, dirty, save, discard } = participant;
+  const { id, tab, dirty, valid, validationError, save, discard } = participant;
   useEffect(() => {
-    register({ id, tab, dirty, save, discard });
-  }, [register, id, tab, dirty, save, discard]);
+    register({ id, tab, dirty, valid, validationError, save, discard });
+  }, [register, id, tab, dirty, valid, validationError, save, discard]);
   useEffect(() => () => unregister(id), [unregister, id]);
 }
