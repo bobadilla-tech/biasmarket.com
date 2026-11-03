@@ -75,12 +75,15 @@ export const saveSettings = async (
   savePaymentSettingsDto: SavePaymentSettingsDto,
   options?: Parameters<typeof customFetch>[1],
 ): Promise<SavePaymentSettingsResponseDto> => {
-  return customFetch<SavePaymentSettingsResponseDto>(getSaveSettingsUrl(storeId), {
-    ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(savePaymentSettingsDto),
-  });
+  return customFetch<SavePaymentSettingsResponseDto>(
+    getSaveSettingsUrl(storeId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(savePaymentSettingsDto),
+    },
+  );
 };
 
 export const getUploadQrImageUrl = (storeId: string, method: string) => {
