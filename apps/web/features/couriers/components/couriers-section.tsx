@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Package, Plus, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { useCouriers } from "../queries/use-couriers";
 import { useSaveCouriers } from "../mutations/use-save-couriers";
@@ -20,6 +19,7 @@ import {
   ToggleRow,
   useSavedFlash,
 } from "@/features/store-settings/components/section-primitives";
+import { useSettingsDraftParticipant } from "@/features/store-settings/components/settings-save-context";
 
 const inputClassName =
   "store-theme-input h-10 rounded-xl border-[#e7dcf3] bg-white text-[#341b55] shadow-none";
@@ -141,16 +141,23 @@ export function CouriersSection({ storeId }: { storeId: string }) {
     );
   };
 
-  const handleSave = () => {
-    saveCouriers.mutate(
-      { couriers, deletedIds },
-      {
-        onSuccess: () => {
-          setDeletedIds([]);
-        },
-      },
-    );
-  };
+  const saveDraft = useCallback(async () => {
+    await saveCouriers.mutateAsync({ couriers, deletedIds });
+    setDeletedIds([]);
+  }, [couriers, deletedIds, saveCouriers]);
+  const discardDraft = useCallback(() => {
+    setCouriers(couriersData ?? []);
+    setDeletedIds([]);
+  }, [couriersData]);
+  useSettingsDraftParticipant({
+    id: "couriers",
+    tab: "delivery",
+    dirty:
+      deletedIds.length > 0 ||
+      JSON.stringify(couriers) !== JSON.stringify(couriersData ?? []),
+    save: saveDraft,
+    discard: discardDraft,
+  });
 
   if (isLoading) return null;
 
@@ -278,23 +285,9 @@ export function CouriersSection({ storeId }: { storeId: string }) {
         </p>
       )}
 
-      <Separator className="my-5 bg-[#f0e7f8]" />
-
-      <div className="flex items-center justify-between gap-4">
-        <p className="text-sm text-[#8f7da8]">{t("delivery.couriersFooter")}</p>
-        <Button
-          onClick={handleSave}
-          disabled={saveCouriers.isPending}
-          variant="outline"
-          className="store-theme-secondary-button h-11 rounded-2xl border px-5 text-sm font-semibold shadow-none"
-        >
-          {saveCouriers.isSuccess
-            ? t("saved")
-            : saveCouriers.isPending
-              ? t("saving")
-              : t("save")}
-        </Button>
-      </div>
+      <p className="mt-5 text-sm text-[#8f7da8]">
+        {t("delivery.couriersFooter")}
+      </p>
     </SectionCard>
   );
 }

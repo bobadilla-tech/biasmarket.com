@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Copy, MapPin, Store, Upload, UserRound } from "lucide-react";
@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Select } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { StoreLogo } from "@/components/store-logo";
 import type { DashboardStore } from "@/features/stores";
@@ -23,6 +22,7 @@ import {
   profileFormSchema,
 } from "../schemas/profile.schema";
 import { Field, SectionCard, useSavedFlash } from "./section-primitives";
+import { useSettingsDraftParticipant } from "./settings-save-context";
 
 export function ProfileSection({
   store,
@@ -67,10 +67,11 @@ export function ProfileSection({
   const {
     register,
     control,
-    handleSubmit,
     watch,
     reset,
-    formState: { isSubmitting, errors },
+    getValues,
+    trigger,
+    formState: { errors, isDirty },
   } = useForm<ProfileFormInput>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
@@ -154,8 +155,20 @@ export function ProfileSection({
 
   useSavedFlash(saveProfile.isSuccess, saveProfile.reset);
 
-  const onSubmit = handleSubmit((values) => saveProfile.mutate(values));
-
+  const saveDraft = useCallback(async () => {
+    if (!(await trigger())) throw new Error(t("saveBar.validationError"));
+    const values = getValues();
+    await saveProfile.mutateAsync(values);
+    reset(values);
+  }, [getValues, reset, saveProfile, t, trigger]);
+  const discardDraft = useCallback(() => reset(), [reset]);
+  useSettingsDraftParticipant({
+    id: "profile",
+    tab: "store",
+    dirty: isDirty,
+    save: saveDraft,
+    discard: discardDraft,
+  });
   return (
     <SectionCard
       icon={Store}
@@ -247,7 +260,7 @@ export function ProfileSection({
         </div>
       </div>
 
-      <form onSubmit={onSubmit}>
+      <form onSubmit={(event) => event.preventDefault()}>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field id="settings-profile-name" label={t("profile.nameLabel")}>
             <Input
@@ -551,27 +564,7 @@ export function ProfileSection({
           </p>
         ) : null}
 
-        <Separator className="my-5 bg-[#f0e7f8]" />
-
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-[#8f7da8]">{t("profile.help")}</p>
-          <Button
-            type="submit"
-            disabled={
-              isSubmitting ||
-              saveProfile.isPending ||
-              !storeName ||
-              !whatsappNumber
-            }
-            className="store-theme-primary-button h-11 rounded-2xl px-5 text-sm font-semibold hover:scale-[1.01] hover:opacity-100"
-          >
-            {saveProfile.isSuccess
-              ? t("saved")
-              : saveProfile.isPending
-                ? t("saving")
-                : t("save")}
-          </Button>
-        </div>
+        <p className="mt-5 text-sm text-[#8f7da8]">{t("profile.help")}</p>
       </form>
     </SectionCard>
   );

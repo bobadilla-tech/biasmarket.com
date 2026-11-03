@@ -21,6 +21,11 @@ import {
 import { CouriersSection } from "@/features/couriers";
 import { RegisterPreferenceSection } from "@/features/store-settings/components/register-preference-section";
 import { cn } from "@/lib/utils";
+import {
+  SettingsDraftProvider,
+  type SettingsTabId,
+  useSettingsDraftContext,
+} from "@/features/store-settings/components/settings-save-context";
 
 const TAB_IDS = [
   "store",
@@ -32,6 +37,14 @@ const TAB_IDS = [
 type TabId = (typeof TAB_IDS)[number];
 
 export function SettingsPageClient() {
+  return (
+    <SettingsDraftProvider>
+      <SettingsPageContent />
+    </SettingsDraftProvider>
+  );
+}
+
+function SettingsPageContent() {
   const t = useTranslations("dashboard.settings");
   const tCommon = useTranslations("common");
   const { store, loading: storeLoading } = useDashboardStore();
@@ -56,6 +69,14 @@ export function SettingsPageClient() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const tablistRef = useRef<HTMLDivElement>(null);
+  const {
+    isDirty: tabIsDirty,
+    save: saveTab,
+    discard: discardTab,
+    isSaving,
+    errors: saveErrors,
+  } = useSettingsDraftContext();
+  const [pendingTab, setPendingTab] = useState<TabId | null>(null);
   const storePreviewSeeded = useRef(false);
   const [storePreview, setStorePreview] = useState(initialStorePreview);
   useEffect(() => {
@@ -90,6 +111,7 @@ export function SettingsPageClient() {
   const activeTab: TabId = TAB_IDS.includes(requestedTab as TabId)
     ? (requestedTab as TabId)
     : "store";
+  const previousTabRef = useRef(activeTab);
   const [visitedTabs, setVisitedTabs] = useState<Set<TabId>>(
     () => new Set([activeTab]),
   );
@@ -98,6 +120,18 @@ export function SettingsPageClient() {
       visited.has(activeTab) ? visited : new Set([...visited, activeTab]),
     );
   }, [activeTab]);
+  useEffect(() => {
+    const previousTab = previousTabRef.current;
+    if (activeTab === previousTab) return;
+    if (tabIsDirty(previousTab)) {
+      setPendingTab(activeTab);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("tab", previousTab);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      return;
+    }
+    previousTabRef.current = activeTab;
+  }, [activeTab, pathname, router, searchParams, tabIsDirty]);
   const { data: whatsappTemplates, isPending: whatsappLoading } =
     useWhatsAppTemplates(activeTab === "messages" ? store?.id : undefined);
 
@@ -109,6 +143,11 @@ export function SettingsPageClient() {
 
   const selectTab = useCallback(
     (tab: TabId) => {
+      if (tab !== activeTab && tabIsDirty(activeTab)) {
+        setPendingTab(tab);
+        return;
+      }
+      setPendingTab(null);
       setVisitedTabs((visited) =>
         visited.has(tab) ? visited : new Set([...visited, tab]),
       );
@@ -116,8 +155,41 @@ export function SettingsPageClient() {
       params.set("tab", tab);
       router.push(`${pathname}?${params.toString()}`, { scroll: false });
     },
-    [pathname, router, searchParams],
+    [activeTab, pathname, router, searchParams, tabIsDirty],
   );
+
+  const continueToPendingTab = useCallback(
+    async (shouldSave: boolean) => {
+      if (!pendingTab) return;
+      if (shouldSave && !(await saveTab(activeTab))) return;
+      if (!shouldSave) discardTab(activeTab);
+      const nextTab = pendingTab;
+      setPendingTab(null);
+      setVisitedTabs((visited) => new Set([...visited, nextTab]));
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("tab", nextTab);
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [
+      activeTab,
+      discardTab,
+      pathname,
+      pendingTab,
+      router,
+      saveTab,
+      searchParams,
+    ],
+  );
+
+  useEffect(() => {
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!tabIsDirty(activeTab)) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [activeTab, tabIsDirty]);
 
   const onTabKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const focusedTab = (event.target as HTMLElement).closest<HTMLElement>(
@@ -157,7 +229,7 @@ export function SettingsPageClient() {
   }
 
   return (
-    <div className="min-h-screen px-4 py-5 pb-10 sm:px-5 lg:px-8 lg:py-8">
+    <div className="min-h-screen px-4 py-5 pb-36 sm:px-5 lg:px-8 lg:py-8 lg:pb-36">
       <div className="mx-auto max-w-6xl space-y-5">
         <Card className="rounded-[28px] border-white/60 bg-white/70 py-0 shadow-[0_10px_35px_rgba(89,35,126,0.05)] backdrop-blur">
           <CardContent className="flex items-center justify-between gap-4 px-5 py-5 sm:px-7">
@@ -207,6 +279,15 @@ export function SettingsPageClient() {
             >
               <Icon aria-hidden="true" className="size-4" />
               <span>{label}</span>
+              {tabIsDirty(id) ? (
+                <span
+                  aria-label={t("saveBar.dirty")}
+                  className={cn(
+                    "size-2 rounded-full",
+                    activeTab === id ? "bg-white" : "bg-[#b24368]",
+                  )}
+                />
+              ) : null}
             </button>
           ))}
         </div>
@@ -308,6 +389,128 @@ export function SettingsPageClient() {
             ) : null}
           </section>
         ))}
+      </div>
+      <SettingsSaveBar
+        activeTab={activeTab}
+        dirty={tabIsDirty(activeTab)}
+        saving={isSaving}
+        errors={saveErrors}
+        onSave={() => void saveTab(activeTab)}
+        onDiscard={() => discardTab(activeTab)}
+        labels={{
+          saved: t("saveBar.saved"),
+          dirty: t("saveBar.dirty"),
+          save: t("saveBar.save"),
+          saving: t("saveBar.saving"),
+          discard: t("saveBar.discard"),
+          errors: t("saveBar.errors"),
+        }}
+      />
+      {pendingTab ? (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-[#251632]/40 p-4"
+          role="presentation"
+        >
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="settings-unsaved-title"
+            className="w-full max-w-md rounded-3xl border border-[#eadcf7] bg-white p-6 shadow-2xl"
+          >
+            <h2
+              id="settings-unsaved-title"
+              className="text-lg font-bold text-[#2d1649]"
+            >
+              {t("saveBar.leaveTitle")}
+            </h2>
+            <p className="mt-2 text-sm text-[#72558e]">
+              {t("saveBar.leaveDescription")}
+            </p>
+            <div className="mt-6 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setPendingTab(null)}
+                className="h-10 rounded-xl border border-[#eadcf7] px-4 text-sm font-semibold text-[#72558e]"
+              >
+                {t("saveBar.cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={() => void continueToPendingTab(false)}
+                className="h-10 rounded-xl border border-[#eadcf7] px-4 text-sm font-semibold text-[#72558e]"
+              >
+                {t("saveBar.discardAndContinue")}
+              </button>
+              <button
+                type="button"
+                onClick={() => void continueToPendingTab(true)}
+                disabled={isSaving}
+                className="store-theme-primary-button h-10 rounded-xl px-4 text-sm font-semibold"
+              >
+                {t("saveBar.saveAndContinue")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function SettingsSaveBar({
+  activeTab,
+  dirty,
+  saving,
+  errors,
+  onSave,
+  onDiscard,
+  labels,
+}: {
+  activeTab: SettingsTabId;
+  dirty: boolean;
+  saving: boolean;
+  errors: string[];
+  onSave: () => void;
+  onDiscard: () => void;
+  labels: Record<
+    "saved" | "dirty" | "save" | "saving" | "discard" | "errors",
+    string
+  >;
+}) {
+  return (
+    <div
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-[#eadcf7] bg-white/95 px-4 py-3 shadow-[0_-8px_30px_rgba(45,22,73,0.12)] backdrop-blur sm:px-6"
+      data-tab={activeTab}
+    >
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p aria-live="polite" className="text-sm font-medium text-[#5b3d80]">
+            {dirty ? labels.dirty : labels.saved}
+          </p>
+          {errors.length ? (
+            <p role="alert" className="mt-1 text-xs text-[#b24368]">
+              {labels.errors}: {errors.join(" · ")}
+            </p>
+          ) : null}
+        </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onDiscard}
+            disabled={!dirty || saving}
+            className="h-10 rounded-xl border border-[#eadcf7] px-4 text-sm font-semibold text-[#72558e] disabled:opacity-45"
+          >
+            {labels.discard}
+          </button>
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={!dirty || saving}
+            className="store-theme-primary-button h-10 rounded-xl px-4 text-sm font-semibold disabled:opacity-50"
+          >
+            {saving ? labels.saving : labels.save}
+          </button>
+        </div>
       </div>
     </div>
   );

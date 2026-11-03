@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronDown, ChevronUp, CreditCard, Info } from "lucide-react";
@@ -29,6 +29,7 @@ import {
 } from "../schemas/payment-details.schema";
 import { paymentInstructionsSchema } from "../schemas/payment-instructions.schema";
 import { Field, SectionCard, useSavedFlash } from "./section-primitives";
+import { useSettingsDraftParticipant } from "./settings-save-context";
 
 const PAYMENT_METHODS = [
   {
@@ -126,21 +127,15 @@ export function PaymentsSection({
   });
   const [expandedMethod, setExpandedMethod] =
     useState<MethodWithDetails | null>(null);
-  const [detailsError, setDetailsError] = useState<
-    Partial<Record<MethodWithDetails, string>>
-  >({});
-  const [savedDetailsMethod, setSavedDetailsMethod] =
-    useState<MethodWithDetails | null>(null);
   const [depositPercents, setDepositPercents] = useState<
     Record<string, number>
   >({});
-  const [depositError, setDepositError] = useState<
-    Record<string, string | null>
-  >({});
   const {
     register: registerPaymentInstructions,
-    handleSubmit: handlePaymentInstructionsSubmit,
     reset: resetPaymentInstructions,
+    getValues: getPaymentInstructionValues,
+    trigger: triggerPaymentInstructions,
+    formState: { isDirty: instructionsDirty },
     watch: watchPaymentInstructions,
   } = useForm({
     resolver: zodResolver(paymentInstructionsSchema),
@@ -150,6 +145,7 @@ export function PaymentsSection({
     watchPaymentInstructions("paymentInstructions") ?? "";
 
   const syncedInstructionsRef = useRef(initialPaymentInstructions);
+  const [savedDraftSignature, setSavedDraftSignature] = useState("");
   useEffect(() => {
     const previous = syncedInstructionsRef.current;
     if (initialPaymentInstructions === previous) return;
@@ -202,7 +198,15 @@ export function PaymentsSection({
     setEnabledByMethod(nextEnabled);
     setDetailsForm(nextDetails);
     setDepositPercents(nextDeposit);
-  }, [methods]);
+    setSavedDraftSignature(
+      JSON.stringify({
+        enabled: nextEnabled,
+        details: nextDetails,
+        deposits: nextDeposit,
+        instructions: initialPaymentInstructions,
+      }),
+    );
+  }, [methods, initialPaymentInstructions]);
 
   useSavedFlash(saveMethods.isSuccess, saveMethods.reset);
 
@@ -215,50 +219,6 @@ export function PaymentsSection({
       ...prev,
       [method]: { ...prev[method], [field]: value },
     }));
-  }
-
-  function handleSaveDetails(method: MethodWithDetails) {
-    const row = detailsForm[method];
-    const schema =
-      method === "TRANSFER" ? transferDetailsSchema : walletDetailsSchema;
-    const parsed = schema.safeParse({
-      ...row,
-      accountType: row.accountType || undefined,
-      qrImageUrl: row.qrImageUrl || undefined,
-    });
-    if (!parsed.success) {
-      setDetailsError((prev) => ({
-        ...prev,
-        [method]: t("payments.detailsInvalid"),
-      }));
-      return;
-    }
-    setDetailsError((prev) => ({ ...prev, [method]: undefined }));
-    saveDetails.mutate(
-      { method, details: parsed.data },
-      {
-        onSuccess: () => {
-          setSavedDetailsMethod(method);
-          globalThis.setTimeout(
-            () =>
-              setSavedDetailsMethod((current) =>
-                current === method ? null : current,
-              ),
-            1800,
-          );
-        },
-        onError: (error) => {
-          setSavedDetailsMethod(null);
-          setDetailsError((prev) => ({
-            ...prev,
-            [method]:
-              error instanceof Error
-                ? error.message
-                : t("payments.detailsInvalid"),
-          }));
-        },
-      },
-    );
   }
 
   function handleQrFileChange(method: "YAPE" | "PLIN", file: File | undefined) {
@@ -281,36 +241,153 @@ export function PaymentsSection({
       ...prev,
       [method]: isNaN(num) ? 0 : num,
     }));
-    setDepositError((prev) => ({ ...prev, [method]: null }));
   }
 
-  function handleSaveDepositPercent(method: UpsertPaymentMethodDtoMethod) {
-    const pct = depositPercents[method];
-    if (pct === undefined || pct < 1 || pct > 100) {
-      setDepositError((prev) => ({
-        ...prev,
-        [method]: t("payments.depositPercent.invalid"),
-      }));
-      return;
+  const draftSignature = JSON.stringify({
+    enabled: enabledByMethod,
+    details: detailsForm,
+    deposits: depositPercents,
+    instructions: paymentInstructions,
+  });
+  const saveDraft = useCallback(async () => {
+    if (!(await triggerPaymentInstructions())) {
+      throw new Error(t("saveBar.validationError"));
     }
-    saveDeposit.mutate(
-      { method, depositPercent: pct },
-      {
-        onSuccess: () => {
-          setDepositError((prev) => ({ ...prev, [method]: null }));
-        },
-        onError: (error) => {
-          setDepositError((prev) => ({
-            ...prev,
-            [method]:
-              error instanceof Error
-                ? error.message
-                : t("payments.depositPercent.invalid"),
-          }));
-        },
-      },
+    const parsedDetails = METHODS_WITH_DETAILS.flatMap((method) => {
+      const row = detailsForm[method];
+      const savedDetails = methods?.find((item) => item.method === method)
+        ?.details as Record<string, unknown> | undefined;
+      const savedRow: DetailsFormRow = {
+        bankName:
+          typeof savedDetails?.bankName === "string"
+            ? savedDetails.bankName
+            : "",
+        accountNumber:
+          typeof savedDetails?.accountNumber === "string"
+            ? savedDetails.accountNumber
+            : "",
+        accountHolder:
+          typeof savedDetails?.accountHolder === "string"
+            ? savedDetails.accountHolder
+            : "",
+        accountType:
+          typeof savedDetails?.accountType === "string"
+            ? savedDetails.accountType
+            : "",
+        phoneNumber:
+          typeof savedDetails?.phoneNumber === "string"
+            ? savedDetails.phoneNumber
+            : "",
+        qrImageUrl:
+          typeof savedDetails?.qrImageUrl === "string"
+            ? savedDetails.qrImageUrl
+            : "",
+      };
+      if (JSON.stringify(row) === JSON.stringify(savedRow)) return [];
+      const schema =
+        method === "TRANSFER" ? transferDetailsSchema : walletDetailsSchema;
+      const parsed = schema.safeParse({
+        ...row,
+        accountType: row.accountType || undefined,
+        qrImageUrl: row.qrImageUrl || undefined,
+      });
+      if (!parsed.success) throw new Error(t("payments.detailsInvalid"));
+      return [{ method, details: parsed.data }];
+    });
+    const paymentMethods = Object.keys(
+      enabledByMethod,
+    ) as UpsertPaymentMethodDtoMethod[];
+    const depositValues = paymentMethods.map((method) => ({
+      method,
+      depositPercent: depositPercents[method] ?? 100,
+    }));
+    if (
+      depositValues.some(
+        ({ depositPercent }) => depositPercent < 1 || depositPercent > 100,
+      )
+    ) {
+      throw new Error(t("payments.depositPercent.invalid"));
+    }
+    await saveMethods.mutateAsync(enabledByMethod);
+    for (const item of parsedDetails) await saveDetails.mutateAsync(item);
+    for (const item of depositValues) await saveDeposit.mutateAsync(item);
+    const instructions = getPaymentInstructionValues().paymentInstructions;
+    await saveInstructions.mutateAsync(instructions);
+    resetPaymentInstructions({ paymentInstructions: instructions });
+    setSavedDraftSignature(draftSignature);
+  }, [
+    detailsForm,
+    depositPercents,
+    draftSignature,
+    enabledByMethod,
+    getPaymentInstructionValues,
+    methods,
+    resetPaymentInstructions,
+    saveDetails,
+    saveDeposit,
+    saveInstructions,
+    saveMethods,
+    t,
+    triggerPaymentInstructions,
+  ]);
+  const discardDraft = useCallback(() => {
+    if (!methods) return;
+    const nextEnabled = { ...DEFAULT_ENABLED };
+    const nextDetails = {
+      TRANSFER: EMPTY_DETAILS_ROW,
+      YAPE: EMPTY_DETAILS_ROW,
+      PLIN: EMPTY_DETAILS_ROW,
+    };
+    const nextDeposit: Record<string, number> = {};
+    for (const row of methods) {
+      nextEnabled[row.method] = row.enabled;
+      nextDeposit[row.method] =
+        typeof row.depositPercent === "number" ? row.depositPercent : 100;
+      if (!METHODS_WITH_DETAILS.includes(row.method as MethodWithDetails))
+        continue;
+      const details = row.details as Record<string, unknown>;
+      nextDetails[row.method as MethodWithDetails] = {
+        bankName: typeof details.bankName === "string" ? details.bankName : "",
+        accountNumber:
+          typeof details.accountNumber === "string"
+            ? details.accountNumber
+            : "",
+        accountHolder:
+          typeof details.accountHolder === "string"
+            ? details.accountHolder
+            : "",
+        accountType:
+          typeof details.accountType === "string" ? details.accountType : "",
+        phoneNumber:
+          typeof details.phoneNumber === "string" ? details.phoneNumber : "",
+        qrImageUrl:
+          typeof details.qrImageUrl === "string" ? details.qrImageUrl : "",
+      };
+    }
+    setEnabledByMethod(nextEnabled);
+    setDetailsForm(nextDetails);
+    setDepositPercents(nextDeposit);
+    resetPaymentInstructions({
+      paymentInstructions: initialPaymentInstructions,
+    });
+    setSavedDraftSignature(
+      JSON.stringify({
+        enabled: nextEnabled,
+        details: nextDetails,
+        deposits: nextDeposit,
+        instructions: initialPaymentInstructions,
+      }),
     );
-  }
+  }, [initialPaymentInstructions, methods, resetPaymentInstructions]);
+  useSettingsDraftParticipant({
+    id: "payments",
+    tab: "payments",
+    dirty:
+      Boolean(methods) &&
+      (draftSignature !== savedDraftSignature || instructionsDirty),
+    save: saveDraft,
+    discard: discardDraft,
+  });
 
   return (
     <SectionCard
@@ -583,28 +660,6 @@ export function PaymentsSection({
                     </>
                   )}
 
-                  {detailsError[method.method as MethodWithDetails] && (
-                    <p role="alert" className="text-xs text-[#b24368]">
-                      {detailsError[method.method as MethodWithDetails]}
-                    </p>
-                  )}
-
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() =>
-                      handleSaveDetails(method.method as MethodWithDetails)
-                    }
-                    disabled={saveDetails.isPending}
-                    className="store-theme-primary-button h-9 rounded-xl px-4 text-xs font-semibold hover:opacity-100"
-                  >
-                    {savedDetailsMethod === method.method
-                      ? t("saved")
-                      : saveDetails.isPending
-                        ? t("saving")
-                        : t("payments.saveDetails")}
-                  </Button>
-
                   <Separator className="my-3 bg-[#f0e7f8]" />
 
                   <p className="text-xs font-medium text-[#341b55]">
@@ -633,26 +688,6 @@ export function PaymentsSection({
                       }
                     />
                   </Field>
-
-                  {depositError[method.method] && (
-                    <p role="alert" className="text-xs text-[#b24368]">
-                      {depositError[method.method]}
-                    </p>
-                  )}
-
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => handleSaveDepositPercent(method.method)}
-                    disabled={saveDeposit.isPending}
-                    className="store-theme-primary-button h-9 rounded-xl px-4 text-xs font-semibold hover:opacity-100"
-                  >
-                    {saveDeposit.isSuccess
-                      ? t("saved")
-                      : saveDeposit.isPending
-                        ? t("saving")
-                        : t("save")}
-                  </Button>
                 </div>
               )}
             </div>
@@ -689,25 +724,6 @@ export function PaymentsSection({
               : tCommon("networkError")}
           </p>
         ) : null}
-        <div className="mt-3 flex justify-end">
-          <Button
-            type="button"
-            aria-label={t("payments.saveInstructions")}
-            onClick={handlePaymentInstructionsSubmit(
-              ({ paymentInstructions: value }) =>
-                saveInstructions.mutate(value),
-            )}
-            disabled={saveInstructions.isPending}
-            className="store-theme-primary-button h-9 rounded-xl px-4 text-xs font-semibold hover:opacity-100"
-          >
-            {saveInstructions.isSuccess &&
-            saveInstructions.variables === paymentInstructions
-              ? t("saved")
-              : saveInstructions.isPending
-                ? t("saving")
-                : t("save")}
-          </Button>
-        </div>
       </div>
 
       {saveMethods.isError ? (
@@ -720,20 +736,7 @@ export function PaymentsSection({
 
       <Separator className="my-5 bg-[#f0e7f8]" />
 
-      <div className="flex items-center justify-between gap-4">
-        <p className="text-sm text-[#8f7da8]">{t("payments.footer")}</p>
-        <Button
-          onClick={() => saveMethods.mutate(enabledByMethod)}
-          disabled={saveMethods.isPending}
-          className="store-theme-primary-button h-11 rounded-2xl px-5 text-sm font-semibold hover:opacity-100"
-        >
-          {saveMethods.isSuccess
-            ? t("saved")
-            : saveMethods.isPending
-              ? t("saving")
-              : t("save")}
-        </Button>
-      </div>
+      <p className="text-sm text-[#8f7da8]">{t("payments.footer")}</p>
     </SectionCard>
   );
 }

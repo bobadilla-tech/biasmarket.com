@@ -286,6 +286,20 @@
     "save": "Save",
     "saving": "Saving...",
     "saved": "Saved",
+    "saveBar": {
+      "saved": "All changes saved",
+      "dirty": "You have unsaved changes",
+      "save": "Save changes",
+      "saving": "Saving...",
+      "discard": "Discard",
+      "errors": "Could not save",
+      "validationError": "Check the highlighted fields before saving.",
+      "leaveTitle": "Leave without saving?",
+      "leaveDescription": "Save or discard your changes before switching tabs.",
+      "cancel": "Keep editing",
+      "discardAndContinue": "Discard and continue",
+      "saveAndContinue": "Save and continue"
+    },
     "accountRegister": {
       "title": "How you're addressed in your dashboard",
       "description": "Choose the Spanish register used for your dashboard.",

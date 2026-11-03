@@ -1,14 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Eye } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import type { DashboardStore } from "@/features/stores";
 import { useSaveVisibility } from "../mutations/use-save-visibility";
 import { SectionCard, ToggleRow, useSavedFlash } from "./section-primitives";
+import { useSettingsDraftParticipant } from "./settings-save-context";
 
 export function DefaultsSection({ store }: { store: DashboardStore }) {
   const t = useTranslations("dashboard.settings");
@@ -22,6 +21,21 @@ export function DefaultsSection({ store }: { store: DashboardStore }) {
   }, [store.isPublic]);
 
   useSavedFlash(saveVisibility.isSuccess, saveVisibility.reset);
+
+  const saveDraft = useCallback(async () => {
+    await saveVisibility.mutateAsync({ isPublic });
+  }, [isPublic, saveVisibility]);
+  const discardDraft = useCallback(
+    () => setIsPublic(store.isPublic ?? true),
+    [store.isPublic],
+  );
+  useSettingsDraftParticipant({
+    id: "visibility",
+    tab: "store",
+    dirty: isPublic !== (store.isPublic ?? true),
+    save: saveDraft,
+    discard: discardDraft,
+  });
 
   return (
     <SectionCard
@@ -53,22 +67,6 @@ export function DefaultsSection({ store }: { store: DashboardStore }) {
             : String(saveVisibility.error)}
         </p>
       ) : null}
-
-      <Separator className="my-5 bg-[#f0e7f8]" />
-
-      <div className="flex items-center justify-end gap-4">
-        <Button
-          onClick={() => saveVisibility.mutate({ isPublic })}
-          disabled={saveVisibility.isPending}
-          className="store-theme-primary-button h-11 rounded-2xl px-5 text-sm font-semibold hover:scale-[1.01] hover:opacity-100"
-        >
-          {saveVisibility.isSuccess
-            ? t("saved")
-            : saveVisibility.isPending
-              ? t("saving")
-              : t("save")}
-        </Button>
-      </div>
     </SectionCard>
   );
 }

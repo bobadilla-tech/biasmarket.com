@@ -286,6 +286,20 @@
     "save": "Guardar",
     "saving": "Guardando...",
     "saved": "Guardado",
+    "saveBar": {
+      "saved": "Todos los cambios están guardados",
+      "dirty": "Tienes cambios sin guardar",
+      "save": "Guardar cambios",
+      "saving": "Guardando...",
+      "discard": "Descartar",
+      "errors": "No se pudo guardar",
+      "validationError": "Revisa los campos marcados antes de guardar.",
+      "leaveTitle": "¿Salir sin guardar?",
+      "leaveDescription": "Guarda o descarta los cambios antes de cambiar de pestaña.",
+      "cancel": "Seguir editando",
+      "discardAndContinue": "Descartar y continuar",
+      "saveAndContinue": "Guardar y continuar"
+    },
     "accountRegister": {
       "title": "Tratamiento en mi panel",
       "description": "Elige el registro del español que se usa en tu panel.",

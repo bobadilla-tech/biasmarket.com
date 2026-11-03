@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Bell } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import type { DashboardStore } from "@/features/stores";
 import { useSaveStockAlerts } from "../mutations/use-save-stock-alerts";
 import {
@@ -15,6 +13,7 @@ import {
   ToggleRow,
   useSavedFlash,
 } from "./section-primitives";
+import { useSettingsDraftParticipant } from "./settings-save-context";
 
 interface NotificationSetting {
   key: "newOrder" | "paymentReview" | "orderDelivered" | "weeklySummary";
@@ -51,12 +50,25 @@ export function NotificationsSection({ store }: { store: DashboardStore }) {
 
   useSavedFlash(saveStockAlerts.isSuccess, saveStockAlerts.reset);
 
-  const handleSave = () => {
-    saveStockAlerts.mutate({
+  const saveDraft = useCallback(async () => {
+    await saveStockAlerts.mutateAsync({
       lowStockAlertsEnabled,
       lowStockThreshold: Math.max(0, Number(lowStockThreshold) || 0),
     });
-  };
+  }, [lowStockAlertsEnabled, lowStockThreshold, saveStockAlerts]);
+  const discardDraft = useCallback(() => {
+    setLowStockAlertsEnabled(store.lowStockAlertsEnabled ?? true);
+    setLowStockThreshold(String(store.lowStockThreshold ?? 5));
+  }, [store.lowStockAlertsEnabled, store.lowStockThreshold]);
+  useSettingsDraftParticipant({
+    id: "notifications",
+    tab: "messages",
+    dirty:
+      lowStockAlertsEnabled !== (store.lowStockAlertsEnabled ?? true) ||
+      lowStockThreshold !== String(store.lowStockThreshold ?? 5),
+    save: saveDraft,
+    discard: discardDraft,
+  });
 
   return (
     <SectionCard
@@ -116,22 +128,6 @@ export function NotificationsSection({ store }: { store: DashboardStore }) {
             : String(saveStockAlerts.error)}
         </p>
       ) : null}
-
-      <Separator className="my-5 bg-[#f0e7f8]" />
-
-      <div className="flex items-center justify-end gap-4">
-        <Button
-          onClick={handleSave}
-          disabled={saveStockAlerts.isPending}
-          className="store-theme-primary-button h-11 rounded-2xl px-5 text-sm font-semibold hover:scale-[1.01] hover:opacity-100"
-        >
-          {saveStockAlerts.isSuccess
-            ? t("saved")
-            : saveStockAlerts.isPending
-              ? t("saving")
-              : t("save")}
-        </Button>
-      </div>
     </SectionCard>
   );
 }

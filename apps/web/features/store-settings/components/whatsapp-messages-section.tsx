@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MessageCircle, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useSaveWhatsAppTemplate } from "../mutations/use-save-whatsapp-template";
 import { SectionCard, useSavedFlash } from "./section-primitives";
+import { useSettingsDraftParticipant } from "./settings-save-context";
 
 const SAMPLE_NEW_ORDER_INPUT: WhatsAppOrderInput = {
   orderId: "sample-order-123456",
@@ -141,6 +142,23 @@ function MessageTemplateEditor({
   );
 
   const preview = buildPreview(type, draftIsCustom ? text : undefined);
+  const saveDraft = useCallback(async () => {
+    if (text.trim().length > 0 && missing.length > 0) {
+      throw new Error(t("missingTokens", { tokens: missing.join(", ") }));
+    }
+    await saveTemplate.mutateAsync(draftIsCustom ? text : "");
+  }, [draftIsCustom, missing, saveTemplate, t, text]);
+  const discardDraft = useCallback(
+    () => setText(savedTemplate),
+    [savedTemplate],
+  );
+  useSettingsDraftParticipant({
+    id: `whatsapp-${type}`,
+    tab: "messages",
+    dirty: text !== savedTemplate,
+    save: saveDraft,
+    discard: discardDraft,
+  });
 
   const insertToken = (token: string) => {
     const textarea = textareaRef.current;
@@ -249,20 +267,6 @@ function MessageTemplateEditor({
               className="mr-auto h-9 rounded-full px-3 text-xs"
             >
               {t("restoreDefault")}
-            </Button>
-            <Button
-              onClick={() => saveTemplate.mutate(draftIsCustom ? text : "")}
-              disabled={
-                (text.trim().length > 0 && missing.length > 0) ||
-                saveTemplate.isPending
-              }
-              className="store-theme-primary-button h-9 rounded-full px-4 text-xs font-semibold hover:opacity-100"
-            >
-              {saveTemplate.isSuccess
-                ? t("saved")
-                : saveTemplate.isPending
-                  ? t("saving")
-                  : t("save")}
             </Button>
           </div>
         </div>

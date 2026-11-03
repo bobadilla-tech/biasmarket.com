@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Palette, Pipette } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -12,7 +12,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
 import { StoreLogo } from "@/components/store-logo";
 import {
   buildCustomStorePalette,
@@ -25,6 +24,7 @@ import { cn } from "@/lib/utils";
 import type { DashboardStore } from "@/features/stores";
 import { useSaveAppearance } from "../mutations/use-save-appearance";
 import { SectionCard, useSavedFlash } from "./section-primitives";
+import { useSettingsDraftParticipant } from "./settings-save-context";
 
 export function AppearanceSection({ store }: { store: DashboardStore }) {
   const t = useTranslations("dashboard.settings");
@@ -73,6 +73,35 @@ export function AppearanceSection({ store }: { store: DashboardStore }) {
       STORE_PALETTES[0]
     );
   }, [selectedPaletteId, customColor, customAccent]);
+
+  const paletteSignature = JSON.stringify({
+    id: selectedPalette.id,
+    colors: selectedPalette.colors,
+  });
+  const initialSignature = JSON.stringify({
+    id: initial.id,
+    colors: initial.colors,
+  });
+  const saveDraft = useCallback(async () => {
+    await saveAppearance.mutateAsync(buildStoreThemeConfig(selectedPalette));
+  }, [saveAppearance, selectedPalette]);
+  const discardDraft = useCallback(() => {
+    setSelectedPaletteId(initialIsPreset ? initial.id : "custom");
+    setCustomColor(initialIsPreset ? "#6d28d9" : initial.colors.primary);
+    setCustomAccent(initialIsPreset ? "#f472b6" : initial.colors.accent);
+  }, [
+    initial.colors.accent,
+    initial.colors.primary,
+    initial.id,
+    initialIsPreset,
+  ]);
+  useSettingsDraftParticipant({
+    id: "appearance",
+    tab: "appearance",
+    dirty: paletteSignature !== initialSignature,
+    save: saveDraft,
+    discard: discardDraft,
+  });
 
   return (
     <SectionCard
@@ -250,24 +279,7 @@ export function AppearanceSection({ store }: { store: DashboardStore }) {
         </p>
       ) : null}
 
-      <Separator className="my-5 bg-[#f0e7f8]" />
-
-      <div className="flex items-center justify-between gap-4">
-        <p className="text-sm text-[#8f7da8]">{t("appearance.help")}</p>
-        <Button
-          onClick={() =>
-            saveAppearance.mutate(buildStoreThemeConfig(selectedPalette))
-          }
-          disabled={saveAppearance.isPending}
-          className="store-theme-primary-button h-11 rounded-2xl px-5 text-sm font-semibold hover:scale-[1.01] hover:opacity-100"
-        >
-          {saveAppearance.isSuccess
-            ? t("saved")
-            : saveAppearance.isPending
-              ? t("saving")
-              : t("appearance.apply")}
-        </Button>
-      </div>
+      <p className="mt-5 text-sm text-[#8f7da8]">{t("appearance.help")}</p>
     </SectionCard>
   );
 }
