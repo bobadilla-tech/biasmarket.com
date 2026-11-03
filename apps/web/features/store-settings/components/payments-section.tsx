@@ -216,6 +216,58 @@ export function PaymentsSection({
     );
   }, [methods]);
 
+  useEffect(() => {
+    if (!methods || !methodsInitialized.current || !savedDraftSignature) return;
+    const nextQrUrls: Partial<Record<MethodWithDetails, string>> = {};
+    for (const method of ["YAPE", "PLIN"] as const) {
+      const details = methods.find((row) => row.method === method)?.details as
+        Record<string, unknown> | undefined;
+      const qrImageUrl =
+        typeof details?.qrImageUrl === "string" ? details.qrImageUrl : "";
+      if (qrImageUrl !== detailsForm[method].qrImageUrl) {
+        nextQrUrls[method] = qrImageUrl;
+      }
+    }
+    if (Object.keys(nextQrUrls).length === 0) return;
+
+    let saved: {
+      details?: Record<string, DetailsFormRow>;
+      [key: string]: unknown;
+    };
+    try {
+      saved = JSON.parse(savedDraftSignature) as typeof saved;
+    } catch {
+      return;
+    }
+    setDetailsForm((current) => {
+      const next = { ...current };
+      for (const [method, qrImageUrl] of Object.entries(nextQrUrls) as [
+        MethodWithDetails,
+        string,
+      ][]) {
+        const savedQrUrl = saved.details?.[method]?.qrImageUrl ?? "";
+        if (current[method].qrImageUrl === savedQrUrl) {
+          next[method] = { ...current[method], qrImageUrl };
+        }
+      }
+      return next;
+    });
+    setSavedDraftSignature(
+      JSON.stringify({
+        ...saved,
+        details: {
+          ...saved.details,
+          ...Object.fromEntries(
+            Object.entries(nextQrUrls).map(([method, qrImageUrl]) => [
+              method,
+              { ...saved.details?.[method as MethodWithDetails], qrImageUrl },
+            ]),
+          ),
+        },
+      }),
+    );
+  }, [detailsForm, methods, savedDraftSignature]);
+
   useSavedFlash(savePaymentSettings.isSuccess, savePaymentSettings.reset);
 
   function updateDetailField(

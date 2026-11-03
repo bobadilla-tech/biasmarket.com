@@ -83,6 +83,7 @@ function SettingsPageContent() {
   );
   const leaveDialogRef = useRef<HTMLDivElement>(null);
   const leaveCancelRef = useRef<HTMLButtonElement>(null);
+  const currentLocationRef = useRef("");
   const storePreviewSeeded = useRef(false);
   const [storePreview, setStorePreview] = useState(initialStorePreview);
   useEffect(() => {
@@ -236,6 +237,35 @@ function SettingsPageContent() {
     };
     document.addEventListener("click", onDocumentClick, true);
     return () => document.removeEventListener("click", onDocumentClick, true);
+  }, [activeTab, pathname, tabIsDirty]);
+
+  useEffect(() => {
+    currentLocationRef.current = `${pathname}${window.location.search}${window.location.hash}`;
+  }, [pathname, searchParams]);
+
+  useEffect(() => {
+    const onPopState = (event: PopStateEvent) => {
+      const destination = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      if (
+        destination === currentLocationRef.current ||
+        new URL(destination, window.location.origin).pathname === pathname ||
+        !tabIsDirty(activeTab)
+      ) {
+        currentLocationRef.current = destination;
+        return;
+      }
+
+      event.stopImmediatePropagation();
+      window.history.pushState(
+        window.history.state,
+        "",
+        currentLocationRef.current,
+      );
+      setPendingTab(null);
+      setPendingNavigation(destination);
+    };
+    window.addEventListener("popstate", onPopState, true);
+    return () => window.removeEventListener("popstate", onPopState, true);
   }, [activeTab, pathname, tabIsDirty]);
 
   useEffect(() => {

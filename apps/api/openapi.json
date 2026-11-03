@@ -3051,7 +3051,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavePaymentSettingsResponseDto"
+                }
+              }
+            }
           }
         },
         "tags": ["PaymentConfig"]
@@ -9917,6 +9924,25 @@
           "depositPercent",
           "createdAt"
         ]
+      },
+      "SavePaymentSettingsStoreResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "paymentInstructions": { "type": "string" }
+        },
+        "required": ["id", "paymentInstructions"]
+      },
+      "SavePaymentSettingsResponseDto": {
+        "type": "object",
+        "properties": {
+          "methods": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/PaymentMethodConfigResponseDto" }
+          },
+          "store": { "$ref": "#/components/schemas/SavePaymentSettingsStoreResponseDto" }
+        },
+        "required": ["methods"]
       },
       "PaymentSettingsMethodChangeDto": {
         "type": "object",

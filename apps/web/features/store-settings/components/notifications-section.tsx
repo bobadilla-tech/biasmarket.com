@@ -82,7 +82,8 @@ export function NotificationsSection({ store }: { store: DashboardStore }) {
     tab: "messages",
     dirty:
       lowStockAlertsEnabled !== (store.lowStockAlertsEnabled ?? true) ||
-      lowStockThreshold !== String(store.lowStockThreshold ?? 5),
+      (lowStockAlertsEnabled &&
+        lowStockThreshold !== String(store.lowStockThreshold ?? 5)),
     valid: !lowStockAlertsEnabled || thresholdIsValid,
     validationError: t("notifications.thresholdInvalid"),
     save: saveDraft,

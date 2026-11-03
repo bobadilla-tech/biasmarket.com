@@ -10,6 +10,7 @@ import type {
   PaymentConfigControlleruploadQrImageBody,
   PaymentMethodConfigResponseDto,
   SavePaymentSettingsDto,
+  SavePaymentSettingsResponseDto,
   UpsertPaymentMethodDto,
 } from "../api.schemas.js";
 
@@ -73,8 +74,8 @@ export const saveSettings = async (
   storeId: string,
   savePaymentSettingsDto: SavePaymentSettingsDto,
   options?: Parameters<typeof customFetch>[1],
-): Promise<void> => {
-  return customFetch<void>(getSaveSettingsUrl(storeId), {
+): Promise<SavePaymentSettingsResponseDto> => {
+  return customFetch<SavePaymentSettingsResponseDto>(getSaveSettingsUrl(storeId), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },

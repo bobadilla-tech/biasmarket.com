@@ -23,6 +23,8 @@ export default async () => {
       await import('./modules/payment-config/dto/payment-method-details.dto.js'),
     ['./modules/payment-config/dto/save-payment-settings.dto.js']:
       await import('./modules/payment-config/dto/save-payment-settings.dto.js'),
+    ['./modules/payment-config/dto/save-payment-settings-response.dto.js']:
+      await import('./modules/payment-config/dto/save-payment-settings-response.dto.js'),
     ['./modules/orders/infrastructure/customer-account-response.dto.js']:
       await import('./modules/orders/infrastructure/customer-account-response.dto.js'),
     ['./modules/customer-auth/dto/account-order-response.dto.js']:
@@ -1779,6 +1781,32 @@ export default async () => {
                 required: false,
                 type: () => String,
                 maxLength: 1000,
+              },
+            },
+          },
+        ],
+        [
+          import('./modules/payment-config/dto/save-payment-settings-response.dto.js'),
+          {
+            SavePaymentSettingsStoreResponseDto: {
+              id: { required: true, type: () => String },
+              paymentInstructions: { required: true, type: () => String },
+            },
+            SavePaymentSettingsResponseDto: {
+              methods: {
+                required: true,
+                type: () => [
+                  t[
+                    './modules/payment-config/dto/payment-method-response.dto.js'
+                  ].PaymentMethodConfigResponseDto,
+                ],
+              },
+              store: {
+                required: false,
+                type: () =>
+                  t[
+                    './modules/payment-config/dto/save-payment-settings-response.dto.js'
+                  ].SavePaymentSettingsStoreResponseDto,
               },
             },
           },
@@ -3764,7 +3792,11 @@ export default async () => {
                   ].PaymentMethodConfigResponseDto,
                 ],
               },
-              saveSettings: {},
+              saveSettings: {
+                type: t[
+                  './modules/payment-config/dto/save-payment-settings-response.dto.js'
+                ].SavePaymentSettingsResponseDto,
+              },
               upsert: {
                 type: t[
                   './modules/payment-config/dto/payment-method-response.dto.js'

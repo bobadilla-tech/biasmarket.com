@@ -12,7 +12,12 @@ import {
 } from "@nestjs/common";
 import { AuthGuard, Public, Session } from "@thallesp/nestjs-better-auth";
 import type { UserSession } from "@thallesp/nestjs-better-auth";
-import { ApiBody, ApiConsumes, ApiQuery } from "@nestjs/swagger";
+import {
+  ApiBody,
+  ApiConsumes,
+  ApiCreatedResponse,
+  ApiQuery,
+} from "@nestjs/swagger";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { PaymentConfigService } from "./payment-config.service.js";
 import {
@@ -21,6 +26,7 @@ import {
 } from "./dto/upsert-payment-method.dto.js";
 import type { PaymentMethodConfigResponseDto } from "./dto/payment-method-response.dto.js";
 import { SavePaymentSettingsDto } from "./dto/save-payment-settings.dto.js";
+import { SavePaymentSettingsResponseDto } from "./dto/save-payment-settings-response.dto.js";
 import {
   IMAGE_UPLOAD_MIME_TYPES,
   UploadedFileValidationPipe,
@@ -76,12 +82,21 @@ export class PaymentConfigController {
   }
 
   @Post("settings")
+  @ApiCreatedResponse({ type: SavePaymentSettingsResponseDto })
   async saveSettings(
     @Param("storeId") storeId: string,
     @Session() session: UserSession,
     @Body() dto: SavePaymentSettingsDto,
-  ) {
-    return this.paymentConfig.saveSettings(storeId, session.user.id, dto);
+  ): Promise<SavePaymentSettingsResponseDto> {
+    const result = await this.paymentConfig.saveSettings(
+      storeId,
+      session.user.id,
+      dto,
+    );
+    return {
+      methods: result.methods.map(toPaymentMethodDto),
+      ...(result.store && { store: result.store }),
+    };
   }
 
   @Post()

@@ -49,6 +49,12 @@ export class PaymentConfigService {
     dto: SavePaymentSettingsDto,
   ) {
     await this.assertOwnership(storeId, userId);
+    if (
+      new Set(dto.methods.map((change) => change.method)).size !==
+      dto.methods.length
+    ) {
+      throw new BadRequestException("No puedes repetir un método de pago");
+    }
     try {
       return await this.prisma.$transaction(
         async (tx) => {

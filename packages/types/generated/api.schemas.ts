@@ -2397,6 +2397,16 @@ export interface SavePaymentSettingsDto {
   expectedPaymentInstructions?: string;
 }
 
+export interface SavePaymentSettingsStoreResponseDto {
+  id: string;
+  paymentInstructions: string;
+}
+
+export interface SavePaymentSettingsResponseDto {
+  methods: PaymentMethodConfigResponseDto[];
+  store?: SavePaymentSettingsStoreResponseDto;
+}
+
 export type DeliveryMethodConfigResponseDtoType =
   (typeof DeliveryMethodConfigResponseDtoType)[keyof typeof DeliveryMethodConfigResponseDtoType];
 

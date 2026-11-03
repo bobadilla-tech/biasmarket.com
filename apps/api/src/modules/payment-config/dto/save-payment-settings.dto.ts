@@ -1,5 +1,6 @@
 import {
   IsArray,
+  ArrayUnique,
   IsIn,
   IsInt,
   IsObject,
@@ -50,6 +51,7 @@ export class PaymentSettingsMethodChangeDto {
 
 export class SavePaymentSettingsDto {
   @IsArray()
+  @ArrayUnique((change: PaymentSettingsMethodChangeDto) => change.method)
   @ValidateNested({ each: true })
   @Type(() => PaymentSettingsMethodChangeDto)
   methods: PaymentSettingsMethodChangeDto[];
