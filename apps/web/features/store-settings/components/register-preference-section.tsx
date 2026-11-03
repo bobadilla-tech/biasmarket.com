@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Languages } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { RegisterSetting } from "@biasmarket/utils/register";
@@ -8,12 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { authClient } from "@/lib/auth-client";
 import { Field, SectionCard } from "./section-primitives";
+import { useSettingsDraftParticipant } from "./settings-save-context";
 
 const REGISTER_SETTINGS: RegisterSetting[] = ["auto", "tuteo", "voseo"];
 
 export function RegisterPreferenceSection() {
   const t = useTranslations("dashboard.settings.accountRegister");
   const [setting, setSetting] = useState<RegisterSetting>("auto");
+  const [savedSetting, setSavedSetting] = useState<RegisterSetting>("auto");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<"saved" | "error" | null>(null);
@@ -25,6 +27,7 @@ export function RegisterPreferenceSection() {
       const value = data?.user.uiRegister;
       if (REGISTER_SETTINGS.includes(value as RegisterSetting)) {
         setSetting(value as RegisterSetting);
+        setSavedSetting(value as RegisterSetting);
       }
       setLoading(false);
     });
@@ -33,13 +36,29 @@ export function RegisterPreferenceSection() {
     };
   }, []);
 
-  const save = async () => {
+  const save = useCallback(async () => {
     setSaving(true);
     setStatus(null);
-    const { error } = await authClient.updateUser({ uiRegister: setting });
-    setSaving(false);
-    setStatus(error ? "error" : "saved");
-  };
+    try {
+      const { error } = await authClient.updateUser({ uiRegister: setting });
+      if (error) throw new Error(error.message);
+      setSavedSetting(setting);
+      setStatus("saved");
+    } catch (error) {
+      setStatus("error");
+      throw error;
+    } finally {
+      setSaving(false);
+    }
+  }, [setting]);
+  const discard = useCallback(() => setSetting(savedSetting), [savedSetting]);
+  useSettingsDraftParticipant({
+    id: "register-preference",
+    tab: "store",
+    dirty: !loading && setting !== savedSetting,
+    save,
+    discard,
+  });
 
   return (
     <SectionCard
@@ -63,13 +82,6 @@ export function RegisterPreferenceSection() {
             <option value="voseo">{t("voseo")}</option>
           </Select>
         </Field>
-        <Button
-          type="button"
-          onClick={() => void save()}
-          disabled={loading || saving}
-        >
-          {saving ? t("saving") : t("save")}
-        </Button>
       </div>
       {status ? (
         <p

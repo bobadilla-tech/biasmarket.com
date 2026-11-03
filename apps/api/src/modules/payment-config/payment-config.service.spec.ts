@@ -12,7 +12,12 @@ import { StorageService } from "../../storage/storage.service.js";
 describe("PaymentConfigService", () => {
   let service: PaymentConfigService;
   let prisma: {
-    store: { findUnique: Mock };
+    store: { findUnique: Mock; update: Mock };
+    paymentMethodConfig: { findMany: Mock; upsert: Mock; findUnique: Mock };
+    $transaction: Mock;
+  };
+  let transaction: {
+    store: { findUnique: Mock; update: Mock };
     paymentMethodConfig: { findMany: Mock; upsert: Mock; findUnique: Mock };
   };
   let storage: {
@@ -24,13 +29,19 @@ describe("PaymentConfigService", () => {
   const storeId = "store-1";
 
   beforeEach(async () => {
-    prisma = {
-      store: { findUnique: vi.fn() },
+    transaction = {
+      store: { findUnique: vi.fn(), update: vi.fn() },
       paymentMethodConfig: {
         findMany: vi.fn(),
         upsert: vi.fn(),
         findUnique: vi.fn(),
       },
+    };
+    prisma = {
+      ...transaction,
+      $transaction: vi.fn((callback: (tx: typeof transaction) => unknown) =>
+        callback(transaction),
+      ),
     };
     storage = {
       uploadPaymentQrImage: vi.fn(),
@@ -215,6 +226,72 @@ describe("PaymentConfigService", () => {
           update: expect.objectContaining({ details: {} }),
         }),
       );
+    });
+  });
+
+  describe("saveSettings", () => {
+    it("saves only changed fields and payment instructions in one transaction", async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
+      transaction.store.findUnique.mockResolvedValue({
+        id: storeId,
+        ownerId,
+        paymentInstructions: "old",
+      });
+      transaction.paymentMethodConfig.findMany.mockResolvedValue([
+        {
+          method: "YAPE",
+          enabled: true,
+          depositPercent: 100,
+          details: { accountHolder: "Ana" },
+        },
+      ]);
+      transaction.paymentMethodConfig.upsert.mockResolvedValue({
+        method: "YAPE",
+        enabled: false,
+      });
+      transaction.store.update.mockResolvedValue({
+        id: storeId,
+        paymentInstructions: "new",
+      });
+
+      const result = await service.saveSettings(storeId, ownerId, {
+        methods: [{ method: "YAPE", enabled: false, expectedEnabled: true }],
+        paymentInstructions: "new",
+        expectedPaymentInstructions: "old",
+      });
+
+      expect(prisma.$transaction).toHaveBeenCalledOnce();
+      expect(transaction.paymentMethodConfig.upsert).toHaveBeenCalledOnce();
+      expect(
+        transaction.paymentMethodConfig.upsert.mock.calls[0]?.[0].update,
+      ).toEqual({ enabled: false });
+      expect(transaction.store.update).toHaveBeenCalledWith({
+        where: { id: storeId },
+        data: { paymentInstructions: "new" },
+      });
+      expect(result.store).toEqual({
+        id: storeId,
+        paymentInstructions: "new",
+      });
+    });
+
+    it("rejects stale payment edits before writing any changes", async () => {
+      prisma.store.findUnique.mockResolvedValue({ id: storeId, ownerId });
+      transaction.store.findUnique.mockResolvedValue({
+        id: storeId,
+        ownerId,
+        paymentInstructions: "old",
+      });
+      transaction.paymentMethodConfig.findMany.mockResolvedValue([
+        { method: "YAPE", enabled: false, depositPercent: 100, details: {} },
+      ]);
+
+      await expect(
+        service.saveSettings(storeId, ownerId, {
+          methods: [{ method: "YAPE", enabled: true, expectedEnabled: true }],
+        }),
+      ).rejects.toThrow("La configuración de pagos cambió");
+      expect(transaction.paymentMethodConfig.upsert).not.toHaveBeenCalled();
     });
   });
 

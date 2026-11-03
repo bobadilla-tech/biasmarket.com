@@ -76,6 +76,9 @@ export const settingsApi = {
   updateVisibility: (storeId: string, payload: { isPublic: boolean }) =>
     apiClient.stores.update(storeId, payload),
 
+  updatePaymentInstructions: (storeId: string, paymentInstructions: string) =>
+    apiClient.stores.update(storeId, { paymentInstructions }),
+
   async getDeliverySettings(storeId: string) {
     const [methods, points] = await Promise.all([
       apiClient.deliveryConfig.findAll(storeId),
@@ -162,6 +165,23 @@ export const settingsApi = {
         }),
       ),
     ),
+
+  savePaymentSettings: (
+    storeId: string,
+    input: {
+      methods: Array<{
+        method: "YAPE" | "PLIN" | "TRANSFER" | "CASH";
+        enabled?: boolean;
+        expectedEnabled?: boolean;
+        details?: Record<string, unknown>;
+        expectedDetails?: Record<string, unknown>;
+        depositPercent?: number;
+        expectedDepositPercent?: number;
+      }>;
+      paymentInstructions?: string;
+      expectedPaymentInstructions?: string;
+    },
+  ) => apiClient.paymentConfig.saveSettings(storeId, input),
 
   savePaymentMethodDetails: (
     storeId: string,

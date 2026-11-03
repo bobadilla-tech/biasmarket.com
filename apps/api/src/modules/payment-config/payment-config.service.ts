@@ -1,14 +1,17 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { PaymentMethodType, Prisma } from "@biasmarket/db";
+import { Prisma, type PaymentMethodType } from "@biasmarket/db";
 import { PrismaService } from "../../prisma/prisma.service.js";
 import { StorageService } from "../../storage/storage.service.js";
 import type { UpsertPaymentMethodDto } from "./dto/upsert-payment-method.dto.js";
 import type { PaymentMethodDetailsDto } from "./dto/payment-method-details.dto.js";
+import type { SavePaymentSettingsDto } from "./dto/save-payment-settings.dto.js";
+import { isDeepStrictEqual } from "node:util";
 
 @Injectable()
 export class PaymentConfigService {
@@ -38,6 +41,133 @@ export class PaymentConfigService {
     return this.prisma.paymentMethodConfig.findMany({
       where: { storeId, enabled: true },
     });
+  }
+
+  async saveSettings(
+    storeId: string,
+    userId: string,
+    dto: SavePaymentSettingsDto,
+  ) {
+    await this.assertOwnership(storeId, userId);
+    if (
+      new Set(dto.methods.map((change) => change.method)).size !==
+      dto.methods.length
+    ) {
+      throw new BadRequestException("No puedes repetir un método de pago");
+    }
+    try {
+      return await this.prisma.$transaction(
+        async (tx) => {
+          const [store, existingRows] = await Promise.all([
+            tx.store.findUnique({ where: { id: storeId } }),
+            tx.paymentMethodConfig.findMany({ where: { storeId } }),
+          ]);
+          if (!store) throw new NotFoundException("Store no encontrada");
+
+          for (const change of dto.methods) {
+            const existing = existingRows.find(
+              (row) => row.method === change.method,
+            );
+            if (
+              change.expectedEnabled !== undefined &&
+              (existing?.enabled ?? true) !== change.expectedEnabled
+            )
+              throw new ConflictException(
+                "La configuración de pagos cambió. Recarga antes de guardar.",
+              );
+            if (
+              change.expectedDepositPercent !== undefined &&
+              (existing?.depositPercent ?? 100) !==
+                change.expectedDepositPercent
+            )
+              throw new ConflictException(
+                "La configuración de pagos cambió. Recarga antes de guardar.",
+              );
+            if (
+              change.expectedDetails !== undefined &&
+              !isDeepStrictEqual(
+                existing?.details ?? {},
+                change.expectedDetails,
+              )
+            )
+              throw new ConflictException(
+                "La configuración de pagos cambió. Recarga antes de guardar.",
+              );
+          }
+          if (
+            dto.expectedPaymentInstructions !== undefined &&
+            store.paymentInstructions !== dto.expectedPaymentInstructions
+          )
+            throw new ConflictException(
+              "Las instrucciones de pago cambiaron. Recarga antes de guardar.",
+            );
+
+          const updatedMethods: Awaited<
+            ReturnType<typeof tx.paymentMethodConfig.findMany>
+          > = [];
+          for (const change of dto.methods) {
+            const details = change.details
+              ? this.normalizeDetails(
+                  change.method,
+                  change.details as PaymentMethodDetailsDto,
+                )
+              : undefined;
+            updatedMethods.push(
+              await tx.paymentMethodConfig.upsert({
+                where: { storeId_method: { storeId, method: change.method } },
+                create: {
+                  storeId,
+                  method: change.method,
+                  enabled: change.enabled ?? true,
+                  details: (details ?? {}) as Prisma.InputJsonValue,
+                  ...(change.depositPercent !== undefined && {
+                    depositPercent: change.depositPercent,
+                  }),
+                },
+                update: {
+                  ...(change.enabled !== undefined && {
+                    enabled: change.enabled,
+                  }),
+                  ...(details !== undefined && {
+                    details: details as Prisma.InputJsonValue,
+                  }),
+                  ...(change.depositPercent !== undefined && {
+                    depositPercent: change.depositPercent,
+                  }),
+                },
+              }),
+            );
+          }
+          const updatedStore =
+            dto.paymentInstructions === undefined
+              ? undefined
+              : await tx.store.update({
+                  where: { id: storeId },
+                  data: { paymentInstructions: dto.paymentInstructions },
+                });
+          return {
+            methods: updatedMethods,
+            ...(updatedStore && {
+              store: {
+                id: updatedStore.id,
+                paymentInstructions: updatedStore.paymentInstructions,
+              },
+            }),
+          };
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      );
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2034"
+      ) {
+        throw new ConflictException(
+          "La configuración de pagos cambió. Recarga antes de guardar.",
+        );
+      }
+      throw error;
+    }
   }
 
   async upsert(storeId: string, userId: string, dto: UpsertPaymentMethodDto) {

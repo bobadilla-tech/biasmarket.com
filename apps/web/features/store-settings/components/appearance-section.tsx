@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Palette, Pipette } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -12,11 +12,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
 import { StoreLogo } from "@/components/store-logo";
 import {
   buildCustomStorePalette,
   buildStoreThemeConfig,
+  ensureContrast,
   resolveStorePalette,
   STORE_PALETTES,
 } from "@/lib/store-theme";
@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import type { DashboardStore } from "@/features/stores";
 import { useSaveAppearance } from "../mutations/use-save-appearance";
 import { SectionCard, useSavedFlash } from "./section-primitives";
+import { useSettingsDraftParticipant } from "./settings-save-context";
 
 export function AppearanceSection({ store }: { store: DashboardStore }) {
   const t = useTranslations("dashboard.settings");
@@ -44,24 +45,63 @@ export function AppearanceSection({ store }: { store: DashboardStore }) {
   const [customColor, setCustomColor] = useState(
     initialIsPreset ? "#6d28d9" : initial.colors.primary,
   );
+  const [customAccent, setCustomAccent] = useState(
+    initialIsPreset ? "#f472b6" : initial.colors.accent,
+  );
 
   useEffect(() => {
     setSelectedPaletteId(initialIsPreset ? initial.id : "custom");
-    if (!initialIsPreset) setCustomColor(initial.colors.primary);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialIsPreset, initial.id, initial.colors.primary]);
+    if (!initialIsPreset) {
+      setCustomColor(initial.colors.primary);
+      setCustomAccent(initial.colors.accent);
+    }
+  }, [
+    initialIsPreset,
+    initial.id,
+    initial.colors.primary,
+    initial.colors.accent,
+  ]);
 
   useSavedFlash(saveAppearance.isSuccess, saveAppearance.reset);
 
   const selectedPalette = useMemo(() => {
     if (selectedPaletteId === "custom") {
-      return buildCustomStorePalette(customColor);
+      return buildCustomStorePalette(customColor, customAccent);
     }
     return (
       STORE_PALETTES.find((palette) => palette.id === selectedPaletteId) ??
       STORE_PALETTES[0]
     );
-  }, [selectedPaletteId, customColor]);
+  }, [selectedPaletteId, customColor, customAccent]);
+
+  const paletteSignature = JSON.stringify({
+    id: selectedPalette.id,
+    colors: selectedPalette.colors,
+  });
+  const initialSignature = JSON.stringify({
+    id: initial.id,
+    colors: initial.colors,
+  });
+  const saveDraft = useCallback(async () => {
+    await saveAppearance.mutateAsync(buildStoreThemeConfig(selectedPalette));
+  }, [saveAppearance, selectedPalette]);
+  const discardDraft = useCallback(() => {
+    setSelectedPaletteId(initialIsPreset ? initial.id : "custom");
+    setCustomColor(initialIsPreset ? "#6d28d9" : initial.colors.primary);
+    setCustomAccent(initialIsPreset ? "#f472b6" : initial.colors.accent);
+  }, [
+    initial.colors.accent,
+    initial.colors.primary,
+    initial.id,
+    initialIsPreset,
+  ]);
+  useSettingsDraftParticipant({
+    id: "appearance",
+    tab: "appearance",
+    dirty: paletteSignature !== initialSignature,
+    save: saveDraft,
+    discard: discardDraft,
+  });
 
   return (
     <SectionCard
@@ -76,6 +116,7 @@ export function AppearanceSection({ store }: { store: DashboardStore }) {
             type="button"
             variant="outline"
             onClick={() => setSelectedPaletteId(palette.id)}
+            disabled={saveAppearance.isPending}
             className={cn(
               "h-auto flex-col items-stretch rounded-3xl p-4 text-left shadow-none",
               selectedPaletteId === palette.id
@@ -118,6 +159,7 @@ export function AppearanceSection({ store }: { store: DashboardStore }) {
           <PopoverTrigger
             type="button"
             onClick={() => setSelectedPaletteId("custom")}
+            disabled={saveAppearance.isPending}
             className={cn(
               "h-auto flex-col items-stretch rounded-3xl border p-4 text-left shadow-none",
               selectedPaletteId === "custom"
@@ -163,19 +205,36 @@ export function AppearanceSection({ store }: { store: DashboardStore }) {
             </div>
           </PopoverTrigger>
           <PopoverContent className="w-auto">
-            <p className="mb-3 text-sm font-semibold text-[#301848]">
-              {t("appearance.customColorLabel")}
-            </p>
-            <input
-              aria-label={t("appearance.customColorLabel")}
-              type="color"
-              value={customColor}
-              onChange={(event) => {
-                setCustomColor(event.target.value);
-                setSelectedPaletteId("custom");
-              }}
-              className="h-10 w-full cursor-pointer rounded-lg border border-[#eadcf8]"
-            />
+            <div className="grid gap-3">
+              <label className="grid gap-1 text-sm font-semibold text-[#301848]">
+                {t("appearance.primaryColorLabel")}
+                <input
+                  aria-label={t("appearance.primaryColorLabel")}
+                  type="color"
+                  value={customColor}
+                  disabled={saveAppearance.isPending}
+                  onChange={(event) => {
+                    setCustomColor(event.target.value);
+                    setSelectedPaletteId("custom");
+                  }}
+                  className="h-10 w-full cursor-pointer rounded-lg border border-[#eadcf8]"
+                />
+              </label>
+              <label className="grid gap-1 text-sm font-semibold text-[#301848]">
+                {t("appearance.secondaryColorLabel")}
+                <input
+                  aria-label={t("appearance.secondaryColorLabel")}
+                  type="color"
+                  value={customAccent}
+                  disabled={saveAppearance.isPending}
+                  onChange={(event) => {
+                    setCustomAccent(event.target.value);
+                    setSelectedPaletteId("custom");
+                  }}
+                  className="h-10 w-full cursor-pointer rounded-lg border border-[#eadcf8]"
+                />
+              </label>
+            </div>
           </PopoverContent>
         </Popover>
       </div>
@@ -206,7 +265,7 @@ export function AppearanceSection({ store }: { store: DashboardStore }) {
                 type="button"
                 className="h-11 w-full rounded-2xl text-sm font-semibold hover:opacity-100"
                 style={{
-                  background: `linear-gradient(135deg, ${selectedPalette.colors.accent} 0%, ${selectedPalette.colors.primary} 100%)`,
+                  background: `linear-gradient(135deg, ${ensureContrast(selectedPalette.colors.accent, "#ffffff", 4.5)} 0%, ${ensureContrast(selectedPalette.colors.primary, "#ffffff", 4.5)} 100%)`,
                 }}
               >
                 {t("appearance.previewButton")}
@@ -224,24 +283,7 @@ export function AppearanceSection({ store }: { store: DashboardStore }) {
         </p>
       ) : null}
 
-      <Separator className="my-5 bg-[#f0e7f8]" />
-
-      <div className="flex items-center justify-between gap-4">
-        <p className="text-sm text-[#8f7da8]">{t("appearance.help")}</p>
-        <Button
-          onClick={() =>
-            saveAppearance.mutate(buildStoreThemeConfig(selectedPalette))
-          }
-          disabled={saveAppearance.isPending}
-          className="store-theme-primary-button h-11 rounded-2xl px-5 text-sm font-semibold hover:scale-[1.01] hover:opacity-100"
-        >
-          {saveAppearance.isSuccess
-            ? t("saved")
-            : saveAppearance.isPending
-              ? t("saving")
-              : t("appearance.apply")}
-        </Button>
-      </div>
+      <p className="mt-5 text-sm text-[#8f7da8]">{t("appearance.help")}</p>
     </SectionCard>
   );
 }

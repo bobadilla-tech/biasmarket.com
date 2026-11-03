@@ -1,9 +1,17 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { screen } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { renderWithProviders } from "../../../test-utils/render-with-providers";
+import { withSettingsDraftActions } from "../../../test-utils/settings-draft-test-actions";
+import { dashboardStoreKeys } from "@/features/stores";
 
-const { findAllPaymentConfig } = vi.hoisted(() => ({
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useParams: () => ({ slug: "test-store", locale: "es" }),
+}));
+
+const { findAllPaymentConfig, savePaymentSettings } = vi.hoisted(() => ({
   findAllPaymentConfig: vi.fn(),
+  savePaymentSettings: vi.fn(),
 }));
 
 vi.mock("@/lib/api-client", () => ({
@@ -11,7 +19,9 @@ vi.mock("@/lib/api-client", () => ({
     paymentConfig: {
       findAll: findAllPaymentConfig,
       upsert: vi.fn(),
+      saveSettings: savePaymentSettings,
     },
+    stores: { update: vi.fn() },
   },
 }));
 
@@ -19,6 +29,56 @@ const { PaymentsSection } = await import("./payments-section");
 
 afterEach(() => {
   vi.clearAllMocks();
+  savePaymentSettings.mockResolvedValue({ store: {} });
+});
+
+test("loads saved payment instructions into the editor", async () => {
+  findAllPaymentConfig.mockResolvedValue([]);
+
+  renderWithProviders(
+    <PaymentsSection
+      storeId="store-1"
+      initialPaymentInstructions="Pagar al recibir"
+    />,
+  );
+  expect(await screen.findByLabelText("Instrucciones de pago")).toHaveProperty(
+    "value",
+    "Pagar al recibir",
+  );
+});
+
+test("saves the edited payment instructions", async () => {
+  findAllPaymentConfig.mockResolvedValue([]);
+
+  const { queryClient } = renderWithProviders(
+    withSettingsDraftActions(
+      <PaymentsSection storeId="store-1" initialPaymentInstructions="" />,
+      "payments",
+    ),
+  );
+  queryClient.setQueryData(dashboardStoreKeys.bySlug("test-store"), {
+    id: "store-1",
+    slug: "test-store",
+    paymentInstructions: "",
+  });
+  savePaymentSettings.mockResolvedValue({
+    store: { paymentInstructions: "Transferir al 999" },
+  });
+
+  const editor = await screen.findByLabelText("Instrucciones de pago");
+  fireEvent.change(editor, { target: { value: "Transferir al 999" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save tab" }));
+
+  await waitFor(() =>
+    expect(savePaymentSettings).toHaveBeenCalledWith("store-1", {
+      methods: [],
+      paymentInstructions: "Transferir al 999",
+      expectedPaymentInstructions: "",
+    }),
+  );
+  expect(
+    queryClient.getQueryData(dashboardStoreKeys.bySlug("test-store")),
+  ).toMatchObject({ paymentInstructions: "Transferir al 999" });
 });
 
 test("shows the setup nudge when only CASH (seeded by default) is configured", async () => {
@@ -29,7 +89,9 @@ test("shows the setup nudge when only CASH (seeded by default) is configured", a
     { method: "CASH", enabled: true, details: {} },
   ]);
 
-  renderWithProviders(<PaymentsSection storeId="store-1" />);
+  renderWithProviders(
+    <PaymentsSection storeId="store-1" initialPaymentInstructions="" />,
+  );
 
   expect(await screen.findByText(/Configura un método de pago/i)).toBeDefined();
 });
@@ -45,7 +107,9 @@ test("hides the setup nudge once a real method (e.g. TRANSFER) is configured", a
     { method: "CASH", enabled: true, details: {} },
   ]);
 
-  renderWithProviders(<PaymentsSection storeId="store-1" />);
+  renderWithProviders(
+    <PaymentsSection storeId="store-1" initialPaymentInstructions="" />,
+  );
 
   await screen.findByText("Yape");
   expect(screen.queryByText(/Configura un método de pago/i)).toBeNull();

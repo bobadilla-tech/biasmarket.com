@@ -2,6 +2,7 @@ import { afterEach, expect, test, vi } from "vitest";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "../../../test-utils/render-with-providers";
+import { withSettingsDraftActions } from "../../../test-utils/settings-draft-test-actions";
 
 const {
   findAllDeliveryConfig,
@@ -54,20 +55,20 @@ test("toggling a weekday off and marking closedOverride, then saving, persists b
   updatePickupPoint.mockResolvedValue({});
 
   const user = userEvent.setup();
-  renderWithProviders(<DeliverySection storeId="store-1" />);
+  renderWithProviders(
+    withSettingsDraftActions(<DeliverySection storeId="store-1" />, "delivery"),
+  );
 
   await screen.findByDisplayValue("Alameda 28 de Julio");
 
-  await user.click(
-    screen.getByRole("button", { name: /disponibilidad/i }),
-  );
+  await user.click(screen.getByRole("button", { name: /disponibilidad/i }));
 
   const dialog = screen.getByRole("dialog");
   await user.click(within(dialog).getByRole("button", { name: "Lun" }));
   await user.click(within(dialog).getByRole("switch"));
   await user.click(within(dialog).getByRole("button", { name: "Listo" }));
 
-  await user.click(screen.getByRole("button", { name: "Guardar" }));
+  await user.click(screen.getByRole("button", { name: "Save tab" }));
 
   await waitFor(() => {
     expect(updatePickupPoint).toHaveBeenCalledWith("store-1", "point-1", {

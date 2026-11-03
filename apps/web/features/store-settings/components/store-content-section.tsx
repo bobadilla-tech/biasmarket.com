@@ -1,6 +1,12 @@
 "use client";
 
-import { type ChangeEvent, useEffect, useRef, useState } from "react";
+import {
+  type ChangeEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FileText, ImagePlus } from "lucide-react";
@@ -8,7 +14,6 @@ import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { renderStoreMarkdown } from "@/lib/store-markdown";
 import type { DashboardStore } from "@/features/stores";
@@ -21,12 +26,19 @@ import {
   storeContentFormSchema,
 } from "../schemas/store-content.schema";
 import { Field, SectionCard, useSavedFlash } from "./section-primitives";
+import { useSettingsDraftParticipant } from "./settings-save-context";
 
 // The word left selected inside `![…](url)` after an image is inserted, so the
 // seller can immediately type a real alt text over it.
 const IMAGE_ALT_PLACEHOLDER = "description";
 
-export function StoreContentSection({ store }: { store: DashboardStore }) {
+export function StoreContentSection({
+  store,
+  onPreviewChange,
+}: {
+  store: DashboardStore;
+  onPreviewChange?: (values: { bio: string }) => void;
+}) {
   const t = useTranslations("dashboard.settings");
   const tCommon = useTranslations("common");
   const { slug } = useParams<{ slug: string }>();
@@ -40,13 +52,15 @@ export function StoreContentSection({ store }: { store: DashboardStore }) {
 
   const {
     register,
-    handleSubmit,
     watch,
     reset,
+    getValues,
+    trigger,
     setValue,
-    formState: { isSubmitting, errors },
+    formState: { errors, isDirty, isValid },
   } = useForm<StoreContentFormInput>({
     resolver: zodResolver(storeContentFormSchema),
+    mode: "onChange",
     defaultValues: defaults,
   });
 
@@ -55,13 +69,16 @@ export function StoreContentSection({ store }: { store: DashboardStore }) {
       bio: store.bio ?? "",
       aboutMarkdown: store.aboutMarkdown ?? "",
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store.bio, store.aboutMarkdown, reset]);
 
   useSavedFlash(saveStoreContent.isSuccess, saveStoreContent.reset);
 
   const bioValue = watch("bio") ?? "";
   const aboutValue = watch("aboutMarkdown") ?? "";
+
+  useEffect(() => {
+    onPreviewChange?.({ bio: bioValue });
+  }, [bioValue, onPreviewChange]);
 
   const { ref: registerAboutRef, ...aboutRegister } = register("aboutMarkdown");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -115,15 +132,29 @@ export function StoreContentSection({ store }: { store: DashboardStore }) {
     }
   }
 
-  const onSubmit = handleSubmit((values) => saveStoreContent.mutate(values));
-
+  const saveDraft = useCallback(async () => {
+    if (!(await trigger())) throw new Error(t("saveBar.validationError"));
+    const values = getValues();
+    await saveStoreContent.mutateAsync(values);
+    reset(values, { keepValues: true });
+  }, [getValues, reset, saveStoreContent, t, trigger]);
+  const discardDraft = useCallback(() => reset(), [reset]);
+  useSettingsDraftParticipant({
+    id: "store-content",
+    tab: "store",
+    dirty: isDirty,
+    valid: isValid,
+    validationError: t("saveBar.validationError"),
+    save: saveDraft,
+    discard: discardDraft,
+  });
   return (
     <SectionCard
       icon={FileText}
       title={t("storeContent.title")}
       description={t("storeContent.description")}
     >
-      <form onSubmit={onSubmit}>
+      <form onSubmit={(event) => event.preventDefault()}>
         <Field
           id="settings-store-content-bio"
           label={t("storeContent.bioLabel")}
@@ -232,22 +263,7 @@ export function StoreContentSection({ store }: { store: DashboardStore }) {
           </p>
         ) : null}
 
-        <Separator className="my-5 bg-[#f0e7f8]" />
-
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-[#8f7da8]">{t("storeContent.help")}</p>
-          <Button
-            type="submit"
-            disabled={isSubmitting || saveStoreContent.isPending}
-            className="store-theme-primary-button h-11 rounded-2xl px-5 text-sm font-semibold hover:scale-[1.01] hover:opacity-100"
-          >
-            {saveStoreContent.isSuccess
-              ? t("saved")
-              : saveStoreContent.isPending
-                ? t("saving")
-                : t("save")}
-          </Button>
-        </div>
+        <p className="mt-5 text-sm text-[#8f7da8]">{t("storeContent.help")}</p>
       </form>
     </SectionCard>
   );

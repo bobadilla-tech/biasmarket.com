@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { MapPin, Store, Upload, UserRound } from "lucide-react";
+import { Copy, MapPin, Store, Upload, UserRound } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { SUPPORTED_CURRENCIES } from "@biasmarket/utils/currency";
@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Select } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { StoreLogo } from "@/components/store-logo";
 import type { DashboardStore } from "@/features/stores";
@@ -23,8 +22,22 @@ import {
   profileFormSchema,
 } from "../schemas/profile.schema";
 import { Field, SectionCard, useSavedFlash } from "./section-primitives";
+import { useSettingsDraftParticipant } from "./settings-save-context";
 
-export function ProfileSection({ store }: { store: DashboardStore }) {
+export function ProfileSection({
+  store,
+  onPreviewChange,
+}: {
+  store: DashboardStore;
+  onPreviewChange?: (values: {
+    name: string;
+    whatsappNumber: string;
+    instagramUrl: string;
+    facebookUrl: string;
+    tiktokUrl: string;
+    twitterUrl: string;
+  }) => void;
+}) {
   const t = useTranslations("dashboard.settings");
   const tCommon = useTranslations("common");
   const { locale, slug } = useParams<{ locale: string; slug: string }>();
@@ -54,16 +67,17 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
   const {
     register,
     control,
-    handleSubmit,
     watch,
     reset,
-    formState: { isSubmitting, errors },
+    getValues,
+    trigger,
+    formState: { errors, isDirty, isValid },
   } = useForm<ProfileFormInput>({
     resolver: zodResolver(profileFormSchema),
+    mode: "onChange",
     defaultValues: {
       name: store.name ?? "",
       whatsappNumber: store.whatsappNumber ?? "",
-      paymentInstructions: store.paymentInstructions ?? "",
       defaultCurrency:
         (store.defaultCurrency as ProfileFormInput["defaultCurrency"]) ??
         SUPPORTED_CURRENCIES[0],
@@ -82,7 +96,6 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
     reset({
       name: store.name ?? "",
       whatsappNumber: store.whatsappNumber ?? "",
-      paymentInstructions: store.paymentInstructions ?? "",
       defaultCurrency:
         (store.defaultCurrency as ProfileFormInput["defaultCurrency"]) ??
         SUPPORTED_CURRENCIES[0],
@@ -95,11 +108,9 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
       locationLabel: store.locationLabel ?? "",
       publicOwnerName: store.publicOwnerName ?? "",
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     store.whatsappNumber,
     store.defaultCurrency,
-    store.paymentInstructions,
     store.name,
     store.locale,
     store.buyerRegister,
@@ -114,6 +125,29 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
 
   const storeName = watch("name");
   const whatsappNumber = watch("whatsappNumber");
+  const instagramUrl = watch("instagramUrl") ?? "";
+  const facebookUrl = watch("facebookUrl") ?? "";
+  const tiktokUrl = watch("tiktokUrl") ?? "";
+  const twitterUrl = watch("twitterUrl") ?? "";
+
+  useEffect(() => {
+    onPreviewChange?.({
+      name: storeName,
+      whatsappNumber,
+      instagramUrl,
+      facebookUrl,
+      tiktokUrl,
+      twitterUrl,
+    });
+  }, [
+    facebookUrl,
+    instagramUrl,
+    onPreviewChange,
+    storeName,
+    tiktokUrl,
+    twitterUrl,
+    whatsappNumber,
+  ]);
 
   const storefrontUrl = useMemo(() => {
     if (typeof window === "undefined") return `/${locale}/store/${slug}`;
@@ -122,8 +156,22 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
 
   useSavedFlash(saveProfile.isSuccess, saveProfile.reset);
 
-  const onSubmit = handleSubmit((values) => saveProfile.mutate(values));
-
+  const saveDraft = useCallback(async () => {
+    if (!(await trigger())) throw new Error(t("saveBar.validationError"));
+    const values = getValues();
+    await saveProfile.mutateAsync(values);
+    reset(values, { keepValues: true });
+  }, [getValues, reset, saveProfile, t, trigger]);
+  const discardDraft = useCallback(() => reset(), [reset]);
+  useSettingsDraftParticipant({
+    id: "profile",
+    tab: "store",
+    dirty: isDirty,
+    valid: isValid,
+    validationError: t("saveBar.validationError"),
+    save: saveDraft,
+    discard: discardDraft,
+  });
   return (
     <SectionCard
       icon={Store}
@@ -146,7 +194,6 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
             <p className="text-lg font-semibold text-[#2d1649]">
               {storeName || t("emptyName")}
             </p>
-            <p className="text-sm text-[#8f7da8]">{storefrontUrl}</p>
           </div>
         </div>
         <input
@@ -183,8 +230,9 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
               className="mb-3 aspect-[3/1] w-full rounded-2xl object-cover"
             />
           ) : (
-            <div className="mb-3 grid aspect-[3/1] place-items-center rounded-2xl bg-muted text-sm text-muted-foreground">
-              {t("profile.bannerEmpty")}
+            <div className="mb-3 flex items-center gap-3 rounded-2xl border border-dashed border-[#d9c7ea] bg-[#fcf9ff] px-4 py-3 text-sm text-muted-foreground">
+              <Upload aria-hidden="true" className="size-4 shrink-0" />
+              <span>{t("profile.bannerEmpty")}</span>
             </div>
           )}
           <p className="mb-2 text-xs text-muted-foreground">
@@ -215,7 +263,7 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
         </div>
       </div>
 
-      <form onSubmit={onSubmit}>
+      <form onSubmit={(event) => event.preventDefault()}>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field id="settings-profile-name" label={t("profile.nameLabel")}>
             <Input
@@ -224,12 +272,25 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
             />
           </Field>
           <Field id="settings-profile-url" label={t("profile.urlLabel")}>
-            <Input
-              aria-label={t("profile.urlLabel")}
-              value={storefrontUrl}
-              readOnly
-              className="h-12 rounded-2xl border-[#ede2f6] bg-[#f5effb] text-[#8d7ba7] shadow-none"
-            />
+            <div className="flex gap-2">
+              <Input
+                aria-label={t("profile.urlLabel")}
+                value={storefrontUrl}
+                readOnly
+                className="h-12 rounded-2xl border-[#ede2f6] bg-[#f5effb] text-[#8d7ba7] shadow-none"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                aria-label={t("defaults.copyMessage")}
+                onClick={() =>
+                  void navigator.clipboard.writeText(storefrontUrl)
+                }
+                className="h-12 shrink-0 rounded-2xl border-[#e5d8f5]"
+              >
+                <Copy aria-hidden="true" className="size-4" />
+              </Button>
+            </div>
           </Field>
         </div>
 
@@ -298,7 +359,7 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Field
             id="settings-profile-instagram"
-            label={t("profile.instagramLabel")}
+            label={`${t("profile.instagramLabel")} · ${t("profile.optional")}`}
           >
             <Input
               aria-invalid={Boolean(errors.instagramUrl)}
@@ -323,7 +384,7 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
           </Field>
           <Field
             id="settings-profile-facebook"
-            label={t("profile.facebookLabel")}
+            label={`${t("profile.facebookLabel")} · ${t("profile.optional")}`}
           >
             <Input
               aria-invalid={Boolean(errors.facebookUrl)}
@@ -346,7 +407,10 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
               </p>
             )}
           </Field>
-          <Field id="settings-profile-tiktok" label={t("profile.tiktokLabel")}>
+          <Field
+            id="settings-profile-tiktok"
+            label={`${t("profile.tiktokLabel")} · ${t("profile.optional")}`}
+          >
             <Input
               aria-invalid={Boolean(errors.tiktokUrl)}
               aria-describedby={
@@ -368,7 +432,7 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
           </Field>
           <Field
             id="settings-profile-twitter"
-            label={t("profile.twitterLabel")}
+            label={`${t("profile.twitterLabel")} · ${t("profile.optional")}`}
           >
             <Input
               aria-invalid={Boolean(errors.twitterUrl)}
@@ -408,16 +472,13 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
           </Field>
         </div>
 
-        <section
-          aria-labelledby="settings-profile-public-owner-title"
-          className="mt-6 rounded-2xl border border-border bg-card p-4 sm:p-5"
-        >
-          <h3
+        <details className="mt-6 rounded-2xl border border-border bg-card p-4 sm:p-5">
+          <summary
             id="settings-profile-public-owner-title"
-            className="font-semibold text-foreground"
+            className="cursor-pointer font-semibold text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8a45cc]"
           >
             {t("profile.publicOwnerProfileTitle")}
-          </h3>
+          </summary>
           <p className="mt-1 text-sm text-muted-foreground">
             {t("profile.publicOwnerProfileHelp")}
           </p>
@@ -485,21 +546,7 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
               </div>
             </div>
           </div>
-        </section>
-
-        <div className="mt-4">
-          <Field
-            id="settings-profile-instructions"
-            label={t("profile.instructionsLabel")}
-          >
-            <Textarea
-              {...register("paymentInstructions")}
-              placeholder={t("profile.instructionsPlaceholder")}
-              rows={4}
-              className="store-theme-input rounded-2xl border-[#e7dcf3] bg-[#fbf8fe] text-[#341b55] shadow-none"
-            />
-          </Field>
-        </div>
+        </details>
 
         {saveProfile.isError ||
         uploadLogo.isError ||
@@ -520,27 +567,7 @@ export function ProfileSection({ store }: { store: DashboardStore }) {
           </p>
         ) : null}
 
-        <Separator className="my-5 bg-[#f0e7f8]" />
-
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-[#8f7da8]">{t("profile.help")}</p>
-          <Button
-            type="submit"
-            disabled={
-              isSubmitting ||
-              saveProfile.isPending ||
-              !storeName ||
-              !whatsappNumber
-            }
-            className="store-theme-primary-button h-11 rounded-2xl px-5 text-sm font-semibold hover:scale-[1.01] hover:opacity-100"
-          >
-            {saveProfile.isSuccess
-              ? t("saved")
-              : saveProfile.isPending
-                ? t("saving")
-                : t("save")}
-          </Button>
-        </div>
+        <p className="mt-5 text-sm text-[#8f7da8]">{t("profile.help")}</p>
       </form>
     </SectionCard>
   );

@@ -56,6 +56,26 @@ export type WhatsAppMessageType =
   | "ASSISTED_ORDER_LINK"
   | WhatsAppBuyerNoticeType;
 
+// Editable defaults used by the settings UI. Keep these aligned with the
+// current builder wording; the builders remain the source of runtime output
+// for stores without an override.
+export const WHATSAPP_DEFAULT_TEMPLATES: Record<WhatsAppMessageType, string> = {
+  NEW_ORDER:
+    "*Nuevo pedido en {{storeName}}*\nRef: {{orderRef}}\n\n{{items}}\n\nEntrega: {{deliveryMethod}} — {{pickupPoint}}\nFecha de recojo: {{pickupDate}}\n*Total: {{totalAmount}} {{currency}}*\nMétodo de pago: {{paymentMethod}}\n\nCliente: {{customerName}}",
+  PAYMENT_REMINDER:
+    "Hola {{customerName}},\nSobre tu pedido {{orderRef}} en {{storeName}}:\nTodavía tienes un saldo pendiente de {{pendingAmount}} {{currency}}.\n¿Podrías completar el pago para que podamos avanzar con tu pedido? ¡Gracias!",
+  ASSISTED_ORDER_LINK:
+    "¡Hola {{customerName}}! 💜\nPreparé tu pedido {{orderRef}} en {{storeName}} por {{totalAmount}} {{currency}}.\nAquí puedes ver el detalle y cómo pagar:\n{{link}}",
+  ASSISTED_PAYMENT_VALIDATED:
+    "¡Hola {{customerName}}! 💜\nValidamos tu pago del pedido {{orderRef}} en {{storeName}}. ✅\n{{saveInvite}}",
+  ASSISTED_IN_TRANSIT:
+    "¡Hola {{customerName}}! 💜\nTu pedido {{orderRef}} de {{storeName}} ya va en camino. 🚚\nCódigo de seguimiento: {{trackingNumber}}",
+  ASSISTED_READY:
+    "¡Hola {{customerName}}! 💜\nTu pedido {{orderRef}} de {{storeName}} ya está listo. 🎉",
+  ASSISTED_DELIVERED:
+    "¡Hola {{customerName}}! 💜\nTu pedido {{orderRef}} de {{storeName}} figura como entregado. ¡Gracias por tu compra! 💜\n{{saveInvite}}",
+};
+
 export interface WhatsAppBuyerNoticeInput {
   orderId: string;
   storeName: string;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { CalendarClock, Plus, Truck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/sheet";
 import { useDeliverySettings } from "../queries/use-delivery-settings";
 import { useSaveDelivery } from "../mutations/use-save-delivery";
+import { useSettingsDraftParticipant } from "./settings-save-context";
 import { isNewPickupPoint, type PickupPoint } from "../schemas/delivery.schema";
 import {
   Field,
@@ -145,15 +146,61 @@ export function DeliverySection({ storeId }: { storeId: string }) {
   const editingPoint =
     pickupPoints.find((point) => point.id === editingPointId) ?? null;
 
-  const handleSave = () => {
-    saveDelivery.mutate({
+  const saveDraft = useCallback(async () => {
+    await saveDelivery.mutateAsync({
       pickupEnabled,
       courierEnabled,
       courierCost: Number(courierCost || 0),
       points: pickupPoints,
       deletedPointIds,
     });
-  };
+  }, [
+    saveDelivery,
+    pickupEnabled,
+    courierEnabled,
+    courierCost,
+    pickupPoints,
+    deletedPointIds,
+  ]);
+  const discardDraft = useCallback(() => {
+    if (!data) return;
+    const pickup = data.methods.find((method) => method.type === "PICKUP");
+    const courier = data.methods.find((method) => method.type === "COURIER");
+    setPickupEnabled(pickup?.enabled ?? false);
+    setPickupPoints(data.points);
+    setDeletedPointIds([]);
+    setCourierEnabled(courier?.enabled ?? false);
+    setCourierCost(
+      String((courier?.details?.estimatedCost as number | undefined) ?? ""),
+    );
+    setNewPointLabel("");
+  }, [data]);
+  useSettingsDraftParticipant({
+    id: "delivery",
+    tab: "delivery",
+    dirty:
+      Boolean(data) &&
+      (newPointLabel.trim().length > 0 ||
+        deletedPointIds.length > 0 ||
+        pickupEnabled !==
+          Boolean(
+            data?.methods.find((method) => method.type === "PICKUP")?.enabled,
+          ) ||
+        courierEnabled !==
+          Boolean(
+            data?.methods.find((method) => method.type === "COURIER")?.enabled,
+          ) ||
+        Number(courierCost || 0) !==
+          Number(
+            data?.methods.find((method) => method.type === "COURIER")?.details
+              ?.estimatedCost ?? 0,
+          ) ||
+        JSON.stringify(pickupPoints) !== JSON.stringify(data?.points ?? [])),
+    valid: newPointLabel.trim().length === 0,
+    validationError: t("delivery.addPickupPointBeforeSaving"),
+    save: saveDraft,
+    discard: discardDraft,
+  });
 
   return (
     <SectionCard
@@ -278,22 +325,7 @@ export function DeliverySection({ storeId }: { storeId: string }) {
       ) : null}
 
       <Separator className="my-5 bg-[#f0e7f8]" />
-
-      <div className="flex items-center justify-between gap-4">
-        <p className="text-sm text-[#8f7da8]">{t("delivery.footer")}</p>
-        <Button
-          onClick={handleSave}
-          disabled={saveDelivery.isPending}
-          variant="outline"
-          className="store-theme-secondary-button h-11 rounded-2xl border px-5 text-sm font-semibold shadow-none"
-        >
-          {saveDelivery.isSuccess
-            ? t("saved")
-            : saveDelivery.isPending
-              ? t("saving")
-              : t("save")}
-        </Button>
-      </div>
+      <p className="text-sm text-[#8f7da8]">{t("delivery.footer")}</p>
 
       <Sheet
         open={!!editingPointId}

@@ -1,5 +1,19 @@
 {
   "settings": {
+    "saveBar": {
+      "saved": "Todos los cambios están guardados",
+      "dirty": "Tenés cambios sin guardar",
+      "save": "Guardar cambios",
+      "saving": "Guardando...",
+      "discard": "Descartar",
+      "errors": "No se pudieron guardar",
+      "validationError": "Revisá los campos marcados antes de guardar.",
+      "leaveTitle": "¿Salir sin guardar?",
+      "leaveDescription": "Guardá o descartá los cambios antes de cambiar de pestaña.",
+      "cancel": "Seguir editando",
+      "discardAndContinue": "Descartar y continuar",
+      "saveAndContinue": "Guardar y continuar"
+    },
     "accountRegister": {
       "description": "Elegí el registro del español que se usa en tu panel.",
       "auto": "Automático según tu país",
@@ -19,12 +33,12 @@
       "bioHelp": "Se muestra bajo el nombre de tu tienda y en los resultados de Google.",
       "aboutPlaceholder": "Cuéntales quién sos, qué vendés y por qué comprar acá. Podés usar párrafos y listas.",
       "previewEmpty": "Acá aparece tu texto con formato.",
+      "livePreviewDescription": "Se actualiza mientras editás los datos públicos de tu tienda.",
       "help": "Este contenido aparece en la página pública de tu tienda y en su ficha para buscadores."
     },
     "appearance": {
       "description": "Elegí la paleta de la barra lateral, los botones principales y los acentos clave de la interfaz.",
-      "customDescription": "Define tu propio color de marca",
-      "customColorLabel": "Elegí tu color"
+      "customDescription": "Define tu propio color de marca"
     },
     "payments": {
       "description": "Aceptá pagos con los métodos disponibles para tu tienda.",
@@ -36,7 +50,9 @@
       "setupNudgeDescription": "Al configurar los datos reales de un método (Yape, Plin o transferencia), Bias Market puede vincular cada abono con su pedido y mantener el estado sincronizado mientras lo revisás. Tu tienda funciona igual sin esto — podés seguir coordinando todos los pedidos por WhatsApp, nada se bloquea."
     },
     "notifications": {
-      "description": "Configurá las alertas que recibís sobre pedidos y stock."
+      "description": "Configurá las alertas que recibís sobre pedidos y stock.",
+      "thresholdLabel": "Umbral de stock bajo (unidades)",
+      "thresholdInvalid": "Ingresá un número entero igual o mayor que cero."
     },
     "delivery": {
       "availabilitySheetDescription": "Elegí los días en que este punto recibe pedidos. También podés desactivarlo temporalmente.",
@@ -50,6 +66,7 @@
       "visibilityToggleDescriptionPrivate": "Tu tienda está oculta del inicio y del directorio de búsqueda — los compradores igual pueden acceder por su link directo."
     },
     "whatsappMessages": {
+      "templateTooLong": "Mantené cada mensaje dentro de 1.000 caracteres.",
       "description": "Personalizá el texto de los mensajes que tu tienda envía y recibe por WhatsApp.",
       "newOrder": {
         "description": "Lo recibís en tu WhatsApp cuando un comprador hace un pedido. Variables requeridas: la referencia del pedido y los productos."

@@ -300,6 +300,20 @@
     "save": "Guardar",
     "saving": "Guardando...",
     "saved": "Guardado",
+    "saveBar": {
+      "saved": "Todos los cambios están guardados",
+      "dirty": "Tienes cambios sin guardar",
+      "save": "Guardar cambios",
+      "saving": "Guardando...",
+      "discard": "Descartar",
+      "errors": "No se pudo guardar",
+      "validationError": "Revisa los campos marcados antes de guardar.",
+      "leaveTitle": "¿Salir sin guardar?",
+      "leaveDescription": "Guarda o descarta los cambios antes de cambiar de pestaña.",
+      "cancel": "Seguir editando",
+      "discardAndContinue": "Descartar y continuar",
+      "saveAndContinue": "Guardar y continuar"
+    },
     "accountRegister": {
       "title": "Tratamiento en mi panel",
       "description": "Elige el registro del español que se usa en tu panel.",
@@ -348,6 +362,7 @@
       "tiktokLabel": "TikTok",
       "tiktokPlaceholder": "https://tiktok.com/@tutienda",
       "twitterLabel": "X (Twitter)",
+      "optional": "opcional",
       "twitterPlaceholder": "https://x.com/tutienda",
       "instructionsLabel": "Instrucciones de pago",
       "instructionsPlaceholder": "Comparte los datos de pago o la guía que quieres mostrar después del checkout.",
@@ -366,6 +381,9 @@
       "imageUploading": "Subiendo…",
       "imageTooLong": "Esa imagen dejaría el texto por encima del límite.",
       "previewLabel": "Vista previa",
+      "previewShow": "Mostrar vista previa",
+      "previewHide": "Ocultar vista previa",
+      "livePreviewDescription": "Se actualiza mientras editas los datos públicos de tu tienda.",
       "previewEmpty": "Aquí aparece tu texto con formato.",
       "help": "Este contenido se usa en la página pública de tu tienda y en su ficha para buscadores."
     },
@@ -375,15 +393,19 @@
       "selected": "Seleccionada",
       "previewTitle": "Vista previa del tema",
       "previewButton": "Acción principal",
-      "help": "Aplica una nueva paleta cuando quieras y el dashboard se actualiza al instante.",
+      "help": "Los cambios se aplican al guardar. Al descartarlos, se conserva la paleta anterior.",
       "apply": "Aplicar paleta",
       "customLabel": "Personalizado",
-      "customDescription": "Define tu propio color de marca",
-      "customColorLabel": "Elige tu color"
+      "customDescription": "Define los colores principal y secundario de tu marca",
+      "primaryColorLabel": "Color principal",
+      "secondaryColorLabel": "Color secundario"
     },
     "payments": {
       "title": "Métodos de pago aceptados",
       "description": "Acepta pagos con los métodos disponibles para tu tienda.",
+      "instructionsHelp": "Estas instrucciones aparecen al comprador después del checkout.",
+      "saveInstructions": "Guardar instrucciones de pago",
+      "reviewPaymentsLink": "Ve a Pagos para revisar y confirmar cada abono.",
       "manual": "Manual",
       "items": {
         "yape": {
@@ -438,6 +460,7 @@
       "pickupPointsLabel": "Puntos de recojo",
       "pickupPointPlaceholder": "Nombre del punto (ej. Alameda 28 de Julio)",
       "addPickupPoint": "Agregar nuevo punto",
+      "addPickupPointBeforeSaving": "Agrega el punto de recojo o borra su nombre antes de guardar.",
       "removePickupPoint": "Eliminar punto",
       "noPickupPoints": "Todavía no agregaste puntos de recojo.",
       "editAvailability": "Disponibilidad",
@@ -492,7 +515,7 @@
     },
     "notifications": {
       "title": "Notificaciones",
-      "description": "Configura las alertas que recibes sobre pedidos y stock.",
+      "description": "Configura los avisos que ayudan a seguir la actividad y el stock de tu tienda.",
       "items": {
         "newOrder": {
           "label": "Nuevo pedido recibido",
@@ -515,9 +538,12 @@
           "description": "Digest planificado con lo más importante de la tienda."
         }
       },
-      "thresholdLabel": "Umbral de stock bajo (unidades)"
+      "thresholdLabel": "Umbral de stock bajo (unidades)",
+      "thresholdInvalid": "Ingresa un número entero igual o mayor que cero.",
+      "comingSoon": "Próximamente"
     },
     "whatsappMessages": {
+      "templateTooLong": "Mantén cada mensaje dentro de 1.000 caracteres.",
       "title": "Mensajes de WhatsApp",
       "description": "Personaliza el texto de los mensajes que tu tienda envía y recibe por WhatsApp.",
       "previewLabel": "Vista previa con datos de ejemplo",
@@ -525,6 +551,14 @@
       "emptyHint": "Déjalo vacío para mantener el mensaje por defecto.",
       "insertVariable": "Insertar {token}",
       "save": "Guardar mensaje",
+      "restoreDefault": "Restaurar predeterminado",
+      "defaultLabel": "Por defecto",
+      "customized": "Personalizado",
+      "groups": {
+        "orders": "Pedidos (2)",
+        "payments": "Cobros (2)",
+        "tracking": "Seguimiento (3)"
+      },
       "saving": "Guardando...",
       "saved": "Guardado",
       "loading": "Cargando plantillas...",

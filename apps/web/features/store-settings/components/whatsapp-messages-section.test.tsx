@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getMessages } from "@biasmarket/i18n";
 import { whatsappTemplatesKeys } from "../queries/use-whatsapp-templates";
+import { withSettingsDraftActions } from "../../../test-utils/settings-draft-test-actions";
 
 const { upsert } = vi.hoisted(() => ({ upsert: vi.fn() }));
 
@@ -27,15 +28,21 @@ const templates = {
   delivered: null,
 };
 
-function renderSection(queryClient: QueryClient) {
+function renderSection(
+  queryClient: QueryClient,
+  sectionTemplates: Record<keyof typeof templates, string | null> = templates,
+) {
   return render(
     <NextIntlClientProvider locale="es" messages={getMessages("es")}>
       <QueryClientProvider client={queryClient}>
-        <WhatsAppMessagesSection
-          storeId="store-1"
-          templates={templates}
-          loading={false}
-        />
+        {withSettingsDraftActions(
+          <WhatsAppMessagesSection
+            storeId="store-1"
+            templates={sectionTemplates}
+            loading={false}
+          />,
+          "messages",
+        )}
       </QueryClientProvider>
     </NextIntlClientProvider>,
   );
@@ -44,9 +51,7 @@ function renderSection(queryClient: QueryClient) {
 test("renders the assisted-order editor with its literal token description and a live preview", () => {
   renderSection(new QueryClient());
 
-  expect(
-    screen.getByText("Mensaje de enlace de pedido asistido"),
-  ).toBeDefined();
+  fireEvent.click(screen.getByText("Mensaje de enlace de pedido asistido"));
   // ICU-quoted in the catalog: the braces render literally.
   expect(screen.getByText(/Variable requerida: \{\{link\}\}/)).toBeDefined();
   const editor = screen.getByLabelText("Mensaje de enlace de pedido asistido");
@@ -68,12 +73,12 @@ test("saving the assisted-order template writes only that key into the templates
   upsert.mockResolvedValue(saved);
   renderSection(queryClient);
 
+  fireEvent.click(screen.getByText("Mensaje de enlace de pedido asistido"));
   fireEvent.change(
     screen.getByLabelText("Mensaje de enlace de pedido asistido"),
     { target: { value: "Hola {{link}}" } },
   );
-  const saveButtons = screen.getAllByRole("button", { name: /^Guardar/ });
-  fireEvent.click(saveButtons[2]!);
+  fireEvent.click(screen.getByRole("button", { name: "Save tab" }));
 
   await waitFor(() =>
     expect(upsert).toHaveBeenCalledWith("store-1", "ASSISTED_ORDER_LINK", {
@@ -89,17 +94,41 @@ test("saving the assisted-order template writes only that key into the templates
   );
 });
 
+test("restoring the assisted-order default saves an empty override", async () => {
+  upsert.mockResolvedValue({ type: "ASSISTED_ORDER_LINK", template: null });
+  renderSection(new QueryClient(), {
+    ...templates,
+    assistedOrderLink: "Custom {{link}}",
+  });
+
+  fireEvent.click(screen.getByText("Mensaje de enlace de pedido asistido"));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Restaurar predeterminado" }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Save tab" }));
+
+  await waitFor(() =>
+    expect(upsert).toHaveBeenCalledWith("store-1", "ASSISTED_ORDER_LINK", {
+      template: "",
+    }),
+  );
+});
+
 test("renders one editor per buyer notice, with a live preview that has no link", () => {
   renderSection(new QueryClient());
 
-  for (const title of [
+  const titles = [
     "Aviso al comprador: pago validado",
     "Aviso al comprador: pedido en camino",
     "Aviso al comprador: pedido listo",
     "Aviso al comprador: pedido entregado",
-  ]) {
+  ];
+  for (const title of titles) {
+    fireEvent.click(screen.getByText(title));
     expect(screen.getByLabelText(title)).toBeDefined();
   }
+
+  fireEvent.click(screen.getByText("Aviso al comprador: pedido en camino"));
   const editor = screen.getByLabelText("Aviso al comprador: pedido en camino");
   fireEvent.change(editor, {
     target: { value: "Va en camino {{orderRef}} {{trackingNumber}}" },
