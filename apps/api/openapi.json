@@ -9985,7 +9985,8 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PaymentSettingsMethodChangeDto"
-            }
+            },
+            "uniqueItems": true
           },
           "paymentInstructions": {
             "type": "string",
