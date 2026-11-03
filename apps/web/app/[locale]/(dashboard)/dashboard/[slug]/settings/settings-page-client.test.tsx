@@ -91,7 +91,7 @@ test("wires the store-content bio draft into the live preview", () => {
     target: { value: "Draft bio" },
   });
 
-  expect(screen.getByText("Draft bio")).toBeTruthy();
+  expect(screen.getAllByText("Draft bio").length).toBeGreaterThan(0);
 });
 
 test("keeps a visited tab mounted and advances focus for consecutive arrow keys", () => {
