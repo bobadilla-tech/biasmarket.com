@@ -134,7 +134,8 @@ function MessageTemplateEditor({
 
   useSavedFlash(saveTemplate.isSuccess, saveTemplate.reset);
 
-  const draftIsCustom = text !== WHATSAPP_DEFAULT_TEMPLATES[type];
+  const draftIsCustom =
+    text.trim().length > 0 && text !== WHATSAPP_DEFAULT_TEMPLATES[type];
   const savedIsCustom = savedTemplate !== WHATSAPP_DEFAULT_TEMPLATES[type];
   const missing = useMemo(
     () => getMissingRequiredTokens(type, text),

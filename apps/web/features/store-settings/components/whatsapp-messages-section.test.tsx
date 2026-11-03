@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getMessages } from "@biasmarket/i18n";
 import { whatsappTemplatesKeys } from "../queries/use-whatsapp-templates";
+import { withSettingsDraftActions } from "../../../test-utils/settings-draft-test-actions";
 
 const { upsert } = vi.hoisted(() => ({ upsert: vi.fn() }));
 
@@ -31,11 +32,14 @@ function renderSection(queryClient: QueryClient) {
   return render(
     <NextIntlClientProvider locale="es" messages={getMessages("es")}>
       <QueryClientProvider client={queryClient}>
-        <WhatsAppMessagesSection
-          storeId="store-1"
-          templates={templates}
-          loading={false}
-        />
+        {withSettingsDraftActions(
+          <WhatsAppMessagesSection
+            storeId="store-1"
+            templates={templates}
+            loading={false}
+          />,
+          "messages",
+        )}
       </QueryClientProvider>
     </NextIntlClientProvider>,
   );
@@ -71,7 +75,7 @@ test("saving the assisted-order template writes only that key into the templates
     screen.getByLabelText("Mensaje de enlace de pedido asistido"),
     { target: { value: "Hola {{link}}" } },
   );
-  fireEvent.click(screen.getByRole("button", { name: /^Guardar/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Save tab" }));
 
   await waitFor(() =>
     expect(upsert).toHaveBeenCalledWith("store-1", "ASSISTED_ORDER_LINK", {
@@ -95,7 +99,7 @@ test("restoring the assisted-order default saves an empty override", async () =>
   fireEvent.click(
     screen.getByRole("button", { name: "Restaurar predeterminado" }),
   );
-  fireEvent.click(screen.getByRole("button", { name: /^Guardar/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Save tab" }));
 
   await waitFor(() =>
     expect(upsert).toHaveBeenCalledWith("store-1", "ASSISTED_ORDER_LINK", {

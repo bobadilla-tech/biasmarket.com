@@ -61,7 +61,7 @@ export type WhatsAppMessageType =
 // for stores without an override.
 export const WHATSAPP_DEFAULT_TEMPLATES: Record<WhatsAppMessageType, string> = {
   NEW_ORDER:
-    "*Nuevo pedido en {{storeName}}*\nRef: {{orderRef}}\n\n{{items}}\n\nEntrega: {{deliveryMethod}} — {{pickupPoint}}\nFecha de recojo: {{pickupDate}}\n*Total: {{totalAmount}} {{currency}}*\nMétodo de pago: {{paymentMethod}}\n\nCliente: {{customerName}}\nContacto: {{customerPhone}}",
+    "*Nuevo pedido en {{storeName}}*\nRef: {{orderRef}}\n\n{{items}}\n\nEntrega: {{deliveryMethod}} — {{pickupPoint}}\nFecha de recojo: {{pickupDate}}\n*Total: {{totalAmount}} {{currency}}*\nMétodo de pago: {{paymentMethod}}\n\nCliente: {{customerName}}",
   PAYMENT_REMINDER:
     "Hola {{customerName}},\nSobre tu pedido {{orderRef}} en {{storeName}}:\nTodavía tienes un saldo pendiente de {{pendingAmount}} {{currency}}.\n¿Podrías completar el pago para que podamos avanzar con tu pedido? ¡Gracias!",
   ASSISTED_ORDER_LINK:

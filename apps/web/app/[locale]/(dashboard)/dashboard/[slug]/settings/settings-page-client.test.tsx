@@ -92,7 +92,7 @@ test("keeps a visited tab mounted and advances focus for consecutive arrow keys"
   });
   fireEvent.keyDown(paymentTab, { key: "ArrowRight" });
   expect(document.activeElement).toBe(
-    screen.getByRole("tab", { name: "Entrega" }),
+    screen.getByRole("tab", { name: "Configuración de entrega" }),
   );
   fireEvent.keyDown(document.activeElement!, { key: "ArrowRight" });
   expect(push).toHaveBeenLastCalledWith(

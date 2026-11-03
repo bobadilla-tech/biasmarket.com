@@ -133,7 +133,7 @@ function SettingsPageContent() {
     previousTabRef.current = activeTab;
   }, [activeTab, pathname, router, searchParams, tabIsDirty]);
   const { data: whatsappTemplates, isPending: whatsappLoading } =
-    useWhatsAppTemplates(activeTab === "messages" ? store?.id : undefined);
+    useWhatsAppTemplates(store?.id);
 
   useEffect(() => {
     if (!requestedTab || !TAB_IDS.includes(requestedTab as TabId)) {

@@ -1,5 +1,19 @@
 {
   "settings": {
+    "saveBar": {
+      "saved": "Todos los cambios están guardados",
+      "dirty": "Tenés cambios sin guardar",
+      "save": "Guardar cambios",
+      "saving": "Guardando...",
+      "discard": "Descartar",
+      "errors": "No se pudieron guardar",
+      "validationError": "Revisá los campos marcados antes de guardar.",
+      "leaveTitle": "¿Salir sin guardar?",
+      "leaveDescription": "Guardá o descartá los cambios antes de cambiar de pestaña.",
+      "cancel": "Seguir editando",
+      "discardAndContinue": "Descartar y continuar",
+      "saveAndContinue": "Guardar y continuar"
+    },
     "accountRegister": {
       "description": "Elegí el registro del español que se usa en tu panel.",
       "auto": "Automático según tu país",

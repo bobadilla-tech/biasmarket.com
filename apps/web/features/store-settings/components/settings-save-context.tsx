@@ -34,6 +34,8 @@ type SettingsDraftContextValue = {
 const SettingsDraftContext = createContext<SettingsDraftContextValue | null>(
   null,
 );
+const noopRegister: SettingsDraftContextValue["register"] = () => {};
+const noopUnregister: SettingsDraftContextValue["unregister"] = () => {};
 
 export function SettingsDraftProvider({
   children,
@@ -131,7 +133,9 @@ export function useSettingsDraftContext() {
 export function useSettingsDraftParticipant(
   participant: SettingsDraftParticipant,
 ) {
-  const { register, unregister } = useSettingsDraftContext();
+  const context = useContext(SettingsDraftContext);
+  const register = context?.register ?? noopRegister;
+  const unregister = context?.unregister ?? noopUnregister;
   const { id, tab, dirty, save, discard } = participant;
   useEffect(() => {
     register({ id, tab, dirty, save, discard });

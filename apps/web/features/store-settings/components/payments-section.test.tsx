@@ -1,6 +1,7 @@
 import { afterEach, expect, test, vi } from "vitest";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { renderWithProviders } from "../../../test-utils/render-with-providers";
+import { withSettingsDraftActions } from "../../../test-utils/settings-draft-test-actions";
 
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
@@ -49,14 +50,15 @@ test("saves the edited payment instructions", async () => {
   findAllPaymentConfig.mockResolvedValue([]);
 
   renderWithProviders(
-    <PaymentsSection storeId="store-1" initialPaymentInstructions="" />,
+    withSettingsDraftActions(
+      <PaymentsSection storeId="store-1" initialPaymentInstructions="" />,
+      "payments",
+    ),
   );
 
   const editor = await screen.findByLabelText("Instrucciones de pago");
   fireEvent.change(editor, { target: { value: "Transferir al 999" } });
-  fireEvent.click(
-    screen.getByRole("button", { name: "Guardar instrucciones de pago" }),
-  );
+  fireEvent.click(screen.getByRole("button", { name: "Save tab" }));
 
   await waitFor(() =>
     expect(updateStore).toHaveBeenCalledWith("store-1", {
