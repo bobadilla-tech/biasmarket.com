@@ -24,22 +24,22 @@
             {
               "scheme": "https",
               "host": "biasmarket.com",
-              "pathPattern": "/es/store/.*/product/.*"
+              "pathAdvancedPattern": "/es/store/[^/]+/product/[^/]+"
             },
             {
               "scheme": "https",
               "host": "biasmarket.com",
-              "pathPattern": "/en/store/.*/product/.*"
+              "pathAdvancedPattern": "/en/store/[^/]+/product/[^/]+"
             },
             {
               "scheme": "https",
               "host": "biasmarket.com",
-              "pathPattern": "/es/store/.*/account/orders/.*"
+              "pathAdvancedPattern": "/es/store/[^/]+/account/orders/[^/]+"
             },
             {
               "scheme": "https",
               "host": "biasmarket.com",
-              "pathPattern": "/en/store/.*/account/orders/.*"
+              "pathAdvancedPattern": "/en/store/[^/]+/account/orders/[^/]+"
             }
           ]
         }
