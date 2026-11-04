@@ -102,9 +102,9 @@ executed".
 - `apps/mobile` measures the tested logic files listed in
   `apps/mobile/vitest.config.ts` (`session-storage`, `cart-storage`,
   `pagination`); React Native components are covered separately by Jest's
-  `test:components` step in CI. The coverage floor means "no regression" for
-  the configured measured files. The `types` workspace gates `lines` only (the
-  value is in `packages/types/vitest.config.ts`); generated code is deliberately
+  `test:components` step in CI. The coverage floor means "no regression" for the
+  configured measured files. The `types` workspace gates `lines` only (the value
+  is in `packages/types/vitest.config.ts`); generated code is deliberately
   unmeasured.
 - turbo `test:cov` has `outputs: ["coverage/**"]` so a cache hit restores
   `lcov.info`. New upload steps are preceded by

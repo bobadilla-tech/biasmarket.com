@@ -22,9 +22,12 @@ pnpm docker:dev
 
 This is the only sanctioned dev workflow, one command brings up Postgres, Redis,
 MinIO, the NestJS API, the workers, and the Next.js web app with working dev
-defaults, no manual `.env` setup required. Hot reload and scripts:
-[docs/core/docker-dev.md](docs/core/docker-dev.md). Seeded accounts and known
-issues: [docs/core/infra.md](docs/core/infra.md).
+defaults, no manual `.env` setup required. The first run takes several minutes;
+open <http://localhost:3001> once `web` logs `Ready` (`minio-init` exiting is
+normal). If something breaks, see
+[troubleshooting](docs/core/docker-dev.md#troubleshooting). Hot reload and
+scripts: [docs/core/docker-dev.md](docs/core/docker-dev.md). Seeded accounts and
+known issues: [docs/core/infra.md](docs/core/infra.md).
 
 Running the apps directly on the host (`pnpm dev`) is possible but unsupported,
 it runs every workspace's `dev` script (`turbo run dev --parallel`) with no
