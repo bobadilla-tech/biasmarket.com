@@ -10,6 +10,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/features/store-settings/queries/use-whatsapp-templates", () => ({
   useWhatsAppTemplates: () => ({
     data: { orderCancelled: { template: "{{orderRef}} fue cancelado." } },
+    isSuccess: true,
   }),
 }));
 

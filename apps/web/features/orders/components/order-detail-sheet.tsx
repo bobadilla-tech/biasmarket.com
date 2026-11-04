@@ -381,7 +381,9 @@ export function OrderDetailSheet({
 
             <SheetFooter className="sticky bottom-0 border-t border-[#f0e7f8] bg-white px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
               <div className="flex w-full flex-wrap gap-2">
-                {order.status === "CANCELLED" && storeId ? (
+                {order.status === "CANCELLED" &&
+                storeId &&
+                whatsappTemplates.isSuccess ? (
                   <a
                     href={buildWhatsAppUrl(
                       order.customerPhone,

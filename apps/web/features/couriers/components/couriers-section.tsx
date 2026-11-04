@@ -70,7 +70,11 @@ export function CouriersSection({ storeId }: { storeId: string }) {
   useEffect(() => {
     if (couriersData) {
       setCouriers(couriersData);
-      setExpandedId((current) => current ?? couriersData[0]?.id ?? null);
+      setExpandedId((current) =>
+        current && couriersData.some((courier) => courier.id === current)
+          ? current
+          : (couriersData[0]?.id ?? null),
+      );
     }
   }, [couriersData]);
 

@@ -145,6 +145,19 @@ describe("buildWhatsAppOrderCancelledMessage", () => {
       ),
     ).toBe("#ABCDEF {{unknown}} ");
   });
+
+  it("passes the plain customer name to custom templates", () => {
+    expect(
+      buildWhatsAppOrderCancelledMessage(
+        {
+          orderId: "order-abcdef",
+          storeName: "K-Store",
+          customerName: " Jane ",
+        },
+        "Estimado {{customerName}}: pedido {{orderRef}} cancelado",
+      ),
+    ).toBe("Estimado Jane: pedido #ABCDEF cancelado");
+  });
 });
 
 describe("buildWhatsAppUrl", () => {

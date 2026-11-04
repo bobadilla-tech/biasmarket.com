@@ -355,10 +355,15 @@ export const buildWhatsAppOrderCancelledMessage = (
   input: WhatsAppOrderCancelledInput,
   template?: string | null,
 ): string => {
+  const hasCustomTemplate = Boolean(template?.trim());
   const variables = {
     customerName: input.customerName?.trim()
-      ? ` ${input.customerName.trim()},`
-      : ",",
+      ? hasCustomTemplate
+        ? input.customerName.trim()
+        : ` ${input.customerName.trim()},`
+      : hasCustomTemplate
+        ? ""
+        : ",",
     storeName: input.storeName,
     orderRef: `#${orderRef(input.orderId)}`,
     cancellationReason: input.cancellationReason?.trim()
@@ -366,7 +371,7 @@ export const buildWhatsAppOrderCancelledMessage = (
       : "",
   };
   return renderWhatsAppTemplate(
-    template?.trim() ? template : WHATSAPP_DEFAULT_TEMPLATES.ORDER_CANCELLED,
+    hasCustomTemplate ? template : WHATSAPP_DEFAULT_TEMPLATES.ORDER_CANCELLED,
     variables,
   );
 };
