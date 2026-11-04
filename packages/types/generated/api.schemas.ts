@@ -454,8 +454,6 @@ export interface CreateVariantDto {
 }
 
 export interface CreateProductDto {
-  /** @maxItems 6 */
-  images?: string[];
   /** @minLength 2 */
   name: string;
   categoryIds?: string[];
@@ -560,8 +558,6 @@ export interface ProductDetailResponseDto {
 }
 
 export interface UpdateProductDto {
-  /** @maxItems 6 */
-  images?: string[];
   /** @minLength 2 */
   name?: string;
   categoryIds?: string[];
@@ -3460,15 +3456,6 @@ export interface StoreReferenceResponseDto {
   createdAt: string;
 }
 
-export interface UpdateStoreReferenceDto {
-  takenAt?: string;
-  /**
-   * @maxLength 240
-   * @nullable
-   */
-  caption?: string | null;
-}
-
 export interface PublicStoreReferencesResponseDto {
   items: StoreReferenceResponseDto[];
   total: number;
@@ -3581,6 +3568,7 @@ export type StoreReferencesControllercreateBody = {
   takenAt: string;
   /** @maxLength 240 */
   caption?: string;
+  hidden?: boolean;
   /**
    * @minimum 1
    * @maximum 12000
@@ -3591,7 +3579,29 @@ export type StoreReferencesControllercreateBody = {
    * @maximum 12000
    */
   height: number;
-  privacyConfirmed: boolean;
+  /** Required unless hidden is true. */
+  privacyConfirmed?: boolean;
+};
+
+export type StoreReferencesControllerupdateBody = {
+  file?: Blob;
+  takenAt?: string;
+  /** @maxLength 240 */
+  caption?: string;
+  /** Setting this to false requires privacyConfirmed: true. */
+  hidden?: boolean;
+  /** Required when publishing, replacing the image, or keeping a reference public. */
+  privacyConfirmed?: boolean;
+  /**
+   * @minimum 1
+   * @maximum 12000
+   */
+  width?: number;
+  /**
+   * @minimum 1
+   * @maximum 12000
+   */
+  height?: number;
 };
 
 export type StoreReferencesControllerfindPublicParams = {

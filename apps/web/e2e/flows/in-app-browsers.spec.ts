@@ -76,16 +76,19 @@ for (const app of IN_APP) {
     await expect(
       buyer.getByRole("button", { name: "Guardar con Google" }),
     ).toHaveCount(0);
-    await expect(buyer.getByText("Sube tu comprobante")).toBeVisible();
-    await expect(buyer.locator('input[type="file"]')).toBeAttached();
-    await buyer.locator('input[type="file"]').setInputFiles(PROOF_IMAGE);
-
     // "Copiar enlace" writes the exact private link.
     await buyer.getByRole("button", { name: "Copiar enlace" }).click();
     await expect(buyer.getByText("Enlace copiado")).toBeVisible();
     expect(await buyer.evaluate(() => navigator.clipboard.readText())).toBe(
       order.link,
     );
+
+    // The payment dialog covers the order page, so complete the in-app-browser
+    // copy-link flow before opening it.
+    await expect(buyer.getByText("Sube tu comprobante")).toBeVisible();
+    await buyer.getByRole("button", { name: /Pagar lo restante/ }).click();
+    await expect(buyer.locator('input[type="file"]')).toBeAttached();
+    await buyer.locator('input[type="file"]').setInputFiles(PROOF_IMAGE);
 
     expect(started).toEqual([]);
     await ctx.close();

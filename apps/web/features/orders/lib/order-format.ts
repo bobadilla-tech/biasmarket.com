@@ -25,6 +25,7 @@ export function formatOrderDate(
   t: ReturnType<typeof useTranslations>,
 ) {
   const date = new Date(createdAt);
+  if (!Number.isFinite(date.getTime())) return "—";
   const now = new Date();
   const time = new Intl.DateTimeFormat(locale, {
     hour: "2-digit",

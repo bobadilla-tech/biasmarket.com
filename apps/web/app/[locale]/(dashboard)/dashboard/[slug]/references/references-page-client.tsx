@@ -3,10 +3,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, ImagePlus, Trash2, X } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  ImagePlus,
+  Pencil,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { ReferenceEditDialog } from "@/features/references/components/reference-edit-dialog";
+import { ReferencePublishDialog } from "@/features/references/components/reference-publish-dialog";
 import { useDashboardStore } from "@/features/stores";
 import { referencesApi } from "@/features/references/api/references.api";
 import { apiClient } from "@/lib/api-client";
@@ -49,6 +60,9 @@ export function ReferencesPageClient() {
   const [caption, setCaption] = useState("");
   const [takenAt, setTakenAt] = useState(localDateTimeValue);
   const [privacyConfirmed, setPrivacyConfirmed] = useState(false);
+  const [createHidden, setCreateHidden] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [publishingId, setPublishingId] = useState<string | null>(null);
   const [sort, setSort] = useState<"recientes" | "antiguas">("recientes");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +85,12 @@ export function ReferencesPageClient() {
     ? items.findIndex((item) => item.id === selectedId)
     : -1;
   const selectedItem = selectedIndex >= 0 ? items[selectedIndex] : null;
+  const editingItem = editingId
+    ? (items.find((item) => item.id === editingId) ?? null)
+    : null;
+  const publishingItem = publishingId
+    ? (items.find((item) => item.id === publishingId) ?? null)
+    : null;
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -88,7 +108,13 @@ export function ReferencesPageClient() {
 
   async function uploadFiles(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy || !storeId || !files.length || !privacyConfirmed) return;
+    if (
+      busy ||
+      !storeId ||
+      !files.length ||
+      (!createHidden && !privacyConfirmed)
+    )
+      return;
     setBusy(true);
     setError(null);
     try {
@@ -102,18 +128,88 @@ export function ReferencesPageClient() {
           caption: caption.trim() || undefined,
           width,
           height,
-          privacyConfirmed: true,
+          hidden: createHidden,
+          privacyConfirmed: createHidden ? false : true,
         });
         setFiles((current) => current.filter((selected) => selected !== file));
       }
       setCaption("");
       setPrivacyConfirmed(false);
+      setCreateHidden(false);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : tc("networkError"));
     } finally {
       await client.invalidateQueries({ queryKey: queryKey(storeId) });
       setBusy(false);
     }
+  }
+
+  function openEdit(item: (typeof items)[number]) {
+    setEditingId(item.id);
+    setError(null);
+  }
+
+  async function saveEdit(formValues: {
+    referenceId: string;
+    takenAt: string;
+    caption: string;
+    file?: File;
+  }) {
+    if (!storeId || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const values: Parameters<typeof referencesApi.update>[2] = {
+        takenAt: new Date(formValues.takenAt).toISOString(),
+        caption: formValues.caption,
+      };
+      if (formValues.file) {
+        values.file = formValues.file;
+        values.privacyConfirmed = true;
+      }
+      await referencesApi.update(
+        storeId,
+        formValues.referenceId,
+        values,
+        tc("networkError"),
+      );
+      await client.invalidateQueries({ queryKey: queryKey(storeId) });
+      setEditingId(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : tc("networkError"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function setHidden(itemId: string, hidden: boolean) {
+    if (!storeId || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await referencesApi.update(
+        storeId,
+        itemId,
+        hidden ? { hidden: true } : { hidden: false, privacyConfirmed: true },
+        tc("networkError"),
+      );
+      await client.invalidateQueries({ queryKey: queryKey(storeId) });
+      if (!hidden) setPublishingId(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : tc("networkError"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function requestPublish(itemId: string) {
+    setError(null);
+    setPublishingId(itemId);
+  }
+
+  async function confirmPublish() {
+    if (!publishingId) return;
+    await setHidden(publishingId, false);
   }
 
   async function remove(id: string) {
@@ -142,14 +238,14 @@ export function ReferencesPageClient() {
   if (loading || query.isLoading) return <p>{tc("loading")}</p>;
 
   return (
-    <main className="space-y-6">
+    <main className="min-w-0 space-y-6">
       <header>
         <h1 className="text-2xl font-bold">{t("title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("description")}</p>
       </header>
       <form
         onSubmit={(event) => void uploadFiles(event)}
-        className="space-y-4 rounded-xl border bg-card p-4"
+        className="min-w-0 space-y-4 rounded-xl border bg-card p-4"
       >
         <label className="grid gap-1 text-sm font-medium">
           {t("images")}
@@ -163,6 +259,19 @@ export function ReferencesPageClient() {
               event.currentTarget.value = "";
             }}
           />
+        </label>
+        <label className="flex min-h-11 items-center gap-3 text-sm">
+          <input
+            type="checkbox"
+            checked={createHidden}
+            disabled={busy}
+            onChange={(event) => {
+              setCreateHidden(event.target.checked);
+              setPrivacyConfirmed(false);
+            }}
+            className="size-4 shrink-0"
+          />
+          <span>{t("saveHidden")}</span>
         </label>
         {files.length ? (
           <p className="text-sm text-muted-foreground">
@@ -192,16 +301,18 @@ export function ReferencesPageClient() {
             />
           </label>
         </div>
-        <label className="flex items-start gap-3 rounded-lg bg-muted p-3 text-sm">
-          <input
-            type="checkbox"
-            checked={privacyConfirmed}
-            disabled={busy}
-            onChange={(event) => setPrivacyConfirmed(event.target.checked)}
-            className="mt-1 size-4"
-          />
-          <span>{t("privacyNotice")}</span>
-        </label>
+        {!createHidden ? (
+          <label className="flex items-start gap-3 rounded-lg bg-muted p-3 text-sm">
+            <input
+              type="checkbox"
+              checked={privacyConfirmed}
+              disabled={busy}
+              onChange={(event) => setPrivacyConfirmed(event.target.checked)}
+              className="mt-1 size-4 shrink-0"
+            />
+            <span>{t("privacyNotice")}</span>
+          </label>
+        ) : null}
         {error || storeError || query.error ? (
           <p role="alert" className="text-sm text-destructive">
             {error ??
@@ -213,7 +324,9 @@ export function ReferencesPageClient() {
         ) : null}
         <Button
           type="submit"
-          disabled={busy || files.length === 0 || !privacyConfirmed}
+          disabled={
+            busy || files.length === 0 || (!createHidden && !privacyConfirmed)
+          }
         >
           <ImagePlus className="mr-2 size-4" />
           {busy ? t("uploading") : t("upload")}
@@ -262,10 +375,23 @@ export function ReferencesPageClient() {
                   className="h-auto w-full object-cover"
                 />
               </button>
-              <div className="flex items-start justify-between gap-2 p-3 text-sm">
+              <div className="flex min-w-0 flex-wrap items-start justify-between gap-2 p-3 text-sm">
                 <div className="min-w-0">
                   <p className="font-semibold">
                     {t("day", { date: formatDate(item.takenAt, locale) })}
+                  </p>
+                  <p className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground">
+                    {item.hidden ? (
+                      <>
+                        <EyeOff aria-hidden="true" className="size-3.5" />
+                        {t("hidden")}
+                      </>
+                    ) : (
+                      <>
+                        <Eye aria-hidden="true" className="size-3.5" />
+                        {t("published")}
+                      </>
+                    )}
                   </p>
                   <p className="text-muted-foreground">
                     {t("uploadedByStore")}
@@ -274,16 +400,51 @@ export function ReferencesPageClient() {
                     <p className="mt-1 break-words">{item.caption}</p>
                   ) : null}
                 </div>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  aria-label={t("deleteImage")}
-                  disabled={deletingIds.has(item.id)}
-                  onClick={() => void remove(item.id)}
-                >
-                  <Trash2 className="size-4" />
-                </Button>
+                <div className="flex min-w-0 flex-wrap items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="min-h-11 px-3"
+                    disabled={busy || deletingIds.has(item.id)}
+                    onClick={() => openEdit(item)}
+                  >
+                    <Pencil aria-hidden="true" className="mr-2 size-4" />
+                    {t("edit")}
+                  </Button>
+                  {item.hidden ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="min-h-11 px-3"
+                      disabled={busy}
+                      onClick={() => requestPublish(item.id)}
+                    >
+                      <Eye aria-hidden="true" className="mr-2 size-4" />
+                      {t("publish")}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="min-h-11 px-3"
+                      disabled={busy}
+                      onClick={() => void setHidden(item.id, true)}
+                    >
+                      <EyeOff aria-hidden="true" className="mr-2 size-4" />
+                      {t("hide")}
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    aria-label={t("deleteImage")}
+                    disabled={busy || deletingIds.has(item.id)}
+                    onClick={() => void remove(item.id)}
+                    className="min-h-11 min-w-11"
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
               </div>
             </li>
           ))}
@@ -293,6 +454,20 @@ export function ReferencesPageClient() {
           {t("empty")}
         </p>
       )}
+      <ReferenceEditDialog
+        item={editingItem}
+        busy={busy}
+        error={error}
+        onCancel={() => setEditingId(null)}
+        onSave={saveEdit}
+      />
+      <ReferencePublishDialog
+        item={publishingItem}
+        busy={busy}
+        error={error}
+        onCancel={() => setPublishingId(null)}
+        onConfirm={() => void confirmPublish()}
+      />
       <dialog
         ref={dialogRef}
         aria-label={

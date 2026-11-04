@@ -680,6 +680,9 @@
       "submitting": "Sending...",
       "success": "Done! We received your proof. The store will review it soon.",
       "inReview": "You have {amount} under review.",
+      "remainingTitle": "Pay the remaining balance",
+      "remainingButton": "Pay remaining · {amount}",
+      "remainingDescription": "You have {amount} left to pay. Upload your payment proof.",
       "waitReview": "Wait for the store to review before sending another proof.",
       "errors": {
         "amountInvalid": "Enter a valid amount, for example 40.50.",

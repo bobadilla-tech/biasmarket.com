@@ -1,10 +1,27 @@
 import { BadRequestException } from "@nestjs/common";
-import { crc32 } from "node:zlib";
+import { crc32, inflateSync } from "node:zlib";
 import type { SupportedUploadMimeType } from "../../common/uploaded-file-validation.pipe.js";
 
 export interface ImageDimensions {
   width: number;
   height: number;
+}
+
+const MAX_REFERENCE_IMAGE_DIMENSION = 12_000;
+const MAX_PNG_DECOMPRESSED_BYTES = 128 * 1024 * 1024;
+
+function checkedDimensions(width: number, height: number): ImageDimensions {
+  if (
+    width < 1 ||
+    height < 1 ||
+    width > MAX_REFERENCE_IMAGE_DIMENSION ||
+    height > MAX_REFERENCE_IMAGE_DIMENSION
+  ) {
+    throw new BadRequestException(
+      "Las dimensiones de la imagen no son válidas",
+    );
+  }
+  return { width, height };
 }
 
 const JPEG_START_OF_FRAME_MARKERS = new Set([
@@ -57,6 +74,7 @@ export function readImageDimensions(
       let width: number | undefined;
       let height: number | undefined;
       let hasImageData = false;
+      const imageData: Buffer[] = [];
 
       while (offset + 12 <= buffer.length) {
         const dataLength = buffer.readUInt32BE(offset);
@@ -77,7 +95,10 @@ export function readImageDimensions(
           break;
         }
 
-        if (type === "IDAT" && dataLength > 0) hasImageData = true;
+        if (type === "IDAT" && dataLength > 0) {
+          hasImageData = true;
+          imageData.push(buffer.subarray(offset + 8, offset + 8 + dataLength));
+        }
         if (type === "IEND") {
           if (
             dataLength === 0 &&
@@ -86,7 +107,16 @@ export function readImageDimensions(
             width !== undefined &&
             height !== undefined
           ) {
-            return { width, height };
+            try {
+              inflateSync(Buffer.concat(imageData), {
+                maxOutputLength: MAX_PNG_DECOMPRESSED_BYTES,
+              });
+            } catch {
+              throw new BadRequestException(
+                "Los datos de la imagen PNG no son válidos",
+              );
+            }
+            return checkedDimensions(width, height);
           }
           break;
         }
@@ -123,12 +153,9 @@ export function readImageDimensions(
         const height = buffer.readUInt16BE(offset + 3);
         const width = buffer.readUInt16BE(offset + 5);
         if (orientation >= 5 && orientation <= 8) {
-          return { width: height, height: width };
+          return checkedDimensions(height, width);
         }
-        return {
-          height,
-          width,
-        };
+        return checkedDimensions(width, height);
       }
       offset += segmentLength;
     }

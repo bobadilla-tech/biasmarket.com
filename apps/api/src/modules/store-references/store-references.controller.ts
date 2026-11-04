@@ -47,6 +47,10 @@ import { readImageDimensions } from "./image-dimensions.js";
 const REFERENCE_IMAGE_PIPE = new UploadedFileValidationPipe({
   allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
 });
+const OPTIONAL_REFERENCE_IMAGE_PIPE = new UploadedFileValidationPipe({
+  allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
+  fileIsRequired: false,
+});
 
 function serializeReference(reference: any): StoreReferenceResponseDto {
   const { privacyConfirmed: _privacyConfirmed, ...serialized } = reference;
@@ -83,14 +87,18 @@ export class StoreReferencesController {
   @ApiBody({
     schema: {
       type: "object",
-      required: ["file", "takenAt", "width", "height", "privacyConfirmed"],
+      required: ["file", "takenAt", "width", "height"],
       properties: {
         file: { type: "string", format: "binary" },
         takenAt: { type: "string", format: "date-time" },
         caption: { type: "string", maxLength: 240 },
+        hidden: { type: "boolean" },
         width: { type: "integer", minimum: 1, maximum: 12000 },
         height: { type: "integer", minimum: 1, maximum: 12000 },
-        privacyConfirmed: { type: "boolean" },
+        privacyConfirmed: {
+          type: "boolean",
+          description: "Required unless hidden is true.",
+        },
       },
     },
   })
@@ -112,7 +120,7 @@ export class StoreReferencesController {
         "Las dimensiones no coinciden con la imagen enviada",
       );
     }
-    if (!dto.privacyConfirmed) {
+    if (dto.hidden !== true && !dto.privacyConfirmed) {
       throw new BadRequestException("Se requiere confirmar la privacidad");
     }
     const imageUrl = await this.storage.uploadStoreReferenceImage(
@@ -126,26 +134,107 @@ export class StoreReferencesController {
         caption: dto.caption?.trim() || undefined,
         width: dto.width,
         height: dto.height,
-        privacyConfirmed: true,
+        hidden: dto.hidden ?? false,
+        privacyConfirmed: dto.privacyConfirmed ?? false,
       });
       return serializeReference(reference);
     } catch (error) {
-      await this.storage.deleteImage(imageUrl).catch(() => undefined);
+      await this.storage
+        .deleteStoreReferenceImage(imageUrl)
+        .catch(() => undefined);
       throw error;
     }
   }
 
   @UseGuards(AuthGuard)
   @Patch("stores/:storeId/references/:referenceId")
+  @ApiConsumes("multipart/form-data")
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        file: { type: "string", format: "binary" },
+        takenAt: { type: "string", format: "date-time" },
+        caption: { type: "string", maxLength: 240 },
+        hidden: {
+          type: "boolean",
+          description: "Setting this to false requires privacyConfirmed: true.",
+        },
+        privacyConfirmed: {
+          type: "boolean",
+          description:
+            "Required when publishing, replacing the image, or keeping a reference public.",
+        },
+        width: { type: "integer", minimum: 1, maximum: 12000 },
+        height: { type: "integer", minimum: 1, maximum: 12000 },
+      },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor("file", {
+      limits: { fileSize: MAX_UPLOAD_SIZE_BYTES + 1 },
+    }),
+  )
   async update(
     @Param("storeId") storeId: string,
     @Param("referenceId") referenceId: string,
     @Session() session: UserSession,
+    @UploadedFile(OPTIONAL_REFERENCE_IMAGE_PIPE)
+    file: ValidatedUploadedFile | undefined,
     @Body() dto: UpdateStoreReferenceDto,
   ): Promise<StoreReferenceResponseDto> {
-    return serializeReference(
-      await this.references.update(referenceId, storeId, session.user.id, dto),
-    );
+    const userId = session.user.id;
+    await this.references.findOwned(referenceId, storeId, userId);
+    if ((dto.hidden === false || file) && !dto.privacyConfirmed) {
+      throw new BadRequestException("Se requiere confirmar la privacidad");
+    }
+
+    let uploadedUrl: string | undefined;
+    let uploadedDimensions: { width: number; height: number } | undefined;
+    if (file) {
+      uploadedDimensions = readImageDimensions(
+        file.buffer,
+        file.detectedMimeType,
+      );
+      uploadedUrl = await this.storage.uploadStoreReferenceImage(
+        file.buffer,
+        file.detectedMimeType,
+      );
+    }
+
+    try {
+      const { updated, previousImageUrl } = await this.references.update(
+        referenceId,
+        storeId,
+        userId,
+        {
+          ...dto,
+          ...(uploadedUrl
+            ? {
+                imageUrl: uploadedUrl,
+                width: uploadedDimensions!.width,
+                height: uploadedDimensions!.height,
+                privacyConfirmed: true,
+              }
+            : {}),
+          ...(!uploadedUrl ? { width: undefined, height: undefined } : {}),
+          ...(dto.privacyConfirmed ? { privacyConfirmed: true } : {}),
+        },
+      );
+      if (uploadedUrl) {
+        await this.storage
+          .deleteStoreReferenceImage(previousImageUrl)
+          .catch(() => undefined);
+      }
+      return serializeReference(updated);
+    } catch (error) {
+      if (uploadedUrl) {
+        await this.storage
+          .deleteStoreReferenceImage(uploadedUrl)
+          .catch(() => undefined);
+      }
+      throw error;
+    }
   }
 
   @UseGuards(AuthGuard)
@@ -160,7 +249,9 @@ export class StoreReferencesController {
       storeId,
       session.user.id,
     );
-    await this.storage.deleteImage(deleted.imageUrl).catch(() => undefined);
+    await this.storage
+      .deleteStoreReferenceImage(deleted.imageUrl)
+      .catch(() => undefined);
     return serializeReference(deleted);
   }
 

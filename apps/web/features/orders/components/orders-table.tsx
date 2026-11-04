@@ -4,7 +4,7 @@ import Image from "next/image";
 import { Fragment, useState } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DataTable, DataTableCaption } from "@/components/ui/data-table";
 import {
@@ -17,6 +17,21 @@ import {
 import { NEXT_FULFILLMENT } from "../lib/order-status";
 import type { OrderResponseDto } from "@biasmarket/types";
 import { OrderStatusBadge } from "./order-status-badge";
+import { paymentMethodLabels } from "../lib/payment-method-labels";
+import { cn } from "@/lib/utils";
+
+function formatOrderTotal(amount: string, currency: string, locale: string) {
+  const numericAmount = Number(amount);
+  if (!Number.isFinite(numericAmount)) return `${amount} ${currency}`;
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+    }).format(numericAmount);
+  } catch {
+    return `${amount} ${currency}`;
+  }
+}
 
 export function OrdersTable({
   orders,
@@ -36,6 +51,7 @@ export function OrdersTable({
   onView: (order: OrderResponseDto) => void;
 }) {
   const t = useTranslations("dashboard.orders");
+  const paymentMethods = paymentMethodLabels(t);
   const { locale } = useParams<{ locale: string }>();
   const [expandedOrderIds, setExpandedOrderIds] = useState<Set<string>>(
     () => new Set(),
@@ -49,11 +65,14 @@ export function OrdersTable({
 
   return (
     <DataTable caption={t("title")}>
-      <table className="w-full text-sm">
+      <table className="w-full table-fixed text-sm md:table-auto">
         <DataTableCaption>{t("title")}</DataTableCaption>
         <thead>
           <tr className="border-b border-[#f3ebff] bg-[#fcf9ff] text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-[#927fac]">
-            <th aria-hidden="true" className="w-11 px-2 py-4 md:hidden" />
+            <th
+              aria-hidden="true"
+              className="hidden w-11 px-2 py-4 md:table-cell"
+            />
             <th scope="col" className="hidden px-6 py-4 md:table-cell">
               {t("columns.number")}
             </th>
@@ -77,7 +96,7 @@ export function OrdersTable({
             </th>
             <th
               scope="col"
-              className="sticky right-0 bg-[#fcf9ff] px-3 py-4 text-right md:static md:px-6"
+              className="hidden sticky right-0 bg-[#fcf9ff] px-3 py-4 text-right md:table-cell md:static md:px-6"
             >
               {t("columns.actions")}
             </th>
@@ -90,10 +109,22 @@ export function OrdersTable({
               order.customerName,
               order.customerPhone,
             );
-            const customer = order.customerName ?? order.customerPhone;
+            const customerName = order.customerName?.trim();
+            const customer =
+              customerName || order.customerPhone || t("unnamedCustomer");
+            const mobileCustomer = customerName
+              ? customerName
+              : order.customerPhone
+                ? t("maskedPhone", { phone: order.customerPhone.slice(-4) })
+                : t("unnamedCustomer");
+            const hasMobileCustomerIdentity = Boolean(
+              customerName || order.customerPhone,
+            );
             const product = getProductSummary(order, t);
             const delivery = getDeliveryLabel(order, t);
-            const date = formatOrderDate(order.createdAt, locale, t);
+            const date = order.createdAt
+              ? formatOrderDate(order.createdAt, locale, t)
+              : "—";
             const avatar = order.items?.[0]?.product?.images?.[0];
             const isPending = pendingOrderIds.has(order.id);
             const next = NEXT_FULFILLMENT[order.fulfillmentStatus];
@@ -102,8 +133,114 @@ export function OrdersTable({
 
             return (
               <Fragment key={order.id}>
-                <tr className="border-b border-[#f3ebff] hover:bg-[#fcf9ff]">
-                  <td className="w-11 px-2 py-4 md:hidden">
+                <tr className="border-b border-[#f3ebff] md:hidden">
+                  <td colSpan={9} className="p-3">
+                    <article className="overflow-hidden rounded-2xl border border-[#eadcf8] bg-white shadow-[0_8px_22px_-20px_rgba(45,22,73,0.7)]">
+                      <div className="flex items-start justify-between gap-3 border-b border-[#f3ebff] bg-[#fcf9ff] px-4 py-3">
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#927fac]">
+                            {t("mobileOrder")}
+                          </p>
+                          <p className="truncate text-base font-bold text-[#2d1649]">
+                            {number}
+                          </p>
+                        </div>
+                        <OrderStatusBadge order={order} />
+                      </div>
+                      <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-3 px-4 py-4">
+                        <div className="min-w-0">
+                          <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#8f7da8]">
+                            {t("columns.customer")}
+                          </dt>
+                          <dd
+                            className={cn(
+                              "mt-0.5 truncate text-sm",
+                              hasMobileCustomerIdentity
+                                ? "font-semibold text-[#2d1649]"
+                                : "italic text-[#8f7da8]",
+                            )}
+                          >
+                            {mobileCustomer}
+                          </dd>
+                        </div>
+                        <div className="text-right">
+                          <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#8f7da8]">
+                            {t("columns.date")}
+                          </dt>
+                          <dd className="mt-0.5 whitespace-nowrap text-sm text-[#5e4a75]">
+                            {date || "—"}
+                          </dd>
+                        </div>
+                        <div className="col-span-2 flex items-end justify-between gap-3 border-t border-[#f3ebff] pt-3">
+                          <div>
+                            <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#8f7da8]">
+                              {t("columns.total")}
+                            </dt>
+                            <dd className="mt-0.5 min-w-0 break-words text-lg font-bold tabular-nums text-[var(--store-accent)]">
+                              {order.currency && order.totalAmount
+                                ? formatOrderTotal(
+                                    order.totalAmount,
+                                    order.currency,
+                                    locale,
+                                  )
+                                : "—"}
+                            </dd>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              aria-expanded={expanded}
+                              aria-controls={detailsId}
+                              aria-label={t("details.title", { number })}
+                              onClick={() =>
+                                setExpandedOrderIds((current) => {
+                                  const nextIds = new Set(current);
+                                  if (nextIds.has(order.id))
+                                    nextIds.delete(order.id);
+                                  else nextIds.add(order.id);
+                                  return nextIds;
+                                })
+                              }
+                              className="rounded-full text-[#2d1649] hover:bg-[#f3ebff]"
+                            >
+                              {expanded ? (
+                                <ChevronDown aria-hidden="true" />
+                              ) : (
+                                <ChevronRight aria-hidden="true" />
+                              )}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => onView(order)}
+                              className="min-h-9 rounded-full border-[#eadcf7] bg-white px-4 text-xs font-semibold text-[#2d1649] shadow-none hover:bg-[#fcf9ff]"
+                            >
+                              {t("view")}
+                            </Button>
+                          </div>
+                          {!isPending &&
+                            order.paymentStatus === "VERIFIED" &&
+                            next && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => onAdvance(order)}
+                                className="min-h-9 rounded-full border-[#eadcf7] bg-white px-3 text-xs font-semibold text-[#2d1649] shadow-none hover:bg-[#fcf9ff]"
+                              >
+                                {t("markAs", {
+                                  status: fulfillmentLabels[next],
+                                })}
+                              </Button>
+                            )}
+                        </div>
+                      </dl>
+                    </article>
+                  </td>
+                </tr>
+                <tr className="hidden border-b border-[#f3ebff] hover:bg-[#fcf9ff] md:table-row">
+                  <td className="hidden w-11 px-2 py-4 md:table-cell">
                     <Button
                       type="button"
                       variant="ghost"
@@ -149,7 +286,9 @@ export function OrdersTable({
                               "linear-gradient(135deg, var(--store-accent) 0%, var(--store-primary) 100%)",
                           }}
                         >
-                          {initials}
+                          {initials || (
+                            <UserRound aria-hidden="true" className="size-4" />
+                          )}
                         </div>
                       )}
                       <p className="text-sm font-semibold text-[#2d1649]">
@@ -242,7 +381,13 @@ export function OrdersTable({
                           <dt className="text-xs font-semibold uppercase tracking-wide text-[#8f7da8]">
                             {t("columns.number")}
                           </dt>
-                          <dd className="font-semibold text-[#2d1649]">
+                          <dd
+                            className={
+                              hasMobileCustomerIdentity
+                                ? "font-semibold text-[#2d1649]"
+                                : "italic text-[#8f7da8]"
+                            }
+                          >
                             {number}
                           </dd>
                         </div>
@@ -250,8 +395,14 @@ export function OrdersTable({
                           <dt className="text-xs font-semibold uppercase tracking-wide text-[#8f7da8]">
                             {t("columns.customer")}
                           </dt>
-                          <dd className="font-semibold text-[#2d1649]">
-                            {customer}
+                          <dd
+                            className={
+                              hasMobileCustomerIdentity
+                                ? "font-semibold text-[#2d1649]"
+                                : "italic text-[#8f7da8]"
+                            }
+                          >
+                            {mobileCustomer}
                           </dd>
                         </div>
                         <div>
@@ -286,6 +437,24 @@ export function OrdersTable({
                           </dt>
                           <dd>
                             <OrderStatusBadge order={order} />
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs font-semibold uppercase tracking-wide text-[#8f7da8]">
+                            {t("columns.payment")}
+                          </dt>
+                          <dd className="text-[#2d1649]">
+                            {order.paymentMethod
+                              ? paymentMethods[order.paymentMethod]
+                              : "—"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs font-semibold uppercase tracking-wide text-[#8f7da8]">
+                            {t("columns.paymentStatus")}
+                          </dt>
+                          <dd className="text-[#2d1649]">
+                            {t(`paymentStatusLabels.${order.paymentStatus}`)}
                           </dd>
                         </div>
                       </dl>

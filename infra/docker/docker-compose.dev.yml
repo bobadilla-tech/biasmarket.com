@@ -172,7 +172,10 @@ services:
       - web_app_node_modules:/app/apps/web/node_modules
       - web_design_tokens_node_modules:/app/packages/design-tokens/node_modules
       - web_i18n_node_modules:/app/packages/i18n/node_modules
+      - web_query_node_modules:/app/packages/query/node_modules
       - web_types_node_modules:/app/packages/types/node_modules
+      - web_utils_node_modules:/app/packages/utils/node_modules
+      - web_validation_node_modules:/app/packages/validation/node_modules
       - web_next_cache:/app/apps/web/.next
     ports:
       - "3001:3001"
@@ -198,5 +201,8 @@ volumes:
   web_app_node_modules:
   web_design_tokens_node_modules:
   web_i18n_node_modules:
+  web_query_node_modules:
   web_types_node_modules:
+  web_utils_node_modules:
+  web_validation_node_modules:
   web_next_cache:

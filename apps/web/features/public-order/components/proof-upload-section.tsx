@@ -2,11 +2,21 @@
 
 import { useTranslations } from "next-intl";
 import type { PublicOrderResponseDto } from "@biasmarket/types";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useState } from "react";
 import {
   canSubmitProof,
   hasPendingProof,
   MAX_PENDING_PROOFS,
   reservedPendingAmount,
+  submittableCents,
 } from "../lib/order-state";
 import { ProofUploadForm } from "./proof-upload-form";
 
@@ -22,8 +32,10 @@ export function ProofUploadSection({
   order: PublicOrderResponseDto;
 }) {
   const t = useTranslations("storefront.publicOrder");
+  const [remainingDialogOpen, setRemainingDialogOpen] = useState(false);
   const inReview = hasPendingProof(order);
   const canSubmit = canSubmitProof(order);
+  const remainingAmount = `${order.currency} ${(submittableCents(order) / 100).toFixed(2)}`;
   const waiting =
     inReview &&
     !canSubmit &&
@@ -56,12 +68,49 @@ export function ProofUploadSection({
       {waiting && (
         <p className="text-sm text-gray-700">{t("upload.waitReview")}</p>
       )}
-      {canSubmit && (
+      {canSubmit && order.paymentStatus === "PARTIALLY_PAID" ? (
+        <>
+          <p className="text-sm text-gray-600">
+            {t("upload.remainingDescription", {
+              amount: remainingAmount,
+            })}
+          </p>
+          <Button
+            type="button"
+            onClick={() => setRemainingDialogOpen(true)}
+            className="min-h-11 rounded-xl"
+          >
+            {t("upload.remainingButton", {
+              amount: remainingAmount,
+            })}
+          </Button>
+          <Dialog
+            open={remainingDialogOpen}
+            onOpenChange={setRemainingDialogOpen}
+          >
+            <DialogContent className="max-h-[90dvh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{t("upload.remainingTitle")}</DialogTitle>
+                <DialogDescription>
+                  {t("upload.remainingDescription", {
+                    amount: remainingAmount,
+                  })}
+                </DialogDescription>
+              </DialogHeader>
+              <ProofUploadForm
+                token={token}
+                order={order}
+                onSuccess={() => setRemainingDialogOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        </>
+      ) : canSubmit ? (
         <>
           <p className="text-sm text-gray-600">{t("upload.description")}</p>
           <ProofUploadForm token={token} order={order} />
         </>
-      )}
+      ) : null}
     </section>
   );
 }

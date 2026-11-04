@@ -28,6 +28,52 @@ starts, followed by the idempotent base seed (`apps/api/scripts/seed/run.ts`);
 see [infra.md](infra.md) for what it creates. `workers` has no database and no
 seed step.
 
+## First run: what to expect
+
+The first `pnpm docker:dev` is slow (installs dependencies, builds workspace
+packages, migrates and seeds) — expect 5–15 minutes. Give Docker Desktop at
+least 8 GB of RAM. It is working when the logs settle and `web` prints `Ready`;
+`web` starts last because it waits for `api` to be healthy.
+
+| Service       | URL / port              | Notes                                                      |
+| ------------- | ----------------------- | ---------------------------------------------------------- |
+| `web`         | <http://localhost:3001> | Redirects to a locale, e.g. `/es`. Dashboard: `/es/login`. |
+| `api`         | <http://localhost:3000> | Routes are under `/api`, e.g. `/api/health`.               |
+| `minio`       | <http://localhost:9001> | Console. Login `admin` / `password123`.                    |
+| `db`, `redis` | `5432`, `6379`          | Credentials in `infra/docker/.env.example`.                |
+
+**`minio-init` showing as stopped/exited is normal.** It is a one-shot job that
+creates the buckets and exits with code 0. Every other service should stay
+running. Log in with the seeded accounts in [infra.md](infra.md).
+
+## Troubleshooting
+
+First step for almost anything odd: a clean rebuild. Gitignored `dist/` folders
+are bind-mounted into the containers, so stale builds survive restarts.
+
+```bash
+pnpm docker:dev:down
+rm -rf apps/api/dist apps/workers/dist packages/*/dist
+pnpm docker:dev
+```
+
+- **A service exits.** Read its logs:
+  `docker compose -f
+infra/docker/docker-compose.dev.yml logs <api|web|workers>`.
+  Docker Desktop only shows the tail; the real error is usually higher up.
+- **`Module not found: Can't resolve '@biasmarket/...'` or
+  `does not provide an
+export named ...`.** A workspace package's `dist/` is
+  missing or stale. Do the clean rebuild above. Pull latest first, older dev
+  scripts did not build every package `web` imports.
+- **`filewatching failed to start: waiting for cookie timed out`.** You are on
+  an old `*-dev.sh` that used `turbo watch`. Pull latest.
+- **Still broken after a clean rebuild.** Wipe volumes too (deletes local data):
+  `docker compose -f infra/docker/docker-compose.dev.yml down -v`.
+- **Install or database problems.** See "Known issues" in [infra.md](infra.md).
+- You do **not** need `pnpm install` or `pnpm build` on the host to run the
+  Docker stack.
+
 ### Hot reload across the whole workspace
 
 The actual `command:` each service runs lives in

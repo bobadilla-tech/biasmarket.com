@@ -35,12 +35,14 @@ review and the required `CI Success` check before running staging QA. Protect
 These settings are release prerequisites; merging the workflow changes does not
 publish a build.
 
-Configure secrets in the environments' settings, not as repository-wide
-secrets. The staging environment should hold only staging credentials. Add
-production credentials only when a release is planned. Check environment rules
-in repository Settings → Environments and branch rules in Settings → Rules.
-See GitHub's [deployment environments](https://docs.github.com/en/rest/deployments/environments)
-and [branch protection](https://docs.github.com/en/rest/branches/branch-protection)
+Configure secrets in the environments' settings, not as repository-wide secrets.
+The staging environment should hold only staging credentials. Add production
+credentials only when a release is planned. Check environment rules in
+repository Settings → Environments and branch rules in Settings → Rules. See
+GitHub's
+[deployment environments](https://docs.github.com/en/rest/deployments/environments)
+and
+[branch protection](https://docs.github.com/en/rest/branches/branch-protection)
 documentation.
 
 Configure these `mobile-staging` environment secrets for Maestro:

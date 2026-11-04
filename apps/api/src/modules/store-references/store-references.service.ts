@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   ConflictException,
   Injectable,
@@ -40,10 +41,14 @@ export class StoreReferencesService {
       caption?: string;
       width: number;
       height: number;
-      privacyConfirmed: true;
+      hidden?: boolean;
+      privacyConfirmed?: boolean;
     },
   ) {
     await this.assertOwnership(storeId, userId);
+    if (!(input.hidden ?? false) && !(input.privacyConfirmed ?? false)) {
+      throw new BadRequestException("Se requiere confirmar la privacidad");
+    }
     return this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT "id" FROM "Store" WHERE "id" = ${storeId} FOR UPDATE`;
       const count = await tx.storeReference.count({ where: { storeId } });
@@ -53,7 +58,12 @@ export class StoreReferencesService {
         );
       }
       const reference = await tx.storeReference.create({
-        data: { ...input, storeId },
+        data: {
+          ...input,
+          hidden: input.hidden ?? false,
+          privacyConfirmed: input.privacyConfirmed ?? false,
+          storeId,
+        },
       });
       await tx.auditLog.create({
         data: {
@@ -69,23 +79,75 @@ export class StoreReferencesService {
     });
   }
 
+  async findOwned(referenceId: string, storeId: string, userId: string) {
+    await this.assertOwnership(storeId, userId);
+    const reference = await this.prisma.storeReference.findFirst({
+      where: { id: referenceId, storeId },
+    });
+    if (!reference) throw new NotFoundException("Referencia no encontrada");
+    return reference;
+  }
+
   async update(
     referenceId: string,
     storeId: string,
     userId: string,
-    dto: UpdateStoreReferenceDto,
+    dto: UpdateStoreReferenceDto & {
+      imageUrl?: string;
+      width?: number;
+      height?: number;
+    },
   ) {
     await this.assertOwnership(storeId, userId);
-    const existing = await this.prisma.storeReference.findFirst({
-      where: { id: referenceId, storeId },
-    });
-    if (!existing) throw new NotFoundException("Referencia no encontrada");
-    return this.prisma.storeReference.update({
-      where: { id: referenceId },
-      data: {
-        ...dto,
-        ...(dto.takenAt ? { takenAt: new Date(dto.takenAt) } : {}),
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const rows = await tx.$queryRaw<
+        Array<{ imageUrl: string; hidden: boolean; privacyConfirmed: boolean }>
+      >`
+        SELECT "imageUrl", "hidden", "privacyConfirmed" FROM "StoreReference"
+        WHERE "id" = ${referenceId} AND "storeId" = ${storeId}
+        FOR UPDATE
+      `;
+      const existing = rows[0];
+      if (!existing) throw new NotFoundException("Referencia no encontrada");
+
+      const nextHidden = dto.hidden ?? existing.hidden;
+      const nextPrivacyConfirmed =
+        dto.privacyConfirmed ?? existing.privacyConfirmed;
+      if (
+        !nextHidden &&
+        (dto.privacyConfirmed === false ||
+          (dto.hidden === false && !nextPrivacyConfirmed))
+      ) {
+        throw new BadRequestException("Se requiere confirmar la privacidad");
+      }
+
+      const updated = await tx.storeReference.update({
+        where: { id: referenceId },
+        data: {
+          ...(dto.takenAt ? { takenAt: new Date(dto.takenAt) } : {}),
+          ...(dto.caption !== undefined ? { caption: dto.caption } : {}),
+          ...(dto.hidden !== undefined ? { hidden: dto.hidden } : {}),
+          ...(dto.privacyConfirmed !== undefined
+            ? { privacyConfirmed: dto.privacyConfirmed }
+            : {}),
+          ...(dto.imageUrl ? { imageUrl: dto.imageUrl } : {}),
+          ...(dto.imageUrl && dto.width ? { width: dto.width } : {}),
+          ...(dto.imageUrl && dto.height ? { height: dto.height } : {}),
+        },
+      });
+      if (dto.hidden !== undefined) {
+        await tx.auditLog.create({
+          data: {
+            actorId: userId,
+            storeId,
+            action: "store_reference.hidden",
+            entityType: "StoreReference",
+            entityId: referenceId,
+            metadata: { hidden: dto.hidden },
+          },
+        });
+      }
+      return { updated, previousImageUrl: existing.imageUrl };
     });
   }
 
@@ -118,6 +180,9 @@ export class StoreReferencesService {
       where: { id: referenceId },
     });
     if (!existing) throw new NotFoundException("Referencia no encontrada");
+    if (!hidden && !existing.privacyConfirmed) {
+      throw new BadRequestException("Se requiere confirmar la privacidad");
+    }
     return this.prisma.$transaction(async (tx) => {
       const updated = await tx.storeReference.update({
         where: { id: referenceId },
