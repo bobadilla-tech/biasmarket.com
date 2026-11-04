@@ -7,9 +7,24 @@ const appConfig = JSON.parse(
 const pathPatterns: string[] = appConfig.expo.android.intentFilters[0].data.map(
   (entry: { pathAdvancedPattern: string }) => entry.pathAdvancedPattern,
 );
-const pathMatchers = pathPatterns.map((pattern) => new RegExp(`^${pattern}$`));
+const expectedPatterns = [
+  "/es/store/[^/]+/product/[^/]+",
+  "/en/store/[^/]+/product/[^/]+",
+  "/es/store/[^/]+/account/orders/[^/]+",
+  "/en/store/[^/]+/account/orders/[^/]+",
+];
+const pathMatchers = [
+  /^\/es\/store\/[^/]+\/product\/[^/]+$/,
+  /^\/en\/store\/[^/]+\/product\/[^/]+$/,
+  /^\/es\/store\/[^/]+\/account\/orders\/[^/]+$/,
+  /^\/en\/store\/[^/]+\/account\/orders\/[^/]+$/,
+];
 
 describe("Android app-link path patterns", () => {
+  it("keeps the Android path patterns aligned with the tested routes", () => {
+    expect(pathPatterns).toEqual(expectedPatterns);
+  });
+
   it("matches product and buyer-order routes with one non-empty segment per ID", () => {
     const validPaths = [
       "/es/store/k-store/product/product-123",
