@@ -56,7 +56,57 @@
     },
     "delivery": {
       "availabilitySheetDescription": "Elegí los días en que este punto recibe pedidos. También podés desactivarlo temporalmente.",
-      "couriersDescription": "Definí los couriers que acepta tu tienda y el precio por modalidad (agencia o domicilio)."
+      "couriersDescription": "Definí los couriers que acepta tu tienda y el precio por modalidad (agencia o domicilio).",
+      "title": "Configuración de entrega",
+      "description": "Definí si la tienda ofrece recojo, courier o ambos.",
+      "pickupToggle": "Retiro presencial",
+      "pickupHelp": "Habilitá pedidos para compradores que recogen en un punto de entrega.",
+      "pickupPointsLabel": "Puntos de recojo",
+      "pickupPointPlaceholder": "Nombre del punto (ej. Alameda 28 de Julio)",
+      "addPickupPoint": "Agregar nuevo punto",
+      "addPickupPointBeforeSaving": "Agregá el punto de recojo o borra su nombre antes de guardar.",
+      "removePickupPoint": "Eliminar punto",
+      "removePickupPointConfirm": "¿Quitar {label} de las opciones para nuevos pedidos? Los pedidos anteriores conservarán sus datos de entrega.",
+      "noPickupPoints": "Todavía no agregaste puntos de recojo.",
+      "editAvailability": "Disponibilidad",
+      "availabilitySheetTitle": "Disponibilidad de {label}",
+      "weekdaysLabel": "Días disponibles",
+      "everyDayHint": "Sin días marcados = disponible todos los días.",
+      "closedOverrideLabel": "No disponible ahora",
+      "closedOverrideHelp": "Oculta este punto del checkout hasta que lo volvás a activar, sin importar los días marcados arriba.",
+      "doneEditingAvailability": "Listo",
+      "everyDayBadge": "Todos los días",
+      "closedNowBadge": "No disponible ahora",
+      "weekdays": {
+        "0": "Dom",
+        "1": "Lun",
+        "2": "Mar",
+        "3": "Mié",
+        "4": "Jue",
+        "5": "Vie",
+        "6": "Sáb"
+      },
+      "courierToggle": "Envío por courier",
+      "courierHelp": "Habilitá courier y define el costo estimado.",
+      "courierCostLabel": "Costo estimado de courier",
+      "courierCostPlaceholder": "0.00",
+      "invalidCourierCost": "Ingresá un costo numérico igual o mayor que cero.",
+      "couriersTitle": "Couriers",
+      "noCouriers": "Todavía no agregaste couriers.",
+      "addCourier": "Agregar courier",
+      "removeCourier": "Eliminar courier",
+      "removeCourierConfirm": "¿Quitar {name} de las opciones para nuevos pedidos? Los pedidos anteriores conservarán el nombre del courier.",
+      "expandCourier": "Expandir {name}",
+      "collapseCourier": "Contraer {name}",
+      "courierNamePlaceholder": "Nombre del courier (ej. Olva, Shalom)",
+      "agencyLabel": "Recojo en agencia",
+      "agencyHelp": "El comprador recoge el pedido en la agencia del courier.",
+      "agencyPriceLabel": "Costo de agencia",
+      "homeLabel": "Envío a domicilio",
+      "homeHelp": "El courier entrega el pedido en la dirección del comprador.",
+      "homePriceLabel": "Costo de domicilio",
+      "couriersFooter": "Los couriers se muestran durante el checkout del comprador.",
+      "footer": "Las opciones de entrega se muestran durante el checkout."
     },
     "defaults": {
       "description": "Un resumen rápido de los datos que comparte tu tienda.",
@@ -90,6 +140,9 @@
         "delivered": {
           "description": "Este mensaje se usa cuando marcás el pedido como entregado. '{{saveInvite}}' agrega la invitación a guardar el pedido y queda vacío si ya lo guardó."
         }
+      },
+      "orderCancelled": {
+        "description": "Este mensaje se usa para avisar al comprador cuando cancelás el pedido. El botón de WhatsApp abre el mensaje para que lo revises y lo envíes. Variable requerida: {{orderRef}}."
       }
     }
   }

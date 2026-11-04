@@ -35,17 +35,16 @@ test("asks before removing a saved courier and keeps it when removal is canceled
   const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
   const user = userEvent.setup();
   renderWithProviders(
-    withSettingsDraftActions(
-      <CouriersSection storeId="store-1" />,
-      "delivery",
-    ),
+    withSettingsDraftActions(<CouriersSection storeId="store-1" />, "delivery"),
   );
 
   await screen.findByDisplayValue("Olva");
   await user.click(screen.getByRole("button", { name: "Eliminar courier" }));
 
   expect(confirm).toHaveBeenCalledWith(
-    expect.stringContaining("Los pedidos anteriores conservarán el nombre del courier"),
+    expect.stringContaining(
+      "Los pedidos anteriores conservarán el nombre del courier",
+    ),
   );
   expect(screen.getByDisplayValue("Olva")).toBeDefined();
 });
