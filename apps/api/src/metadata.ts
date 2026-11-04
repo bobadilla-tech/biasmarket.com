@@ -23,8 +23,6 @@ export default async () => {
       await import('./modules/payment-config/dto/payment-method-details.dto.js'),
     ['./modules/payment-config/dto/save-payment-settings.dto.js']:
       await import('./modules/payment-config/dto/save-payment-settings.dto.js'),
-    ['./modules/payment-config/dto/save-payment-settings-response.dto.js']:
-      await import('./modules/payment-config/dto/save-payment-settings-response.dto.js'),
     ['./modules/orders/infrastructure/customer-account-response.dto.js']:
       await import('./modules/orders/infrastructure/customer-account-response.dto.js'),
     ['./modules/customer-auth/dto/account-order-response.dto.js']:
@@ -33,6 +31,10 @@ export default async () => {
       await import('./modules/orders/infrastructure/customers-response.dto.js'),
     ['./modules/orders/dto/public-order-response.dto.js']:
       await import('./modules/orders/dto/public-order-response.dto.js'),
+    ['./modules/payment-config/dto/payment-method-response.dto.js']:
+      await import('./modules/payment-config/dto/payment-method-response.dto.js'),
+    ['./modules/payment-config/dto/save-payment-settings-response.dto.js']:
+      await import('./modules/payment-config/dto/save-payment-settings-response.dto.js'),
     ['./modules/pickup-points/dto/pickup-point-response.dto.js']:
       await import('./modules/pickup-points/dto/pickup-point-response.dto.js'),
     ['./modules/collections/dto/collection-response.dto.js']:
@@ -73,8 +75,6 @@ export default async () => {
       await import('./modules/orders/dto/submit-public-payment.dto.js'),
     ['./modules/orders/dto/receipt-confirmed-response.dto.js']:
       await import('./modules/orders/dto/receipt-confirmed-response.dto.js'),
-    ['./modules/payment-config/dto/payment-method-response.dto.js']:
-      await import('./modules/payment-config/dto/payment-method-response.dto.js'),
     ['./modules/delivery-config/dto/delivery-method-response.dto.js']:
       await import('./modules/delivery-config/dto/delivery-method-response.dto.js'),
     ['./modules/pickup-points/dto/public-pickup-points-response.dto.js']:
@@ -1771,6 +1771,7 @@ export default async () => {
                   t['./modules/payment-config/dto/save-payment-settings.dto.js']
                     .PaymentSettingsMethodChangeDto,
                 ],
+                uniqueItems: true,
               },
               paymentInstructions: {
                 required: false,
@@ -1781,32 +1782,6 @@ export default async () => {
                 required: false,
                 type: () => String,
                 maxLength: 1000,
-              },
-            },
-          },
-        ],
-        [
-          import('./modules/payment-config/dto/save-payment-settings-response.dto.js'),
-          {
-            SavePaymentSettingsStoreResponseDto: {
-              id: { required: true, type: () => String },
-              paymentInstructions: { required: true, type: () => String },
-            },
-            SavePaymentSettingsResponseDto: {
-              methods: {
-                required: true,
-                type: () => [
-                  t[
-                    './modules/payment-config/dto/payment-method-response.dto.js'
-                  ].PaymentMethodConfigResponseDto,
-                ],
-              },
-              store: {
-                required: false,
-                type: () =>
-                  t[
-                    './modules/payment-config/dto/save-payment-settings-response.dto.js'
-                  ].SavePaymentSettingsStoreResponseDto,
               },
             },
           },
@@ -2196,6 +2171,32 @@ export default async () => {
               },
               depositPercent: { required: true, type: () => Number },
               createdAt: { required: true, type: () => String },
+            },
+          },
+        ],
+        [
+          import('./modules/payment-config/dto/save-payment-settings-response.dto.js'),
+          {
+            SavePaymentSettingsStoreResponseDto: {
+              id: { required: true, type: () => String },
+              paymentInstructions: { required: true, type: () => String },
+            },
+            SavePaymentSettingsResponseDto: {
+              methods: {
+                required: true,
+                type: () => [
+                  t[
+                    './modules/payment-config/dto/payment-method-response.dto.js'
+                  ].PaymentMethodConfigResponseDto,
+                ],
+              },
+              store: {
+                required: false,
+                type: () =>
+                  t[
+                    './modules/payment-config/dto/save-payment-settings-response.dto.js'
+                  ].SavePaymentSettingsStoreResponseDto,
+              },
             },
           },
         ],
@@ -2974,6 +2975,7 @@ export default async () => {
               type: {
                 required: true,
                 enum: [
+                  'ORDER_CANCELLED',
                   'ASSISTED_PAYMENT_VALIDATED',
                   'ASSISTED_IN_TRANSIT',
                   'ASSISTED_READY',

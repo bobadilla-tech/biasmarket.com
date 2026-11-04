@@ -3,6 +3,7 @@ import {
   buildWhatsAppAssistedOrderLinkMessage,
   buildWhatsAppBuyerNoticeMessage,
   buildWhatsAppOrderMessage,
+  buildWhatsAppOrderCancelledMessage,
   buildWhatsAppPaymentReminderMessage,
   buildWhatsAppUrl,
   extractTokens,
@@ -120,6 +121,29 @@ describe("buildWhatsAppPaymentReminderMessage", () => {
   it("falls back to a generic greeting when no name is provided", () => {
     const message = buildWhatsAppPaymentReminderMessage(base);
     expect(message).toContain("Hola,");
+  });
+});
+
+describe("buildWhatsAppOrderCancelledMessage", () => {
+  it("includes the order reference, store, buyer and cancellation reason", () => {
+    const message = buildWhatsAppOrderCancelledMessage({
+      orderId: "order-abcdef",
+      storeName: "K-Store",
+      customerName: "Jane",
+      cancellationReason: "No hay stock",
+    });
+    expect(message).toContain("Hola Jane,");
+    expect(message).toContain("pedido #ABCDEF de K-Store fue cancelado");
+    expect(message).toContain("Motivo: No hay stock");
+  });
+
+  it("uses a custom template and leaves unknown variables visible", () => {
+    expect(
+      buildWhatsAppOrderCancelledMessage(
+        { orderId: "order-abcdef", storeName: "K-Store" },
+        "{{orderRef}} {{unknown}} {{cancellationReason}}",
+      ),
+    ).toBe("#ABCDEF {{unknown}} ");
   });
 });
 

@@ -22,6 +22,7 @@ const templates = {
   newOrder: null,
   paymentReminder: null,
   assistedOrderLink: null,
+  orderCancelled: null,
   paymentValidated: null,
   inTransit: null,
   ready: null,
@@ -61,6 +62,27 @@ test("renders the assisted-order editor with its literal token description and a
   ).toBeGreaterThan(0);
 });
 
+test("edits and saves the order-cancellation message under Orders", async () => {
+  const queryClient = new QueryClient();
+  upsert.mockResolvedValue({
+    type: "ORDER_CANCELLED",
+    template: "Pedido {{orderRef}} cancelado.",
+  });
+  renderSection(queryClient);
+
+  fireEvent.click(screen.getByText("Aviso de pedido cancelado"));
+  fireEvent.change(screen.getByLabelText("Aviso de pedido cancelado"), {
+    target: { value: "Pedido {{orderRef}} cancelado." },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Save tab" }));
+
+  await waitFor(() =>
+    expect(upsert).toHaveBeenCalledWith("store-1", "ORDER_CANCELLED", {
+      template: "Pedido {{orderRef}} cancelado.",
+    }),
+  );
+});
+
 test("saving the assisted-order template writes only that key into the templates cache", async () => {
   const queryClient = new QueryClient();
   const key = whatsappTemplatesKeys.byStore("store-1");
@@ -68,6 +90,7 @@ test("saving the assisted-order template writes only that key into the templates
     newOrder: { template: "keep" },
     paymentReminder: null,
     assistedOrderLink: null,
+    orderCancelled: null,
   });
   const saved = { type: "ASSISTED_ORDER_LINK", template: "Hola {{link}}" };
   upsert.mockResolvedValue(saved);
@@ -90,6 +113,7 @@ test("saving the assisted-order template writes only that key into the templates
       newOrder: { template: "keep" },
       paymentReminder: null,
       assistedOrderLink: saved,
+      orderCancelled: null,
     }),
   );
 });

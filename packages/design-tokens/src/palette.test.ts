@@ -33,8 +33,8 @@ describe("palette", () => {
   it("derives custom colors and preserves explicit overrides", () => {
     expect(buildCustomStorePalette("#123456")).toEqual({
       id: "custom",
-      name: "Custom",
-      description: "Your own color",
+      name: "Personalizado",
+      description: "Tus propios colores",
       colors: {
         primary: "#123456",
         accent: "rgb(77, 103, 128)",

@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import {
   buildWhatsAppAssistedOrderLinkMessage,
   buildWhatsAppBuyerNoticeMessage,
+  buildWhatsAppOrderCancelledMessage,
   buildWhatsAppOrderMessage,
   buildWhatsAppPaymentReminderMessage,
   getMissingRequiredTokens,
@@ -50,6 +51,13 @@ const SAMPLE_REMINDER_INPUT: WhatsAppPaymentReminderInput = {
   customerName: "Cliente Ejemplo",
 };
 
+const SAMPLE_CANCELLED_INPUT = {
+  orderId: "sample-order-123456",
+  storeName: "K-Store",
+  customerName: "Cliente Ejemplo",
+  cancellationReason: "No hay stock disponible",
+};
+
 const SAMPLE_ASSISTED_LINK_INPUT: WhatsAppAssistedOrderLinkInput = {
   orderId: "sample-order-123456",
   storeName: "K-Store",
@@ -86,6 +94,11 @@ function buildPreview(type: WhatsAppMessageType, template?: string): string {
     case "PAYMENT_REMINDER":
       return buildWhatsAppPaymentReminderMessage(
         SAMPLE_REMINDER_INPUT,
+        template,
+      );
+    case "ORDER_CANCELLED":
+      return buildWhatsAppOrderCancelledMessage(
+        SAMPLE_CANCELLED_INPUT,
         template,
       );
     case "ASSISTED_ORDER_LINK":
@@ -305,6 +318,7 @@ export function WhatsAppMessagesSection({
         newOrder: string | null;
         paymentReminder: string | null;
         assistedOrderLink: string | null;
+        orderCancelled: string | null;
         paymentValidated: string | null;
         inTransit: string | null;
         ready: string | null;
@@ -361,6 +375,21 @@ export function WhatsAppMessagesSection({
                     openMessage === "ASSISTED_ORDER_LINK"
                       ? null
                       : "ASSISTED_ORDER_LINK",
+                  )
+                }
+              />
+              <MessageTemplateEditor
+                type="ORDER_CANCELLED"
+                storeId={storeId}
+                initialTemplate={templates.orderCancelled}
+                title={t("orderCancelled.title")}
+                description={t("orderCancelled.description")}
+                isOpen={openMessage === "ORDER_CANCELLED"}
+                onToggle={() =>
+                  setOpenMessage(
+                    openMessage === "ORDER_CANCELLED"
+                      ? null
+                      : "ORDER_CANCELLED",
                   )
                 }
               />

@@ -17,6 +17,7 @@ export class WhatsAppTemplateResponseDto {
       "NEW_ORDER",
       "PAYMENT_REMINDER",
       "ASSISTED_ORDER_LINK",
+      "ORDER_CANCELLED",
       ...WHATSAPP_BUYER_NOTICE_TYPES,
     ],
   })
@@ -24,6 +25,7 @@ export class WhatsAppTemplateResponseDto {
     | "NEW_ORDER"
     | "PAYMENT_REMINDER"
     | "ASSISTED_ORDER_LINK"
+    | "ORDER_CANCELLED"
     | (typeof WHATSAPP_BUYER_NOTICE_TYPES)[number];
 
   @ApiProperty()

@@ -14,6 +14,7 @@ export interface WhatsAppTemplatesByStore {
   newOrder: WhatsAppTemplateResponseDto | null;
   paymentReminder: WhatsAppTemplateResponseDto | null;
   assistedOrderLink: WhatsAppTemplateResponseDto | null;
+  orderCancelled: WhatsAppTemplateResponseDto | null;
   paymentValidated: WhatsAppTemplateResponseDto | null;
   inTransit: WhatsAppTemplateResponseDto | null;
   ready: WhatsAppTemplateResponseDto | null;

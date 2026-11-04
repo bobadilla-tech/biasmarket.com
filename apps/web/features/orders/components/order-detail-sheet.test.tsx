@@ -7,6 +7,12 @@ vi.mock("next/navigation", () => ({
   useParams: () => ({ locale: "es" }),
 }));
 
+vi.mock("@/features/store-settings/queries/use-whatsapp-templates", () => ({
+  useWhatsAppTemplates: () => ({
+    data: { orderCancelled: { template: "{{orderRef}} fue cancelado." } },
+  }),
+}));
+
 const { OrderDetailSheet } = await import("./order-detail-sheet");
 
 const baseOrder: OrderResponseDto = {
@@ -55,7 +61,10 @@ const baseOrder: OrderResponseDto = {
 const noop = () => {};
 const noopAsync = () => Promise.resolve();
 
-function renderSheet(order: OrderResponseDto) {
+function renderSheet(
+  order: OrderResponseDto,
+  options: { storeId?: string; storeName?: string } = {},
+) {
   return renderWithProviders(
     <OrderDetailSheet
       open
@@ -71,9 +80,27 @@ function renderSheet(order: OrderResponseDto) {
       onReject={noop}
       onAdvance={noop}
       onCancel={noop}
+      storeId={options.storeId}
+      storeName={options.storeName}
     />,
   );
 }
+
+test("offers the saved cancellation template as a WhatsApp draft for canceled orders", () => {
+  renderSheet(
+    {
+      ...baseOrder,
+      status: "CANCELLED",
+      cancellationReason: "Sin stock",
+    },
+    { storeId: "store-1", storeName: "K-Store" },
+  );
+
+  const link = screen.getByRole("link", { name: "Avisar por WhatsApp" });
+  const url = new URL(link.getAttribute("href")!);
+  expect(url.pathname).toBe("/51987654321");
+  expect(url.searchParams.get("text")).toBe("#RDER-1 fue cancelado.");
+});
 
 test("disables Aprobar for an order with zero payment registered", () => {
   renderSheet(baseOrder);

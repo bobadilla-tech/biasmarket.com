@@ -354,7 +354,7 @@ model Order {
   // NULLs are distinct in Postgres, so orders without a key never collide.
   idempotencyKey           String?
   // Mobile/public checkout retries reuse this UUID, scoped to one store.
-  checkoutIdempotencyKey    String?
+  checkoutIdempotencyKey   String?
   // SHA-256 of the private-link token. The raw token is never stored.
   accessTokenHash          String?                 @unique
   accessTokenRevokedAt     DateTime?
@@ -675,6 +675,7 @@ enum WhatsAppMessageType {
   NEW_ORDER
   PAYMENT_REMINDER
   ASSISTED_ORDER_LINK
+  ORDER_CANCELLED
   ASSISTED_PAYMENT_VALIDATED
   ASSISTED_IN_TRANSIT
   ASSISTED_READY
