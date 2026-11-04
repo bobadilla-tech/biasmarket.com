@@ -462,6 +462,7 @@
       "addPickupPoint": "Add new point",
       "addPickupPointBeforeSaving": "Add the pickup point or clear its name before saving.",
       "removePickupPoint": "Remove point",
+      "removePickupPointConfirm": "Remove {label} from options for new orders? Existing orders will keep their delivery details.",
       "noPickupPoints": "You haven't added any pickup points yet.",
       "editAvailability": "Availability",
       "availabilitySheetTitle": "Availability for {label}",
@@ -486,11 +487,15 @@
       "courierHelp": "Enable courier and set the expected delivery charge.",
       "courierCostLabel": "Estimated courier cost",
       "courierCostPlaceholder": "0.00",
+      "invalidCourierCost": "Enter a numeric cost of zero or more.",
       "couriersTitle": "Couriers",
       "couriersDescription": "Define the couriers your store accepts and the price per modality (agency or home delivery).",
       "noCouriers": "You haven't added any couriers yet.",
       "addCourier": "Add courier",
       "removeCourier": "Remove courier",
+      "removeCourierConfirm": "Remove {name} from options for new orders? Existing orders will keep the courier name.",
+      "expandCourier": "Expand {name}",
+      "collapseCourier": "Collapse {name}",
       "courierNamePlaceholder": "Courier name (e.g. Olva, Shalom)",
       "agencyLabel": "Agency pickup",
       "agencyHelp": "The buyer picks up the order at the courier's agency.",
@@ -555,7 +560,7 @@
       "defaultLabel": "Default",
       "customized": "Customized",
       "groups": {
-        "orders": "Orders (2)",
+        "orders": "Orders (3)",
         "payments": "Payments (2)",
         "tracking": "Tracking (3)"
       },
@@ -574,6 +579,10 @@
       "assistedOrderLink": {
         "title": "Assisted order link message",
         "description": "Used when you create an order for a buyer and send them their private link. Required variable: '{{link}}'."
+      },
+      "orderCancelled": {
+        "title": "Order cancellation notice",
+        "description": "Used to notify the buyer after you cancel an order. The WhatsApp button opens a draft for you to review and send. Required variable: '{{orderRef}}'."
       },
       "buyerNotices": {
         "paymentValidated": {
@@ -758,6 +767,7 @@
     },
     "details": {
       "title": "Order {number}",
+      "sendCancellationWhatsapp": "Notify by WhatsApp",
       "total": "Total",
       "paid": "Paid",
       "pending": "Pending balance",

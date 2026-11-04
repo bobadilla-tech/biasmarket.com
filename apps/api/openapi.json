@@ -4960,6 +4960,7 @@
                 "NEW_ORDER",
                 "PAYMENT_REMINDER",
                 "ASSISTED_ORDER_LINK",
+                "ORDER_CANCELLED",
                 "ASSISTED_PAYMENT_VALIDATED",
                 "ASSISTED_IN_TRANSIT",
                 "ASSISTED_READY",
@@ -5008,6 +5009,7 @@
                 "NEW_ORDER",
                 "PAYMENT_REMINDER",
                 "ASSISTED_ORDER_LINK",
+                "ORDER_CANCELLED",
                 "ASSISTED_PAYMENT_VALIDATED",
                 "ASSISTED_IN_TRANSIT",
                 "ASSISTED_READY",
@@ -9941,25 +9943,6 @@
           "createdAt"
         ]
       },
-      "SavePaymentSettingsStoreResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "paymentInstructions": { "type": "string" }
-        },
-        "required": ["id", "paymentInstructions"]
-      },
-      "SavePaymentSettingsResponseDto": {
-        "type": "object",
-        "properties": {
-          "methods": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/PaymentMethodConfigResponseDto" }
-          },
-          "store": { "$ref": "#/components/schemas/SavePaymentSettingsStoreResponseDto" }
-        },
-        "required": ["methods"]
-      },
       "PaymentSettingsMethodChangeDto": {
         "type": "object",
         "properties": {
@@ -9998,11 +9981,11 @@
         "type": "object",
         "properties": {
           "methods": {
+            "uniqueItems": true,
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PaymentSettingsMethodChangeDto"
-            },
-            "uniqueItems": true
+            }
           },
           "paymentInstructions": {
             "type": "string",
@@ -10011,6 +9994,33 @@
           "expectedPaymentInstructions": {
             "type": "string",
             "maxLength": 1000
+          }
+        },
+        "required": ["methods"]
+      },
+      "SavePaymentSettingsStoreResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "paymentInstructions": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "paymentInstructions"]
+      },
+      "SavePaymentSettingsResponseDto": {
+        "type": "object",
+        "properties": {
+          "methods": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentMethodConfigResponseDto"
+            }
+          },
+          "store": {
+            "$ref": "#/components/schemas/SavePaymentSettingsStoreResponseDto"
           }
         },
         "required": ["methods"]
@@ -11589,6 +11599,7 @@
               "NEW_ORDER",
               "PAYMENT_REMINDER",
               "ASSISTED_ORDER_LINK",
+              "ORDER_CANCELLED",
               "ASSISTED_PAYMENT_VALIDATED",
               "ASSISTED_IN_TRANSIT",
               "ASSISTED_READY",

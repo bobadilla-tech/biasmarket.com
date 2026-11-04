@@ -151,8 +151,8 @@ export function buildCustomStorePalette(
 ): StorePalette {
   return {
     id: "custom",
-    name: "Custom",
-    description: "Your own color",
+    name: "Personalizado",
+    description: "Tus propios colores",
     colors: {
       primary: primaryHex,
       accent: accentHex ?? lighten(primaryHex, 0.25),
@@ -178,8 +178,8 @@ export function resolveStorePalette(themeConfig?: unknown): StorePalette {
   const merged = {
     ...base,
     id: isCustomPalette ? paletteId! : base.id,
-    name: isCustomPalette ? "Custom" : base.name,
-    description: isCustomPalette ? "Your own color" : base.description,
+    name: isCustomPalette ? "Personalizado" : base.name,
+    description: isCustomPalette ? "Tus propios colores" : base.description,
     colors: {
       ...base.colors,
       ...(parsedThemeConfig.colors ?? {}),

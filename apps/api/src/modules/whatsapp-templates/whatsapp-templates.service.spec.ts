@@ -91,6 +91,16 @@ describe("WhatsappTemplatesService", () => {
     );
   });
 
+  it("requires the order reference for an ORDER_CANCELLED template", async () => {
+    const error = await service
+      .upsert(storeId, userId, "ORDER_CANCELLED", {
+        template: "Tu pedido fue cancelado",
+      })
+      .catch((e: Error) => e);
+    expect(error).toBeInstanceOf(BadRequestException);
+    expect((error as BadRequestException).message).toContain("{{orderRef}}");
+  });
+
   it("rejects an ASSISTED_ORDER_LINK template missing {{link}} and accepts one with it", async () => {
     const error = await service
       .upsert(storeId, userId, "ASSISTED_ORDER_LINK", {

@@ -44,6 +44,29 @@ const point = {
 
 afterEach(() => {
   vi.clearAllMocks();
+  vi.restoreAllMocks();
+});
+
+test("asks before removing a saved pickup point and keeps it when removal is canceled", async () => {
+  findAllDeliveryConfig.mockResolvedValue([
+    { type: "PICKUP", enabled: true, details: {} },
+  ]);
+  findAllPickupPoints.mockResolvedValue([point]);
+  const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+  const user = userEvent.setup();
+  renderWithProviders(
+    withSettingsDraftActions(<DeliverySection storeId="store-1" />, "delivery"),
+  );
+
+  await screen.findByDisplayValue("Alameda 28 de Julio");
+  await user.click(screen.getByRole("button", { name: "Eliminar punto" }));
+
+  expect(confirm).toHaveBeenCalledWith(
+    expect.stringContaining(
+      "Los pedidos anteriores conservarán sus datos de entrega",
+    ),
+  );
+  expect(screen.getByDisplayValue("Alameda 28 de Julio")).toBeDefined();
 });
 
 test("toggling a weekday off and marking closedOverride, then saving, persists both", async () => {

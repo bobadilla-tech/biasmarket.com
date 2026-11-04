@@ -481,6 +481,9 @@ function SettingsPageContent() {
                               assistedOrderLink:
                                 whatsappTemplates.assistedOrderLink?.template ??
                                 null,
+                              orderCancelled:
+                                whatsappTemplates.orderCancelled?.template ??
+                                null,
                               paymentValidated:
                                 whatsappTemplates.paymentValidated?.template ??
                                 null,

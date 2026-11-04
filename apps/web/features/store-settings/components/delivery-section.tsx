@@ -102,6 +102,17 @@ export function DeliverySection({ storeId }: { storeId: string }) {
   };
 
   const handleRemovePoint = (id: string) => {
+    const point = pickupPoints.find((candidate) => candidate.id === id);
+    if (
+      !isNewPickupPoint(id) &&
+      !window.confirm(
+        t("delivery.removePickupPointConfirm", {
+          label: point?.label ?? "",
+        }),
+      )
+    ) {
+      return;
+    }
     setPickupPoints((prev) => prev.filter((point) => point.id !== id));
     if (!isNewPickupPoint(id)) {
       setDeletedPointIds((prev) => [...prev, id]);
@@ -196,8 +207,13 @@ export function DeliverySection({ storeId }: { storeId: string }) {
               ?.estimatedCost ?? 0,
           ) ||
         JSON.stringify(pickupPoints) !== JSON.stringify(data?.points ?? [])),
-    valid: newPointLabel.trim().length === 0,
-    validationError: t("delivery.addPickupPointBeforeSaving"),
+    valid:
+      newPointLabel.trim().length === 0 &&
+      Number.isFinite(Number(courierCost)) &&
+      Number(courierCost) >= 0,
+    validationError: newPointLabel.trim().length
+      ? t("delivery.addPickupPointBeforeSaving")
+      : t("delivery.invalidCourierCost"),
     save: saveDraft,
     discard: discardDraft,
   });
@@ -308,6 +324,9 @@ export function DeliverySection({ storeId }: { storeId: string }) {
         >
           <Input
             aria-label={t("delivery.courierCostLabel")}
+            type="number"
+            min={0}
+            step="0.01"
             value={courierCost}
             onChange={(event) => setCourierCost(event.target.value)}
             placeholder={t("delivery.courierCostPlaceholder")}

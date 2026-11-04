@@ -28,6 +28,13 @@ export interface WhatsAppPaymentReminderInput {
   customerName?: string | null;
 }
 
+export interface WhatsAppOrderCancelledInput {
+  orderId: string;
+  storeName: string;
+  customerName?: string | null;
+  cancellationReason?: string | null;
+}
+
 export interface WhatsAppAssistedOrderLinkInput {
   orderId: string;
   storeName: string;
@@ -54,6 +61,7 @@ export type WhatsAppMessageType =
   | "NEW_ORDER"
   | "PAYMENT_REMINDER"
   | "ASSISTED_ORDER_LINK"
+  | "ORDER_CANCELLED"
   | WhatsAppBuyerNoticeType;
 
 // Editable defaults used by the settings UI. Keep these aligned with the
@@ -64,6 +72,8 @@ export const WHATSAPP_DEFAULT_TEMPLATES: Record<WhatsAppMessageType, string> = {
     "*Nuevo pedido en {{storeName}}*\nRef: {{orderRef}}\n\n{{items}}\n\nEntrega: {{deliveryMethod}} — {{pickupPoint}}\nFecha de recojo: {{pickupDate}}\n*Total: {{totalAmount}} {{currency}}*\nMétodo de pago: {{paymentMethod}}\n\nCliente: {{customerName}}",
   PAYMENT_REMINDER:
     "Hola {{customerName}},\nSobre tu pedido {{orderRef}} en {{storeName}}:\nTodavía tienes un saldo pendiente de {{pendingAmount}} {{currency}}.\n¿Podrías completar el pago para que podamos avanzar con tu pedido? ¡Gracias!",
+  ORDER_CANCELLED:
+    "Hola{{customerName}}\nTe informamos que el pedido {{orderRef}} de {{storeName}} fue cancelado.{{cancellationReason}}",
   ASSISTED_ORDER_LINK:
     "¡Hola {{customerName}}! 💜\nPreparé tu pedido {{orderRef}} en {{storeName}} por {{totalAmount}} {{currency}}.\nAquí puedes ver el detalle y cómo pagar:\n{{link}}",
   ASSISTED_PAYMENT_VALIDATED:
@@ -103,6 +113,7 @@ export const WHATSAPP_REQUIRED_TOKENS: Record<
 > = {
   NEW_ORDER: ["orderRef", "items"],
   PAYMENT_REMINDER: ["orderRef", "pendingAmount"],
+  ORDER_CANCELLED: ["orderRef"],
   ASSISTED_ORDER_LINK: ["link"],
   ASSISTED_PAYMENT_VALIDATED: [],
   ASSISTED_IN_TRANSIT: [],
@@ -135,6 +146,12 @@ export const WHATSAPP_MESSAGE_TOKENS: Record<
     "pendingAmount",
     "currency",
     "customerName",
+  ],
+  ORDER_CANCELLED: [
+    "customerName",
+    "storeName",
+    "orderRef",
+    "cancellationReason",
   ],
   ASSISTED_ORDER_LINK: [
     "link",
@@ -332,6 +349,32 @@ export const buildWhatsAppPaymentReminderMessage = (
     return renderWhatsAppTemplate(template, paymentReminderVariables(input));
   }
   return buildDefaultPaymentReminderMessage(input);
+};
+
+export const buildWhatsAppOrderCancelledMessage = (
+  input: WhatsAppOrderCancelledInput,
+  template?: string | null,
+): string => {
+  const customTemplate = template?.trim();
+  const hasCustomTemplate = Boolean(customTemplate);
+  const variables = {
+    customerName: input.customerName?.trim()
+      ? hasCustomTemplate
+        ? input.customerName.trim()
+        : ` ${input.customerName.trim()},`
+      : hasCustomTemplate
+        ? ""
+        : ",",
+    storeName: input.storeName,
+    orderRef: `#${orderRef(input.orderId)}`,
+    cancellationReason: input.cancellationReason?.trim()
+      ? `\nMotivo: ${input.cancellationReason.trim()}`
+      : "",
+  };
+  return renderWhatsAppTemplate(
+    customTemplate || WHATSAPP_DEFAULT_TEMPLATES.ORDER_CANCELLED,
+    variables,
+  );
 };
 
 const assistedOrderLinkVariables = (

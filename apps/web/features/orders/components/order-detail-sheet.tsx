@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ClipboardCopy, Wallet } from "lucide-react";
+import { ClipboardCopy, MessageCircle, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,6 +31,11 @@ import { OrderShippingSection } from "./order-shipping-section";
 import { AssistedOrderSection } from "@/features/assisted-orders/components/assisted-order-section";
 import type { OrderResponseDto } from "@biasmarket/types";
 import type { SellerPaymentInput } from "@biasmarket/validation";
+import {
+  buildWhatsAppOrderCancelledMessage,
+  buildWhatsAppUrl,
+} from "@biasmarket/utils/whatsapp";
+import { useWhatsAppTemplates } from "@/features/store-settings/queries/use-whatsapp-templates";
 
 export function OrderDetailSheet({
   open,
@@ -71,6 +76,7 @@ export function OrderDetailSheet({
 }) {
   const t = useTranslations("dashboard.orders");
   const { locale } = useParams<{ locale: string }>();
+  const whatsappTemplates = useWhatsAppTemplates(storeId);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -375,6 +381,30 @@ export function OrderDetailSheet({
 
             <SheetFooter className="sticky bottom-0 border-t border-[#f0e7f8] bg-white px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
               <div className="flex w-full flex-wrap gap-2">
+                {order.status === "CANCELLED" &&
+                storeId &&
+                whatsappTemplates.isSuccess ? (
+                  <a
+                    href={buildWhatsAppUrl(
+                      order.customerPhone,
+                      buildWhatsAppOrderCancelledMessage(
+                        {
+                          orderId: order.id,
+                          storeName,
+                          customerName: order.customerName,
+                          cancellationReason: order.cancellationReason,
+                        },
+                        whatsappTemplates.data?.orderCancelled?.template,
+                      ),
+                    )}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-[#cdebdc] bg-[#effaf4] px-4 py-2.5 text-sm font-semibold text-[#147446] hover:bg-[#e4f6ec]"
+                  >
+                    <MessageCircle className="size-4" />
+                    {t("details.sendCancellationWhatsapp")}
+                  </a>
+                ) : null}
                 {!isPending &&
                   (order.paymentStatus === "PENDING_PAYMENT" ||
                     order.paymentStatus === "PAYMENT_SUBMITTED" ||

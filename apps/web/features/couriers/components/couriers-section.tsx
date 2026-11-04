@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Package, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, Package, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,31 +65,57 @@ export function CouriersSection({ storeId }: { storeId: string }) {
 
   const [couriers, setCouriers] = useState<Courier[]>([]);
   const [deletedIds, setDeletedIds] = useState<string[]>([]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (couriersData) setCouriers(couriersData);
+    if (couriersData) {
+      setCouriers(couriersData);
+      setExpandedId((current) =>
+        current && couriersData.some((courier) => courier.id === current)
+          ? current
+          : (couriersData[0]?.id ?? null),
+      );
+    }
   }, [couriersData]);
 
   useSavedFlash(saveCouriers.isSuccess, saveCouriers.reset);
 
   const handleAddCourier = () => {
-    setCouriers((prev) => [...prev, emptyCourier(prev.length)]);
+    const courier = emptyCourier(couriers.length);
+    setCouriers((prev) => [...prev, courier]);
+    setExpandedId(courier.id);
   };
 
   const handleRemoveCourier = (id: string) => {
+    const courier = couriers.find((candidate) => candidate.id === id);
+    if (
+      !isNewCourier(id) &&
+      !window.confirm(
+        t("delivery.removeCourierConfirm", {
+          name: courier?.name ?? "",
+        }),
+      )
+    ) {
+      return;
+    }
     setCouriers((prev) => prev.filter((c) => c.id !== id));
+    if (expandedId === id) {
+      setExpandedId(couriers.find((courier) => courier.id !== id)?.id ?? null);
+    }
     if (!isNewCourier(id)) {
       setDeletedIds((prev) => [...prev, id]);
     }
   };
 
   const handleToggleCourier = (id: string, enabled: boolean) => {
+    setExpandedId(id);
     setCouriers((prev) =>
       prev.map((c) => (c.id === id ? { ...c, enabled } : c)),
     );
   };
 
   const handleUpdateName = (id: string, name: string) => {
+    setExpandedId(id);
     setCouriers((prev) => prev.map((c) => (c.id === id ? { ...c, name } : c)));
   };
 
@@ -97,6 +123,7 @@ export function CouriersSection({ storeId }: { storeId: string }) {
     courierId: string,
     modality: "AGENCY" | "HOME",
   ) => {
+    setExpandedId(courierId);
     setCouriers((prev) =>
       prev.map((c) => {
         if (c.id !== courierId) return c;
@@ -128,6 +155,7 @@ export function CouriersSection({ storeId }: { storeId: string }) {
     modality: "AGENCY" | "HOME",
     price: string,
   ) => {
+    setExpandedId(courierId);
     setCouriers((prev) =>
       prev.map((c) => {
         if (c.id !== courierId) return c;
@@ -198,6 +226,26 @@ export function CouriersSection({ storeId }: { storeId: string }) {
               />
               <button
                 type="button"
+                aria-label={t(
+                  expandedId === courier.id
+                    ? "delivery.collapseCourier"
+                    : "delivery.expandCourier",
+                  {
+                    name: courier.name || t("delivery.courierNamePlaceholder"),
+                  },
+                )}
+                aria-expanded={expandedId === courier.id}
+                onClick={() =>
+                  setExpandedId(expandedId === courier.id ? null : courier.id)
+                }
+                className="rounded-full p-2 text-[#72558e] hover:bg-white"
+              >
+                <ChevronDown
+                  className={`size-4 transition-transform ${expandedId === courier.id ? "rotate-180" : ""}`}
+                />
+              </button>
+              <button
+                type="button"
                 onClick={() => handleRemoveCourier(courier.id)}
                 className="text-lg leading-none text-[#b24368]"
                 aria-label={t("delivery.removeCourier")}
@@ -206,63 +254,71 @@ export function CouriersSection({ storeId }: { storeId: string }) {
               </button>
             </div>
 
-            <div className="flex gap-4 pl-11">
-              <ToggleRow
-                label={t("delivery.agencyLabel")}
-                description={t("delivery.agencyHelp")}
-                enabled={hasModality(courier, "AGENCY")}
-                onChange={() => handleToggleModality(courier.id, "AGENCY")}
-              />
-            </div>
-
-            {hasModality(courier, "AGENCY") && (
-              <div className="pl-11">
-                <Field label={t("delivery.agencyPriceLabel")}>
-                  <Input
-                    aria-label={`${
-                      courier.name || t("delivery.courierNamePlaceholder")
-                    } ${t("delivery.agencyPriceLabel")}`}
-                    type="number"
-                    min={0}
-                    value={getModalityPrice(courier, "AGENCY")}
-                    onChange={(e) =>
-                      handleUpdatePrice(courier.id, "AGENCY", e.target.value)
-                    }
-                    placeholder={t("delivery.courierCostPlaceholder")}
-                    className={inputClassName}
+            {expandedId === courier.id ? (
+              <div className="space-y-3">
+                <div className="flex gap-4 pl-11">
+                  <ToggleRow
+                    label={t("delivery.agencyLabel")}
+                    description={t("delivery.agencyHelp")}
+                    enabled={hasModality(courier, "AGENCY")}
+                    onChange={() => handleToggleModality(courier.id, "AGENCY")}
                   />
-                </Field>
-              </div>
-            )}
+                </div>
 
-            <div className="flex gap-4 pl-11">
-              <ToggleRow
-                label={t("delivery.homeLabel")}
-                description={t("delivery.homeHelp")}
-                enabled={hasModality(courier, "HOME")}
-                onChange={() => handleToggleModality(courier.id, "HOME")}
-              />
-            </div>
+                {hasModality(courier, "AGENCY") && (
+                  <div className="pl-11">
+                    <Field label={t("delivery.agencyPriceLabel")}>
+                      <Input
+                        aria-label={`${
+                          courier.name || t("delivery.courierNamePlaceholder")
+                        } ${t("delivery.agencyPriceLabel")}`}
+                        type="number"
+                        min={0}
+                        value={getModalityPrice(courier, "AGENCY")}
+                        onChange={(e) =>
+                          handleUpdatePrice(
+                            courier.id,
+                            "AGENCY",
+                            e.target.value,
+                          )
+                        }
+                        placeholder={t("delivery.courierCostPlaceholder")}
+                        className={inputClassName}
+                      />
+                    </Field>
+                  </div>
+                )}
 
-            {hasModality(courier, "HOME") && (
-              <div className="pl-11">
-                <Field label={t("delivery.homePriceLabel")}>
-                  <Input
-                    aria-label={`${
-                      courier.name || t("delivery.courierNamePlaceholder")
-                    } ${t("delivery.homePriceLabel")}`}
-                    type="number"
-                    min={0}
-                    value={getModalityPrice(courier, "HOME")}
-                    onChange={(e) =>
-                      handleUpdatePrice(courier.id, "HOME", e.target.value)
-                    }
-                    placeholder={t("delivery.courierCostPlaceholder")}
-                    className={inputClassName}
+                <div className="flex gap-4 pl-11">
+                  <ToggleRow
+                    label={t("delivery.homeLabel")}
+                    description={t("delivery.homeHelp")}
+                    enabled={hasModality(courier, "HOME")}
+                    onChange={() => handleToggleModality(courier.id, "HOME")}
                   />
-                </Field>
+                </div>
+
+                {hasModality(courier, "HOME") && (
+                  <div className="pl-11">
+                    <Field label={t("delivery.homePriceLabel")}>
+                      <Input
+                        aria-label={`${
+                          courier.name || t("delivery.courierNamePlaceholder")
+                        } ${t("delivery.homePriceLabel")}`}
+                        type="number"
+                        min={0}
+                        value={getModalityPrice(courier, "HOME")}
+                        onChange={(e) =>
+                          handleUpdatePrice(courier.id, "HOME", e.target.value)
+                        }
+                        placeholder={t("delivery.courierCostPlaceholder")}
+                        className={inputClassName}
+                      />
+                    </Field>
+                  </div>
+                )}
               </div>
-            )}
+            ) : null}
           </div>
         ))}
 

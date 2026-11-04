@@ -498,6 +498,8 @@ export function PaymentsPageClient() {
         }
         onAdvance={() => {}}
         onCancel={() => setCancelDialogOpen(true)}
+        storeId={storeId}
+        storeName={store?.name ?? ""}
       />
     </div>
   );
