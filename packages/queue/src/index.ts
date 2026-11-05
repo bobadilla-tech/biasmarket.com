@@ -2,12 +2,6 @@ export { buildRedisConnection } from "./connection.js";
 export { QUEUE_NAMES, type QueueName } from "./queue-names.js";
 export { defaultJobOptions } from "./default-job-options.js";
 export {
-  PUSH_JOB_NAME,
-  expoPushPayloadSchema,
-  expoPushTokenSchema,
-  type ExpoPushPayload,
-} from "./jobs/push.jobs.js";
-export {
   PING_JOB_NAME,
   type PingJobPayload,
   pingJobPayloadSchema,
@@ -26,6 +20,9 @@ export {
   EXPIRE_ORDERS_JOB_NAME,
   EXPIRE_ORDERS_SCHEDULER_ID,
   INTERNAL_JOBS_SECRET_HEADER,
+  PAYMENT_PROOF_SWEEP_CRON_PATTERN,
+  PAYMENT_PROOF_SWEEP_JOB_NAME,
+  PAYMENT_PROOF_SWEEP_SCHEDULER_ID,
 } from "./jobs/orders.jobs.js";
 export {
   EXPIRE_PREMIUM_CRON_PATTERN,
