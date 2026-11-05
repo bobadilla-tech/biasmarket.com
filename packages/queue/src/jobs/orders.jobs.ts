@@ -18,6 +18,10 @@ export const ASSISTED_IDENTITY_RETENTION_SCHEDULER_ID =
 // Runs daily; the API operation itself checks each order's closedAt timestamp.
 export const ASSISTED_IDENTITY_RETENTION_CRON_PATTERN = "17 3 * * *";
 
+export const PAYMENT_PROOF_SWEEP_JOB_NAME = "orphan-payment-proof-sweep";
+export const PAYMENT_PROOF_SWEEP_SCHEDULER_ID = "orphan-payment-proof-sweep";
+export const PAYMENT_PROOF_SWEEP_CRON_PATTERN = "41 3 * * *";
+
 // Shared by apps/workers' outbound call and apps/api's InternalJobsSecretGuard
 // so the header name can't drift between producer and consumer.
 export const INTERNAL_JOBS_SECRET_HEADER = "x-internal-jobs-secret";
