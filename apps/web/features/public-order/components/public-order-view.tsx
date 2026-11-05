@@ -358,7 +358,11 @@ export function PublicOrderView({
                   )}
                   {payment.reviewStatus === "REJECTED" && !payment.voidedAt && (
                     <p className="text-xs text-rose-600">
-                      {t("payments.rejectedNote")}
+                      {payment.rejectionReason
+                        ? t("payments.rejectionReason", {
+                            reason: payment.rejectionReason,
+                          })
+                        : t("payments.rejectedNote")}
                     </p>
                   )}
                 </li>
