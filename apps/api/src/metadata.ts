@@ -1929,6 +1929,7 @@ export default async () => {
                 required: true,
                 enum: ['REJECTED', 'N_A', 'PENDING_REVIEW', 'APPROVED'],
               },
+              rejectionReason: { required: true, type: () => String, nullable: true },
             },
             PublicOrderTimelineItemDto: {
               type: {
@@ -3799,6 +3800,7 @@ export default async () => {
             InternalJobsController: {
               expireSweep: {},
               assistedIdentityRetentionSweep: {},
+              orphanPaymentProofSweep: {},
               eraseAssistedIdentityRequest: {},
             },
           },
