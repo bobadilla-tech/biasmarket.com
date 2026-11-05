@@ -190,6 +190,7 @@ test("partial payment shows the pending amount as due, paid and voided rows", as
           amount: "10",
           createdAt: "2026-09-01T12:00:00.000Z",
           reviewStatus: "N_A",
+          rejectionReason: null,
           voidedAt: null,
         },
         {
@@ -201,6 +202,7 @@ test("partial payment shows the pending amount as due, paid and voided rows", as
           amount: "99",
           createdAt: "2026-09-01T12:00:00.000Z",
           reviewStatus: "N_A",
+          rejectionReason: null,
           voidedAt: "2026-09-02T12:00:00.000Z",
         },
         {
@@ -212,6 +214,7 @@ test("partial payment shows the pending amount as due, paid and voided rows", as
           amount: "5",
           createdAt: "2026-09-01T12:00:00.000Z",
           reviewStatus: "PENDING_REVIEW",
+          rejectionReason: null,
           voidedAt: null,
         },
       ],
@@ -263,6 +266,7 @@ test("asks only for what is still due when a payment was already recorded", asyn
           amount: "10",
           createdAt: "2026-09-01T12:00:00.000Z",
           reviewStatus: "N_A",
+          rejectionReason: null,
           voidedAt: null,
         },
       ],
