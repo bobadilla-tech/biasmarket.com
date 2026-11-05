@@ -197,6 +197,7 @@ export class OrderEventsService {
             source: true,
             reviewStatus: true,
             voidedAt: true,
+            createdAt: true,
           },
         },
       },
