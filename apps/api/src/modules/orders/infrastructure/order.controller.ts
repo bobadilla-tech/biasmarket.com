@@ -29,6 +29,7 @@ import {
   ApiProduces,
   ApiQuery,
 } from "@nestjs/swagger";
+import { NotificationsService } from "../../notifications/notifications.service.js";
 import { OrderRepository } from "./order.repository.js";
 import { ReviewPaymentUseCase } from "../application/review-payment.usecase.js";
 import { AdvanceFulfillmentUseCase } from "../application/advance-fulfillment.usecase.js";
@@ -414,6 +415,7 @@ export class OrderController {
     private events: OrderEventsService,
     private voidOrderPayment: VoidOrderPaymentUseCase,
     private payments: OrderPaymentsService,
+    private notifications: NotificationsService,
   ) {}
 
   @ApiQuery({ name: "paymentStatus", required: false, type: String })
@@ -925,6 +927,8 @@ export class OrderController {
 
     const reviewStatus = dto.decision === "approve" ? "APPROVED" : "REJECTED";
     let settlesOrder = false;
+    let buyerAccountId: string | null = null;
+    let storeSlug = "";
     await this.prisma.$transaction(async (tx) => {
       // Serialise concurrent reviews of the same order. Without the row lock
       // two overlapping approvals of two half proofs each sum only their own
@@ -937,8 +941,10 @@ export class OrderController {
 
       const order = await tx.order.findUniqueOrThrow({
         where: { id: orderId },
-        select: { paymentStatus: true, requiredAmount: true },
+        select: { paymentStatus: true, requiredAmount: true, buyerAccountId: true, store: { select: { slug: true } } },
       });
+      buyerAccountId = order.buyerAccountId ?? null;
+      storeSlug = order.store?.slug ?? "";
       if (dto.decision === "approve") {
         // Thrown before the claim below, so nothing has been written yet and
         // the proof stays PENDING_REVIEW. Approving on a dead order would mark
@@ -1095,6 +1101,8 @@ export class OrderController {
         );
       }
     });
+
+    await this.notifications.pushToBuyer(buyerAccountId, dto.decision === "approve" ? "Comprobante aprobado" : "Comprobante rechazado", dto.decision === "approve" ? `El comprobante del pedido ${orderId.slice(0, 8)} fue aprobado.` : `El comprobante del pedido ${orderId.slice(0, 8)} fue rechazado.`, { type: "PAYMENT_PROOF_REVIEWED", orderId, storeSlug, decision: dto.decision });
 
     if (settlesOrder) {
       await this.reviewPayment.execute(
