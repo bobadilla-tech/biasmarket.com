@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import {
   DeleteObjectCommand,
   GetObjectCommand,
+  ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -102,6 +103,53 @@ export class StorageService {
 
   async deleteStoreReferenceImage(url: string): Promise<void> {
     await this.deleteUploadedObject(url, "store-references");
+  }
+
+  async listPaymentProofObjectsBefore(
+    cutoff: Date,
+  ): Promise<Array<{ bucket: string; key: string }>> {
+    const objects: Array<{ bucket: string; key: string }> = [];
+    // `bucket/payments/` contains uploads created before payment proofs were
+    // moved into their private bucket. Both locations must be swept, while
+    // the URL read path remains compatible with those older rows.
+    for (const bucket of new Set([this.paymentBucket, this.bucket])) {
+      let continuationToken: string | undefined;
+      do {
+        const page = await this.client.send(
+          new ListObjectsV2Command({
+            Bucket: bucket,
+            Prefix: "payments/",
+            ContinuationToken: continuationToken,
+          }),
+        );
+        for (const object of page.Contents ?? []) {
+          if (
+            !object.Key ||
+            !object.LastModified ||
+            object.LastModified >= cutoff
+          ) {
+            continue;
+          }
+          objects.push({ bucket, key: object.Key });
+        }
+        continuationToken = page.IsTruncated
+          ? page.NextContinuationToken
+          : undefined;
+      } while (continuationToken);
+    }
+    return objects;
+  }
+
+  async deletePaymentProofObject(bucket: string, key: string): Promise<void> {
+    if (bucket !== this.paymentBucket && bucket !== this.bucket) {
+      throw new Error("Invalid payment proof bucket");
+    }
+    if (!/^payments\/[a-f0-9-]+\.(png|jpg|pdf)$/i.test(key)) {
+      throw new Error("Invalid payment proof object key");
+    }
+    await this.client.send(
+      new DeleteObjectCommand({ Bucket: bucket, Key: key }),
+    );
   }
 
   private async deleteUploadedObject(
