@@ -125,6 +125,7 @@ export class CreateOrderUseCase {
         // (common/payment-summary.ts's `countsTowardPaid`). The seller
         // notification uses the same dedup-as-an-open-notification helper
         // as the buyer account's later submit-proof endpoint.
+        let paymentProofNotificationCreated = false;
         if (proof?.imageUrl) {
           const payment = await tx.orderPayment.create({
             data: {
@@ -139,7 +140,7 @@ export class CreateOrderUseCase {
             },
           });
           order.payments = [payment];
-          await this.notifications.createIfNotOpen(
+          const notification = await this.notifications.createIfNotOpen(
             {
               storeId: store.id,
               type: "PAYMENT_PROOF_SUBMITTED",
@@ -150,6 +151,7 @@ export class CreateOrderUseCase {
             },
             tx,
           );
+          paymentProofNotificationCreated = Boolean(notification);
         }
 
         return {
@@ -157,6 +159,7 @@ export class CreateOrderUseCase {
           pendingVerificationCustomer,
           pickupPointLabel,
           messageItems,
+          paymentProofNotificationCreated,
         };
       });
     } catch (error) {
@@ -174,7 +177,17 @@ export class CreateOrderUseCase {
       pendingVerificationCustomer,
       pickupPointLabel,
       messageItems,
+      paymentProofNotificationCreated,
     } = transactionResult;
+
+    if (paymentProofNotificationCreated) {
+      await this.notifications.pushToStoreOwner({
+        storeId: store.id,
+        title: "Comprobante de pago recibido",
+        body: "Un comprador envió un comprobante de pago para revisar.",
+        data: { type: "PAYMENT_PROOF_SUBMITTED", entityId: order.id },
+      });
+    }
 
     // A store's saved NEW_ORDER override (whatsapp-templates module); null
     // when the seller never customized it, in which case

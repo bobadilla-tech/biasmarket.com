@@ -43,7 +43,7 @@ describe("BuyerPaymentProofService.submit", () => {
     orderPayment: { findMany: Mock; create: Mock };
   };
   let events: { record: Mock };
-  let notifications: { createIfNotOpen: Mock };
+  let notifications: { createIfNotOpen: Mock; pushToStoreOwner: Mock };
 
   const currentOrder = (overrides: Record<string, unknown> = {}) => ({
     status: "ACTIVE",
@@ -68,7 +68,10 @@ describe("BuyerPaymentProofService.submit", () => {
       },
     };
     events = { record: vi.fn() };
-    notifications = { createIfNotOpen: vi.fn() };
+    notifications = {
+      createIfNotOpen: vi.fn(),
+      pushToStoreOwner: vi.fn().mockResolvedValue(undefined),
+    };
     service = new BuyerPaymentProofService(
       { $transaction: (cb: (t: unknown) => unknown) => cb(tx) } as never,
       { uploadPaymentImage: upload, deleteImage } as never,
@@ -344,6 +347,19 @@ describe("BuyerPaymentProofService.submit", () => {
         imageUrl: "https://cdn.example/p.png",
       });
       expect(String(data.amount)).toBe("40");
+    });
+
+    it("queues one seller push after commit when it creates the in-app notice", async () => {
+      notifications.createIfNotOpen.mockResolvedValue({ id: "notice-1" });
+
+      await submit();
+
+      expect(notifications.pushToStoreOwner).toHaveBeenCalledWith({
+        storeId: "store-1",
+        title: "Comprobante de pago recibido",
+        body: "Un comprador envió un comprobante de pago para revisar.",
+        data: { type: "PAYMENT_PROOF_SUBMITTED", entityId: "order-1" },
+      });
     });
 
     it("records an event with exactly paymentId, amount (number) and method", async () => {

@@ -29,6 +29,7 @@ import { MonitoringModule } from "./modules/monitoring/monitoring.module.js";
 import { CouponsModule } from "./modules/coupons/coupons.module.js";
 import { CouriersModule } from "./modules/couriers/couriers.module.js";
 import { StoreReferencesModule } from "./modules/store-references/store-references.module.js";
+import { DeviceTokensModule } from "./modules/device-tokens/device-tokens.module.js";
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { StoreReferencesModule } from "./modules/store-references/store-referenc
     CouponsModule,
     CouriersModule,
     StoreReferencesModule,
+    DeviceTokensModule,
   ],
   controllers: [AppController],
 })

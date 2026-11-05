@@ -29,6 +29,7 @@ import { OrderPaymentsService } from "../application/order-payments.service.js";
 import { PrismaService } from "../../../prisma/prisma.service.js";
 import { StorageService } from "../../../storage/storage.service.js";
 import { OrderEventsService } from "../application/order-events.service.js";
+import { NotificationsService } from "../../notifications/notifications.service.js";
 
 describe("toOrderPaymentDto", () => {
   it("does not expose private payment actor ids", () => {
@@ -77,6 +78,7 @@ describe("OrderController.addPayment", () => {
     deleteImage: Mock;
   };
   let events: { record: Mock };
+  let notifications: { pushToBuyer: Mock };
   let prisma: {
     $transaction: Mock;
     orderPayment: { create: Mock };
@@ -176,6 +178,7 @@ describe("OrderController.addPayment", () => {
       deleteImage: vi.fn().mockResolvedValue(undefined),
     };
     events = { record: vi.fn() };
+    notifications = { pushToBuyer: vi.fn().mockResolvedValue(undefined) };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [OrderController],
@@ -189,6 +192,7 @@ describe("OrderController.addPayment", () => {
         { provide: PrismaService, useValue: prisma },
         { provide: StorageService, useValue: storage },
         { provide: OrderEventsService, useValue: events },
+        { provide: NotificationsService, useValue: notifications },
       ],
     }).compile();
 
@@ -782,6 +786,7 @@ describe("OrderController.getPaymentImage", () => {
         { provide: PrismaService, useValue: {} },
         { provide: StorageService, useValue: storage },
         { provide: OrderEventsService, useValue: { record: vi.fn() } },
+        { provide: NotificationsService, useValue: { pushToBuyer: vi.fn() } },
       ],
     }).compile();
 
@@ -949,6 +954,7 @@ describe("OrderController.shipping", () => {
         { provide: PrismaService, useValue: prisma },
         { provide: StorageService, useValue: storage },
         { provide: OrderEventsService, useValue: events },
+        { provide: NotificationsService, useValue: { pushToBuyer: vi.fn() } },
         { provide: VoidOrderPaymentUseCase, useValue: { execute: vi.fn() } },
         {
           provide: OrderPaymentsService,
@@ -1180,6 +1186,7 @@ describe("OrderController.reviewPaymentProof", () => {
   };
   let reviewPayment: { execute: Mock };
   let events: { record: Mock };
+  let notifications: { pushToBuyer: Mock };
   let prisma: { $transaction: Mock };
   let tx: {
     $queryRaw: Mock;
@@ -1217,6 +1224,8 @@ describe("OrderController.reviewPaymentProof", () => {
         findUniqueOrThrow: vi.fn().mockResolvedValue({
           paymentStatus: "PENDING_PAYMENT",
           requiredAmount: new Prisma.Decimal("100.00"),
+          buyerAccountId: "buyer-1",
+          store: { slug: "test-store" },
         }),
       },
       orderPayment: {
@@ -1243,6 +1252,7 @@ describe("OrderController.reviewPaymentProof", () => {
     };
     reviewPayment = { execute: vi.fn() };
     events = { record: vi.fn() };
+    notifications = { pushToBuyer: vi.fn().mockResolvedValue(undefined) };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [OrderController],
@@ -1267,6 +1277,7 @@ describe("OrderController.reviewPaymentProof", () => {
           },
         },
         { provide: OrderEventsService, useValue: events },
+        { provide: NotificationsService, useValue: notifications },
       ],
     }).compile();
 
@@ -1277,6 +1288,8 @@ describe("OrderController.reviewPaymentProof", () => {
     tx.order.findUniqueOrThrow.mockResolvedValue({
       paymentStatus: "PENDING_PAYMENT",
       requiredAmount: new Prisma.Decimal("100.00"),
+      buyerAccountId: "buyer-1",
+      store: { slug: "test-store" },
     });
     tx.orderPayment.findMany.mockResolvedValue([
       {
@@ -1304,6 +1317,38 @@ describe("OrderController.reviewPaymentProof", () => {
       tx,
     );
     expect(reviewPayment.execute).not.toHaveBeenCalled();
+    expect(notifications.pushToBuyer).toHaveBeenCalledWith(
+      "buyer-1",
+      "Comprobante aprobado",
+      "El comprobante del pedido order-1 fue aprobado.",
+      {
+        type: "PAYMENT_PROOF_REVIEWED",
+        orderId,
+        storeSlug: "test-store",
+        decision: "approve",
+      },
+    );
+    expect(prisma.$transaction.mock.invocationCallOrder[0]).toBeLessThan(
+      notifications.pushToBuyer.mock.invocationCallOrder[0]!,
+    );
+  });
+
+  it("notifies the buyer after a proof is rejected", async () => {
+    await controller.reviewPaymentProof(storeId, orderId, paymentId, session, {
+      decision: "reject",
+    });
+
+    expect(notifications.pushToBuyer).toHaveBeenCalledWith(
+      "buyer-1",
+      "Comprobante rechazado",
+      "El comprobante del pedido order-1 fue rechazado.",
+      {
+        type: "PAYMENT_PROOF_REVIEWED",
+        orderId,
+        storeSlug: "test-store",
+        decision: "reject",
+      },
+    );
   });
 
   it("lets ReviewPaymentUseCase settle a proof that clears the balance without a second PAYMENT_VALIDATED", async () => {

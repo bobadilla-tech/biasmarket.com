@@ -18,7 +18,9 @@ describe("NotificationsService", () => {
       count: Mock;
     };
     productVariant: { findMany: Mock };
+    deviceToken: { findMany: Mock };
   };
+  let pushQueue: { add: Mock };
 
   const ownerId = "user-1";
   const storeId = "store-1";
@@ -37,7 +39,9 @@ describe("NotificationsService", () => {
         count: vi.fn(),
       },
       productVariant: { findMany: vi.fn() },
+      deviceToken: { findMany: vi.fn().mockResolvedValue([]) },
     };
+    pushQueue = { add: vi.fn().mockResolvedValue(undefined) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -46,6 +50,7 @@ describe("NotificationsService", () => {
           provide: PrismaService,
           useValue: prisma,
         },
+        { provide: "BullQueue_push", useValue: pushQueue },
       ],
     }).compile();
 
@@ -280,6 +285,82 @@ describe("NotificationsService", () => {
 
       expect(prisma.notification.create).not.toHaveBeenCalled();
       expect(prisma.notification.updateMany).toHaveBeenCalled();
+    });
+  });
+
+  describe("push routing", () => {
+    const payload = {
+      title: "Comprobante aprobado",
+      body: "El pago fue aprobado.",
+      data: { type: "PAYMENT_PROOF_REVIEWED", orderId: "order-1" },
+    };
+
+    it("queues buyer pushes to every device registered to that buyer account", async () => {
+      prisma.deviceToken.findMany.mockResolvedValue([
+        { expoPushToken: "ExpoPushToken[buyer-device-00000001]" },
+        { expoPushToken: "ExponentPushToken[buyer-device-00000002]" },
+      ]);
+
+      await service.pushToBuyer(
+        "buyer-1",
+        payload.title,
+        payload.body,
+        payload.data,
+      );
+
+      expect(prisma.deviceToken.findMany).toHaveBeenCalledWith({
+        where: { buyerAccountId: "buyer-1" },
+        select: { expoPushToken: true },
+      });
+      expect(pushQueue.add).toHaveBeenCalledTimes(2);
+      expect(pushQueue.add).toHaveBeenCalledWith(
+        "send-expo-push",
+        expect.objectContaining({
+          to: "ExpoPushToken[buyer-device-00000001]",
+          ...payload,
+        }),
+      );
+    });
+
+    it("routes seller proof notices only to the owner of the submitted store", async () => {
+      prisma.store.findUnique.mockResolvedValue({ ownerId });
+      prisma.deviceToken.findMany.mockResolvedValue([
+        { expoPushToken: "ExpoPushToken[seller-device-00000001]" },
+      ]);
+
+      await service.pushToStoreOwner({ storeId, ...payload });
+
+      expect(prisma.store.findUnique).toHaveBeenCalledWith({
+        where: { id: storeId },
+        select: { ownerId: true },
+      });
+      expect(prisma.deviceToken.findMany).toHaveBeenCalledWith({
+        where: { userId: ownerId },
+        select: { expoPushToken: true },
+      });
+      expect(pushQueue.add).toHaveBeenCalledWith(
+        "send-expo-push",
+        expect.objectContaining({
+          to: "ExpoPushToken[seller-device-00000001]",
+          ...payload,
+        }),
+      );
+    });
+
+    it("keeps notification actions successful when Redis enqueue fails", async () => {
+      prisma.deviceToken.findMany.mockResolvedValue([
+        { expoPushToken: "ExpoPushToken[buyer-device-00000001]" },
+      ]);
+      pushQueue.add.mockRejectedValue(new Error("redis unavailable"));
+
+      await expect(
+        service.pushToBuyer(
+          "buyer-1",
+          payload.title,
+          payload.body,
+          payload.data,
+        ),
+      ).resolves.toBeUndefined();
     });
   });
 });
