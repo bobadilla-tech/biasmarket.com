@@ -61,6 +61,7 @@ import {
 } from "../dto/submit-public-payment.dto.js";
 import { PublicOrder } from "./public-order.decorator.js";
 import { PublicOrderTokenGuard } from "./public-order-token.guard.js";
+import { PublicProofThrottlerGuard } from "./public-proof-throttler.guard.js";
 
 const PUBLIC_PROOF_PIPE = new UploadedFileValidationPipe({
   allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
@@ -123,7 +124,7 @@ export class PublicOrderEventsController {
   @ApiConsumes("multipart/form-data")
   @ApiBody({ type: SubmitPublicPaymentDto })
   @ApiCreatedResponse({ type: SubmitPublicPaymentResponseDto })
-  @UseGuards(ThrottlerGuard, PublicOrderTokenGuard)
+  @UseGuards(PublicProofThrottlerGuard, ThrottlerGuard, PublicOrderTokenGuard)
   @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @UseInterceptors(
     FileInterceptor("file", { limits: PAYMENT_PROOF_UPLOAD_LIMITS }),
