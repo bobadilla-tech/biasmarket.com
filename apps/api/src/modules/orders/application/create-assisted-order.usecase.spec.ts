@@ -29,6 +29,7 @@ function setup(finalAmount: { lte: (n: number) => boolean }) {
   vi.mocked(core.reserveItems).mockResolvedValue({
     orderData: { storeId: "store1" },
     finalAmount,
+    stockAlerts: [],
   } as never);
   const tx = {
     order: {
@@ -42,15 +43,16 @@ function setup(finalAmount: { lte: (n: number) => boolean }) {
     $transaction: vi.fn((cb: (t: unknown) => unknown) => cb(tx)),
     order: { findFirst: vi.fn().mockResolvedValue(null) },
   };
+  const notifications = { enqueueStockAlertPushes: vi.fn() };
   const events = { record: vi.fn() };
   const customers = { countPreviousOrders: vi.fn().mockResolvedValue(2) };
   const useCase = new CreateAssistedOrderUseCase(
     prisma as never,
-    {} as never,
+    notifications as never,
     events as never,
     customers as never,
   );
-  return { useCase, tx, prisma, events };
+  return { useCase, tx, prisma, events, notifications };
 }
 
 describe("CreateAssistedOrderUseCase", () => {
@@ -59,7 +61,9 @@ describe("CreateAssistedOrderUseCase", () => {
   });
 
   it("stores only the token hash and returns the link once", async () => {
-    const { useCase, tx, prisma, events } = setup({ lte: () => false });
+    const { useCase, tx, prisma, events, notifications } = setup({
+      lte: () => false,
+    });
     const result = await useCase.execute(store, "user1", dto);
 
     expect(core.reserveItems).toHaveBeenCalledWith(
@@ -91,6 +95,7 @@ describe("CreateAssistedOrderUseCase", () => {
       tx,
       expect.objectContaining({ type: "CREATED", actor: "SELLER" }),
     );
+    expect(notifications.enqueueStockAlertPushes).toHaveBeenCalledWith([]);
     const audit = JSON.stringify(tx.auditLog.create.mock.calls[0]![0]);
     expect(audit).not.toContain(token);
     expect(audit).not.toContain("Sofi");
