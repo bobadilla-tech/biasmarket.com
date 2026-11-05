@@ -13,6 +13,7 @@ export function makePayment(
     createdAt: "2026-09-01T12:00:00.000Z",
     paidAt: null,
     reviewStatus: "PENDING_REVIEW",
+    rejectionReason: null,
     voidedAt: null,
     hasProof: true,
     ...overrides,
