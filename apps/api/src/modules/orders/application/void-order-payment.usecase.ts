@@ -65,11 +65,9 @@ export class VoidOrderPaymentUseCase {
           "No se pueden anular pagos de una orden cancelada o rechazada",
         );
       }
-      if (order.paymentStatus === "VERIFIED") {
-        throw new BadRequestException(
-          "No se pueden anular pagos de una orden ya verificada",
-        );
-      }
+      // A seller may correct a mistaken payment until fulfillment starts.
+      // If a verified order drops below its required total, stock returns to
+      // the order's reservation so another order cannot claim it concurrently.
 
       const payment = await tx.orderPayment.findFirst({
         where: { id: paymentId, orderId, storeId },
@@ -107,25 +105,43 @@ export class VoidOrderPaymentUseCase {
         },
       });
       const summary = computePaymentSummary(order.requiredAmount, payments);
+      const wasVerified = order.paymentStatus === "VERIFIED";
+      const remainsVerified =
+        toCents(summary.paidAmount) >= toCents(Number(order.requiredAmount));
       const hasPendingProof = payments.some(
         (candidate) =>
           candidate.voidedAt == null &&
           candidate.source === "BUYER_SUBMITTED" &&
           candidate.reviewStatus === "PENDING_REVIEW",
       );
-      const paymentStatus =
-        toCents(summary.paidAmount) >= toCents(Number(order.requiredAmount))
-          ? "VERIFIED"
-          : summary.paidAmount > 0
-            ? "PARTIALLY_PAID"
-            : hasPendingProof
-              ? "PAYMENT_SUBMITTED"
-              : "PENDING_PAYMENT";
+      const paymentStatus = remainsVerified
+        ? "VERIFIED"
+        : summary.paidAmount > 0
+          ? "PARTIALLY_PAID"
+          : hasPendingProof
+            ? "PAYMENT_SUBMITTED"
+            : "PENDING_PAYMENT";
 
       await tx.order.update({
         where: { id: orderId },
         data: { paymentStatus },
       });
+      if (wasVerified && !remainsVerified) {
+        const items = await tx.orderItem.findMany({
+          where: { orderId, storeId },
+          select: { variantId: true, quantity: true },
+        });
+        for (const item of items) {
+          if (!item.variantId) continue;
+          await tx.productVariant.updateMany({
+            where: { id: item.variantId, storeId, stock: { not: null } },
+            data: {
+              stock: { increment: item.quantity },
+              reserved: { increment: item.quantity },
+            },
+          });
+        }
+      }
       // Payload is amount/currency/paymentId only: the seller's free-text
       // reason stays in the audit log. The public mapper drops `paymentId`.
       await this.events.record(tx, {
