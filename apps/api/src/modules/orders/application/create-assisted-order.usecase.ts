@@ -13,6 +13,7 @@ import {
 } from "@biasmarket/utils/assisted-order";
 import { PrismaService } from "../../../prisma/prisma.service.js";
 import { NotificationsService } from "../../notifications/notifications.service.js";
+import type { StockAlertPush } from "../../notifications/notifications.service.js";
 import type { CreateAssistedOrderDto } from "../dto/create-assisted-order.dto.js";
 import { upsertAssistedCustomer } from "./assisted-customer.js";
 import { CustomersService } from "./customers.service.js";
@@ -82,6 +83,7 @@ export class CreateAssistedOrderUseCase {
     // Lock order (same as checkout, see order-creation.core.ts): pickup point
     // -> courier -> Customer -> stock -> Order insert.
     let order;
+    const stockAlerts: StockAlertPush[] = [];
     try {
       order = await this.prisma.$transaction(
         async (tx) => {
@@ -93,13 +95,18 @@ export class CreateAssistedOrderUseCase {
             phone,
             alias,
           );
-          const { orderData, finalAmount } = await reserveItems(
+          const {
+            orderData,
+            finalAmount,
+            stockAlerts: reservedAlerts,
+          } = await reserveItems(
             tx,
             this.notifications,
             store,
             { ...dto, ...pre, ...locked },
             "ASSISTED_ORDER_V1",
           );
+          stockAlerts.push(...reservedAlerts);
           // Rolls the whole transaction back, releasing the reserved stock.
           if (finalAmount.lte(0)) {
             throw new BadRequestException(
@@ -176,6 +183,8 @@ export class CreateAssistedOrderUseCase {
       }
       throw err;
     }
+
+    await this.notifications.enqueueStockAlertPushes(stockAlerts);
 
     return {
       order,

@@ -219,18 +219,19 @@ describe("NotificationsService", () => {
 
     it("creates LOW_STOCK when available stock is at or below the threshold", async () => {
       prisma.notification.findFirst.mockResolvedValue(null);
+      prisma.notification.create.mockResolvedValue({ id: "new-alert" });
       prisma.productVariant.findMany.mockResolvedValue([
         {
-          stock: 5,
-          reserved: 3,
+          stock: 10,
+          reserved: 0,
         },
       ]);
 
-      await service.syncStockAlerts(
+      const alerts = await service.syncStockAlerts(
         prisma as any,
         store as any,
         product as any,
-        { id: "variant-1", stock: 5, reserved: 3 } as any,
+        { id: "variant-1", name: "Widget", stock: 5, reserved: 3 } as any,
       );
 
       expect(prisma.notification.create).toHaveBeenCalledWith(
@@ -241,6 +242,17 @@ describe("NotificationsService", () => {
           }),
         }),
       );
+      expect(alerts).toEqual([
+        {
+          storeId,
+          type: "LOW_STOCK",
+          entityType: "ProductVariant",
+          entityId: "variant-1",
+          title: "Stock bajo: Widget",
+          body: "Widget tiene 2 unidades disponibles.",
+        },
+      ]);
+      expect(pushQueue.add).not.toHaveBeenCalled();
     });
 
     it("resolves open alerts when available stock rises above the threshold", async () => {
@@ -343,6 +355,38 @@ describe("NotificationsService", () => {
         expect.objectContaining({
           to: "ExpoPushToken[seller-device-00000001]",
           ...payload,
+        }),
+      );
+    });
+
+    it("queues stock alerts for the store owner after the transaction commits", async () => {
+      prisma.store.findUnique.mockResolvedValue({ ownerId });
+      prisma.deviceToken.findMany.mockResolvedValue([
+        { expoPushToken: "ExpoPushToken[seller-device-00000001]" },
+      ]);
+
+      await service.enqueueStockAlertPushes([
+        {
+          storeId,
+          type: "OUT_OF_STOCK",
+          entityType: "ProductVariant",
+          entityId: "variant-1",
+          title: "Sin stock: Widget",
+          body: "Widget se quedó sin unidades disponibles.",
+        },
+      ]);
+
+      expect(pushQueue.add).toHaveBeenCalledWith(
+        "send-expo-push",
+        expect.objectContaining({
+          to: "ExpoPushToken[seller-device-00000001]",
+          title: "Sin stock: Widget",
+          body: "Widget se quedó sin unidades disponibles.",
+          data: {
+            type: "OUT_OF_STOCK",
+            entityType: "ProductVariant",
+            entityId: "variant-1",
+          },
         }),
       );
     });

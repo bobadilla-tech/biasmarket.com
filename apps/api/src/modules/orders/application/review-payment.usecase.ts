@@ -9,6 +9,7 @@ import { PrismaService } from "../../../prisma/prisma.service.js";
 import { OrderRepository } from "../infrastructure/order.repository.js";
 import { Order } from "../domain/order.entity.js";
 import { NotificationsService } from "../../notifications/notifications.service.js";
+import type { StockAlertPush } from "../../notifications/notifications.service.js";
 import { MailerService } from "../../../mailer/mailer.service.js";
 import { OrderEventsService } from "./order-events.service.js";
 
@@ -82,6 +83,7 @@ export class ReviewPaymentUseCase {
     }
 
     let storeName = "";
+    const stockAlerts: StockAlertPush[] = [];
 
     const updated = await this.prisma.$transaction(async (tx) => {
       const store = await tx.store.findUnique({ where: { id: storeId } });
@@ -129,11 +131,13 @@ export class ReviewPaymentUseCase {
             where: { id: item.productId },
           });
           if (product) {
-            await this.notifications.syncStockAlerts(
-              tx,
-              store,
-              product,
-              updatedVariant,
+            stockAlerts.push(
+              ...(await this.notifications.syncStockAlerts(
+                tx,
+                store,
+                product,
+                updatedVariant,
+              )),
             );
           }
         }
@@ -172,6 +176,8 @@ export class ReviewPaymentUseCase {
 
       return updated;
     });
+
+    await this.notifications.enqueueStockAlertPushes(stockAlerts);
 
     if (row.customerEmail) {
       try {

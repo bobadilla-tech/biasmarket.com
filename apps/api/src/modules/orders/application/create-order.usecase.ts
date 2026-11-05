@@ -97,12 +97,17 @@ export class CreateOrderUseCase {
           buyerAccountId = pendingVerificationCustomer.buyerAccount?.id;
         }
 
-        const { orderData, requiredAmount, messageItems, pickupPointLabel } =
-          await reserveItems(tx, this.notifications, store, {
-            ...dto,
-            ...pre,
-            ...locked,
-          });
+        const {
+          orderData,
+          requiredAmount,
+          messageItems,
+          pickupPointLabel,
+          stockAlerts,
+        } = await reserveItems(tx, this.notifications, store, {
+          ...dto,
+          ...pre,
+          ...locked,
+        });
 
         const order = await tx.order.create({
           data: {
@@ -160,6 +165,7 @@ export class CreateOrderUseCase {
           pickupPointLabel,
           messageItems,
           paymentProofNotificationCreated,
+          stockAlerts,
         };
       });
     } catch (error) {
@@ -178,7 +184,10 @@ export class CreateOrderUseCase {
       pickupPointLabel,
       messageItems,
       paymentProofNotificationCreated,
+      stockAlerts,
     } = transactionResult;
+
+    await this.notifications.enqueueStockAlertPushes(stockAlerts);
 
     if (paymentProofNotificationCreated) {
       await this.notifications.pushToStoreOwner({

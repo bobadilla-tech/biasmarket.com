@@ -22,6 +22,15 @@ import {
 
 type Client = Prisma.TransactionClient | PrismaService;
 
+export type StockAlertPush = {
+  storeId: string;
+  type: "LOW_STOCK" | "OUT_OF_STOCK";
+  entityType: "ProductVariant" | "Product";
+  entityId: string;
+  title: string;
+  body: string;
+};
+
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
@@ -228,8 +237,9 @@ export class NotificationsService {
     store: Store,
     product: Product,
     variant: ProductVariant,
-  ) {
-    if (!store.lowStockAlertsEnabled) return;
+  ): Promise<StockAlertPush[]> {
+    if (!store.lowStockAlertsEnabled) return [];
+    const pushes: StockAlertPush[] = [];
 
     await this.syncEntityStockAlert(
       client,
@@ -238,6 +248,7 @@ export class NotificationsService {
       variant.id,
       variant.stock === null ? null : variant.stock - variant.reserved,
       variant.name,
+      pushes,
     );
 
     const siblingVariants = await client.productVariant.findMany({
@@ -258,6 +269,25 @@ export class NotificationsService {
       product.id,
       productAvailable,
       product.name,
+      pushes,
+    );
+    return pushes;
+  }
+
+  async enqueueStockAlertPushes(pushes: StockAlertPush[]): Promise<void> {
+    await Promise.all(
+      pushes.map((alert) =>
+        this.pushToStoreOwner({
+          storeId: alert.storeId,
+          title: alert.title,
+          body: alert.body,
+          data: {
+            type: alert.type,
+            entityType: alert.entityType,
+            entityId: alert.entityId,
+          },
+        }),
+      ),
     );
   }
 
@@ -268,13 +298,14 @@ export class NotificationsService {
     entityId: string,
     available: number | null,
     name: string,
+    pushes: StockAlertPush[],
   ) {
     if (available === null) {
       await this.resolveOpenStockAlerts(store.id, entityType, entityId, client);
       return;
     }
     if (available <= 0) {
-      await this.createIfNotOpen(
+      const created = await this.createIfNotOpen(
         {
           storeId: store.id,
           type: "OUT_OF_STOCK",
@@ -285,10 +316,20 @@ export class NotificationsService {
         },
         client,
       );
+      if (created) {
+        pushes.push({
+          storeId: store.id,
+          type: "OUT_OF_STOCK",
+          entityType,
+          entityId,
+          title: `Sin stock: ${name}`,
+          body: `${name} se quedó sin unidades disponibles.`,
+        });
+      }
       return;
     }
     if (available <= store.lowStockThreshold) {
-      await this.createIfNotOpen(
+      const created = await this.createIfNotOpen(
         {
           storeId: store.id,
           type: "LOW_STOCK",
@@ -299,6 +340,16 @@ export class NotificationsService {
         },
         client,
       );
+      if (created) {
+        pushes.push({
+          storeId: store.id,
+          type: "LOW_STOCK",
+          entityType,
+          entityId,
+          title: `Stock bajo: ${name}`,
+          body: `${name} tiene ${available} unidades disponibles.`,
+        });
+      }
       return;
     }
     await this.resolveOpenStockAlerts(store.id, entityType, entityId, client);

@@ -68,7 +68,10 @@ describe("ProductsService", () => {
         { provide: PrismaService, useValue: prisma },
         {
           provide: NotificationsService,
-          useValue: { syncStockAlerts: vi.fn() },
+          useValue: {
+            syncStockAlerts: vi.fn().mockResolvedValue([]),
+            enqueueStockAlertPushes: vi.fn().mockResolvedValue(undefined),
+          },
         },
       ],
     }).compile();

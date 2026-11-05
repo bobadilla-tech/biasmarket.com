@@ -59,6 +59,7 @@ describe("CreateOrderUseCase", () => {
   };
   let notifications: {
     syncStockAlerts: Mock;
+    enqueueStockAlertPushes: Mock;
     createIfNotOpen: Mock;
     pushToStoreOwner: Mock;
   };
@@ -104,7 +105,8 @@ describe("CreateOrderUseCase", () => {
       whatsAppMessageTemplate: { findUnique: vi.fn() },
     };
     notifications = {
-      syncStockAlerts: vi.fn(),
+      syncStockAlerts: vi.fn().mockResolvedValue([]),
+      enqueueStockAlertPushes: vi.fn().mockResolvedValue(undefined),
       createIfNotOpen: vi.fn(),
       pushToStoreOwner: vi.fn().mockResolvedValue(undefined),
     };

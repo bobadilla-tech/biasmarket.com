@@ -10,7 +10,10 @@ import type {
 } from "@biasmarket/db";
 import { PrismaService } from "../../../prisma/prisma.service.js";
 import { getBusinessDate } from "../../../common/business-time.js";
-import { NotificationsService } from "../../notifications/notifications.service.js";
+import {
+  NotificationsService,
+  type StockAlertPush,
+} from "../../notifications/notifications.service.js";
 import type { CreateOrderItemDto } from "../dto/create-order.dto.js";
 import type { ShippingAddressDto } from "../dto/create-order.dto.js";
 
@@ -308,6 +311,7 @@ export async function reserveItems(
   let totalAmount: Prisma.Decimal | undefined;
   let currency: string | undefined;
   const itemsData: Prisma.OrderItemCreateManyOrderInput[] = [];
+  const stockAlerts: StockAlertPush[] = [];
 
   for (const item of input.items) {
     const product = await tx.product.findUnique({
@@ -369,7 +373,14 @@ export async function reserveItems(
             `Stock insuficiente para ${variant.name}`,
           );
         }
-        await notifications.syncStockAlerts(tx, store, product, updatedVariant);
+        stockAlerts.push(
+          ...(await notifications.syncStockAlerts(
+            tx,
+            store,
+            product,
+            updatedVariant,
+          )),
+        );
       }
     } else if (product.variants.length > 0) {
       throw new BadRequestException(
@@ -522,5 +533,6 @@ export async function reserveItems(
     requiredAmount,
     messageItems,
     pickupPointLabel: pickupPoint?.label ?? null,
+    stockAlerts,
   };
 }
