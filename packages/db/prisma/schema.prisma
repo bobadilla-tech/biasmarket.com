@@ -31,6 +31,7 @@ model User {
   ordersCreated     Order[]
   createdCoupons    Coupon[]           @relation("CouponCreatedBy")
   couponRedemptions CouponRedemption[]
+  deviceTokens      DeviceToken[]
 
   @@map("user")
 }
@@ -495,15 +496,15 @@ model OrderItem {
 }
 
 model OrderPayment {
-  id              String              @id @default(cuid())
-  orderId         String
-  storeId         String
-  amount          Decimal             @db.Decimal(10, 2)
-  currency        String
-  method          PaymentMethodType?
-  note            String?
-  imageUrl        String?
-  createdAt       DateTime            @default(now())
+  id            String              @id @default(cuid())
+  orderId       String
+  storeId       String
+  amount        Decimal             @db.Decimal(10, 2)
+  currency      String
+  method        PaymentMethodType?
+  note          String?
+  imageUrl      String?
+  createdAt     DateTime            @default(now())
   // Buyer-submitted proof-of-payment upload — see
   // .artifacts/2026/08/20260808--buyer-proof-of-payment-upload/plan.md. `source`
   // distinguishes who created the row; `reviewStatus` gates buyer-submitted
@@ -511,17 +512,16 @@ model OrderPayment {
   // common/payment-summary.ts's
   // `countsTowardPaid` — the single source of truth for this filter, reused
   // by every aggregation call site so this invariant can't drift per-site).
-  source          PaymentSource       @default(SELLER_RECORDED)
-  reviewStatus    PaymentReviewStatus @default(N_A)
-  reviewedAt      DateTime?
-  reviewedBy      String?
-  operationCode   String?
-  paidAt          DateTime?
-  recordedBy      String?
-  voidedAt        DateTime?
-  voidedBy        String?
-  voidReason      String?
-  rejectionReason String?
+  source        PaymentSource       @default(SELLER_RECORDED)
+  reviewStatus  PaymentReviewStatus @default(N_A)
+  reviewedAt    DateTime?
+  reviewedBy    String?
+  operationCode String?
+  paidAt        DateTime?
+  recordedBy    String?
+  voidedAt      DateTime?
+  voidedBy      String?
+  voidReason    String?
 
   order Order @relation(fields: [orderId], references: [id])
 
@@ -773,6 +773,7 @@ model BuyerAccount {
   stores    CustomerStoreLink[]
   orders    Order[]
   addresses Address[]
+  deviceTokens DeviceToken[]
 }
 
 // Buyer-owned, reusable across every store the BuyerAccount is linked to
@@ -868,6 +869,25 @@ model Notification {
   @@index([storeId, createdAt])
   @@index([storeId, archived, read])
   @@index([entityType, entityId])
+}
+
+model DeviceToken {
+  id             String   @id @default(cuid())
+  userId         String?
+  buyerAccountId String?
+  expoPushToken  String   @unique
+  platform       String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  buyerAccount BuyerAccount? @relation(fields: [buyerAccountId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([buyerAccountId])
+  // Exactly one authenticated owner must own each token. A token re-registered
+  // by another account is atomically transferred by DeviceTokensService.
+  @@map("DeviceToken")
 }
 
 model AuditLog {
