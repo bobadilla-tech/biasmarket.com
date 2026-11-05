@@ -40,6 +40,7 @@ const MAX_OPERATION_CODE_LENGTH = 64;
 // A balance reservation alone does not bound the number of proofs (a 100.00
 // balance admits 10,000 one-cent proofs), so the count is capped as well.
 export const MAX_PENDING_BUYER_PROOFS = 5;
+export const MAX_BUYER_PROOFS_PER_HOUR = 10;
 
 /**
  * Order snapshot the caller already authorized (session lookup or token
@@ -60,6 +61,7 @@ export type BuyerProofOrder = {
     source: string;
     reviewStatus: string;
     voidedAt?: Date | null;
+    createdAt?: Date;
   }[];
 };
 
@@ -98,6 +100,19 @@ function pendingProofCents(payments: BuyerProofOrder["payments"]) {
   return payments
     .filter(isPendingProof)
     .reduce((sum, payment) => sum + toCents(payment.amount), 0);
+}
+
+function hourlyBuyerProofCount(
+  payments: BuyerProofOrder["payments"],
+  now: Date,
+) {
+  const since = now.getTime() - 60 * 60 * 1000;
+  return payments.filter(
+    (payment) =>
+      payment.source === "BUYER_SUBMITTED" &&
+      payment.createdAt != null &&
+      payment.createdAt.getTime() >= since,
+  ).length;
 }
 
 function pendingBuyerProofCount(payments: BuyerProofOrder["payments"]) {
@@ -211,6 +226,12 @@ export class BuyerPaymentProofService {
     }
     const storedOperationCode = parseOperationCode(operationCode);
     const parsed = parseAmount(amount);
+    const now = new Date();
+    if (hourlyBuyerProofCount(order.payments, now) >= MAX_BUYER_PROOFS_PER_HOUR) {
+      throw new BadRequestException(
+        "Se alcanzó el límite de comprobantes para este pedido. Inténtalo más tarde.",
+      );
+    }
     const storedNote = sanitizeDisplayText(note as string | undefined);
 
     const summary = computePaymentSummary(
@@ -279,6 +300,7 @@ export class BuyerPaymentProofService {
             source: true,
             reviewStatus: true,
             voidedAt: true,
+            createdAt: true,
           },
         });
         const lockedSummary = computePaymentSummary(
@@ -286,6 +308,11 @@ export class BuyerPaymentProofService {
           asSummable(payments),
         );
         assertAcceptsProofs(current, lockedSummary.pendingAmount, new Date());
+        if (hourlyBuyerProofCount(payments, new Date()) >= MAX_BUYER_PROOFS_PER_HOUR) {
+          throw new BadRequestException(
+            "Se alcanzó el límite de comprobantes para este pedido. Inténtalo más tarde.",
+          );
+        }
         const availableCents =
           toCents(lockedSummary.pendingAmount) - pendingProofCents(payments);
         if (parsed.cents > availableCents) {
