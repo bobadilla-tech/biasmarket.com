@@ -23,7 +23,7 @@ describe("ExpireOrdersSchedulerService", () => {
 
     await service.onModuleInit();
 
-    expect(queue.upsertJobScheduler).toHaveBeenCalledTimes(2);
+    expect(queue.upsertJobScheduler).toHaveBeenCalledTimes(3);
     expect(queue.upsertJobScheduler).toHaveBeenCalledWith(
       EXPIRE_ORDERS_SCHEDULER_ID,
       { pattern: EXPIRE_ORDERS_CRON_PATTERN },
