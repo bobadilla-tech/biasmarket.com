@@ -75,6 +75,9 @@ export class PublicOrderPaymentResponseDto {
     enum: ["N_A", "PENDING_REVIEW", "APPROVED", "REJECTED"],
   })
   reviewStatus: "N_A" | "PENDING_REVIEW" | "APPROVED" | "REJECTED";
+
+  @ApiProperty({ type: String, nullable: true })
+  rejectionReason: string | null;
 }
 
 export const PUBLIC_TIMELINE_EVENT_TYPES = [
