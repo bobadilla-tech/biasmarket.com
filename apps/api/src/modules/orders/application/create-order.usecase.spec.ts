@@ -57,7 +57,12 @@ describe("CreateOrderUseCase", () => {
     orderPayment: { create: Mock };
     whatsAppMessageTemplate: { findUnique: Mock };
   };
-  let notifications: { syncStockAlerts: Mock; createIfNotOpen: Mock };
+  let notifications: {
+    syncStockAlerts: Mock;
+    enqueueStockAlertPushes: Mock;
+    createIfNotOpen: Mock;
+    pushToStoreOwner: Mock;
+  };
   let customerAccounts: {
     findOrCreateCustomer: Mock;
     sendVerificationEmail: Mock;
@@ -99,7 +104,12 @@ describe("CreateOrderUseCase", () => {
       orderPayment: { create: vi.fn() },
       whatsAppMessageTemplate: { findUnique: vi.fn() },
     };
-    notifications = { syncStockAlerts: vi.fn(), createIfNotOpen: vi.fn() };
+    notifications = {
+      syncStockAlerts: vi.fn().mockResolvedValue([]),
+      enqueueStockAlertPushes: vi.fn().mockResolvedValue(undefined),
+      createIfNotOpen: vi.fn(),
+      pushToStoreOwner: vi.fn().mockResolvedValue(undefined),
+    };
     customerAccounts = {
       findOrCreateCustomer: vi.fn(),
       sendVerificationEmail: vi.fn(),
@@ -293,6 +303,7 @@ describe("CreateOrderUseCase", () => {
   });
 
   it("attaches a BUYER_SUBMITTED/PENDING_REVIEW payment for the order total when a proof is uploaded", async () => {
+    notifications.createIfNotOpen.mockResolvedValue({ id: "notice-1" });
     prisma.product.findUnique.mockResolvedValue({
       id: "product-1",
       storeId: store.id,
@@ -340,6 +351,12 @@ describe("CreateOrderUseCase", () => {
       }),
       prisma,
     );
+    expect(notifications.pushToStoreOwner).toHaveBeenCalledWith({
+      storeId: store.id,
+      title: "Comprobante de pago recibido",
+      body: "Un comprador envió un comprobante de pago para revisar.",
+      data: { type: "PAYMENT_PROOF_SUBMITTED", entityId: "order-1" },
+    });
   });
 
   it("does not create a payment row when no proof was uploaded", async () => {

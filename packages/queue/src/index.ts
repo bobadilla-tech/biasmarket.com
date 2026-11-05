@@ -2,6 +2,12 @@ export { buildRedisConnection } from "./connection.js";
 export { QUEUE_NAMES, type QueueName } from "./queue-names.js";
 export { defaultJobOptions } from "./default-job-options.js";
 export {
+  PUSH_JOB_NAME,
+  expoPushPayloadSchema,
+  expoPushTokenSchema,
+  type ExpoPushPayload,
+} from "./jobs/push.jobs.js";
+export {
   PING_JOB_NAME,
   type PingJobPayload,
   pingJobPayloadSchema,

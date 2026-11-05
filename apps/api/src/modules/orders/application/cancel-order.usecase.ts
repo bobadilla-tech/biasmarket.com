@@ -7,6 +7,7 @@ import { CancelOrderDto } from "../dto/cancel-order.dto.js";
 import { PrismaService } from "../../../prisma/prisma.service.js";
 import { OrderRepository } from "../infrastructure/order.repository.js";
 import { NotificationsService } from "../../notifications/notifications.service.js";
+import type { StockAlertPush } from "../../notifications/notifications.service.js";
 import { Order } from "../domain/order.entity.js";
 import { OrderEventsService } from "./order-events.service.js";
 import { RESERVED_HOLD_STATUSES } from "../domain/hold-statuses.js";
@@ -87,7 +88,8 @@ export class CancelOrderUseCase {
 
     const releaseStock = RESERVED_HOLD_STATUSES.includes(row.paymentStatus);
 
-    return this.prisma.$transaction(async (tx) => {
+    const stockAlerts: StockAlertPush[] = [];
+    const order = await this.prisma.$transaction(async (tx) => {
       // Guard against a concurrent cancel/review/advance of the same order:
       // only proceed if neither state axis changed since the entity validated
       // the transition, same pattern as ReviewPaymentUseCase's updateMany guard.
@@ -132,11 +134,13 @@ export class CancelOrderUseCase {
               where: { id: item.productId },
             });
             if (product) {
-              await this.notifications.syncStockAlerts(
-                tx,
-                store,
-                product,
-                updatedVariant,
+              stockAlerts.push(
+                ...(await this.notifications.syncStockAlerts(
+                  tx,
+                  store,
+                  product,
+                  updatedVariant,
+                )),
               );
             }
           }
@@ -170,5 +174,7 @@ export class CancelOrderUseCase {
 
       return tx.order.findUniqueOrThrow({ where: { id: orderId } });
     });
+    await this.notifications.enqueueStockAlertPushes(stockAlerts);
+    return order;
   }
 }

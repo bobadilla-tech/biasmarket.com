@@ -3,6 +3,7 @@ import { Prisma } from "@biasmarket/db";
 import { computePaymentSummary } from "../../../common/payment-summary.js";
 import { PrismaService } from "../../../prisma/prisma.service.js";
 import { NotificationsService } from "../../notifications/notifications.service.js";
+import type { StockAlertPush } from "../../notifications/notifications.service.js";
 import { Order } from "../domain/order.entity.js";
 import { OrderEventsService } from "./order-events.service.js";
 import { RESERVED_HOLD_STATUSES } from "../domain/hold-statuses.js";
@@ -45,6 +46,7 @@ export class ExpireOrdersUseCase {
         order.payments,
       );
 
+      const stockAlerts: StockAlertPush[] = [];
       try {
         await this.prisma.$transaction(async (tx) => {
           // Guard against a seller decision (verify/reject) landing between
@@ -109,16 +111,19 @@ export class ExpireOrdersUseCase {
                 where: { id: item.productId },
               });
               if (product) {
-                await this.notifications.syncStockAlerts(
-                  tx,
-                  store,
-                  product,
-                  updatedVariant,
+                stockAlerts.push(
+                  ...(await this.notifications.syncStockAlerts(
+                    tx,
+                    store,
+                    product,
+                    updatedVariant,
+                  )),
                 );
               }
             }
           }
         });
+        await this.notifications.enqueueStockAlertPushes(stockAlerts);
       } catch (error) {
         // Keep sweeping the rest of the batch even if one order fails.
         this.logger.error(

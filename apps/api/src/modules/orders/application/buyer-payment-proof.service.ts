@@ -242,7 +242,8 @@ export class BuyerPaymentProofService {
     );
 
     try {
-      return await this.prisma.$transaction(async (tx) => {
+      let notifySeller = false;
+      const payment = await this.prisma.$transaction(async (tx) => {
         // Row-lock the order so concurrent submissions serialize instead of
         // all passing the re-check below on the same pre-commit snapshot
         // (READ COMMITTED does not see uncommitted rows). The second
@@ -325,7 +326,7 @@ export class BuyerPaymentProofService {
         });
         // Dedups against an already-open notification for this order (see
         // NotificationsService.createIfNotOpen).
-        await this.notifications.createIfNotOpen(
+        const notification = await this.notifications.createIfNotOpen(
           {
             storeId: order.storeId,
             type: "PAYMENT_PROOF_SUBMITTED",
@@ -338,8 +339,18 @@ export class BuyerPaymentProofService {
           },
           tx,
         );
+        notifySeller = Boolean(notification);
         return created;
       });
+      if (notifySeller) {
+        await this.notifications.pushToStoreOwner({
+          storeId: order.storeId,
+          title: "Comprobante de pago recibido",
+          body: "Un comprador envió un comprobante de pago para revisar.",
+          data: { type: "PAYMENT_PROOF_SUBMITTED", entityId: order.id },
+        });
+      }
+      return payment;
     } catch (error) {
       // The object was uploaded before the transaction; do not leave it
       // orphaned. Best effort, and the URL is not logged.

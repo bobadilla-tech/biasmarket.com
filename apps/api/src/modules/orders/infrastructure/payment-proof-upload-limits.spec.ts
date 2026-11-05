@@ -32,6 +32,7 @@ import { VoidOrderPaymentUseCase } from "../application/void-order-payment.useca
 import { CustomerOrderPaymentsController } from "./customer-order-payments.controller.js";
 import { OrderController } from "./order.controller.js";
 import { OrderRepository } from "./order.repository.js";
+import { NotificationsService } from "../../notifications/notifications.service.js";
 
 const MB = 1024 * 1024;
 
@@ -121,6 +122,7 @@ const routes: Route[] = [
           { provide: PrismaService, useValue: {} },
           { provide: StorageService, useValue: {} },
           { provide: OrderEventsService, useValue: {} },
+          { provide: NotificationsService, useValue: {} },
         ],
       })
         .overrideGuard(AuthGuard)

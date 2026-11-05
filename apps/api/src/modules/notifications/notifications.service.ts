@@ -1,6 +1,7 @@
 import {
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from "@nestjs/common";
 import type {
@@ -11,12 +12,101 @@ import type {
   Store,
 } from "@biasmarket/db";
 import { PrismaService } from "../../prisma/prisma.service.js";
+import { InjectQueue } from "@nestjs/bullmq";
+import type { Queue } from "bullmq";
+import {
+  expoPushPayloadSchema,
+  PUSH_JOB_NAME,
+  QUEUE_NAMES,
+} from "@biasmarket/queue";
 
 type Client = Prisma.TransactionClient | PrismaService;
 
+export type StockAlertPush = {
+  storeId: string;
+  type: "LOW_STOCK" | "OUT_OF_STOCK";
+  entityType: "ProductVariant" | "Product";
+  entityId: string;
+  title: string;
+  body: string;
+};
+
 @Injectable()
 export class NotificationsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(NotificationsService.name);
+  constructor(
+    private prisma: PrismaService,
+    @InjectQueue(QUEUE_NAMES.PUSH) private pushQueue: Queue,
+  ) {}
+
+  private async enqueuePush(payload: unknown) {
+    try {
+      await this.pushQueue.add(
+        PUSH_JOB_NAME,
+        expoPushPayloadSchema.parse(payload),
+      );
+    } catch (error) {
+      // Push is additive: queue or payload failures must not break proof
+      // submission, review, or the existing in-app notification path.
+      this.logger.warn(
+        `Could not enqueue push notification (${errorName(error)})`,
+      );
+    }
+  }
+
+  async pushToBuyer(
+    buyerAccountId: string | null,
+    title: string,
+    body: string,
+    data: Record<string, unknown>,
+  ) {
+    if (!buyerAccountId) return;
+    try {
+      const tokens = await this.prisma.deviceToken.findMany({
+        where: { buyerAccountId },
+        select: { expoPushToken: true },
+      });
+      await Promise.all(
+        tokens.map(({ expoPushToken }) =>
+          this.enqueuePush({ to: expoPushToken, title, body, data }),
+        ),
+      );
+    } catch (error) {
+      // A notification lookup or queue failure must not affect payment review.
+      this.logger.warn(
+        `Could not load buyer push tokens (${errorName(error)})`,
+      );
+    }
+  }
+
+  async pushToStoreOwner(params: {
+    storeId: string;
+    title: string;
+    body: string;
+    data: Record<string, unknown>;
+  }) {
+    try {
+      const store = await this.prisma.store.findUnique({
+        where: { id: params.storeId },
+        select: { ownerId: true },
+      });
+      if (!store) return;
+      const tokens = await this.prisma.deviceToken.findMany({
+        where: { userId: store.ownerId },
+        select: { expoPushToken: true },
+      });
+      await Promise.all(
+        tokens.map(({ expoPushToken }) =>
+          this.enqueuePush({ ...params, to: expoPushToken }),
+        ),
+      );
+    } catch (error) {
+      // A notification lookup or queue failure must not affect checkout.
+      this.logger.warn(
+        `Could not load seller push tokens (${errorName(error)})`,
+      );
+    }
+  }
 
   private async assertOwnership(storeId: string, userId: string) {
     const store = await this.prisma.store.findUnique({
@@ -147,8 +237,9 @@ export class NotificationsService {
     store: Store,
     product: Product,
     variant: ProductVariant,
-  ) {
-    if (!store.lowStockAlertsEnabled) return;
+  ): Promise<StockAlertPush[]> {
+    if (!store.lowStockAlertsEnabled) return [];
+    const pushes: StockAlertPush[] = [];
 
     await this.syncEntityStockAlert(
       client,
@@ -157,6 +248,7 @@ export class NotificationsService {
       variant.id,
       variant.stock === null ? null : variant.stock - variant.reserved,
       variant.name,
+      pushes,
     );
 
     const siblingVariants = await client.productVariant.findMany({
@@ -177,6 +269,25 @@ export class NotificationsService {
       product.id,
       productAvailable,
       product.name,
+      pushes,
+    );
+    return pushes;
+  }
+
+  async enqueueStockAlertPushes(pushes: StockAlertPush[]): Promise<void> {
+    await Promise.all(
+      pushes.map((alert) =>
+        this.pushToStoreOwner({
+          storeId: alert.storeId,
+          title: alert.title,
+          body: alert.body,
+          data: {
+            type: alert.type,
+            entityType: alert.entityType,
+            entityId: alert.entityId,
+          },
+        }),
+      ),
     );
   }
 
@@ -187,13 +298,14 @@ export class NotificationsService {
     entityId: string,
     available: number | null,
     name: string,
+    pushes: StockAlertPush[],
   ) {
     if (available === null) {
       await this.resolveOpenStockAlerts(store.id, entityType, entityId, client);
       return;
     }
     if (available <= 0) {
-      await this.createIfNotOpen(
+      const created = await this.createIfNotOpen(
         {
           storeId: store.id,
           type: "OUT_OF_STOCK",
@@ -204,10 +316,20 @@ export class NotificationsService {
         },
         client,
       );
+      if (created) {
+        pushes.push({
+          storeId: store.id,
+          type: "OUT_OF_STOCK",
+          entityType,
+          entityId,
+          title: `Sin stock: ${name}`,
+          body: `${name} se quedó sin unidades disponibles.`,
+        });
+      }
       return;
     }
     if (available <= store.lowStockThreshold) {
-      await this.createIfNotOpen(
+      const created = await this.createIfNotOpen(
         {
           storeId: store.id,
           type: "LOW_STOCK",
@@ -218,8 +340,22 @@ export class NotificationsService {
         },
         client,
       );
+      if (created) {
+        pushes.push({
+          storeId: store.id,
+          type: "LOW_STOCK",
+          entityType,
+          entityId,
+          title: `Stock bajo: ${name}`,
+          body: `${name} tiene ${available} unidades disponibles.`,
+        });
+      }
       return;
     }
     await this.resolveOpenStockAlerts(store.id, entityType, entityId, client);
   }
+}
+
+function errorName(error: unknown): string {
+  return error instanceof Error ? error.name : "unknown error";
 }

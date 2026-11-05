@@ -295,12 +295,13 @@ export class ProductsService {
       where: { id: storeId },
     });
     if (store) {
-      await this.notifications.syncStockAlerts(
+      const alerts = await this.notifications.syncStockAlerts(
         this.prisma,
         store,
         product,
         updated,
       );
+      await this.notifications.enqueueStockAlertPushes(alerts);
     }
     return updated;
   }

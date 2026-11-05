@@ -7,9 +7,14 @@ import { GlobalAccountController } from "./global-account.controller.js";
 import { CustomerAuthService } from "./customer-auth.service.js";
 import { CustomerSessionGuard } from "./customer-session.guard.js";
 import { OriginGuard } from "./origin.guard.js";
+import { DeviceTokensModule } from "../device-tokens/device-tokens.module.js";
 
 @Module({
-  imports: [ThrottlerModule.forRoot([{ ttl: 60_000, limit: 5 }]), OrdersModule],
+  imports: [
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 5 }]),
+    OrdersModule,
+    DeviceTokensModule,
+  ],
   controllers: [
     CustomerAuthController,
     GlobalAccountController,

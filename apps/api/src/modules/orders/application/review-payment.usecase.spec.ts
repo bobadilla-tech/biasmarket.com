@@ -26,7 +26,10 @@ describe("ReviewPaymentUseCase", () => {
     $transaction: Mock;
   };
   let events: { record: Mock };
-  let notifications: { syncStockAlerts: Mock };
+  let notifications: {
+    syncStockAlerts: Mock;
+    enqueueStockAlertPushes: Mock;
+  };
   let mailer: {
     send: Mock<
       (params: {
@@ -56,7 +59,10 @@ describe("ReviewPaymentUseCase", () => {
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
     };
     events = { record: vi.fn() };
-    notifications = { syncStockAlerts: vi.fn() };
+    notifications = {
+      syncStockAlerts: vi.fn().mockResolvedValue([]),
+      enqueueStockAlertPushes: vi.fn().mockResolvedValue(undefined),
+    };
     mailer = { send: vi.fn().mockResolvedValue({ id: "email-1" }) };
 
     const module: TestingModule = await Test.createTestingModule({

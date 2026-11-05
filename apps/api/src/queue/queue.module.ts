@@ -24,6 +24,10 @@ import {
       name: QUEUE_NAMES.ORDERS,
       defaultJobOptions,
     }),
+    BullModule.registerQueue({
+      name: QUEUE_NAMES.PUSH,
+      defaultJobOptions,
+    }),
   ],
   exports: [BullModule],
 })

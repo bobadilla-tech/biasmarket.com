@@ -429,6 +429,7 @@ describe("customer account + customer auth (e2e)", () => {
       let bearerProductId: string | undefined;
       let bearerOrder: string | undefined;
       let bearerToken: string | undefined;
+      let bearerDeviceToken: string | undefined;
       let bearerApp: INestApplication | undefined;
       let bearerPrisma: PrismaService | undefined;
 
@@ -596,6 +597,36 @@ describe("customer account + customer auth (e2e)", () => {
           .expect(200);
         assertMatchesSchema(meRes.body, profileSchema, openapi.components);
 
+        bearerDeviceToken = `ExpoPushToken[buyer-${runId.replaceAll("-", "")}]`;
+        const tokenRes = await request(bearerApp.getHttpServer())
+          .post(`/stores/${slug}/account/devices`)
+          .set("Authorization", `Bearer ${bearerToken}`)
+          .send({ expoPushToken: bearerDeviceToken, platform: "android" })
+          .expect(201);
+        expect(tokenRes.body).toEqual({
+          id: expect.any(String),
+          platform: "android",
+        });
+        const deviceRow = await bearerPrisma!.deviceToken.findUnique({
+          where: { expoPushToken: bearerDeviceToken },
+        });
+        expect(deviceRow).toMatchObject({
+          userId: null,
+          buyerAccountId: expect.any(String),
+          platform: "android",
+        });
+        await request(bearerApp.getHttpServer())
+          .delete(`/stores/${slug}/account/devices`)
+          .set("Authorization", `Bearer ${bearerToken}`)
+          .send({ expoPushToken: bearerDeviceToken, platform: "android" })
+          .expect(200);
+        expect(
+          await bearerPrisma!.deviceToken.findUnique({
+            where: { expoPushToken: bearerDeviceToken },
+          }),
+        ).toBeNull();
+        bearerDeviceToken = undefined;
+
         // --- changePassword with X-Client: mobile returns fresh token ---
         const newPassword = "correcthorsebatterystaple2";
         const changePwRes = await request(bearerApp.getHttpServer())
@@ -639,6 +670,11 @@ describe("customer account + customer auth (e2e)", () => {
           .expect(401);
       } finally {
         // Cleanup DB rows
+        if (bearerDeviceToken) {
+          await bearerPrisma!.deviceToken.deleteMany({
+            where: { expoPushToken: bearerDeviceToken },
+          });
+        }
         if (bearerOrder) {
           // Checkout creates an OrderPayment row (see create-order.usecase.ts)
           // and OrderPayment.order has no cascade delete — payments must go
