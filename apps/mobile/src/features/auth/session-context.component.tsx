@@ -15,6 +15,11 @@ jest.mock("./session-storage.js", () => ({
   deleteBuyerSession: jest.fn(),
 }));
 
+jest.mock("./push-token.js", () => ({
+  registerBuyerPushToken: jest.fn(),
+  unregisterBuyerPushToken: jest.fn(),
+}));
+
 jest.mock("@biasmarket/types", () => ({
   ...(jest.requireActual("@biasmarket/types") as Record<string, unknown>),
   customerAuth: {
@@ -38,11 +43,17 @@ import {
   setSessionRefreshHandler,
   setUnauthorizedHandler,
 } from "./api-client.js";
+import {
+  registerBuyerPushToken,
+  unregisterBuyerPushToken,
+} from "./push-token.js";
 
 const mockRead = jest.mocked(readBuyerSession);
 const mockWrite = jest.mocked(writeBuyerSession);
 const mockRemove = jest.mocked(deleteBuyerSession);
 const mockLogin = jest.mocked(customerAuth.login);
+const mockRegisterPushToken = jest.mocked(registerBuyerPushToken);
+const mockUnregisterPushToken = jest.mocked(unregisterBuyerPushToken);
 
 function SessionProbe() {
   const { status, signIn, signOut } = useBuyerSession();
@@ -83,6 +94,8 @@ describe("buyer session lifecycle", () => {
     mockWrite.mockResolvedValue(undefined);
     mockRemove.mockResolvedValue(undefined);
     mockLogin.mockResolvedValue({ ok: true, sessionToken: "buyer-token" });
+    mockRegisterPushToken.mockResolvedValue(undefined);
+    mockUnregisterPushToken.mockResolvedValue(undefined);
     configureMobileApiClient();
     setMobileBearerToken(null);
     setSessionRefreshHandler(undefined);
@@ -116,6 +129,7 @@ describe("buyer session lifecycle", () => {
       ),
     );
     expect(mockRemove).toHaveBeenCalledTimes(1);
+    expect(mockUnregisterPushToken).toHaveBeenCalledWith("demo");
   });
 
   it("clears buyer-specific query data after a successful sign-in", async () => {
@@ -181,6 +195,9 @@ describe("buyer session lifecycle", () => {
       new Headers(fetchMock.mock.calls[0]?.[1]?.headers).get("Authorization"),
     ).toBe("Bearer buyer-token");
     expect(mockRemove).toHaveBeenCalledTimes(1);
+    expect(mockRegisterPushToken).toHaveBeenCalledWith("demo", {
+      requestPermission: true,
+    });
   });
 
   it("persists a rotated token and unregisters the handler on unmount", async () => {

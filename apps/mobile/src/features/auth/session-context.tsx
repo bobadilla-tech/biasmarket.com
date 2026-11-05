@@ -22,6 +22,10 @@ import {
   setUnauthorizedHandler,
 } from "./api-client";
 import { useMobileI18n } from "../../i18n/mobile-i18n";
+import {
+  registerBuyerPushToken,
+  unregisterBuyerPushToken,
+} from "./push-token.js";
 
 type SessionStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -49,6 +53,7 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
   const queryClient = useQueryClient();
   const sessionGeneration = useRef(0);
   const storageQueue = useRef<Promise<void>>(Promise.resolve());
+  const requestPushPermission = useRef(false);
   const [status, setStatus] = useState<SessionStatus>("loading");
   const [storeSlug, setStoreSlug] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -155,6 +160,16 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
     };
   }, [clearLocalSession, refreshSessionToken, runStorageOperation]);
 
+  useEffect(() => {
+    if (status !== "authenticated" || !storeSlug) return;
+    const requestPermission = requestPushPermission.current;
+    requestPushPermission.current = false;
+    void registerBuyerPushToken(storeSlug, { requestPermission }).catch(() => {
+      // Push setup is optional and must not change whether the buyer can use
+      // their authenticated session.
+    });
+  }, [status, storeSlug]);
+
   const signIn = useCallback(
     async (slug: string, phone: string, password: string) => {
       const generation = ++sessionGeneration.current;
@@ -183,6 +198,7 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
       queryClient.removeQueries({ queryKey: ["private-payment-proof"] });
       setMobileBearerToken(token);
       setStoreSlug(slug);
+      requestPushPermission.current = true;
       setStatus("authenticated");
     },
     [queryClient, runStorageOperation, t],
@@ -213,8 +229,14 @@ export function BuyerSessionProvider({ children }: PropsWithChildren) {
 
   const signOut = useCallback(async () => {
     setError(null);
+    if (storeSlug) {
+      await unregisterBuyerPushToken(storeSlug).catch(() => {
+        // Signing out remains available while offline; a later login
+        // re-registers the device token under the active buyer account.
+      });
+    }
     await clearLocalSession();
-  }, [clearLocalSession]);
+  }, [clearLocalSession, storeSlug]);
 
   const value = useMemo(
     () => ({

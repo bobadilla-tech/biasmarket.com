@@ -65,6 +65,13 @@
       ],
       "expo-image",
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#208AEF"
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": false,
