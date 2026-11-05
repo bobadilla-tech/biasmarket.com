@@ -29,11 +29,22 @@ const PAYMENT_TRANSITIONS: Record<PaymentStatus, PaymentStatus[]> = {
     "REJECTED",
     "CANCELLED",
   ],
-  PAYMENT_SUBMITTED: ["PARTIALLY_PAID", "VERIFIED", "REJECTED", "CANCELLED"],
+  PAYMENT_SUBMITTED: [
+    "PENDING_PAYMENT",
+    "PARTIALLY_PAID",
+    "VERIFIED",
+    "REJECTED",
+    "CANCELLED",
+  ],
   // Payment verification is terminal for payment review, but not for the
   // independent order-cancellation axis: sellers may still cancel a verified
   // order until fulfillment is completed and record how funds were resolved.
-  VERIFIED: ["CANCELLED"],
+  VERIFIED: [
+    "PARTIALLY_PAID",
+    "PENDING_PAYMENT",
+    "PAYMENT_SUBMITTED",
+    "CANCELLED",
+  ],
   REJECTED: [],
   CANCELLED: [],
 };
