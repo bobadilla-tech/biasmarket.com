@@ -1,5 +1,5 @@
-import { InjectQueue } from "@nestjs/bullmq";
-import { Injectable, Logger, type OnModuleInit } from "@nestjs/common";
+import { getQueueToken, InjectQueue } from "@nestjs/bullmq";
+import { Inject, Injectable, Logger, type OnModuleInit } from "@nestjs/common";
 import type { Queue } from "bullmq";
 import {
   ASSISTED_IDENTITY_RETENTION_CRON_PATTERN,
@@ -26,7 +26,7 @@ export class ExpireOrdersSchedulerService implements OnModuleInit {
 
   constructor(
     @InjectQueue(QUEUE_NAMES.ORDERS) private queue: Queue,
-    @InjectQueue(QUEUE_NAMES.PAYMENT_PROOF_SWEEP)
+    @Inject(getQueueToken(QUEUE_NAMES.PAYMENT_PROOF_SWEEP))
     private proofSweepQueue: Queue,
   ) {}
 
