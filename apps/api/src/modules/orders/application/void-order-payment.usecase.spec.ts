@@ -62,7 +62,9 @@ describe("VoidOrderPaymentUseCase", () => {
       },
       auditLog: { create: vi.fn() },
       orderItem: {
-        findMany: vi.fn().mockResolvedValue([{ variantId: "variant-1", quantity: 1 }]),
+        findMany: vi
+          .fn()
+          .mockResolvedValue([{ variantId: "variant-1", quantity: 1 }]),
       },
       productVariant: { updateMany: vi.fn() },
     };
