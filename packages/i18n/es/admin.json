@@ -5,6 +5,7 @@
     "stores": "Tiendas",
     "coupons": "Cupones",
     "users": "Usuarios",
+    "metrics": "Métricas",
     "comingSoon": "Pronto",
     "navigationLabel": "Navegación de administración",
     "signOut": "Cerrar sesión"
@@ -108,6 +109,73 @@
       "email": "Correo",
       "redeemedAt": "Canjeado",
       "expiresAt": "Premium hasta"
+    }
+  },
+  "metrics": {
+    "title": "Métricas del piloto de órdenes asistidas",
+    "subtitle": "Indicadores de adopción, apertura de links, reclamo de cuentas y validación de pagos.",
+    "filters": {
+      "dateRange": "Rango de fechas",
+      "allTime": "Todo el historial",
+      "last7Days": "Últimos 7 días",
+      "last30Days": "Últimos 30 días",
+      "store": "Tienda",
+      "allStores": "Todas las tiendas"
+    },
+    "hypothesis": {
+      "title": "Hipótesis de reclamo del 30%",
+      "description": "El objetivo inicial del piloto es alcanzar al menos un 30% de reclamos con cuenta Google entre órdenes con pago validado. Si la tasa es inferior, se debe evaluar la activación de recordatorios más visibles.",
+      "onTarget": "En meta (≥ 30%)",
+      "belowTarget": "Por debajo de la meta (< 30%) — Evaluar recordatorios",
+      "evaluationAlert": "La tasa de reclamo con pago validado está por debajo del 30%. Se recomienda evaluar recordatorios o avisos más visibles en el flujo de entrega."
+    },
+    "cards": {
+      "totalAssisted": "Órdenes asistidas",
+      "totalMarketplace": "Órdenes marketplace",
+      "linkOpenedRate": "Apertura de link",
+      "overallClaimRate": "Reclamo general",
+      "validatedClaimRate": "Reclamo con pago validado",
+      "buyerNoticeRate": "Aviso manual (G1)",
+      "confirmedReceivedRate": "Recepción confirmada (G3)",
+      "timeToPayment": "Tiempo a pago validado",
+      "paymentSources": "Origen de pagos",
+      "sellerRecorded": "Registrado por vendedor",
+      "buyerSubmitted": "Comprobante de comprador",
+      "targetComparison": "Meta: 30%",
+      "avgMinutes": "Promedio {minutes} min",
+      "medianMinutes": "Mediana {minutes} min",
+      "notAvailable": "N/D"
+    },
+    "funnel": {
+      "title": "Embudo de invitaciones a guardar orden",
+      "subtitle": "Interacciones con el diálogo de invitación a guardar la orden",
+      "moment": "Momento",
+      "shown": "Mostrado",
+      "clicked": "Clic en Guardar",
+      "dismissed": "Ahora no",
+      "claimed": "Reclamado",
+      "total": "Total",
+      "moments": {
+        "pago_validado": "Pago validado",
+        "entrega": "Entrega",
+        "banner": "Banner recurrente",
+        "adelanto_linea_de_tiempo": "Línea de tiempo",
+        "unspecified": "Sin especificar"
+      }
+    },
+    "table": {
+      "title": "Desglose semanal por tienda",
+      "subtitle": "Volumen, ingresos y retención de compradores por semana y tienda",
+      "week": "Semana",
+      "store": "Tienda",
+      "assistedOrders": "Órdenes asistidas",
+      "marketplaceOrders": "Órdenes marketplace",
+      "assistedRevenue": "Venta asistida",
+      "marketplaceRevenue": "Venta marketplace",
+      "distinctBuyers": "Compradores únicos",
+      "repeatBuyers": "Compradores recurrentes",
+      "repeatRate": "Tasa de recurrencia",
+      "empty": "No hay datos de órdenes para el período seleccionado."
     }
   }
 }
