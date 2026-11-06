@@ -2448,11 +2448,12 @@
           {
             "name": "Idempotency-Key",
             "in": "header",
-            "description": "UUID reused when retrying the same checkout submission.",
+            "description": "UUID v4 reused when retrying the same checkout submission.",
             "required": false,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
             }
           }
         ],
