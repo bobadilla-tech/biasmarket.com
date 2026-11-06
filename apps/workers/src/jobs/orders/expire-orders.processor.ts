@@ -5,7 +5,6 @@ import {
   ASSISTED_IDENTITY_RETENTION_JOB_NAME,
   EXPIRE_ORDERS_JOB_NAME,
   INTERNAL_JOBS_SECRET_HEADER,
-  PAYMENT_PROOF_SWEEP_JOB_NAME,
   QUEUE_NAMES,
 } from "@biasmarket/queue";
 import { requiredEnv } from "../../config/env.validation.js";
@@ -26,18 +25,15 @@ export class ExpireOrdersProcessor extends ObservedProcessor {
   ): Promise<
     | { cancelled: number }
     | { anonymized: number }
-    | { deleted: number; failed: number }
   > {
     const internalApiUrl = requiredEnv("INTERNAL_API_URL");
     const secret = requiredEnv("INTERNAL_JOBS_SECRET");
     const endpoint =
       job.name === ASSISTED_IDENTITY_RETENTION_JOB_NAME
         ? "assisted-identity-retention-sweep"
-        : job.name === PAYMENT_PROOF_SWEEP_JOB_NAME
-          ? "orphan-payment-proof-sweep"
-          : job.name === EXPIRE_ORDERS_JOB_NAME
-            ? "expire-sweep"
-            : null;
+        : job.name === EXPIRE_ORDERS_JOB_NAME
+          ? "expire-sweep"
+          : null;
     if (!endpoint) {
       throw new Error(`Unsupported orders job: ${job.name}`);
     }
@@ -59,7 +55,7 @@ export class ExpireOrdersProcessor extends ObservedProcessor {
     const result = (await response.json()) as
       | { cancelled: number }
       | { anonymized: number }
-      | { deleted: number; failed: number };
+;
     if ("cancelled" in result) {
       this.logger.log(
         `Expire-sweep job ${job.id} cancelled ${result.cancelled} order(s)`,
@@ -67,10 +63,6 @@ export class ExpireOrdersProcessor extends ObservedProcessor {
     } else if ("anonymized" in result) {
       this.logger.log(
         `Assisted identity-retention job ${job.id} anonymized ${result.anonymized} order(s)`,
-      );
-    } else {
-      this.logger.log(
-        `Orphan proof sweep job ${job.id} deleted ${result.deleted} object(s); ${result.failed} failed`,
       );
     }
     return result;
