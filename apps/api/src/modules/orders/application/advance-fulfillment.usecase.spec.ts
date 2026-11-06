@@ -74,7 +74,7 @@ describe("AdvanceFulfillmentUseCase", () => {
   });
 
   it("advances fulfillment when payment is VERIFIED", async () => {
-    prisma.order.findUnique.mockResolvedValue({
+    prisma.order.findFirst.mockResolvedValue({
       id: orderId,
       storeId,
       paymentStatus: "VERIFIED",
@@ -114,7 +114,7 @@ describe("AdvanceFulfillmentUseCase", () => {
   });
 
   it("rejects skipping a fulfillment state", async () => {
-    prisma.order.findUnique.mockResolvedValue({
+    prisma.order.findFirst.mockResolvedValue({
       id: orderId,
       storeId,
       paymentStatus: "VERIFIED",
