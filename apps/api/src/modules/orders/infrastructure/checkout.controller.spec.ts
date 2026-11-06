@@ -3,6 +3,7 @@ import {
   HttpException,
   NotFoundException,
 } from "@nestjs/common";
+import { HEADERS_METADATA } from "@nestjs/common/constants";
 import { vi } from "vitest";
 import {
   CheckoutController,
@@ -91,6 +92,15 @@ function setup() {
 }
 
 describe("checkout controller proof cleanup", () => {
+  it("marks public checkout responses as non-cacheable", () => {
+    expect(
+      Reflect.getMetadata(
+        HEADERS_METADATA,
+        CheckoutController.prototype.create,
+      ),
+    ).toContainEqual({ name: "Cache-Control", value: "no-store" });
+  });
+
   it("returns an existing replay before requiring or uploading proof", async () => {
     const { controller, createOrder, storage, paymentConfig } = setup();
     createOrder.findCheckoutReplay.mockResolvedValue(ORDER);

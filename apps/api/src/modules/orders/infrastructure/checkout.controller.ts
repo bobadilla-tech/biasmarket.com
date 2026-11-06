@@ -4,6 +4,7 @@ import {
   Headers,
   Controller,
   HttpException,
+  Header,
   Logger,
   Param,
   Post,
@@ -216,6 +217,7 @@ export class CheckoutController {
   })
   @UseInterceptors(FileInterceptor("file", { limits: CHECKOUT_UPLOAD_LIMITS }))
   @Post()
+  @Header("Cache-Control", "no-store")
   async create(
     @Param("slug") slug: string,
     @Body() body: Record<string, unknown>,
