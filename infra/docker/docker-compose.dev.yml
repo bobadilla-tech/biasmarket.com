@@ -91,9 +91,12 @@ services:
       - .env.example
       - path: .env.local
         required: false
+    environment:
+      - TURBO_CACHE_DIR=/turbo-cache
     command: sh infra/docker/scripts/api-dev.sh
     volumes:
       - ../..:/app
+      - api_turbo_cache:/turbo-cache
       - api_root_node_modules:/app/node_modules
       - api_app_node_modules:/app/apps/api/node_modules
       - api_db_node_modules:/app/packages/db/node_modules
@@ -130,9 +133,11 @@ services:
         required: false
     environment:
       - PORT=3002
+      - TURBO_CACHE_DIR=/turbo-cache
     command: sh infra/docker/scripts/workers-dev.sh
     volumes:
       - ../..:/app
+      - workers_turbo_cache:/turbo-cache
       - workers_root_node_modules:/app/node_modules
       - workers_app_node_modules:/app/apps/workers/node_modules
       - workers_queue_node_modules:/app/packages/queue/node_modules
@@ -165,9 +170,12 @@ services:
       - .env.example
       - path: .env.local
         required: false
+    environment:
+      - TURBO_CACHE_DIR=/turbo-cache
     command: sh infra/docker/scripts/web-dev.sh
     volumes:
       - ../..:/app
+      - web_turbo_cache:/turbo-cache
       - web_root_node_modules:/app/node_modules
       - web_app_node_modules:/app/apps/web/node_modules
       - web_design_tokens_node_modules:/app/packages/design-tokens/node_modules
@@ -187,6 +195,9 @@ volumes:
   db_data:
   minio_data:
   redis_data:
+  api_turbo_cache:
+  workers_turbo_cache:
+  web_turbo_cache:
   api_root_node_modules:
   api_app_node_modules:
   api_db_node_modules:
