@@ -16,7 +16,7 @@ const WINDOW_MS = 60_000;
 @Injectable()
 export class PublicProofThrottlerGuard implements CanActivate, OnModuleDestroy {
   private readonly redis =
-    process.env.NODE_ENV === "test"
+    process.env.VITEST_WORKER_ID != null
       ? null
       : new Redis(process.env.REDIS_URL!, { maxRetriesPerRequest: null });
 
