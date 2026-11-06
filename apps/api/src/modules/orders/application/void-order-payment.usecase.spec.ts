@@ -129,9 +129,9 @@ describe("VoidOrderPaymentUseCase", () => {
     expect(JSON.stringify(events.record.mock.calls)).not.toContain("rude");
   });
 
-  it("records nothing when the void is rejected", async () => {
+  it("records nothing when a cancelled order rejects the void", async () => {
     tx.order.findFirst.mockResolvedValueOnce({
-      paymentStatus: "VERIFIED",
+      paymentStatus: "CANCELLED",
       fulfillmentStatus: "ORDERING",
       requiredAmount: new Prisma.Decimal(100),
       currency: "PEN",
@@ -142,7 +142,7 @@ describe("VoidOrderPaymentUseCase", () => {
     expect(events.record).not.toHaveBeenCalled();
   });
 
-  it("rejects voiding after an order has been verified", async () => {
+  it("allows voiding a verified order before fulfillment advances", async () => {
     tx.order.findFirst.mockResolvedValueOnce({
       paymentStatus: "VERIFIED",
       fulfillmentStatus: "ORDERING",
@@ -151,9 +151,9 @@ describe("VoidOrderPaymentUseCase", () => {
 
     await expect(
       useCase.execute(orderId, paymentId, storeId, userId, "Mistake"),
-    ).rejects.toBeInstanceOf(BadRequestException);
-    expect(tx.orderPayment.update).not.toHaveBeenCalled();
-    expect(tx.auditLog.create).not.toHaveBeenCalled();
+    ).resolves.toMatchObject({ paymentId, orderId, paymentStatus: "PARTIALLY_PAID" });
+    expect(tx.orderPayment.update).toHaveBeenCalled();
+    expect(tx.auditLog.create).toHaveBeenCalled();
   });
 
   it("rejects voiding after fulfillment advances", async () => {
