@@ -30,7 +30,10 @@ export class PublicProofThrottlerGuard implements CanActivate, OnModuleDestroy {
     const count = await this.redis.incr(key);
     if (count === 1) await this.redis.pexpire(key, WINDOW_MS * 2);
     if (count > LIMIT) {
-      throw new HttpException("Too many requests", HttpStatus.TOO_MANY_REQUESTS);
+      throw new HttpException(
+        "Too many requests",
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
     }
     return true;
   }
