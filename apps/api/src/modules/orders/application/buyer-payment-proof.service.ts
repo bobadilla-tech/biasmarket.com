@@ -227,7 +227,9 @@ export class BuyerPaymentProofService {
     const storedOperationCode = parseOperationCode(operationCode);
     const parsed = parseAmount(amount);
     const now = new Date();
-    if (hourlyBuyerProofCount(order.payments, now) >= MAX_BUYER_PROOFS_PER_HOUR) {
+    if (
+      hourlyBuyerProofCount(order.payments, now) >= MAX_BUYER_PROOFS_PER_HOUR
+    ) {
       throw new BadRequestException(
         "Se alcanzó el límite de comprobantes para este pedido. Inténtalo más tarde.",
       );
@@ -308,7 +310,10 @@ export class BuyerPaymentProofService {
           asSummable(payments),
         );
         assertAcceptsProofs(current, lockedSummary.pendingAmount, new Date());
-        if (hourlyBuyerProofCount(payments, new Date()) >= MAX_BUYER_PROOFS_PER_HOUR) {
+        if (
+          hourlyBuyerProofCount(payments, new Date()) >=
+          MAX_BUYER_PROOFS_PER_HOUR
+        ) {
           throw new BadRequestException(
             "Se alcanzó el límite de comprobantes para este pedido. Inténtalo más tarde.",
           );
