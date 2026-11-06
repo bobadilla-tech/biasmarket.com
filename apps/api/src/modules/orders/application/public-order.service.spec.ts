@@ -155,6 +155,7 @@ describe("PublicOrderService", () => {
         amount: "40",
         createdAt: "2026-10-01T00:00:00.000Z",
         paidAt: "2026-09-30T17:00:00.000Z",
+        rejectionReason: null,
         reviewStatus: "N_A",
         voidedAt: null,
         hasProof: false,
