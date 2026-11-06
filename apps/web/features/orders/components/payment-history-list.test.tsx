@@ -72,6 +72,11 @@ test("a recorded payment of an open order can be voided", () => {
   expect(voidButton()).toBeTruthy();
 });
 
+test("a verified order can void its payment before fulfillment", () => {
+  renderList([payment()], { paymentStatus: "VERIFIED", fulfillmentStatus: "ORDERING" });
+  expect(voidButton()).toBeTruthy();
+});
+
 test("an approved buyer proof can be voided, a pending one cannot", () => {
   renderList([
     payment({ id: "a", source: "BUYER_SUBMITTED", reviewStatus: "APPROVED" }),
@@ -88,16 +93,16 @@ test("an approved buyer proof can be voided, a pending one cannot", () => {
 
 test.each([
   [
-    "a VERIFIED order",
-    { paymentStatus: "VERIFIED", fulfillmentStatus: "ORDERING" },
-  ],
-  [
     "a CANCELLED order",
     { paymentStatus: "CANCELLED", fulfillmentStatus: "ORDERING" },
   ],
   [
     "a REJECTED order",
     { paymentStatus: "REJECTED", fulfillmentStatus: "ORDERING" },
+  ],
+  [
+    "a verified order in transit",
+    { paymentStatus: "VERIFIED", fulfillmentStatus: "IN_TRANSIT" },
   ],
   [
     "an order in transit",
