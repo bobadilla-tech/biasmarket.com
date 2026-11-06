@@ -11,7 +11,6 @@ import { createHash } from "node:crypto";
 
 const LIMIT = 10;
 const WINDOW_MS = 60_000;
-const testCounters = new Map<string, { count: number; resetAt: number }>();
 
 /** Share the proof-upload burst limit for each secret link across API replicas. */
 @Injectable()
@@ -22,6 +21,7 @@ export class PublicProofThrottlerGuard implements CanActivate, OnModuleDestroy {
       : new Redis(process.env.REDIS_URL!, { maxRetriesPerRequest: null });
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    if (!this.redis) return true;
     const request = context.switchToHttp().getRequest<{
       params?: { token?: string };
     }>();
@@ -29,16 +29,8 @@ export class PublicProofThrottlerGuard implements CanActivate, OnModuleDestroy {
     const tokenHash = createHash("sha256").update(token).digest("hex");
     const window = Math.floor(Date.now() / WINDOW_MS);
     const key = `public-proof-throttle:${tokenHash}:${window}`;
-    let count: number;
-    if (this.redis) {
-      count = await this.redis.incr(key);
-      if (count === 1) await this.redis.pexpire(key, WINDOW_MS * 2);
-    } else {
-      const now = Date.now();
-      const entry = testCounters.get(key);
-      count = entry && entry.resetAt > now ? entry.count + 1 : 1;
-      testCounters.set(key, { count, resetAt: (window + 1) * WINDOW_MS });
-    }
+    const count = await this.redis.incr(key);
+    if (count === 1) await this.redis.pexpire(key, WINDOW_MS * 2);
     if (count > LIMIT) {
       throw new HttpException("Too many requests", HttpStatus.TOO_MANY_REQUESTS);
     }
@@ -47,6 +39,5 @@ export class PublicProofThrottlerGuard implements CanActivate, OnModuleDestroy {
 
   async onModuleDestroy(): Promise<void> {
     if (this.redis) await this.redis.quit();
-    else testCounters.clear();
   }
 }
