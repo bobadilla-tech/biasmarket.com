@@ -10,6 +10,9 @@
 //
 // Usage: node scripts/with-turbo-env.mjs <task> [turbo args...]
 import { spawn } from "node:child_process";
+import { createRequire } from "node:module";
+import os from "node:os";
+import path from "node:path";
 
 const DUMMY_DATABASE_URL =
   "postgresql://build:build@localhost:5432/build?schema=public";
@@ -25,19 +28,33 @@ if (args.length === 0) {
 const env = { ...process.env };
 env.DATABASE_URL ||= DUMMY_DATABASE_URL;
 
-// pnpm puts node_modules/.bin on PATH for package scripts, so `turbo` resolves.
-// On Windows it is a .cmd shim, which only spawns through a shell.
-const child = spawn("turbo", ["run", ...args], {
+// Run turbo's JS entrypoint with the current Node binary instead of the
+// `turbo` shim: no shell is involved (so Windows cmd.exe never re-parses
+// arguments such as paths containing `&`), and it works the same everywhere.
+const require = createRequire(import.meta.url);
+const turboPkgPath = require.resolve("turbo/package.json");
+const { bin } = require(turboPkgPath);
+const turboBin = path.resolve(
+  path.dirname(turboPkgPath),
+  typeof bin === "string" ? bin : bin.turbo,
+);
+
+const child = spawn(process.execPath, [turboBin, "run", ...args], {
   env,
   stdio: "inherit",
-  shell: process.platform === "win32",
 });
+
+// Forward termination signals so cancelling the wrapper (CI cancel, Ctrl+C
+// sent to the wrapper only) also stops turbo, then wait for it to exit.
+for (const signal of ["SIGINT", "SIGTERM"]) {
+  process.on(signal, () => child.kill(signal));
+}
 
 child.on("error", (err) => {
   console.error(`failed to start turbo: ${err.message}`);
   process.exit(1);
 });
 child.on("exit", (code, signal) => {
-  if (signal) process.kill(process.pid, signal);
-  else process.exit(code ?? 1);
+  if (signal) process.exit(128 + (os.constants.signals[signal] ?? 0));
+  process.exit(code ?? 1);
 });

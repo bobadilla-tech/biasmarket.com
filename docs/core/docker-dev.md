@@ -57,6 +57,15 @@ rm -rf apps/api/dist apps/workers/dist packages/*/dist
 pnpm docker:dev
 ```
 
+On Windows PowerShell (`rm -rf` does not work there). `dist/` folders are
+bind-mounted from the host, so `down -v` does **not** remove them:
+
+```powershell
+pnpm docker:dev:down
+Remove-Item -Recurse -Force -ErrorAction SilentlyContinue apps/api/dist, apps/workers/dist, packages/*/dist
+pnpm docker:dev
+```
+
 - **A service exits.** Read its logs:
   `docker compose -f
 infra/docker/docker-compose.dev.yml logs <api|web|workers>`.
@@ -75,10 +84,9 @@ export named ...`.** A workspace package's `dist/` is
   package) while a container builds packages.** Each dev container keeps its own
   Turbo cache in a named volume (`TURBO_CACHE_DIR=/turbo-cache`) rather than the
   bind-mounted host `.turbo/`, so a host `pnpm build` (e.g. on Windows) cannot
-  feed it a stale cache hit with missing `dist/` output. If you are
-  upgrading from an older checkout, do the clean rebuild above and
-  `docker compose -f infra/docker/docker-compose.dev.yml down -v` once so the
-  old volumes are recreated.
+  feed it a stale cache hit with missing `dist/` output. The cache volumes are
+  new, so upgrading needs no volume wipe (your database, Redis and MinIO data is
+  untouched); just do the clean rebuild above to drop host-built `dist/` output.
 - You do **not** need `pnpm install` or `pnpm build` on the host to run the
   Docker stack.
 
@@ -87,7 +95,8 @@ export named ...`.** A workspace package's `dist/` is
 `pnpm docker:dev` works from PowerShell, cmd or WSL with Docker Desktop. The
 repo's `.gitattributes` forces LF on checkout (`*.sh` especially), so the
 container scripts run unchanged; if you cloned before that and see
-`sh: 1: ...\r: not found`, run `git add --renormalize .` or re-clone.
+`sh: 1: ...\r: not found`, re-clone into a new directory (renormalizing
+does not rewrite files already checked out with CRLF).
 
 The root `build`, `test` and `typecheck` scripts go through
 [`scripts/with-turbo-env.mjs`](../../scripts/with-turbo-env.mjs), which fills in
