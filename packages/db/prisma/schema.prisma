@@ -522,6 +522,7 @@ model OrderPayment {
   voidedAt      DateTime?
   voidedBy      String?
   voidReason    String?
+  rejectionReason String?
 
   order Order @relation(fields: [orderId], references: [id])
 
