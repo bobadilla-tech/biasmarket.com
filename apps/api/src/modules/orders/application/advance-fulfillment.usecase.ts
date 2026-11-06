@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import type { FulfillmentStatus } from "@biasmarket/db";
 import { PrismaService } from "../../../prisma/prisma.service.js";
 import { OrderRepository } from "../infrastructure/order.repository.js";
@@ -27,10 +27,7 @@ export class AdvanceFulfillmentUseCase {
         WHERE "id" = ${orderId} AND "storeId" = ${storeId}
         FOR UPDATE
       `;
-      if (!lockedOrder) {
-        const row = await this.orders.findRowByIdForStore(orderId, storeId);
-        throw new Error(`Order ${row.id} could not be locked`);
-      }
+      if (!lockedOrder) throw new NotFoundException("Orden no encontrada");
       const row = await tx.order.findFirst({
         where: { id: orderId, storeId },
         select: {
@@ -40,7 +37,7 @@ export class AdvanceFulfillmentUseCase {
           fulfillmentStatus: true,
         },
       });
-      if (!row) throw new Error("Order not found");
+      if (!row) throw new NotFoundException("Orden no encontrada");
       const entity = new Order(
         row.id,
         row.storeId,
