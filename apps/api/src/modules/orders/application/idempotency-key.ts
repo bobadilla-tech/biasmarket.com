@@ -7,15 +7,15 @@ const UNIQUE_INDEX_NAME = "Order_storeId_createdByUserId_idempotencyKey_key";
 
 /**
  * The optional `Idempotency-Key` header: absent means behavior unchanged,
- * present must be a UUID (a retried form submit reuses the same one).
+ * present must be a UUID v4 (a retried form submit reuses the same one).
  */
 export function parseIdempotencyKey(
   header: string | string[] | undefined,
 ): string | undefined {
   if (header === undefined) return undefined;
   // A repeated header is not one key.
-  if (Array.isArray(header) || !isUUID(header)) {
-    throw new BadRequestException("Idempotency-Key debe ser un UUID");
+  if (Array.isArray(header) || !isUUID(header, "4")) {
+    throw new BadRequestException("Idempotency-Key debe ser un UUID v4");
   }
   return header.toLowerCase();
 }
