@@ -585,18 +585,22 @@ describe("assisted order journey (e2e)", () => {
       reason: "Número de operación equivocado",
     });
 
-    // A fully verified order cannot have a payment voided any more.
+    // A fully verified order can still be corrected before fulfillment starts.
     const verified = await newOrder(shop);
     const full = await recordPayment(shop, verified.id, "100.00").expect(201);
     expect(full.body.paymentStatus).toBe("VERIFIED");
     const fullPaymentId = (full.body.payments as { id: string }[])[0]!.id;
-    await request(app.getHttpServer())
+    const corrected = await request(app.getHttpServer())
       .patch(
         sellerOrderUrl(shop, verified.id, `/payments/${fullPaymentId}/void`),
       )
       .set("Cookie", sellerCookie)
       .send({ reason: "ya verificado" })
-      .expect(400);
+      .expect(200);
+    expect(corrected.body.paymentStatus).toBe("PENDING_PAYMENT");
+    const correctedView = await publicGet(verified.token).expect(200);
+    expect(correctedView.body.paidAmount).toBe(0);
+    expect(correctedView.body.payments[0].voidedAt).toBeTruthy();
   });
 
   // --- creation ----------------------------------------------------------
@@ -812,6 +816,7 @@ describe("assisted order journey (e2e)", () => {
       "id",
       "method",
       "paidAt",
+      "rejectionReason",
       "reviewStatus",
       "source",
       "voidedAt",
