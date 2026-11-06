@@ -22,10 +22,7 @@ export class ExpireOrdersProcessor extends ObservedProcessor {
 
   async process(
     job: Job,
-  ): Promise<
-    | { cancelled: number }
-    | { anonymized: number }
-  > {
+  ): Promise<{ cancelled: number } | { anonymized: number }> {
     const internalApiUrl = requiredEnv("INTERNAL_API_URL");
     const secret = requiredEnv("INTERNAL_JOBS_SECRET");
     const endpoint =
@@ -54,8 +51,7 @@ export class ExpireOrdersProcessor extends ObservedProcessor {
 
     const result = (await response.json()) as
       | { cancelled: number }
-      | { anonymized: number }
-;
+      | { anonymized: number };
     if ("cancelled" in result) {
       this.logger.log(
         `Expire-sweep job ${job.id} cancelled ${result.cancelled} order(s)`,
