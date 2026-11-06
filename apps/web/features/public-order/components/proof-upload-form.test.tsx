@@ -136,7 +136,7 @@ test.each([
   [404, "Este enlace ya no es válido. Pídele uno nuevo a la tienda."],
   [413, "La imagen es demasiado grande."],
   [429, "Hiciste muchos intentos. Espera un momento."],
-  [400, "El monto excede el saldo pendiente"],
+  [400, "No pudimos enviar tu comprobante. Inténtalo de nuevo."],
 ])(
   "maps a %i response to a message and keeps the entered values",
   async (status, message) => {
