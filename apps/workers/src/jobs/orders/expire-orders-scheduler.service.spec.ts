@@ -53,7 +53,10 @@ describe("ExpireOrdersSchedulerService", () => {
     const queue = {
       upsertJobScheduler: vi.fn(),
     } as unknown as Queue & { upsertJobScheduler: Mock };
-    const service = new ExpireOrdersSchedulerService(queue);
+    const proofSweepQueue = {
+      upsertJobScheduler: vi.fn(),
+    } as unknown as Queue & { upsertJobScheduler: Mock };
+    const service = new ExpireOrdersSchedulerService(queue, proofSweepQueue);
     const logger = (service as unknown as { logger: { log: Mock } }).logger;
     const log = vi.spyOn(logger, "log");
 
