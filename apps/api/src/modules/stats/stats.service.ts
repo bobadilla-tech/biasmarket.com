@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -22,6 +23,15 @@ import type {
   PaymentMethodBreakdownRow,
   PaymentMethodsBreakdown,
 } from "./analytics.types.js";
+import {
+  AdminAssistedOrderMetricsQueryDto,
+  AdminAssistedOrderMetricsResponseDto,
+} from "./dto/admin-assisted-order-metrics.dto.js";
+import {
+  calculateAdminAssistedOrderMetrics,
+  type MetricOrderEventRow,
+  type MetricOrderRow,
+} from "./admin-assisted-order-metrics.helper.js";
 
 const TOP_PRODUCTS_LIMIT = 5;
 
@@ -404,5 +414,115 @@ export class StatsService {
       totalCount,
       byMethod,
     };
+  }
+
+  async getAdminAssistedOrderMetrics(
+    query: AdminAssistedOrderMetricsQueryDto,
+  ): Promise<AdminAssistedOrderMetricsResponseDto> {
+    let fromDate: Date | undefined;
+    let toDate: Date | undefined;
+
+    if (query.from) {
+      fromDate = new Date(query.from);
+      if (Number.isNaN(fromDate.getTime())) {
+        throw new BadRequestException("Fecha 'from' inválida");
+      }
+    }
+
+    if (query.to) {
+      toDate = new Date(query.to);
+      if (Number.isNaN(toDate.getTime())) {
+        throw new BadRequestException("Fecha 'to' inválida");
+      }
+      if (query.to.length === 10) {
+        toDate = new Date(
+          Date.UTC(
+            toDate.getUTCFullYear(),
+            toDate.getUTCMonth(),
+            toDate.getUTCDate(),
+            23,
+            59,
+            59,
+            999,
+          ),
+        );
+      }
+    }
+
+    if (fromDate && toDate && fromDate > toDate) {
+      throw new BadRequestException("Rango de fechas inválido");
+    }
+
+    const orders = (await this.prisma.order.findMany({
+      where: {
+        ...(fromDate || toDate
+          ? {
+              createdAt: {
+                ...(fromDate ? { gte: fromDate } : {}),
+                ...(toDate ? { lte: toDate } : {}),
+              },
+            }
+          : {}),
+        ...(query.storeId ? { storeId: query.storeId } : {}),
+        status: { not: "CANCELLED" },
+      },
+      select: {
+        id: true,
+        storeId: true,
+        store: { select: { id: true, name: true } },
+        source: true,
+        customerId: true,
+        customerPhoneNormalized: true,
+        customerPhone: true,
+        buyerAccountId: true,
+        linkFirstOpenedAt: true,
+        claimedAt: true,
+        buyerConfirmedReceivedAt: true,
+        createdAt: true,
+        totalAmount: true,
+        payments: {
+          select: {
+            id: true,
+            source: true,
+            reviewStatus: true,
+            paidAt: true,
+            reviewedAt: true,
+            voidedAt: true,
+            amount: true,
+            createdAt: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    })) as MetricOrderRow[];
+
+    const assistedOrders = orders.filter((o) => o.source === "VENDOR_ASSISTED");
+    const assistedOrderIds = assistedOrders.map((o) => o.id);
+
+    const events = (
+      assistedOrderIds.length > 0
+        ? await this.prisma.orderEvent.findMany({
+            where: {
+              orderId: { in: assistedOrderIds },
+              type: {
+                in: [
+                  "BUYER_NOTIFIED",
+                  "INVITE_SHOWN",
+                  "INVITE_CLICKED",
+                  "INVITE_DISMISSED",
+                  "CLAIMED",
+                ],
+              },
+            },
+            select: {
+              orderId: true,
+              type: true,
+              payload: true,
+            },
+          })
+        : []
+    ) as MetricOrderEventRow[];
+
+    return calculateAdminAssistedOrderMetrics(orders, events);
   }
 }
