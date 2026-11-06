@@ -30,7 +30,6 @@ describe("parseIdempotencyKey", () => {
     "3f2504e0-4f89-11d3-9a0c-0305e82c3301", // UUID v1
     "01890f47-6c2f-7cc1-98c4-dc0c0c07398f", // UUID v7
   ])("rejects %j with a 400", (value) => {
-      expect(() => parseIdempotencyKey(value)).toThrow(BadRequestException);
-    },
-  );
+    expect(() => parseIdempotencyKey(value)).toThrow(BadRequestException);
+  });
 });
