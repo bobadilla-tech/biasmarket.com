@@ -357,7 +357,7 @@ export function PublicOrderView({
                     </a>
                   )}
                   {payment.reviewStatus === "REJECTED" && !payment.voidedAt && (
-                    <p className="text-xs text-rose-600">
+                    <p className="break-words text-xs text-rose-600">
                       {payment.rejectionReason
                         ? t("payments.rejectionReason", {
                             reason: payment.rejectionReason,
