@@ -94,7 +94,10 @@ function setup() {
 describe("checkout controller proof cleanup", () => {
   it("marks public checkout responses as non-cacheable", () => {
     expect(
-      Reflect.getMetadata(HEADERS_METADATA, CheckoutController.prototype.create),
+      Reflect.getMetadata(
+        HEADERS_METADATA,
+        CheckoutController.prototype.create,
+      ),
     ).toContainEqual({ name: "Cache-Control", value: "no-store" });
   });
 
