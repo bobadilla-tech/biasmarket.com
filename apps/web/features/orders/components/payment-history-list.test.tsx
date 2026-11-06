@@ -73,7 +73,10 @@ test("a recorded payment of an open order can be voided", () => {
 });
 
 test("a verified order can void its payment before fulfillment", () => {
-  renderList([payment()], { paymentStatus: "VERIFIED", fulfillmentStatus: "ORDERING" });
+  renderList([payment()], {
+    paymentStatus: "VERIFIED",
+    fulfillmentStatus: "ORDERING",
+  });
   expect(voidButton()).toBeTruthy();
 });
 
