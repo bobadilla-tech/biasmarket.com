@@ -24,7 +24,11 @@ import {
 export class ExpireOrdersSchedulerService implements OnModuleInit {
   private readonly logger = new Logger(ExpireOrdersSchedulerService.name);
 
-  constructor(@InjectQueue(QUEUE_NAMES.ORDERS) private queue: Queue) {}
+  constructor(
+    @InjectQueue(QUEUE_NAMES.ORDERS) private queue: Queue,
+    @InjectQueue(QUEUE_NAMES.PAYMENT_PROOF_SWEEP)
+    private proofSweepQueue: Queue,
+  ) {}
 
   async onModuleInit(): Promise<void> {
     if (process.env.E2E_DISABLE_EXPIRATION_SCHEDULERS === "true") {
@@ -44,7 +48,7 @@ export class ExpireOrdersSchedulerService implements OnModuleInit {
       { pattern: ASSISTED_IDENTITY_RETENTION_CRON_PATTERN },
       { name: ASSISTED_IDENTITY_RETENTION_JOB_NAME },
     );
-    await this.queue.upsertJobScheduler(
+    await this.proofSweepQueue.upsertJobScheduler(
       PAYMENT_PROOF_SWEEP_SCHEDULER_ID,
       { pattern: PAYMENT_PROOF_SWEEP_CRON_PATTERN },
       { name: PAYMENT_PROOF_SWEEP_JOB_NAME },
