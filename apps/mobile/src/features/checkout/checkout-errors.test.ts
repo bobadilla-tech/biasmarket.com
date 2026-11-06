@@ -14,7 +14,10 @@ test.each([
   ],
   [new ApiError("server failed", 500), { kind: "failed" }],
   [new TypeError("network unavailable"), { kind: "connection" }],
-  [Object.assign(new Error("timed out"), { name: "AbortError" }), { kind: "connection" }],
+  [
+    Object.assign(new Error("timed out"), { name: "AbortError" }),
+    { kind: "connection" },
+  ],
   [new Error("unexpected"), { kind: "failed" }],
   [undefined, { kind: "failed" }],
 ])("maps %s into a safe checkout error", (error, expected) => {
