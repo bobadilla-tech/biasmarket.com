@@ -2,6 +2,7 @@ export const QUEUE_NAMES = {
   PING: "ping",
   MAILER: "mailer",
   ORDERS: "orders",
+  PAYMENT_PROOF_SWEEP: "payment-proof-sweep",
   PREMIUM: "premium",
   PUSH: "push",
 } as const;

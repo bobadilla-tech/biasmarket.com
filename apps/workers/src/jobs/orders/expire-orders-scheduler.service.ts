@@ -1,5 +1,5 @@
-import { InjectQueue } from "@nestjs/bullmq";
-import { Injectable, Logger, type OnModuleInit } from "@nestjs/common";
+import { getQueueToken, InjectQueue } from "@nestjs/bullmq";
+import { Inject, Injectable, Logger, type OnModuleInit } from "@nestjs/common";
 import type { Queue } from "bullmq";
 import {
   ASSISTED_IDENTITY_RETENTION_CRON_PATTERN,
@@ -9,6 +9,9 @@ import {
   EXPIRE_ORDERS_JOB_NAME,
   EXPIRE_ORDERS_SCHEDULER_ID,
   QUEUE_NAMES,
+  PAYMENT_PROOF_SWEEP_CRON_PATTERN,
+  PAYMENT_PROOF_SWEEP_JOB_NAME,
+  PAYMENT_PROOF_SWEEP_SCHEDULER_ID,
 } from "@biasmarket/queue";
 
 // apps/workers owns scheduling: BullMQ job schedulers dispatch expiry and
@@ -21,7 +24,11 @@ import {
 export class ExpireOrdersSchedulerService implements OnModuleInit {
   private readonly logger = new Logger(ExpireOrdersSchedulerService.name);
 
-  constructor(@InjectQueue(QUEUE_NAMES.ORDERS) private queue: Queue) {}
+  constructor(
+    @InjectQueue(QUEUE_NAMES.ORDERS) private queue: Queue,
+    @Inject(getQueueToken(QUEUE_NAMES.PAYMENT_PROOF_SWEEP))
+    private proofSweepQueue: Queue,
+  ) {}
 
   async onModuleInit(): Promise<void> {
     if (process.env.E2E_DISABLE_EXPIRATION_SCHEDULERS === "true") {
@@ -40,6 +47,11 @@ export class ExpireOrdersSchedulerService implements OnModuleInit {
       ASSISTED_IDENTITY_RETENTION_SCHEDULER_ID,
       { pattern: ASSISTED_IDENTITY_RETENTION_CRON_PATTERN },
       { name: ASSISTED_IDENTITY_RETENTION_JOB_NAME },
+    );
+    await this.proofSweepQueue.upsertJobScheduler(
+      PAYMENT_PROOF_SWEEP_SCHEDULER_ID,
+      { pattern: PAYMENT_PROOF_SWEEP_CRON_PATTERN },
+      { name: PAYMENT_PROOF_SWEEP_JOB_NAME },
     );
     this.logger.log(
       `Registered "${EXPIRE_ORDERS_SCHEDULER_ID}" job scheduler (${EXPIRE_ORDERS_CRON_PATTERN})`,

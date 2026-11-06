@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import type { FulfillmentStatus } from "@biasmarket/db";
 import { PrismaService } from "../../../prisma/prisma.service.js";
 import { OrderRepository } from "../infrastructure/order.repository.js";
@@ -21,27 +21,40 @@ export class AdvanceFulfillmentUseCase {
   ) {
     await this.orders.assertOwnership(storeId, userId);
 
-    const row = await this.orders.findRowByIdForStore(orderId, storeId);
-    const entity = new Order(
-      row.id,
-      row.storeId,
-      row.paymentStatus,
-      row.fulfillmentStatus,
-    );
-
-    const fromStatus = entity.currentFulfillmentStatus;
-    entity.advanceFulfillment(status);
-    const toStatus = entity.currentFulfillmentStatus;
-
     return this.prisma.$transaction(async (tx) => {
-      const updated = await this.orders.saveStatus(
-        orderId,
-        {
+      const [lockedOrder] = await tx.$queryRaw<Array<{ id: string }>>`
+        SELECT "id" FROM "Order"
+        WHERE "id" = ${orderId} AND "storeId" = ${storeId}
+        FOR UPDATE
+      `;
+      if (!lockedOrder) throw new NotFoundException("Orden no encontrada");
+      const row = await tx.order.findFirst({
+        where: { id: orderId, storeId },
+        select: {
+          id: true,
+          storeId: true,
+          paymentStatus: true,
+          fulfillmentStatus: true,
+        },
+      });
+      if (!row) throw new NotFoundException("Orden no encontrada");
+      const entity = new Order(
+        row.id,
+        row.storeId,
+        row.paymentStatus,
+        row.fulfillmentStatus,
+      );
+      const fromStatus = entity.currentFulfillmentStatus;
+      entity.advanceFulfillment(status);
+      const toStatus = entity.currentFulfillmentStatus;
+
+      const updated = await tx.order.update({
+        where: { id: orderId },
+        data: {
           fulfillmentStatus: toStatus,
           ...(toStatus === "COMPLETED" ? { closedAt: new Date() } : {}),
         },
-        tx,
-      );
+      });
 
       await tx.auditLog.create({
         data: {

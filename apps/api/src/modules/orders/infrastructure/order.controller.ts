@@ -29,6 +29,7 @@ import {
   ApiProduces,
   ApiQuery,
 } from "@nestjs/swagger";
+import { NotificationsService } from "../../notifications/notifications.service.js";
 import { OrderRepository } from "./order.repository.js";
 import { ReviewPaymentUseCase } from "../application/review-payment.usecase.js";
 import { AdvanceFulfillmentUseCase } from "../application/advance-fulfillment.usecase.js";
@@ -74,7 +75,6 @@ import {
 } from "../../../common/uploaded-file-validation.pipe.js";
 import { computePaymentSummary } from "../../../common/payment-summary.js";
 import { UpdateOrderShippingDto } from "../dto/update-order-shipping.dto.js";
-import { NotificationsService } from "../../notifications/notifications.service.js";
 
 const OPTIONAL_PAYMENT_IMAGE_PIPE = new UploadedFileValidationPipe({
   allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
@@ -992,6 +992,8 @@ export class OrderController {
         where: { id: paymentId, orderId, reviewStatus: "PENDING_REVIEW" },
         data: {
           reviewStatus,
+          rejectionReason:
+            dto.decision === "reject" ? sanitizeDisplayText(dto.reason) : null,
           reviewedAt: new Date(),
           reviewedBy: session.user.id,
           ...(dto.decision === "approve" && {
@@ -1027,8 +1029,8 @@ export class OrderController {
       // event and does not try to re-drive an order that can no longer legally
       // change state.
       if (
-        order.paymentStatus !== "PENDING_PAYMENT" &&
-        order.paymentStatus !== "PARTIALLY_PAID"
+        order.paymentStatus === "CANCELLED" ||
+        order.paymentStatus === "REJECTED"
       ) {
         return;
       }
@@ -1041,8 +1043,6 @@ export class OrderController {
         actor: "SELLER",
         payload: { paymentId },
       });
-
-      if (dto.decision !== "approve") return;
 
       // Re-derive the order's status from the new total in this same
       // transaction (under the lock above), so a partial approval records its
@@ -1061,6 +1061,35 @@ export class OrderController {
         order.requiredAmount,
         payments,
       );
+      if (dto.decision !== "approve") {
+        if (order.paymentStatus === "PAYMENT_SUBMITTED") {
+          const hasPendingProof = payments.some(
+            (candidate) =>
+              candidate.voidedAt == null &&
+              candidate.source === "BUYER_SUBMITTED" &&
+              candidate.reviewStatus === "PENDING_REVIEW",
+          );
+          const nextStatus =
+            paidAmount > 0
+              ? "PARTIALLY_PAID"
+              : hasPendingProof
+                ? "PAYMENT_SUBMITTED"
+                : "PENDING_PAYMENT";
+          if (nextStatus !== order.paymentStatus) {
+            await this.orders.saveStatus(
+              orderId,
+              { paymentStatus: nextStatus },
+              tx,
+            );
+          }
+        }
+        return;
+      }
+      // A proof can be submitted to a legacy VERIFIED order with an unpaid
+      // residual balance. Its proof decision is visible, but the order has
+      // already consumed inventory and must not run settlement twice.
+      if (order.paymentStatus === "VERIFIED") return;
+
       if (toCents(paidAmount) >= toCents(Number(order.requiredAmount))) {
         // Settling also has to convert the soft-hold `reserved` into real
         // `stock`, run the domain transition guard and email the buyer —

@@ -4,6 +4,7 @@ import { Public } from "@thallesp/nestjs-better-auth";
 import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
 import { ExpireOrdersUseCase } from "../application/expire-orders.usecase.js";
 import { AssistedOrderIdentityRetentionUseCase } from "../application/assisted-order-identity-retention.usecase.js";
+import { SweepOrphanPaymentProofsUseCase } from "../application/sweep-orphan-payment-proofs.usecase.js";
 import { AssistedOrderIdentityErasureDto } from "../dto/assisted-order-identity-erasure.dto.js";
 import { InternalJobsSecretGuard } from "./internal-jobs-secret.guard.js";
 
@@ -24,6 +25,7 @@ export class InternalJobsController {
   constructor(
     private expireOrders: ExpireOrdersUseCase,
     private identityRetention: AssistedOrderIdentityRetentionUseCase,
+    private orphanPaymentProofs: SweepOrphanPaymentProofsUseCase,
   ) {}
 
   @HttpCode(200)
@@ -36,6 +38,15 @@ export class InternalJobsController {
   @Post("assisted-identity-retention-sweep")
   async assistedIdentityRetentionSweep(): Promise<{ anonymized: number }> {
     return this.identityRetention.eraseExpiredUnclaimedIdentities();
+  }
+
+  @HttpCode(200)
+  @Post("orphan-payment-proof-sweep")
+  async orphanPaymentProofSweep(): Promise<{
+    deleted: number;
+    failed: number;
+  }> {
+    return this.orphanPaymentProofs.execute();
   }
 
   @HttpCode(200)

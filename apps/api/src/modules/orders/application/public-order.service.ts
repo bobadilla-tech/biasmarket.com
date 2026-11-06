@@ -79,6 +79,7 @@ export class PublicOrderService {
             source: true,
             method: true,
             reviewStatus: true,
+            rejectionReason: true,
             createdAt: true,
             paidAt: true,
             voidedAt: true,
@@ -239,6 +240,10 @@ export class PublicOrderService {
         createdAt: payment.createdAt.toISOString(),
         paidAt: payment.paidAt?.toISOString() ?? null,
         reviewStatus: payment.reviewStatus,
+        rejectionReason:
+          payment.reviewStatus === "REJECTED"
+            ? sanitizeDisplayText(payment.rejectionReason)
+            : null,
         voidedAt: payment.voidedAt?.toISOString() ?? null,
         hasProof: payment.source === "BUYER_SUBMITTED" && !!payment.imageUrl,
       })),

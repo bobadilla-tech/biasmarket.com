@@ -565,6 +565,7 @@
       "bySelf": "Enviado por ti",
       "byStore": "Registrado por la tienda",
       "rejectedNote": "Escríbele a la tienda para resolverlo.",
+      "rejectionReason": "Motivo: {reason}",
       "closedPending": "Sin revisar (pedido cerrado)",
       "balanceUpdated": "El saldo se actualizó.",
       "viewProof": "Ver comprobante",

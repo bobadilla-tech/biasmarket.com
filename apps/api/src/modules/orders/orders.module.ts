@@ -18,6 +18,7 @@ import { AdvanceFulfillmentUseCase } from "./application/advance-fulfillment.use
 import { CancelOrderUseCase } from "./application/cancel-order.usecase.js";
 import { ExpireOrdersUseCase } from "./application/expire-orders.usecase.js";
 import { AssistedOrderIdentityRetentionUseCase } from "./application/assisted-order-identity-retention.usecase.js";
+import { SweepOrphanPaymentProofsUseCase } from "./application/sweep-orphan-payment-proofs.usecase.js";
 import { CustomerAccountService } from "./application/customer-account.service.js";
 import { OrderEventsService } from "./application/order-events.service.js";
 import { PublicOrderTokenGuard } from "./infrastructure/public-order-token.guard.js";
@@ -26,6 +27,7 @@ import { OrderPaymentsService } from "./application/order-payments.service.js";
 import { VoidOrderPaymentUseCase } from "./application/void-order-payment.usecase.js";
 import { PublicOrderService } from "./application/public-order.service.js";
 import { PublicOrderEventsController } from "./infrastructure/public-order-events.controller.js";
+import { PublicProofThrottlerGuard } from "./infrastructure/public-proof-throttler.guard.js";
 import { NotificationsModule } from "../notifications/notifications.module.js";
 import { PaymentConfigModule } from "../payment-config/payment-config.module.js";
 
@@ -55,12 +57,14 @@ import { PaymentConfigModule } from "../payment-config/payment-config.module.js"
     CancelOrderUseCase,
     ExpireOrdersUseCase,
     AssistedOrderIdentityRetentionUseCase,
+    SweepOrphanPaymentProofsUseCase,
     InternalJobsSecretGuard,
     CustomerAccountService,
     CustomersService,
     OrderEventsService,
     BuyerPaymentProofService,
     PublicOrderTokenGuard,
+    PublicProofThrottlerGuard,
     OrderPaymentsService,
     VoidOrderPaymentUseCase,
     PublicOrderService,

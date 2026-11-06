@@ -29,6 +29,10 @@ import {
       defaultJobOptions,
     }),
     BullModule.registerQueue({
+      name: QUEUE_NAMES.PAYMENT_PROOF_SWEEP,
+      defaultJobOptions,
+    }),
+    BullModule.registerQueue({
       name: QUEUE_NAMES.PREMIUM,
       defaultJobOptions,
     }),

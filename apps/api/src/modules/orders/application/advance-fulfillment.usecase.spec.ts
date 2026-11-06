@@ -13,9 +13,10 @@ describe("AdvanceFulfillmentUseCase", () => {
   let events: { record: Mock };
   let prisma: {
     store: { findUnique: Mock };
-    order: { findUnique: Mock; update: Mock };
+    order: { findUnique: Mock; findFirst: Mock; update: Mock };
     auditLog: { create: Mock };
     $transaction: Mock;
+    $queryRaw: Mock;
   };
 
   const ownerId = "user-1";
@@ -26,9 +27,10 @@ describe("AdvanceFulfillmentUseCase", () => {
   beforeEach(async () => {
     prisma = {
       store: { findUnique: vi.fn() },
-      order: { findUnique: vi.fn(), update: vi.fn() },
+      order: { findUnique: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
       auditLog: { create: vi.fn() },
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
+      $queryRaw: vi.fn().mockResolvedValue([{ id: orderId }]),
     };
     events = { record: vi.fn() };
 
@@ -57,7 +59,7 @@ describe("AdvanceFulfillmentUseCase", () => {
   });
 
   it("throws BadRequestException when payment is not yet VERIFIED", async () => {
-    prisma.order.findUnique.mockResolvedValue({
+    prisma.order.findFirst.mockResolvedValue({
       id: orderId,
       storeId,
       paymentStatus: "PENDING_PAYMENT",
@@ -72,7 +74,7 @@ describe("AdvanceFulfillmentUseCase", () => {
   });
 
   it("advances fulfillment when payment is VERIFIED", async () => {
-    prisma.order.findUnique.mockResolvedValue({
+    prisma.order.findFirst.mockResolvedValue({
       id: orderId,
       storeId,
       paymentStatus: "VERIFIED",
@@ -112,7 +114,7 @@ describe("AdvanceFulfillmentUseCase", () => {
   });
 
   it("rejects skipping a fulfillment state", async () => {
-    prisma.order.findUnique.mockResolvedValue({
+    prisma.order.findFirst.mockResolvedValue({
       id: orderId,
       storeId,
       paymentStatus: "VERIFIED",

@@ -57,15 +57,18 @@ describe("canVoidPayment", () => {
     voidedAt: null,
   } as const;
 
-  test("a recorded or approved payment can be voided while ordering", () => {
+  test("a recorded or approved payment can be voided before fulfillment", () => {
     expect(canVoidPayment(order(), seller)).toBe(true);
     expect(canVoidPayment(order(), approved)).toBe(true);
     expect(
       canVoidPayment(order({ paymentStatus: "PENDING_PAYMENT" }), seller),
     ).toBe(true);
+    expect(canVoidPayment(order({ paymentStatus: "VERIFIED" }), seller)).toBe(
+      true,
+    );
   });
 
-  test.each(["CANCELLED", "REJECTED", "VERIFIED"])(
+  test.each(["CANCELLED", "REJECTED"])(
     "never on a %s order",
     (paymentStatus) => {
       expect(canVoidPayment(order({ paymentStatus }), seller)).toBe(false);

@@ -9718,6 +9718,10 @@
           "reviewStatus": {
             "enum": ["N_A", "PENDING_REVIEW", "APPROVED", "REJECTED"],
             "type": "string"
+          },
+          "rejectionReason": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -9729,7 +9733,8 @@
           "amount",
           "createdAt",
           "voidedAt",
-          "reviewStatus"
+          "reviewStatus",
+          "rejectionReason"
         ]
       },
       "PublicOrderClosureResponseDto": {

@@ -50,15 +50,12 @@ export class ExpireOrdersProcessor extends ObservedProcessor {
     }
 
     const result = (await response.json()) as
-      | { cancelled: number }
-      | {
-          anonymized: number;
-        };
+      { cancelled: number } | { anonymized: number };
     if ("cancelled" in result) {
       this.logger.log(
         `Expire-sweep job ${job.id} cancelled ${result.cancelled} order(s)`,
       );
-    } else {
+    } else if ("anonymized" in result) {
       this.logger.log(
         `Assisted identity-retention job ${job.id} anonymized ${result.anonymized} order(s)`,
       );

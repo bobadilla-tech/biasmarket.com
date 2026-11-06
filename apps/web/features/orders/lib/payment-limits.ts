@@ -36,9 +36,8 @@ export function recordableCents(
 }
 
 // Mirrors the API (`VoidOrderPaymentUseCase`): only while fulfillment is
-// ORDERING, never on CANCELLED/REJECTED/VERIFIED orders, and only for a
-// payment that counts toward paid. Known limitation: a payment that settled
-// the order (VERIFIED) cannot be voided from here.
+// ORDERING, never on CANCELLED/REJECTED orders, and only for a payment that
+// counts toward paid.
 export function canVoidPayment(
   order: { paymentStatus: string; fulfillmentStatus: string },
   payment: Pick<
@@ -49,8 +48,7 @@ export function canVoidPayment(
   if (order.fulfillmentStatus !== "ORDERING") return false;
   if (
     order.paymentStatus === "CANCELLED" ||
-    order.paymentStatus === "REJECTED" ||
-    order.paymentStatus === "VERIFIED"
+    order.paymentStatus === "REJECTED"
   ) {
     return false;
   }

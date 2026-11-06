@@ -2132,6 +2132,8 @@ export interface PublicOrderPaymentResponseDto {
   /** @nullable */
   voidedAt: string | null;
   reviewStatus: PublicOrderPaymentResponseDtoReviewStatus;
+  /** @nullable */
+  rejectionReason: string | null;
 }
 
 export type PublicOrderClosureResponseDtoKind =

@@ -565,6 +565,7 @@
       "bySelf": "Sent by you",
       "byStore": "Recorded by the store",
       "rejectedNote": "Message the store to sort it out.",
+      "rejectionReason": "Reason: {reason}",
       "closedPending": "Not reviewed (order closed)",
       "balanceUpdated": "The balance was updated.",
       "viewProof": "View proof",
