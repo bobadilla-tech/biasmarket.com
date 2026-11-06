@@ -941,7 +941,12 @@ export class OrderController {
 
       const order = await tx.order.findUniqueOrThrow({
         where: { id: orderId },
-        select: { paymentStatus: true, requiredAmount: true, buyerAccountId: true, store: { select: { slug: true } } },
+        select: {
+          paymentStatus: true,
+          requiredAmount: true,
+          buyerAccountId: true,
+          store: { select: { slug: true } },
+        },
       });
       buyerAccountId = order.buyerAccountId ?? null;
       storeSlug = order.store?.slug ?? "";
@@ -1102,7 +1107,21 @@ export class OrderController {
       }
     });
 
-    await this.notifications.pushToBuyer(buyerAccountId, dto.decision === "approve" ? "Comprobante aprobado" : "Comprobante rechazado", dto.decision === "approve" ? `El comprobante del pedido ${orderId.slice(0, 8)} fue aprobado.` : `El comprobante del pedido ${orderId.slice(0, 8)} fue rechazado.`, { type: "PAYMENT_PROOF_REVIEWED", orderId, storeSlug, decision: dto.decision });
+    await this.notifications.pushToBuyer(
+      buyerAccountId,
+      dto.decision === "approve"
+        ? "Comprobante aprobado"
+        : "Comprobante rechazado",
+      dto.decision === "approve"
+        ? `El comprobante del pedido ${orderId.slice(0, 8)} fue aprobado.`
+        : `El comprobante del pedido ${orderId.slice(0, 8)} fue rechazado.`,
+      {
+        type: "PAYMENT_PROOF_REVIEWED",
+        orderId,
+        storeSlug,
+        decision: dto.decision,
+      },
+    );
 
     if (settlesOrder) {
       await this.reviewPayment.execute(
