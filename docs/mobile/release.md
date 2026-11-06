@@ -76,6 +76,8 @@ real checkout before a production release is approved.
 
 The CI guarantees and component-test coverage are described in [the CI guide](../core/ci.md).
 
+## GitHub Release artifact workflow
+
 Publishing a GitHub Release builds the Expo app (`apps/mobile`) for Android and
 iOS and attaches the outputs to that release. Free GitHub-hosted runners only;
 no signing secrets. Workflow: `.github/workflows/mobile-release.yml`.
