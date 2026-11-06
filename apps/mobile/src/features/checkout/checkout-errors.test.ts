@@ -29,7 +29,7 @@ test("keeps the checkout idempotency key after a timeout", () => {
     name: "AbortError",
   });
 
-  expect(
-    shouldClearCheckoutIdempotencyKey(mapCheckoutError(timeout)),
-  ).toBe(false);
+  expect(shouldClearCheckoutIdempotencyKey(mapCheckoutError(timeout))).toBe(
+    false,
+  );
 });
