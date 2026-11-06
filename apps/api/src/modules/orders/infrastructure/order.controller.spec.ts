@@ -1411,7 +1411,15 @@ describe("OrderController.reviewPaymentProof", () => {
       actor: "SELLER",
       payload: { paymentId },
     });
-    expect(tx.orderPayment.findMany).not.toHaveBeenCalled();
+    expect(tx.orderPayment.findMany).toHaveBeenCalledWith({
+      where: { orderId },
+      select: {
+        amount: true,
+        source: true,
+        reviewStatus: true,
+        voidedAt: true,
+      },
+    });
     expect(orders.saveStatus).not.toHaveBeenCalled();
     expect(reviewPayment.execute).not.toHaveBeenCalled();
   });
