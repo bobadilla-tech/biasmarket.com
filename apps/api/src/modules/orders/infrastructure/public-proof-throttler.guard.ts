@@ -6,7 +6,7 @@ import {
   Injectable,
   OnModuleDestroy,
 } from "@nestjs/common";
-import Redis from "ioredis";
+import { Redis } from "ioredis";
 import { createHash } from "node:crypto";
 
 const LIMIT = 10;
