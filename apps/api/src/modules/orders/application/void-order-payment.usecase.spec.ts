@@ -151,7 +151,11 @@ describe("VoidOrderPaymentUseCase", () => {
 
     await expect(
       useCase.execute(orderId, paymentId, storeId, userId, "Mistake"),
-    ).resolves.toMatchObject({ paymentId, orderId, paymentStatus: "PARTIALLY_PAID" });
+    ).resolves.toMatchObject({
+      paymentId,
+      orderId,
+      paymentStatus: "PARTIALLY_PAID",
+    });
     expect(tx.orderPayment.update).toHaveBeenCalled();
     expect(tx.auditLog.create).toHaveBeenCalled();
   });
