@@ -124,7 +124,7 @@ export class PublicOrderEventsController {
   @ApiConsumes("multipart/form-data")
   @ApiBody({ type: SubmitPublicPaymentDto })
   @ApiCreatedResponse({ type: SubmitPublicPaymentResponseDto })
-  @UseGuards(PublicProofThrottlerGuard, ThrottlerGuard, PublicOrderTokenGuard)
+  @UseGuards(ThrottlerGuard, PublicProofThrottlerGuard, PublicOrderTokenGuard)
   @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @UseInterceptors(
     FileInterceptor("file", { limits: PAYMENT_PROOF_UPLOAD_LIMITS }),
