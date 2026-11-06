@@ -107,7 +107,7 @@ export function ProofUploadForm({
         if (error.status === 413) message = t("errors.tooLarge");
         else if (error.status === 404) message = t("errors.invalid");
         else if (error.status === 429) message = t("errors.rateLimited");
-        else if (error.status === 400) message = error.message;
+        else if (error.status === 400) message = t("errors.generic");
       }
       setError("root", { message });
     }
