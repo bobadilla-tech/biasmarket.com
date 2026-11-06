@@ -16,6 +16,17 @@ export function mapCheckoutError(error: unknown): CheckoutError {
     }
   }
 
-  if (error instanceof TypeError) return { kind: "connection" };
+  if (
+    error instanceof TypeError ||
+    (error instanceof Error && error.name === "AbortError")
+  ) {
+    return { kind: "connection" };
+  }
   return { kind: "failed" };
+}
+
+export function shouldClearCheckoutIdempotencyKey(
+  error: CheckoutError,
+): boolean {
+  return error.kind === "mismatch" || error.kind === "expired";
 }

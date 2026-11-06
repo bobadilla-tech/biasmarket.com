@@ -60,8 +60,13 @@ import {
   courierFieldLabelKey,
 } from "../../features/checkout/courier-fields";
 import { checkoutViewState } from "../../features/checkout/checkout-view-state";
-import { mapCheckoutError } from "../../features/checkout/checkout-errors";
+import {
+  mapCheckoutError,
+  shouldClearCheckoutIdempotencyKey,
+} from "../../features/checkout/checkout-errors";
 import { useMobileI18n } from "../../i18n/mobile-i18n.js";
+
+const CHECKOUT_REQUEST_TIMEOUT_MS = 45_000;
 
 const emptyForm: CheckoutFormInput = {
   customerName: "",
@@ -378,14 +383,26 @@ export default function CheckoutScreen() {
       }
 
       const idempotencyKey = await getCheckoutIdempotencyKey(storeSlug, items);
-      const result = await customFetch<CheckoutResultResponseDto>(
-        `/stores/${encodeURIComponent(storeSlug)}/checkout`,
-        {
-          method: "POST",
-          body,
-          headers: { "Idempotency-Key": idempotencyKey },
-        },
-      );
+      const result = await (async () => {
+        const controller = new AbortController();
+        const timeout = setTimeout(
+          () => controller.abort(),
+          CHECKOUT_REQUEST_TIMEOUT_MS,
+        );
+        try {
+          return await customFetch<CheckoutResultResponseDto>(
+            `/stores/${encodeURIComponent(storeSlug)}/checkout`,
+            {
+              method: "POST",
+              body,
+              headers: { "Idempotency-Key": idempotencyKey },
+              signal: controller.signal,
+            },
+          );
+        } finally {
+          clearTimeout(timeout);
+        }
+      })();
       try {
         await markCheckoutIdempotencyKeyDone(storeSlug, items, idempotencyKey);
       } catch {
@@ -419,7 +436,7 @@ export default function CheckoutScreen() {
       });
     } catch (error) {
       const mappedError = mapCheckoutError(error);
-      if (mappedError.kind === "mismatch" || mappedError.kind === "expired") {
+      if (shouldClearCheckoutIdempotencyKey(mappedError)) {
         try {
           await clearCheckoutIdempotencyKey(storeSlug);
         } catch {
