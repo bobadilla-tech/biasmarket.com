@@ -47,5 +47,6 @@ export class PublicProofThrottlerGuard implements CanActivate, OnModuleDestroy {
 
   async onModuleDestroy(): Promise<void> {
     if (this.redis) await this.redis.quit();
+    else testCounters.clear();
   }
 }
