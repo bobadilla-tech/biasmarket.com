@@ -22,11 +22,15 @@ describe("ExpireOrdersSchedulerService", () => {
     const queue = {
       upsertJobScheduler: vi.fn().mockResolvedValue(undefined),
     } as unknown as Queue & { upsertJobScheduler: Mock };
-    const service = new ExpireOrdersSchedulerService(queue);
+    const proofSweepQueue = {
+      upsertJobScheduler: vi.fn().mockResolvedValue(undefined),
+    } as unknown as Queue & { upsertJobScheduler: Mock };
+    const service = new ExpireOrdersSchedulerService(queue, proofSweepQueue);
 
     await service.onModuleInit();
 
-    expect(queue.upsertJobScheduler).toHaveBeenCalledTimes(3);
+    expect(queue.upsertJobScheduler).toHaveBeenCalledTimes(2);
+    expect(proofSweepQueue.upsertJobScheduler).toHaveBeenCalledTimes(1);
     expect(queue.upsertJobScheduler).toHaveBeenCalledWith(
       EXPIRE_ORDERS_SCHEDULER_ID,
       { pattern: EXPIRE_ORDERS_CRON_PATTERN },
@@ -37,7 +41,7 @@ describe("ExpireOrdersSchedulerService", () => {
       { pattern: ASSISTED_IDENTITY_RETENTION_CRON_PATTERN },
       { name: ASSISTED_IDENTITY_RETENTION_JOB_NAME },
     );
-    expect(queue.upsertJobScheduler).toHaveBeenCalledWith(
+    expect(proofSweepQueue.upsertJobScheduler).toHaveBeenCalledWith(
       PAYMENT_PROOF_SWEEP_SCHEDULER_ID,
       { pattern: PAYMENT_PROOF_SWEEP_CRON_PATTERN },
       { name: PAYMENT_PROOF_SWEEP_JOB_NAME },
