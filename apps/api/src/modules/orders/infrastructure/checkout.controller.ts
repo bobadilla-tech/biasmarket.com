@@ -211,8 +211,13 @@ export class CheckoutController {
   @ApiHeader({
     name: "Idempotency-Key",
     required: false,
-    description: "UUID reused when retrying the same checkout submission.",
-    schema: { type: "string", format: "uuid" },
+    description: "UUID v4 reused when retrying the same checkout submission.",
+    schema: {
+      type: "string",
+      format: "uuid",
+      pattern:
+        "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+    },
   })
   @UseInterceptors(FileInterceptor("file", { limits: CHECKOUT_UPLOAD_LIMITS }))
   @Post()
