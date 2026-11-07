@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { RefreshCw } from "lucide-react";
 import {
@@ -21,24 +21,13 @@ export function AdminMetricsPageClient() {
   const storesQuery = useAdminStores();
   const stores = storesQuery.data ?? [];
 
-  const queryParams = useMemo(() => {
-    let from: string | undefined;
-    const to: string | undefined = undefined;
-
-    if (datePreset === "7d") {
-      from = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    } else if (datePreset === "30d") {
-      from = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    }
-
-    return {
-      from,
-      to,
+  const metricsQuery = useAdminMetrics(
+    {
+      preset: datePreset,
       storeId: selectedStoreId || undefined,
-    };
-  }, [datePreset, selectedStoreId]);
-
-  const metricsQuery = useAdminMetrics(queryParams, tCommon("networkError"));
+    },
+    tCommon("networkError"),
+  );
 
   return (
     <div className="bg-gray-50/50 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
@@ -116,7 +105,7 @@ export function AdminMetricsPageClient() {
             <button
               type="button"
               onClick={() => metricsQuery.refetch()}
-              aria-label="Refresh metrics"
+              aria-label={t("filters.refresh")}
               className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:bg-gray-50 hover:text-gray-900"
             >
               <RefreshCw

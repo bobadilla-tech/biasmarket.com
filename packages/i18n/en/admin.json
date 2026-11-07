@@ -120,7 +120,8 @@
       "last7Days": "Last 7 days",
       "last30Days": "Last 30 days",
       "store": "Store",
-      "allStores": "All stores"
+      "allStores": "All stores",
+      "refresh": "Refresh metrics"
     },
     "hypothesis": {
       "title": "30% Claim Rate Hypothesis",
