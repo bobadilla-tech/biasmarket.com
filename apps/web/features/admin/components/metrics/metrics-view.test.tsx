@@ -181,6 +181,38 @@ describe("AdminMetricsView", () => {
 
     expect(screen.getByText("En meta (≥ 30%)")).toBeTruthy();
     expect(screen.queryByTestId("hypothesis-evaluation-alert")).toBeNull();
+    expect(screen.getByText("Tasa actual (con pago)")).toBeTruthy();
+    expect(screen.getAllByText("35.0%").length).toBeGreaterThanOrEqual(1);
+  });
+
+  test("shows a neutral no-data status when no order has a validated payment", () => {
+    const noData: AdminAssistedOrderMetricsResponse = {
+      ...mockMetricsData,
+      summary: {
+        ...mockMetricsData.summary,
+        ordersWithValidatedPaymentCount: 0,
+        claimedWithValidatedPaymentCount: 0,
+        validatedClaimRate: 0,
+        belowTargetClaimRate: false,
+      },
+    };
+
+    renderWithProviders(<AdminMetricsView data={noData} />, "es");
+
+    expect(screen.getByText("Sin datos")).toBeTruthy();
+    expect(screen.queryByText("En meta (≥ 30%)")).toBeNull();
+    expect(screen.queryByTestId("hypothesis-evaluation-alert")).toBeNull();
+    expect(screen.getByText("—")).toBeTruthy();
+  });
+
+  test("uses English hypothesis labels on the English route", () => {
+    renderWithProviders(<AdminMetricsView data={mockMetricsData} />, "en");
+
+    expect(
+      screen.getByText("Below target (< 30%) — Evaluate backlog nudges"),
+    ).toBeTruthy();
+    expect(screen.getByText("Current rate (with payment)")).toBeTruthy();
+    expect(screen.getByText("/ Target 30%")).toBeTruthy();
   });
 
   test("displays empty state message when weekly store breakdown is empty", () => {

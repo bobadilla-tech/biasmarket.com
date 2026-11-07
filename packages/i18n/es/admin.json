@@ -128,6 +128,9 @@
       "description": "El objetivo inicial del piloto es alcanzar al menos un 30% de reclamos con cuenta Google entre órdenes con pago validado. Si la tasa es inferior, se debe evaluar la activación de recordatorios más visibles.",
       "onTarget": "En meta (≥ 30%)",
       "belowTarget": "Por debajo de la meta (< 30%) — Evaluar recordatorios",
+      "noData": "Sin datos",
+      "currentRate": "Tasa actual (con pago)",
+      "target": "/ Meta {percent}%",
       "evaluationAlert": "La tasa de reclamo con pago validado está por debajo del 30%. Se recomienda evaluar recordatorios o avisos más visibles en el flujo de entrega."
     },
     "cards": {

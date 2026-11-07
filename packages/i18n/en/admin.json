@@ -128,6 +128,9 @@
       "description": "The pilot's initial target is to achieve at least 30% Google account claims among orders with validated payment. If the rate is lower, evaluate activating stronger backlog nudges.",
       "onTarget": "On target (≥ 30%)",
       "belowTarget": "Below target (< 30%) — Evaluate backlog nudges",
+      "noData": "No data",
+      "currentRate": "Current rate (with payment)",
+      "target": "/ Target {percent}%",
       "evaluationAlert": "The validated claim rate is currently below 30%. Evaluating stronger nudges in the delivery flow is recommended."
     },
     "cards": {
