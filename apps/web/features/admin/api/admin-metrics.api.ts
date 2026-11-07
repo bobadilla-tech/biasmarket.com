@@ -1,112 +1,37 @@
-export interface AdminAssistedOrderMetricsQuery {
-  from?: string;
-  to?: string;
-  storeId?: string;
-}
+import { apiClient } from "@/lib/api-client";
+import type {
+  AdminAssistedOrderMetricsResponseDto,
+  AdminAssistedOrderMetricsSummaryDto,
+  AdminStatsControllergetAssistedOrderMetricsParams,
+  FunnelMomentMetricsDto,
+  InvitationFunnelMetricsDto,
+  PaymentSourceBreakdownDto,
+  TimeToPaymentSummaryDto,
+  WeeklyStoreBreakdownDto,
+} from "@biasmarket/types";
 
-export interface TimeToPaymentSummary {
-  assistedAvgMinutes: number | null;
-  assistedMedianMinutes: number | null;
-  marketplaceAvgMinutes: number | null;
-  marketplaceMedianMinutes: number | null;
-}
+export type AdminAssistedOrderMetricsQuery =
+  AdminStatsControllergetAssistedOrderMetricsParams;
+export type TimeToPaymentSummary = TimeToPaymentSummaryDto;
+export type PaymentSourceBreakdown = PaymentSourceBreakdownDto;
+export type FunnelMomentMetrics = FunnelMomentMetricsDto;
+export type InvitationFunnelMetrics = InvitationFunnelMetricsDto;
+export type WeeklyStoreBreakdown = WeeklyStoreBreakdownDto;
+export type AdminAssistedOrderMetricsSummary =
+  AdminAssistedOrderMetricsSummaryDto;
+export type AdminAssistedOrderMetricsResponse =
+  AdminAssistedOrderMetricsResponseDto;
 
-export interface PaymentSourceBreakdown {
-  sellerRecordedCount: number;
-  buyerSubmittedCount: number;
-  sellerRecordedRate: number;
-  buyerSubmittedRate: number;
-}
-
-export interface FunnelMomentMetrics {
-  moment: string;
-  shownCount: number;
-  clickedCount: number;
-  dismissedCount: number;
-  claimedCount: number;
-}
-
-export interface InvitationFunnelMetrics {
-  byMoment: FunnelMomentMetrics[];
-  totals: FunnelMomentMetrics;
-}
-
-export interface WeeklyStoreBreakdown {
-  weekStartDate: string;
-  storeId: string;
-  storeName: string;
-  assistedOrdersCount: number;
-  marketplaceOrdersCount: number;
-  assistedRevenue: number;
-  marketplaceRevenue: number;
-  distinctBuyers: number;
-  repeatBuyers: number;
-  repeatBuyerRate: number;
-}
-
-export interface AdminAssistedOrderMetricsSummary {
-  totalAssistedOrders: number;
-  totalMarketplaceOrders: number;
-  linkOpenedCount: number;
-  linkOpenedRate: number;
-  totalClaimedCount: number;
-  overallClaimRate: number;
-  ordersWithValidatedPaymentCount: number;
-  claimedWithValidatedPaymentCount: number;
-  validatedClaimRate: number;
-  targetClaimRateHypothesis: number;
-  belowTargetClaimRate: boolean;
-  buyerNoticeCount: number;
-  buyerNoticeRate: number;
-  confirmedReceivedCount: number;
-  confirmedReceivedRate: number;
-  timeToFirstValidPayment: TimeToPaymentSummary;
-  paymentSources: PaymentSourceBreakdown;
-}
-
-export interface AdminAssistedOrderMetricsResponse {
-  summary: AdminAssistedOrderMetricsSummary;
-  invitationFunnel: InvitationFunnelMetrics;
-  weeklyStoreBreakdown: WeeklyStoreBreakdown[];
-}
-
-function apiUrl(): string {
-  return (
-    process.env.INTERNAL_API_URL ??
-    process.env.NEXT_PUBLIC_API_URL ??
-    (process.env.NODE_ENV === "development" ? "http://localhost:3000" : "")
-  );
-}
-
+/**
+ * Admin metrics client delegating to the generated OpenAPI stats SDK.
+ */
 export const adminMetricsApi = {
-  async getAssistedOrderMetrics(
+  getAssistedOrderMetrics(
     query?: AdminAssistedOrderMetricsQuery,
     fallbackErrorMessage?: string,
   ): Promise<AdminAssistedOrderMetricsResponse> {
-    const searchParams = new URLSearchParams();
-    if (query?.from) searchParams.set("from", query.from);
-    if (query?.to) searchParams.set("to", query.to);
-    if (query?.storeId) searchParams.set("storeId", query.storeId);
-    const qs = searchParams.toString();
-    const url = `${apiUrl()}/api/admin/stats/assisted-orders${qs ? `?${qs}` : ""}`;
-
-    const res = await fetch(url, {
-      method: "GET",
-      credentials: "include",
-      headers: {
-        Accept: "application/json",
-      },
+    return apiClient.stats.getAssistedOrderMetrics(query, {
+      fallbackErrorMessage,
     });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => null);
-      throw new Error(
-        typeof data?.message === "string"
-          ? data.message
-          : (fallbackErrorMessage ?? "Error loading assisted order metrics"),
-      );
-    }
-
-    return (await res.json()) as AdminAssistedOrderMetricsResponse;
   },
 };

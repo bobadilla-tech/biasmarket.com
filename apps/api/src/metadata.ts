@@ -41,6 +41,8 @@ export default async () => {
       await import('./modules/collections/dto/collection-response.dto.js'),
     ['./modules/store-sections/dto/create-store-section.dto.js']:
       await import('./modules/store-sections/dto/create-store-section.dto.js'),
+    ['./modules/stats/dto/admin-assisted-order-metrics.dto.js']:
+      await import('./modules/stats/dto/admin-assisted-order-metrics.dto.js'),
     ['./modules/stats/dto/stats-response.dto.js']:
       await import('./modules/stats/dto/stats-response.dto.js'),
     ['./modules/customer-auth/dto/global-account-response.dto.js']:
@@ -562,7 +564,6 @@ export default async () => {
               soldOut: { required: false, type: () => Boolean },
               discontinued: { required: false, type: () => Boolean },
               shipsInternationally: { required: false, type: () => Boolean },
-              images: { required: false, type: () => [String] },
               availableUntil: { required: false, type: () => String },
               currency: { required: false, type: () => String },
               stock: { required: false, type: () => Number, minimum: 0 },
@@ -587,7 +588,6 @@ export default async () => {
               soldOut: { required: false, type: () => Boolean },
               discontinued: { required: false, type: () => Boolean },
               shipsInternationally: { required: false, type: () => Boolean },
-              images: { required: false, type: () => [String] },
               availableUntil: { required: false, type: () => String },
               currency: { required: false, type: () => String },
             },
@@ -1929,7 +1929,11 @@ export default async () => {
                 required: true,
                 enum: ['REJECTED', 'N_A', 'PENDING_REVIEW', 'APPROVED'],
               },
-              rejectionReason: { required: true, type: () => String, nullable: true },
+              rejectionReason: {
+                required: true,
+                type: () => String,
+                nullable: true,
+              },
             },
             PublicOrderTimelineItemDto: {
               type: {
@@ -2553,6 +2557,134 @@ export default async () => {
               position: { required: true, type: () => Number },
               hidden: { required: true, type: () => Boolean },
               createdAt: { required: true, type: () => String },
+            },
+          },
+        ],
+        [
+          import('./modules/stats/dto/admin-assisted-order-metrics.dto.js'),
+          {
+            AdminAssistedOrderMetricsQueryDto: {
+              from: { required: false, type: () => String },
+              to: { required: false, type: () => String },
+              storeId: { required: false, type: () => String },
+            },
+            TimeToPaymentSummaryDto: {
+              assistedAvgMinutes: {
+                required: true,
+                type: () => Number,
+                nullable: true,
+              },
+              assistedMedianMinutes: {
+                required: true,
+                type: () => Number,
+                nullable: true,
+              },
+              marketplaceAvgMinutes: {
+                required: true,
+                type: () => Number,
+                nullable: true,
+              },
+              marketplaceMedianMinutes: {
+                required: true,
+                type: () => Number,
+                nullable: true,
+              },
+            },
+            PaymentSourceBreakdownDto: {
+              sellerRecordedCount: { required: true, type: () => Number },
+              buyerSubmittedCount: { required: true, type: () => Number },
+              sellerRecordedRate: { required: true, type: () => Number },
+              buyerSubmittedRate: { required: true, type: () => Number },
+            },
+            FunnelMomentMetricsDto: {
+              moment: { required: true, type: () => String },
+              shownCount: { required: true, type: () => Number },
+              clickedCount: { required: true, type: () => Number },
+              dismissedCount: { required: true, type: () => Number },
+              claimedCount: { required: true, type: () => Number },
+            },
+            InvitationFunnelMetricsDto: {
+              byMoment: {
+                required: true,
+                type: () => [
+                  t['./modules/stats/dto/admin-assisted-order-metrics.dto.js']
+                    .FunnelMomentMetricsDto,
+                ],
+              },
+              totals: {
+                required: true,
+                type: () =>
+                  t['./modules/stats/dto/admin-assisted-order-metrics.dto.js']
+                    .FunnelMomentMetricsDto,
+              },
+            },
+            WeeklyStoreBreakdownDto: {
+              weekStartDate: { required: true, type: () => String },
+              storeId: { required: true, type: () => String },
+              storeName: { required: true, type: () => String },
+              assistedOrdersCount: { required: true, type: () => Number },
+              marketplaceOrdersCount: { required: true, type: () => Number },
+              assistedRevenue: { required: true, type: () => Number },
+              marketplaceRevenue: { required: true, type: () => Number },
+              distinctBuyers: { required: true, type: () => Number },
+              repeatBuyers: { required: true, type: () => Number },
+              repeatBuyerRate: { required: true, type: () => Number },
+            },
+            AdminAssistedOrderMetricsSummaryDto: {
+              totalAssistedOrders: { required: true, type: () => Number },
+              totalMarketplaceOrders: { required: true, type: () => Number },
+              linkOpenedCount: { required: true, type: () => Number },
+              linkOpenedRate: { required: true, type: () => Number },
+              totalClaimedCount: { required: true, type: () => Number },
+              overallClaimRate: { required: true, type: () => Number },
+              ordersWithValidatedPaymentCount: {
+                required: true,
+                type: () => Number,
+              },
+              claimedWithValidatedPaymentCount: {
+                required: true,
+                type: () => Number,
+              },
+              validatedClaimRate: { required: true, type: () => Number },
+              targetClaimRateHypothesis: { required: true, type: () => Number },
+              belowTargetClaimRate: { required: true, type: () => Boolean },
+              buyerNoticeCount: { required: true, type: () => Number },
+              buyerNoticeRate: { required: true, type: () => Number },
+              confirmedReceivedCount: { required: true, type: () => Number },
+              confirmedReceivedRate: { required: true, type: () => Number },
+              timeToFirstValidPayment: {
+                required: true,
+                type: () =>
+                  t['./modules/stats/dto/admin-assisted-order-metrics.dto.js']
+                    .TimeToPaymentSummaryDto,
+              },
+              paymentSources: {
+                required: true,
+                type: () =>
+                  t['./modules/stats/dto/admin-assisted-order-metrics.dto.js']
+                    .PaymentSourceBreakdownDto,
+              },
+            },
+            AdminAssistedOrderMetricsResponseDto: {
+              summary: {
+                required: true,
+                type: () =>
+                  t['./modules/stats/dto/admin-assisted-order-metrics.dto.js']
+                    .AdminAssistedOrderMetricsSummaryDto,
+              },
+              invitationFunnel: {
+                required: true,
+                type: () =>
+                  t['./modules/stats/dto/admin-assisted-order-metrics.dto.js']
+                    .InvitationFunnelMetricsDto,
+              },
+              weeklyStoreBreakdown: {
+                required: true,
+                type: () => [
+                  t['./modules/stats/dto/admin-assisted-order-metrics.dto.js']
+                    .WeeklyStoreBreakdownDto,
+                ],
+              },
             },
           },
         ],
@@ -4056,6 +4188,20 @@ export default async () => {
                 type: t[
                   './modules/store-sections/dto/store-section-response.dto.js'
                 ].StoreSectionResponseDto,
+              },
+            },
+          },
+        ],
+        [
+          import('./modules/stats/admin-stats.controller.js'),
+          {
+            AdminStatsController: {
+              getAssistedOrderMetrics: {
+                summary:
+                  'Returns aggregated assisted-order pilot metrics with zero PII exposure.',
+                type: t[
+                  './modules/stats/dto/admin-assisted-order-metrics.dto.js'
+                ].AdminAssistedOrderMetricsResponseDto,
               },
             },
           },

@@ -2821,6 +2821,129 @@ export interface SuggestionResponseDto {
   bodyParams: SuggestionResponseDtoBodyParams;
 }
 
+export interface TimeToPaymentSummaryDto {
+  /**
+   * Average minutes from creation to first valid payment for assisted orders
+   * @nullable
+   */
+  assistedAvgMinutes: number | null;
+  /**
+   * Median minutes from creation to first valid payment for assisted orders
+   * @nullable
+   */
+  assistedMedianMinutes: number | null;
+  /**
+   * Average minutes from creation to first valid payment for marketplace orders
+   * @nullable
+   */
+  marketplaceAvgMinutes: number | null;
+  /**
+   * Median minutes from creation to first valid payment for marketplace orders
+   * @nullable
+   */
+  marketplaceMedianMinutes: number | null;
+}
+
+export interface PaymentSourceBreakdownDto {
+  /** Count of active payments recorded by seller */
+  sellerRecordedCount: number;
+  /** Count of active payments submitted by buyer */
+  buyerSubmittedCount: number;
+  /** Proportion of active payments recorded by seller (0.0 - 1.0) */
+  sellerRecordedRate: number;
+  /** Proportion of active payments submitted by buyer (0.0 - 1.0) */
+  buyerSubmittedRate: number;
+}
+
+export interface AdminAssistedOrderMetricsSummaryDto {
+  /** Total assisted orders in the selected period */
+  totalAssistedOrders: number;
+  /** Total marketplace orders in the selected period */
+  totalMarketplaceOrders: number;
+  /** Assisted orders where the private link was opened */
+  linkOpenedCount: number;
+  /** Proportion of assisted orders whose link was opened */
+  linkOpenedRate: number;
+  /** Assisted orders claimed with Google */
+  totalClaimedCount: number;
+  /** Overall claim rate across all assisted orders */
+  overallClaimRate: number;
+  /** Assisted orders that have at least one validated payment */
+  ordersWithValidatedPaymentCount: number;
+  /** Assisted orders with validated payment claimed with Google */
+  claimedWithValidatedPaymentCount: number;
+  /** Claim rate among assisted orders with validated payment */
+  validatedClaimRate: number;
+  /** Target claim rate hypothesis benchmark (0.30) */
+  targetClaimRateHypothesis: number;
+  /** Flag indicating whether validatedClaimRate is below the 0.30 target hypothesis (false when 0 validated orders) */
+  belowTargetClaimRate: boolean;
+  /** Assisted orders with manual buyer notice event (G1) */
+  buyerNoticeCount: number;
+  /** Proportion of assisted orders with manual buyer notice */
+  buyerNoticeRate: number;
+  /** Assisted orders with confirmed reception (G3) */
+  confirmedReceivedCount: number;
+  /** Proportion of assisted orders with confirmed reception */
+  confirmedReceivedRate: number;
+  /** Time from order creation to first valid payment */
+  timeToFirstValidPayment: TimeToPaymentSummaryDto;
+  /** Origin breakdown of registered payments on assisted orders */
+  paymentSources: PaymentSourceBreakdownDto;
+}
+
+export interface FunnelMomentMetricsDto {
+  /** Moment of the invite in the order flow */
+  moment: string;
+  /** Distinct orders where the invite was shown */
+  shownCount: number;
+  /** Distinct orders where save button was clicked */
+  clickedCount: number;
+  /** Distinct orders where 'Ahora no' was clicked */
+  dismissedCount: number;
+  /** Distinct orders claimed with Google */
+  claimedCount: number;
+}
+
+export interface InvitationFunnelMetricsDto {
+  /** Breakdown of the save invitation funnel by moment */
+  byMoment: FunnelMomentMetricsDto[];
+  /** Aggregated totals across all invitation moments */
+  totals: FunnelMomentMetricsDto;
+}
+
+export interface WeeklyStoreBreakdownDto {
+  /** ISO week start date (YYYY-MM-DD, Monday in UTC) */
+  weekStartDate: string;
+  /** Store identifier */
+  storeId: string;
+  /** Store name */
+  storeName: string;
+  /** Volume of vendor-assisted orders */
+  assistedOrdersCount: number;
+  /** Volume of marketplace orders */
+  marketplaceOrdersCount: number;
+  /** Settled revenue from assisted orders */
+  assistedRevenue: number;
+  /** Settled revenue from marketplace orders */
+  marketplaceRevenue: number;
+  /** Count of distinct buyer entities in this store and week */
+  distinctBuyers: number;
+  /** Count of repeat buyer entities (>= 2 orders) in this store and week */
+  repeatBuyers: number;
+  /** Proportion of repeat buyers (0.0 - 1.0) */
+  repeatBuyerRate: number;
+}
+
+export interface AdminAssistedOrderMetricsResponseDto {
+  /** Summary indicators and conversion rates for assisted orders */
+  summary: AdminAssistedOrderMetricsSummaryDto;
+  /** Save-order invitation funnel broken down by moment */
+  invitationFunnel: InvitationFunnelMetricsDto;
+  /** Weekly volume, revenue, and repeat buyer comparison grouped by store */
+  weeklyStoreBreakdown: WeeklyStoreBreakdownDto[];
+}
+
 export interface RegisterCustomerDto {
   /** @minLength 1 */
   token: string;
@@ -3558,6 +3681,21 @@ export type StatsControlleranalyticsParams = {
 export type StatsControllerpaymentMethodsParams = {
   to?: string;
   from?: string;
+};
+
+export type AdminStatsControllergetAssistedOrderMetricsParams = {
+  /**
+   * Start date filter (ISO 8601 string, e.g. 2026-11-01)
+   */
+  from?: string;
+  /**
+   * End date filter (ISO 8601 string, e.g. 2026-11-07)
+   */
+  to?: string;
+  /**
+   * Optional store ID to filter metrics by a single store
+   */
+  storeId?: string;
 };
 
 export type MonitoringControllerfindAllParams = {

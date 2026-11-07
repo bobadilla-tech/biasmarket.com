@@ -4331,6 +4331,57 @@
         "tags": ["Suggestions"]
       }
     },
+    "/admin/stats/assisted-orders": {
+      "get": {
+        "operationId": "AdminStatsController_getAssistedOrderMetrics",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Start date filter (ISO 8601 string, e.g. 2026-11-01)",
+            "schema": {
+              "example": "2026-11-01T00:00:00.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "End date filter (ISO 8601 string, e.g. 2026-11-07)",
+            "schema": {
+              "example": "2026-11-07T23:59:59.999Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "storeId",
+            "required": false,
+            "in": "query",
+            "description": "Optional store ID to filter metrics by a single store",
+            "schema": {
+              "example": "cm0123456789abcdef",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAssistedOrderMetricsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Returns aggregated assisted-order pilot metrics with zero PII exposure.",
+        "tags": ["Stats"]
+      }
+    },
     "/stores/{slug}/account/register": {
       "post": {
         "operationId": "CustomerAuthController_register",
@@ -11139,6 +11190,306 @@
           }
         },
         "required": ["id", "severity", "titleKey", "bodyParams"]
+      },
+      "TimeToPaymentSummaryDto": {
+        "type": "object",
+        "properties": {
+          "assistedAvgMinutes": {
+            "type": "number",
+            "nullable": true,
+            "description": "Average minutes from creation to first valid payment for assisted orders"
+          },
+          "assistedMedianMinutes": {
+            "type": "number",
+            "nullable": true,
+            "description": "Median minutes from creation to first valid payment for assisted orders"
+          },
+          "marketplaceAvgMinutes": {
+            "type": "number",
+            "nullable": true,
+            "description": "Average minutes from creation to first valid payment for marketplace orders"
+          },
+          "marketplaceMedianMinutes": {
+            "type": "number",
+            "nullable": true,
+            "description": "Median minutes from creation to first valid payment for marketplace orders"
+          }
+        },
+        "required": [
+          "assistedAvgMinutes",
+          "assistedMedianMinutes",
+          "marketplaceAvgMinutes",
+          "marketplaceMedianMinutes"
+        ]
+      },
+      "PaymentSourceBreakdownDto": {
+        "type": "object",
+        "properties": {
+          "sellerRecordedCount": {
+            "type": "number",
+            "description": "Count of active payments recorded by seller"
+          },
+          "buyerSubmittedCount": {
+            "type": "number",
+            "description": "Count of active payments submitted by buyer"
+          },
+          "sellerRecordedRate": {
+            "type": "number",
+            "description": "Proportion of active payments recorded by seller (0.0 - 1.0)"
+          },
+          "buyerSubmittedRate": {
+            "type": "number",
+            "description": "Proportion of active payments submitted by buyer (0.0 - 1.0)"
+          }
+        },
+        "required": [
+          "sellerRecordedCount",
+          "buyerSubmittedCount",
+          "sellerRecordedRate",
+          "buyerSubmittedRate"
+        ]
+      },
+      "AdminAssistedOrderMetricsSummaryDto": {
+        "type": "object",
+        "properties": {
+          "totalAssistedOrders": {
+            "type": "number",
+            "description": "Total assisted orders in the selected period"
+          },
+          "totalMarketplaceOrders": {
+            "type": "number",
+            "description": "Total marketplace orders in the selected period"
+          },
+          "linkOpenedCount": {
+            "type": "number",
+            "description": "Assisted orders where the private link was opened"
+          },
+          "linkOpenedRate": {
+            "type": "number",
+            "description": "Proportion of assisted orders whose link was opened"
+          },
+          "totalClaimedCount": {
+            "type": "number",
+            "description": "Assisted orders claimed with Google"
+          },
+          "overallClaimRate": {
+            "type": "number",
+            "description": "Overall claim rate across all assisted orders"
+          },
+          "ordersWithValidatedPaymentCount": {
+            "type": "number",
+            "description": "Assisted orders that have at least one validated payment"
+          },
+          "claimedWithValidatedPaymentCount": {
+            "type": "number",
+            "description": "Assisted orders with validated payment claimed with Google"
+          },
+          "validatedClaimRate": {
+            "type": "number",
+            "description": "Claim rate among assisted orders with validated payment"
+          },
+          "targetClaimRateHypothesis": {
+            "type": "number",
+            "description": "Target claim rate hypothesis benchmark (0.30)",
+            "example": 0.3
+          },
+          "belowTargetClaimRate": {
+            "type": "boolean",
+            "description": "Flag indicating whether validatedClaimRate is below the 0.30 target hypothesis (false when 0 validated orders)"
+          },
+          "buyerNoticeCount": {
+            "type": "number",
+            "description": "Assisted orders with manual buyer notice event (G1)"
+          },
+          "buyerNoticeRate": {
+            "type": "number",
+            "description": "Proportion of assisted orders with manual buyer notice"
+          },
+          "confirmedReceivedCount": {
+            "type": "number",
+            "description": "Assisted orders with confirmed reception (G3)"
+          },
+          "confirmedReceivedRate": {
+            "type": "number",
+            "description": "Proportion of assisted orders with confirmed reception"
+          },
+          "timeToFirstValidPayment": {
+            "description": "Time from order creation to first valid payment",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TimeToPaymentSummaryDto"
+              }
+            ]
+          },
+          "paymentSources": {
+            "description": "Origin breakdown of registered payments on assisted orders",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaymentSourceBreakdownDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "totalAssistedOrders",
+          "totalMarketplaceOrders",
+          "linkOpenedCount",
+          "linkOpenedRate",
+          "totalClaimedCount",
+          "overallClaimRate",
+          "ordersWithValidatedPaymentCount",
+          "claimedWithValidatedPaymentCount",
+          "validatedClaimRate",
+          "targetClaimRateHypothesis",
+          "belowTargetClaimRate",
+          "buyerNoticeCount",
+          "buyerNoticeRate",
+          "confirmedReceivedCount",
+          "confirmedReceivedRate",
+          "timeToFirstValidPayment",
+          "paymentSources"
+        ]
+      },
+      "FunnelMomentMetricsDto": {
+        "type": "object",
+        "properties": {
+          "moment": {
+            "type": "string",
+            "description": "Moment of the invite in the order flow",
+            "example": "pago_validado"
+          },
+          "shownCount": {
+            "type": "number",
+            "description": "Distinct orders where the invite was shown"
+          },
+          "clickedCount": {
+            "type": "number",
+            "description": "Distinct orders where save button was clicked"
+          },
+          "dismissedCount": {
+            "type": "number",
+            "description": "Distinct orders where 'Ahora no' was clicked"
+          },
+          "claimedCount": {
+            "type": "number",
+            "description": "Distinct orders claimed with Google"
+          }
+        },
+        "required": [
+          "moment",
+          "shownCount",
+          "clickedCount",
+          "dismissedCount",
+          "claimedCount"
+        ]
+      },
+      "InvitationFunnelMetricsDto": {
+        "type": "object",
+        "properties": {
+          "byMoment": {
+            "description": "Breakdown of the save invitation funnel by moment",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FunnelMomentMetricsDto"
+            }
+          },
+          "totals": {
+            "description": "Aggregated totals across all invitation moments",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FunnelMomentMetricsDto"
+              }
+            ]
+          }
+        },
+        "required": ["byMoment", "totals"]
+      },
+      "WeeklyStoreBreakdownDto": {
+        "type": "object",
+        "properties": {
+          "weekStartDate": {
+            "type": "string",
+            "description": "ISO week start date (YYYY-MM-DD, Monday in UTC)",
+            "example": "2026-11-02"
+          },
+          "storeId": {
+            "type": "string",
+            "description": "Store identifier"
+          },
+          "storeName": {
+            "type": "string",
+            "description": "Store name"
+          },
+          "assistedOrdersCount": {
+            "type": "number",
+            "description": "Volume of vendor-assisted orders"
+          },
+          "marketplaceOrdersCount": {
+            "type": "number",
+            "description": "Volume of marketplace orders"
+          },
+          "assistedRevenue": {
+            "type": "number",
+            "description": "Settled revenue from assisted orders"
+          },
+          "marketplaceRevenue": {
+            "type": "number",
+            "description": "Settled revenue from marketplace orders"
+          },
+          "distinctBuyers": {
+            "type": "number",
+            "description": "Count of distinct buyer entities in this store and week"
+          },
+          "repeatBuyers": {
+            "type": "number",
+            "description": "Count of repeat buyer entities (>= 2 orders) in this store and week"
+          },
+          "repeatBuyerRate": {
+            "type": "number",
+            "description": "Proportion of repeat buyers (0.0 - 1.0)"
+          }
+        },
+        "required": [
+          "weekStartDate",
+          "storeId",
+          "storeName",
+          "assistedOrdersCount",
+          "marketplaceOrdersCount",
+          "assistedRevenue",
+          "marketplaceRevenue",
+          "distinctBuyers",
+          "repeatBuyers",
+          "repeatBuyerRate"
+        ]
+      },
+      "AdminAssistedOrderMetricsResponseDto": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "description": "Summary indicators and conversion rates for assisted orders",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AdminAssistedOrderMetricsSummaryDto"
+              }
+            ]
+          },
+          "invitationFunnel": {
+            "description": "Save-order invitation funnel broken down by moment",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/InvitationFunnelMetricsDto"
+              }
+            ]
+          },
+          "weeklyStoreBreakdown": {
+            "description": "Weekly volume, revenue, and repeat buyer comparison grouped by store",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeeklyStoreBreakdownDto"
+            }
+          }
+        },
+        "required": ["summary", "invitationFunnel", "weeklyStoreBreakdown"]
       },
       "RegisterCustomerDto": {
         "type": "object",

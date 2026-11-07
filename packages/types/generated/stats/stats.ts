@@ -6,6 +6,8 @@
  * OpenAPI spec version: 1.0
  */
 import type {
+  AdminAssistedOrderMetricsResponseDto,
+  AdminStatsControllergetAssistedOrderMetricsParams,
   AnalyticsResultResponseDto,
   PaymentMethodsBreakdownResponseDto,
   StatsControlleranalyticsParams,
@@ -88,6 +90,40 @@ export const paymentMethods = async (
 ): Promise<PaymentMethodsBreakdownResponseDto> => {
   return customFetch<PaymentMethodsBreakdownResponseDto>(
     getPaymentMethodsUrl(storeId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetAssistedOrderMetricsUrl = (
+  params?: AdminStatsControllergetAssistedOrderMetricsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/admin/stats/assisted-orders?${stringifiedParams}`
+    : `/admin/stats/assisted-orders`;
+};
+
+/**
+ * @summary Returns aggregated assisted-order pilot metrics with zero PII exposure.
+ */
+export const getAssistedOrderMetrics = async (
+  params?: AdminStatsControllergetAssistedOrderMetricsParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AdminAssistedOrderMetricsResponseDto> => {
+  return customFetch<AdminAssistedOrderMetricsResponseDto>(
+    getGetAssistedOrderMetricsUrl(params),
     {
       ...options,
       method: "GET",
