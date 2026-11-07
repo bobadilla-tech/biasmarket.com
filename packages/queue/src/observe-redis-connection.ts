@@ -22,8 +22,7 @@ export function observeRedisConnection(
     if (failureLogged) return;
     failureLogged = true;
 
-    const error =
-      cause instanceof Error ? cause : new Error(String(cause));
+    const error = cause instanceof Error ? cause : new Error(String(cause));
 
     logger.error({
       event: "redis.connection_error",
