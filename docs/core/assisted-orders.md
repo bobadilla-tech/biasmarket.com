@@ -261,6 +261,168 @@ ownership and the database in one place.
   scheduled.
 - Queue names and job options are in `packages/queue`.
 
+## Pilot metrics and evaluation framework
+
+To measure buyer adoption, payment conversion and private link usage during the
+assisted order pilot, the stats module (`apps/api/src/modules/stats/`) computes
+server-side aggregations comparing assisted orders (`VENDOR_ASSISTED`) and
+marketplace orders (`MARKETPLACE`). An audit of existing telemetry confirmed
+100% sufficiency with existing `OrderEvent` types and `Order` lifecycle fields;
+no duplicate or missing instrumentation was required.
+
+### Catalog of 8 pilot metrics
+
+The cohort is every assisted (`VENDOR_ASSISTED`) and marketplace
+(`MARKETPLACE`) order in the selected window, including cancelled orders.
+Cancelling an order does not remove its volume or earlier adoption events from
+these denominators.
+
+`GET /api/admin/stats/assisted-orders` loads orders and assisted-order events in
+id-cursor pages of 500 and folds each page into one accumulator in
+`admin-assisted-order-metrics.helper.ts`. A full-history request still returns
+complete results, and each Prisma payload stays bounded:
+
+1. **Weekly summary grouped by store.** Compares assisted (`VENDOR_ASSISTED`)
+   and marketplace (`MARKETPLACE`) orders grouped by store (`storeId`) and ISO
+   week start date (Monday in UTC, `YYYY-MM-DD`):
+   - **Order volume:** Count of assisted orders and count of marketplace
+     orders.
+   - **Gross merchandise volume / revenue:** Sum of `OrderPayment.amount` for
+     active payments satisfying `countsTowardPaid` (`payment.voidedAt == null &&
+(payment.source === 'SELLER_RECORDED' || payment.reviewStatus === 'APPROVED')`),
+     computed separately for assisted and marketplace orders and separately per
+     `OrderPayment.currency`. Amounts in different currencies are not added
+     together. A side with no settled payment returns an empty list.
+   - **Distinct buyers:** Count of distinct buyer entities per store-week.
+   - **Repeat buyers:** Count of distinct buyer entities with $\ge 2$ orders
+     at the same store within that week.
+   - **Repeat buyer rate:** $\frac{\text{repeat buyers}}{\text{distinct buyers}}$
+     (0.0 if distinct buyers is 0).
+2. **Link opened proportion.** Proportion of assisted orders whose private
+   link was opened:
+   - **Numerator:** Assisted orders where `linkFirstOpenedAt IS NOT NULL`.
+   - **Denominator:** Total assisted orders (`Order.source = 'VENDOR_ASSISTED'`).
+   - **Formula:** $\frac{\text{Count}(linkFirstOpenedAt \neq \text{null})}{\text{Total assisted orders}}$
+     (0.0 if total is 0). The flag is stamped by the first browser read that
+     presents the token. Crawlers and link previews do not execute client
+     scripts and therefore do not trigger an open; a seller who opens the link
+     to check it does count, because the read itself does not reveal who holds
+     the token.
+3. **Claim rates (overall and validated payment).**
+   - **Overall claim rate:** Proportion of assisted orders claimed with a
+     Google account across all assisted orders.
+     - **Numerator:** Assisted orders where `claimedAt IS NOT NULL`.
+     - **Denominator:** Total assisted orders.
+     - **Formula:** $\frac{\text{Count}(claimedAt \neq \text{null})}{\text{Total assisted orders}}$
+       (0.0 if total is 0).
+   - **Validated claim rate:** Proportion of assisted orders claimed with
+     Google among orders that have at least one validated payment.
+     - **Numerator:** Assisted orders where `claimedAt IS NOT NULL` AND at least
+       one payment satisfies `countsTowardPaid`.
+     - **Denominator:** Assisted orders having at least one payment that satisfies
+       `countsTowardPaid`.
+     - **Formula:** $\frac{\text{Count}(claimedAt \neq \text{null} \land \text{has validated payment})}{\text{Assisted orders with validated payment}}$
+       (0.0 if denominator is 0).
+4. **Invitation funnel by moment.** Tracks distinct assisted orders across
+   save-order prompt moments (`pago_validado`, `entrega`, `banner`,
+   `adelanto_linea_de_tiempo`, and `unspecified` for unrecognized payloads)
+   through four stages:
+   - **Shown:** Distinct orders where an `INVITE_SHOWN` event was recorded.
+   - **Clicked:** Distinct orders where an `INVITE_CLICKED` event was recorded.
+   - **Dismissed:** Distinct orders where an `INVITE_DISMISSED` ("Ahora no")
+     event was recorded.
+   - **Claimed:** Distinct orders where a `CLAIMED` event was recorded.
+   - Monotonicity and deduplication are enforced by counting distinct order IDs
+     (`new Set(orderIds).size`) per moment and across totals.
+5. **G1 buyer notice rate and G3 confirmed reception rate.**
+   - **G1 buyer notice rate:** Proportion of assisted orders where the seller
+     executed the manual WhatsApp notification step.
+     - **Numerator:** Distinct assisted orders with at least one `BUYER_NOTIFIED`
+       event in `OrderEvent`.
+     - **Denominator:** Total assisted orders.
+     - **Formula:** $\frac{\text{Count}(\text{distinct orders with } BUYER\_NOTIFIED)}{\text{Total assisted orders}}$
+       (0.0 if total is 0).
+   - **G3 confirmed reception rate:** Proportion of assisted orders where the
+     buyer confirmed delivery on the timeline.
+     - **Numerator:** Assisted orders where `buyerConfirmedReceivedAt IS NOT NULL`.
+     - **Denominator:** Total assisted orders.
+     - **Formula:** $\frac{\text{Count}(buyerConfirmedReceivedAt \neq \text{null})}{\text{Total assisted orders}}$
+       (0.0 if total is 0).
+6. **Privacy-preserving repeat buyers.** Buyers grouped per store server-side
+   on normalized phone (`Order.customerPhoneNormalized` or normalized
+   `Order.customerPhone`), falling back to `Order.buyerAccountId`,
+   `Order.customerId`, or `Order.id`.
+   - **Period-level (`repeatBuyersByStore`):** groups each buyer across the
+     whole selected window, so two orders in different weeks still count as one
+     returning buyer. Each row reports the store, distinct buyers, repeat buyers
+     ($\ge 2$ orders at that store) and the repeat-buyer rate.
+   - **Weekly breakdown:** each `weeklyStoreBreakdown` row applies the same
+     grouping inside its store-week, for week-over-week comparison.
+   - Zero phone numbers, phone hashes, or customer UUIDs are exposed in the
+     API response or rendered in the UI; only aggregate counts and rates are
+     returned.
+7. **Time from order creation to first valid payment.** Duration from
+   `Order.createdAt` to the earliest validated payment timestamp:
+   - Earliest valid timestamp: `paidAt ?? createdAt` for `SELLER_RECORDED`
+     payments; `reviewedAt ?? paidAt ?? createdAt` for `BUYER_SUBMITTED`
+     payments.
+   - Evaluated exclusively for orders with at least one payment that satisfies
+     `countsTowardPaid`.
+   - Duration is clamped to $\ge 0$ minutes to guard against server clock skew.
+   - Exposes arithmetic average (`computeAvg`) and median (`computeMedian`),
+     calculated separately for assisted orders and marketplace orders (or null
+     when 0 qualifying orders exist).
+8. **Payment source breakdown.** Distribution of active payment origins on
+   assisted orders:
+   - **Active payments:** Non-voided payments (`OrderPayment.voidedAt == null`).
+   - **Seller recorded:** Count and rate of active payments with `source ===
+'SELLER_RECORDED'`.
+   - **Buyer submitted:** Count and rate of active payments with `source ===
+'BUYER_SUBMITTED'`.
+   - **Rates:** Proportions of each source over total active payments (0.0 if
+     active payments count is 0).
+
+### 30% claim rate hypothesis
+
+A 30% claim rate (`TARGET_CLAIM_RATE_HYPOTHESIS = 0.30`) among orders with
+validated payment is established as an initial operational hypothesis to evaluate
+whether buyers trust the private link experience and find sufficient incentive
+to save their order into a permanent Google account.
+
+This figure is an operational evaluation benchmark rather than an SLA, service
+guarantee, or rigid system limit. It serves to measure private link adoption
+and determine when product intervention is warranted.
+
+### Backlog nudge evaluation rule
+
+When the claim rate among orders with validated payment (`validatedClaimRate`)
+falls below 30% (`belowTargetClaimRate = true`) over a rolling evaluation
+window, platform operations will evaluate activating stronger backlog nudges.
+
+- **Condition:** `ordersWithValidatedPaymentCount > 0` and `validatedClaimRate <
+0.30`. If there are 0 orders with validated payment in the window,
+  `belowTargetClaimRate` evaluates strictly to `false` to avoid false alerts on
+  new or low-volume stores.
+- **Potential nudges:**
+  - Enhanced reminder banners presented when the buyer revisits their private
+    link.
+  - Recommended WhatsApp reminder templates suggested to sellers post-delivery.
+  - Prominent timeline callouts prompting the buyer to claim the order to
+    track future purchases.
+
+### Data privacy invariants
+
+All metrics are folded server-side from bounded pages and exposed strictly as aggregated
+totals, conversion rates, and monetary sums. Zero Personally Identifiable
+Information (PII) is transmitted over the API or rendered in the administrative
+interface:
+
+- No buyer phone numbers, normalized phone numbers, or phone hashes.
+- No buyer names, aliases, or customer notes.
+- No email addresses or buyer account IDs.
+- No private link access tokens, link hashes, or order URLs.
+- No individual order UUIDs or granular transaction records.
+
 ## Related
 
 Next: [security-payments.md](security-payments.md) for the payment state machine

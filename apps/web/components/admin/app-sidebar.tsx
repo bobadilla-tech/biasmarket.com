@@ -1,6 +1,6 @@
 "use client";
 
-import { Inbox, LogOut, Store, Users } from "lucide-react";
+import { BarChart3, Inbox, LogOut, Store, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { authClient } from "@/lib/auth-client";
@@ -18,18 +18,19 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-interface NavItem {
+export interface NavItem {
   href: string;
-  labelKey: "inquiries" | "stores" | "coupons" | "users";
+  labelKey: "inquiries" | "stores" | "coupons" | "users" | "metrics";
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   disabled?: boolean;
 }
 
-const NAV_ITEMS: NavItem[] = [
+export const NAV_ITEMS: NavItem[] = [
   { href: "/admin/inquiries", labelKey: "inquiries", icon: Inbox },
   { href: "/admin/stores", labelKey: "stores", icon: Store },
   { href: "/admin/coupons", labelKey: "coupons", icon: Store },
   { href: "/admin/users", labelKey: "users", icon: Users },
+  { href: "/admin/metrics", labelKey: "metrics", icon: BarChart3 },
 ];
 
 export function AppSidebar() {

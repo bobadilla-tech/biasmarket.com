@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -22,8 +23,28 @@ import type {
   PaymentMethodBreakdownRow,
   PaymentMethodsBreakdown,
 } from "./analytics.types.js";
+import {
+  AdminAssistedOrderMetricsQueryDto,
+  AdminAssistedOrderMetricsResponseDto,
+} from "./dto/admin-assisted-order-metrics.dto.js";
+import {
+  createMetricsAccumulator,
+  finalizeMetrics,
+  foldEvents,
+  foldOrders,
+  type MetricOrderEventRow,
+  type MetricOrderRow,
+} from "./admin-assisted-order-metrics.helper.js";
 
 const TOP_PRODUCTS_LIMIT = 5;
+const ASSISTED_METRICS_PAGE_SIZE = 500;
+const ASSISTED_METRIC_EVENT_TYPES = [
+  "BUYER_NOTIFIED",
+  "INVITE_SHOWN",
+  "INVITE_CLICKED",
+  "INVITE_DISMISSED",
+  "CLAIMED",
+] as const;
 
 const KNOWN_PAYMENT_METHODS: PaymentMethodType[] = [
   "YAPE",
@@ -404,5 +425,147 @@ export class StatsService {
       totalCount,
       byMethod,
     };
+  }
+
+  async getAdminAssistedOrderMetrics(
+    query: AdminAssistedOrderMetricsQueryDto,
+  ): Promise<AdminAssistedOrderMetricsResponseDto> {
+    let fromDate: Date | undefined;
+    let toDate: Date | undefined;
+
+    if (query.from) {
+      fromDate = new Date(query.from);
+      if (Number.isNaN(fromDate.getTime())) {
+        throw new BadRequestException("Fecha 'from' inválida");
+      }
+    }
+
+    if (query.to) {
+      toDate = new Date(query.to);
+      if (Number.isNaN(toDate.getTime())) {
+        throw new BadRequestException("Fecha 'to' inválida");
+      }
+      if (query.to.length === 10) {
+        toDate = new Date(
+          Date.UTC(
+            toDate.getUTCFullYear(),
+            toDate.getUTCMonth(),
+            toDate.getUTCDate(),
+            23,
+            59,
+            59,
+            999,
+          ),
+        );
+      }
+    }
+
+    if (fromDate && toDate && fromDate > toDate) {
+      throw new BadRequestException("Rango de fechas inválido");
+    }
+
+    const orderWhere: Prisma.OrderWhereInput = {
+      ...(fromDate || toDate
+        ? {
+            createdAt: {
+              ...(fromDate ? { gte: fromDate } : {}),
+              ...(toDate ? { lte: toDate } : {}),
+            },
+          }
+        : {}),
+      ...(query.storeId ? { storeId: query.storeId } : {}),
+    };
+
+    const accumulator = createMetricsAccumulator();
+    await this.forEachIdPage(
+      (page) =>
+        this.prisma.order.findMany({
+          where: orderWhere,
+          select: {
+            id: true,
+            storeId: true,
+            store: { select: { id: true, name: true } },
+            source: true,
+            customerId: true,
+            customerPhoneNormalized: true,
+            customerPhone: true,
+            buyerAccountId: true,
+            linkFirstOpenedAt: true,
+            claimedAt: true,
+            buyerConfirmedReceivedAt: true,
+            createdAt: true,
+            totalAmount: true,
+            payments: {
+              select: {
+                id: true,
+                source: true,
+                reviewStatus: true,
+                paidAt: true,
+                reviewedAt: true,
+                voidedAt: true,
+                amount: true,
+                currency: true,
+                createdAt: true,
+              },
+            },
+          },
+          ...page,
+        }) as Promise<MetricOrderRow[]>,
+      (orders) => foldOrders(accumulator, orders),
+    );
+
+    if (accumulator.totalAssistedOrders > 0) {
+      const eventWhere: Prisma.OrderEventWhereInput = {
+        type: { in: [...ASSISTED_METRIC_EVENT_TYPES] },
+        order: {
+          ...orderWhere,
+          source: "VENDOR_ASSISTED",
+        },
+      };
+      await this.forEachIdPage(
+        (page) =>
+          this.prisma.orderEvent.findMany({
+            where: eventWhere,
+            select: {
+              id: true,
+              orderId: true,
+              type: true,
+              payload: true,
+            },
+            ...page,
+          }) as Promise<Array<MetricOrderEventRow & { id: string }>>,
+        (events) => foldEvents(accumulator, events),
+      );
+    }
+
+    return finalizeMetrics(accumulator);
+  }
+
+  /**
+   * Walks a primary-key cursor so each Prisma payload stays bounded. Callers
+   * fold the page and discard it.
+   */
+  private async forEachIdPage<T extends { id: string }>(
+    load: (page: {
+      take: number;
+      orderBy: { id: "asc" };
+      skip?: number;
+      cursor?: { id: string };
+    }) => Promise<T[]>,
+    onPage: (rows: T[]) => void,
+  ): Promise<void> {
+    let cursor: string | undefined;
+    for (;;) {
+      const rows = await load({
+        take: ASSISTED_METRICS_PAGE_SIZE,
+        orderBy: { id: "asc" },
+        ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
+      });
+      if (rows.length === 0) return;
+      onPage(rows);
+      if (rows.length < ASSISTED_METRICS_PAGE_SIZE) return;
+      cursor = rows[rows.length - 1]?.id;
+      if (!cursor) return;
+    }
   }
 }

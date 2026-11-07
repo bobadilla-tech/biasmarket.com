@@ -33,3 +33,25 @@ export type {
   CouponFormValues,
   CouponRedemption,
 } from "./schemas/coupon.schema";
+
+export { adminMetricsApi } from "./api/admin-metrics.api";
+export type {
+  AdminAssistedOrderMetricsQuery,
+  AdminAssistedOrderMetricsResponse,
+  AdminAssistedOrderMetricsSummary,
+  FunnelMomentMetrics,
+  InvitationFunnelMetrics,
+  PaymentSourceBreakdown,
+  TimeToPaymentSummary,
+  WeeklyStoreBreakdown,
+  StoreRepeatBuyerMetrics,
+} from "./api/admin-metrics.api";
+
+export { adminMetricsKeys, useAdminMetrics } from "./queries/use-admin-metrics";
+
+export { AdminMetricsView } from "./components/metrics/admin-metrics-view";
+export { MetricsSummaryCards } from "./components/metrics/metrics-summary-cards";
+export { HypothesisCallout } from "./components/metrics/hypothesis-callout";
+export { InvitationFunnelCard } from "./components/metrics/invitation-funnel-card";
+export { WeeklyStoreBreakdownTable } from "./components/metrics/weekly-store-breakdown-table";
+export { RepeatBuyersByStoreCard } from "./components/metrics/repeat-buyers-by-store-card";

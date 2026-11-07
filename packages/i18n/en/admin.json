@@ -5,6 +5,7 @@
     "stores": "Stores",
     "coupons": "Coupons",
     "users": "Users",
+    "metrics": "Metrics",
     "comingSoon": "Soon",
     "navigationLabel": "Admin navigation",
     "signOut": "Sign out"
@@ -108,6 +109,83 @@
       "email": "Email",
       "redeemedAt": "Redeemed",
       "expiresAt": "Premium until"
+    }
+  },
+  "metrics": {
+    "title": "Assisted Order Pilot Metrics",
+    "subtitle": "Adoption indicators, link open rates, account claims, and payment validation.",
+    "filters": {
+      "dateRange": "Date range",
+      "allTime": "All time",
+      "last7Days": "Last 7 days",
+      "last30Days": "Last 30 days",
+      "store": "Store",
+      "allStores": "All stores",
+      "refresh": "Refresh metrics"
+    },
+    "hypothesis": {
+      "title": "30% Claim Rate Hypothesis",
+      "description": "The pilot's initial target is to achieve at least 30% Google account claims among orders with validated payment. If the rate is lower, evaluate activating stronger backlog nudges.",
+      "onTarget": "On target (≥ 30%)",
+      "belowTarget": "Below target (< 30%) — Evaluate backlog nudges",
+      "noData": "No data",
+      "currentRate": "Current rate (with payment)",
+      "target": "/ Target {percent}%",
+      "evaluationAlert": "The validated claim rate is currently below 30%. Evaluating stronger nudges in the delivery flow is recommended."
+    },
+    "cards": {
+      "totalAssisted": "Assisted orders",
+      "totalMarketplace": "Marketplace orders",
+      "linkOpenedRate": "Link opened rate",
+      "overallClaimRate": "Overall claim rate",
+      "validatedClaimRate": "Validated payment claim rate",
+      "buyerNoticeRate": "Manual buyer notice (G1)",
+      "confirmedReceivedRate": "Confirmed received (G3)",
+      "timeToPayment": "Time to validated payment",
+      "paymentSources": "Payment sources",
+      "sellerRecorded": "Seller recorded",
+      "buyerSubmitted": "Buyer submitted proof",
+      "targetComparison": "Target: 30%",
+      "avgMinutes": "Avg {minutes} min",
+      "medianMinutes": "Median {minutes} min",
+      "marketplaceAvgMinutes": "Marketplace avg {minutes} min",
+      "notAvailable": "N/A"
+    },
+    "funnel": {
+      "title": "Save-Order Invitation Funnel",
+      "subtitle": "Interactions with the save-order invitation prompt",
+      "moment": "Moment",
+      "shown": "Shown",
+      "clicked": "Clicked Save",
+      "dismissed": "Not now",
+      "claimed": "Claimed",
+      "total": "Total",
+      "moments": {
+        "pago_validado": "Validated payment",
+        "entrega": "Delivery",
+        "banner": "Recurring banner",
+        "adelanto_linea_de_tiempo": "Timeline teaser",
+        "unspecified": "Unspecified"
+      }
+    },
+    "table": {
+      "title": "Weekly Store Breakdown",
+      "subtitle": "Volume, revenue, and buyer retention by week and store",
+      "week": "Week",
+      "store": "Store",
+      "assistedOrders": "Assisted orders",
+      "marketplaceOrders": "Marketplace orders",
+      "assistedRevenue": "Assisted revenue",
+      "marketplaceRevenue": "Marketplace revenue",
+      "distinctBuyers": "Distinct buyers",
+      "repeatBuyers": "Repeat buyers",
+      "repeatRate": "Repeat rate",
+      "empty": "No order data for the selected period."
+    },
+    "repeatBuyers": {
+      "title": "Repeat Buyers by Store",
+      "subtitle": "Buyers with two or more orders at the same store in the selected period",
+      "empty": "No buyer data for the selected period."
     }
   }
 }
