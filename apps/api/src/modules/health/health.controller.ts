@@ -10,14 +10,18 @@ import type { Queue } from "bullmq";
 import { QUEUE_NAMES } from "@biasmarket/queue";
 import { PrismaService } from "../../prisma/prisma.service.js";
 
-const REDIS_HEALTH_TIMEOUT_MS = 2_000;
+const HEALTH_CHECK_TIMEOUT_MS = 2_000;
 
 type RedisPingClient = { status: string; ping(): Promise<string> };
 
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  operation: string,
+): Promise<T> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(
-      () => reject(new Error(`Redis PING timed out after ${timeoutMs}ms`)),
+      () => reject(new Error(`${operation} timed out after ${timeoutMs}ms`)),
       timeoutMs,
     );
     timer.unref();
@@ -38,6 +42,7 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
 @Controller("health")
 export class HealthController {
   private readonly logger = new Logger(HealthController.name);
+  private redisPingPromise: Promise<string> | null = null;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -66,7 +71,11 @@ export class HealthController {
 
   private async checkDatabase(): Promise<"ok" | "error"> {
     try {
-      await this.prisma.$queryRaw`SELECT 1`;
+      await withTimeout(
+        this.prisma.$queryRaw`SELECT 1`,
+        HEALTH_CHECK_TIMEOUT_MS,
+        "Database health check",
+      );
       return "ok";
     } catch {
       return "error";
@@ -75,14 +84,11 @@ export class HealthController {
 
   private async checkRedis(): Promise<"ok" | "error"> {
     try {
-      const ping = this.pingQueue.backend.client.then((client) => {
-        const redis = client as unknown as RedisPingClient;
-        if (redis.status !== "ready" && redis.status !== "connect") {
-          throw new Error(`Redis connection is ${redis.status}`);
-        }
-        return redis.ping();
-      });
-      const response = await withTimeout(ping, REDIS_HEALTH_TIMEOUT_MS);
+      const response = await withTimeout(
+        this.getRedisPing(),
+        HEALTH_CHECK_TIMEOUT_MS,
+        "Redis PING",
+      );
       if (response !== "PONG") {
         throw new Error("Redis PING returned an unexpected response");
       }
@@ -95,5 +101,24 @@ export class HealthController {
       });
       return "error";
     }
+  }
+
+  private getRedisPing(): Promise<string> {
+    if (!this.redisPingPromise) {
+      const ping = this.pingQueue.backend.client.then((client) => {
+        const redis = client as unknown as RedisPingClient;
+        if (redis.status !== "ready" && redis.status !== "connect") {
+          throw new Error(`Redis connection is ${redis.status}`);
+        }
+        return redis.ping();
+      });
+
+      // Keep a timed-out PING shared until Redis settles it.
+      this.redisPingPromise = ping.finally(() => {
+        this.redisPingPromise = null;
+      });
+    }
+
+    return this.redisPingPromise;
   }
 }

@@ -33,7 +33,16 @@ export function observeRedisConnection(
   });
 
   backend.on("close", () => {
-    if (hasConnected) connectionFailed = true;
+    if (!hasConnected) return;
+    connectionFailed = true;
+    if (failureLogged) return;
+    failureLogged = true;
+
+    logger.error({
+      event: "redis.connection_closed",
+      queue,
+      msg: "Redis connection closed unexpectedly",
+    });
   });
 
   backend.on("ready", () => {

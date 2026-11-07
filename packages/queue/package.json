@@ -7,6 +7,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
+    "test": "vitest run test",
     "typecheck": "tsc --noEmit",
     "lint": "node ../../scripts/lint-changed-files.mjs packages/queue && eslint . --max-warnings 0"
   },
@@ -17,6 +18,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
   }
 }

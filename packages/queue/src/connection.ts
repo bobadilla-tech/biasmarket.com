@@ -1,4 +1,4 @@
-import type { ConnectionOptions } from "bullmq";
+import type { RedisOptions } from "bullmq";
 
 const REDIS_CONNECT_TIMEOUT_MS = 5_000;
 const REDIS_RETRY_BASE_DELAY_MS = 250;
@@ -11,7 +11,7 @@ const REDIS_RETRY_MAX_DELAY_MS = 5_000;
 // which surfaces as a silent stall, not a clear error. Keep reconnects alive
 // through Redis restarts, with a bounded connection timeout and capped,
 // jittered backoff so parallel BullMQ clients don't all retry in lockstep.
-export function buildRedisConnection(): ConnectionOptions {
+export function buildRedisConnection(): RedisOptions {
   const url = process.env.REDIS_URL;
   if (!url) throw new Error("Missing required env var: REDIS_URL");
 
@@ -20,7 +20,7 @@ export function buildRedisConnection(): ConnectionOptions {
     maxRetriesPerRequest: null,
     connectTimeout: REDIS_CONNECT_TIMEOUT_MS,
     retryStrategy: (attempt) => {
-      const exponent = Math.min(Math.max(attempt - 1, 0), 4);
+      const exponent = Math.max(attempt - 1, 0);
       const baseDelay = Math.min(
         REDIS_RETRY_BASE_DELAY_MS * 2 ** exponent,
         REDIS_RETRY_MAX_DELAY_MS,
