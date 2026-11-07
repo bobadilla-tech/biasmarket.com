@@ -1,5 +1,6 @@
 import { Global, Module } from "@nestjs/common";
 import { BullModule } from "@nestjs/bullmq";
+import { QueueConnectionObserver } from "./queue-connection-observer.js";
 import {
   buildRedisConnection,
   defaultJobOptions,
@@ -29,6 +30,7 @@ import {
       defaultJobOptions,
     }),
   ],
+  providers: [QueueConnectionObserver],
   exports: [BullModule],
 })
 export class QueueModule {}

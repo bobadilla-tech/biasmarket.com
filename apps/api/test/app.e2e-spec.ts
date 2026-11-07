@@ -22,11 +22,11 @@ describe("AppController (e2e)", () => {
       .expect("Location", process.env.WEB_URL ?? "http://localhost:3001");
   });
 
-  it("/health (GET) reports db status without requiring auth", () => {
+  it("/health (GET) reports database and Redis status without requiring auth", () => {
     return request(app.getHttpServer())
       .get("/health")
       .expect(200)
-      .expect({ status: "ok", db: "ok" });
+      .expect({ status: "ok", db: "ok", redis: "ok" });
   });
 
   afterEach(async () => {

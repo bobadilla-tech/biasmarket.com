@@ -746,6 +746,9 @@ jobs:
             turbo-queue-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}
             turbo-queue-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
+      - name: Test
+        run: pnpm --filter @biasmarket/queue test
+
       - name: Build
         run: pnpm turbo run build --filter=@biasmarket/queue
 

@@ -1,8 +1,8 @@
 import { Controller, Get } from "@nestjs/common";
 
-// Liveness only — this app has no database. Queue-depth / Redis-connection
-// reporting can be added here later without inventing a second healthcheck
-// mechanism.
+// Liveness only — this app has no database. The API's /api/health endpoint
+// also checks shared Redis readiness; worker connection failures are logged by
+// the observed processors without turning this process probe into readiness.
 @Controller("health")
 export class HealthController {
   @Get()

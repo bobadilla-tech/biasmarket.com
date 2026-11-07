@@ -1,4 +1,5 @@
 export { buildRedisConnection } from "./connection.js";
+export { observeRedisConnection } from "./observe-redis-connection.js";
 export { QUEUE_NAMES, type QueueName } from "./queue-names.js";
 export { defaultJobOptions } from "./default-job-options.js";
 export {
