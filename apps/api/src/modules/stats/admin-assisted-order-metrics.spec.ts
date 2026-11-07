@@ -317,6 +317,35 @@ describe("Admin Assisted Order Metrics (M2 Backend Aggregation)", () => {
         expect(funnel.totals.dismissedCount).toBe(1);
         expect(funnel.totals.claimedCount).toBe(1);
       });
+
+      it("counts one order once in totals when it appears in two moments", () => {
+        const events: MetricOrderEventRow[] = [
+          {
+            orderId: "o1",
+            type: "INVITE_SHOWN",
+            payload: { moment: "pago_validado" },
+          },
+          {
+            orderId: "o1",
+            type: "INVITE_SHOWN",
+            payload: { moment: "banner" },
+          },
+          {
+            orderId: "o1",
+            type: "INVITE_CLICKED",
+            payload: { moment: "banner" },
+          },
+        ];
+
+        const funnel = aggregateInvitationFunnel(events);
+        const pago = funnel.byMoment.find((m) => m.moment === "pago_validado")!;
+        const banner = funnel.byMoment.find((m) => m.moment === "banner")!;
+        expect(pago.shownCount).toBe(1);
+        expect(banner.shownCount).toBe(1);
+        expect(banner.clickedCount).toBe(1);
+        expect(funnel.totals.shownCount).toBe(1);
+        expect(funnel.totals.clickedCount).toBe(1);
+      });
     });
 
     describe("calculateAdminAssistedOrderMetrics", () => {
@@ -615,6 +644,7 @@ describe("Admin Assisted Order Metrics (M2 Backend Aggregation)", () => {
                   reviewStatus: "N_A",
                   voidedAt: null,
                   amount: new Prisma.Decimal(50),
+                  currency: "PEN",
                   createdAt: new Date("2026-11-02T10:00:00Z"),
                 },
               ],
@@ -632,6 +662,7 @@ describe("Admin Assisted Order Metrics (M2 Backend Aggregation)", () => {
                   reviewStatus: "APPROVED",
                   voidedAt: null,
                   amount: new Prisma.Decimal(30),
+                  currency: "USD",
                   createdAt: new Date("2026-11-03T11:00:00Z"),
                 },
               ],
@@ -655,8 +686,12 @@ describe("Admin Assisted Order Metrics (M2 Backend Aggregation)", () => {
           expect(row.storeName).toBe("Tienda Uno");
           expect(row.assistedOrdersCount).toBe(2);
           expect(row.marketplaceOrdersCount).toBe(1);
-          expect(row.assistedRevenue).toBe(50);
-          expect(row.marketplaceRevenue).toBe(30);
+          expect(row.assistedRevenueByCurrency).toEqual([
+            { currency: "PEN", amount: 50 },
+          ]);
+          expect(row.marketplaceRevenueByCurrency).toEqual([
+            { currency: "USD", amount: 30 },
+          ]);
           expect(row.distinctBuyers).toBe(2);
           expect(row.repeatBuyers).toBe(1);
           expect(row.repeatBuyerRate).toBe(0.5);
@@ -666,6 +701,55 @@ describe("Admin Assisted Order Metrics (M2 Backend Aggregation)", () => {
           expect(serialized).not.toContain("+51999111222");
           expect(serialized).not.toContain("999111222");
           expect(serialized).not.toContain("+51988888888");
+        });
+
+        it("does not add payments in different currencies into one total", () => {
+          const orders: MetricOrderRow[] = [
+            {
+              id: "o-mixed",
+              storeId: "store-1",
+              store: { id: "store-1", name: "Tienda Uno" },
+              source: "VENDOR_ASSISTED",
+              createdAt: new Date("2026-11-02T10:00:00Z"),
+              payments: [
+                {
+                  source: "SELLER_RECORDED",
+                  reviewStatus: "N_A",
+                  voidedAt: null,
+                  amount: new Prisma.Decimal(10),
+                  currency: "USD",
+                  createdAt: new Date("2026-11-02T10:00:00Z"),
+                },
+                {
+                  source: "SELLER_RECORDED",
+                  reviewStatus: "N_A",
+                  voidedAt: null,
+                  amount: new Prisma.Decimal(2.5),
+                  currency: "PEN",
+                  createdAt: new Date("2026-11-02T10:05:00Z"),
+                },
+                {
+                  source: "SELLER_RECORDED",
+                  reviewStatus: "N_A",
+                  voidedAt: null,
+                  amount: new Prisma.Decimal(1.25),
+                  currency: "PEN",
+                  createdAt: new Date("2026-11-02T10:10:00Z"),
+                },
+              ],
+            },
+          ];
+
+          const result = calculateAdminAssistedOrderMetrics(orders, []);
+          expect(
+            result.weeklyStoreBreakdown[0]?.assistedRevenueByCurrency,
+          ).toEqual([
+            { currency: "PEN", amount: 3.75 },
+            { currency: "USD", amount: 10 },
+          ]);
+          expect(
+            result.weeklyStoreBreakdown[0]?.marketplaceRevenueByCurrency,
+          ).toEqual([]);
         });
       });
     });
@@ -703,7 +787,7 @@ describe("Admin Assisted Order Metrics (M2 Backend Aggregation)", () => {
       expect(prisma.order.findMany).toHaveBeenCalled();
     });
 
-    it("scopes event query to assisted order IDs", async () => {
+    it("loads events for assisted orders in the same cohort", async () => {
       prisma.order.findMany.mockResolvedValue([
         {
           id: "assisted-1",
@@ -726,10 +810,8 @@ describe("Admin Assisted Order Metrics (M2 Backend Aggregation)", () => {
 
       await service.getAdminAssistedOrderMetrics({});
 
-      // Event query should be scoped to assisted-1 only
       expect(prisma.orderEvent.findMany).toHaveBeenCalledWith({
         where: {
-          orderId: { in: ["assisted-1"] },
           type: {
             in: [
               "BUYER_NOTIFIED",
@@ -739,13 +821,67 @@ describe("Admin Assisted Order Metrics (M2 Backend Aggregation)", () => {
               "CLAIMED",
             ],
           },
+          order: { source: "VENDOR_ASSISTED" },
         },
         select: {
+          id: true,
           orderId: true,
           type: true,
           payload: true,
         },
+        orderBy: { id: "asc" },
+        take: 500,
       });
+    });
+
+    it("keeps a cancelled assisted order in volume, rates, and the funnel", async () => {
+      prisma.order.findMany.mockResolvedValue([
+        {
+          id: "cancelled-assisted",
+          storeId: "store-x",
+          store: { id: "store-x", name: "Store X" },
+          source: "VENDOR_ASSISTED",
+          status: "CANCELLED",
+          createdAt: new Date("2026-11-02T10:00:00Z"),
+          linkFirstOpenedAt: new Date("2026-11-02T11:00:00Z"),
+          claimedAt: new Date("2026-11-02T12:00:00Z"),
+          payments: [
+            {
+              id: "pay-1",
+              source: "SELLER_RECORDED",
+              reviewStatus: "N_A",
+              voidedAt: null,
+              amount: new Prisma.Decimal(40),
+              currency: "PEN",
+              paidAt: new Date("2026-11-02T10:30:00Z"),
+              createdAt: new Date("2026-11-02T10:30:00Z"),
+            },
+          ],
+        },
+      ]);
+      prisma.orderEvent.findMany.mockResolvedValue([
+        {
+          id: "evt-1",
+          orderId: "cancelled-assisted",
+          type: "INVITE_SHOWN",
+          payload: { moment: "pago_validado" },
+        },
+      ]);
+
+      const result = await service.getAdminAssistedOrderMetrics({});
+      const where = prisma.order.findMany.mock.calls[0]?.[0].where;
+      expect(where).not.toHaveProperty("status");
+      expect(result.summary.totalAssistedOrders).toBe(1);
+      expect(result.summary.linkOpenedCount).toBe(1);
+      expect(result.summary.linkOpenedRate).toBe(1);
+      expect(result.summary.totalClaimedCount).toBe(1);
+      expect(result.summary.ordersWithValidatedPaymentCount).toBe(1);
+      expect(result.summary.claimedWithValidatedPaymentCount).toBe(1);
+      expect(result.summary.validatedClaimRate).toBe(1);
+      expect(result.invitationFunnel.totals.shownCount).toBe(1);
+      expect(result.weeklyStoreBreakdown[0]?.assistedRevenueByCurrency).toEqual(
+        [{ currency: "PEN", amount: 40 }],
+      );
     });
 
     it("skips event query when 0 assisted orders exist", async () => {

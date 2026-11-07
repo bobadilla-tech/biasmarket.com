@@ -7,8 +7,8 @@ import {
 import type {
   AdminAssistedOrderMetricsResponseDto,
   AdminAssistedOrderMetricsSummaryDto,
+  CurrencyAmountDto,
   FunnelMomentMetricsDto,
-  InvitationFunnelMetricsDto,
   PaymentSourceBreakdownDto,
   TimeToPaymentSummaryDto,
   WeeklyStoreBreakdownDto,
@@ -40,6 +40,7 @@ export interface MetricOrderPayment extends SummablePayment {
   reviewedAt?: Date | null;
   voidedAt?: Date | null;
   amount: any;
+  currency?: string | null;
   createdAt: Date;
 }
 
@@ -168,272 +169,301 @@ export function computePaymentSources(
   };
 }
 
-/**
- * Aggregates invitation funnel events by moment, counting distinct orders per stage
- * to maintain monotonicity.
- */
-export function aggregateInvitationFunnel(
-  events: MetricOrderEventRow[],
-): InvitationFunnelMetricsDto {
-  const byMoment: FunnelMomentMetricsDto[] = ALL_FUNNEL_MOMENTS.map(
-    (moment) => {
-      const momentEvents = events.filter(
-        (e) => resolveMoment(e.payload) === moment,
-      );
+type FunnelStage = "shown" | "clicked" | "dismissed" | "claimed";
 
-      const shownCount = new Set(
-        momentEvents
-          .filter((e) => e.type === "INVITE_SHOWN")
-          .map((e) => e.orderId),
-      ).size;
-      const clickedCount = new Set(
-        momentEvents
-          .filter((e) => e.type === "INVITE_CLICKED")
-          .map((e) => e.orderId),
-      ).size;
-      const dismissedCount = new Set(
-        momentEvents
-          .filter((e) => e.type === "INVITE_DISMISSED")
-          .map((e) => e.orderId),
-      ).size;
-      const claimedCount = new Set(
-        momentEvents.filter((e) => e.type === "CLAIMED").map((e) => e.orderId),
-      ).size;
+const EVENT_TYPE_TO_STAGE: Record<string, FunnelStage | undefined> = {
+  INVITE_SHOWN: "shown",
+  INVITE_CLICKED: "clicked",
+  INVITE_DISMISSED: "dismissed",
+  CLAIMED: "claimed",
+};
 
-      return {
-        moment,
-        shownCount,
-        clickedCount,
-        dismissedCount,
-        claimedCount,
-      };
-    },
-  );
+interface FunnelSets {
+  shown: Set<string>;
+  clicked: Set<string>;
+  dismissed: Set<string>;
+  claimed: Set<string>;
+}
 
-  const totals: FunnelMomentMetricsDto = byMoment.reduce(
-    (acc, m) => ({
-      moment: "total",
-      shownCount: acc.shownCount + m.shownCount,
-      clickedCount: acc.clickedCount + m.clickedCount,
-      dismissedCount: acc.dismissedCount + m.dismissedCount,
-      claimedCount: acc.claimedCount + m.claimedCount,
-    }),
-    {
-      moment: "total",
-      shownCount: 0,
-      clickedCount: 0,
-      dismissedCount: 0,
-      claimedCount: 0,
-    },
-  );
+function emptyFunnelSets(): FunnelSets {
+  return {
+    shown: new Set(),
+    clicked: new Set(),
+    dismissed: new Set(),
+    claimed: new Set(),
+  };
+}
 
-  return { byMoment, totals };
+interface WeekBucket {
+  weekStartDate: string;
+  storeId: string;
+  storeName: string;
+  assistedOrdersCount: number;
+  marketplaceOrdersCount: number;
+  assistedRevenue: Map<string, number>;
+  marketplaceRevenue: Map<string, number>;
+  buyerCounts: Map<string, number>;
 }
 
 /**
- * Pure calculation function for all 8 assisted order pilot metrics.
+ * Running totals for one metrics response. The service folds id-cursor pages
+ * into one accumulator and drops each page, so a full-history request does not
+ * keep every order and payment row at once.
  */
-export function calculateAdminAssistedOrderMetrics(
-  orders: MetricOrderRow[],
-  events: MetricOrderEventRow[],
-): AdminAssistedOrderMetricsResponseDto {
-  const assistedOrders = orders.filter((o) => o.source === "VENDOR_ASSISTED");
-  const marketplaceOrders = orders.filter((o) => o.source === "MARKETPLACE");
+export interface MetricsAccumulator {
+  totalAssistedOrders: number;
+  totalMarketplaceOrders: number;
+  linkOpenedCount: number;
+  totalClaimedCount: number;
+  ordersWithValidatedPaymentCount: number;
+  claimedWithValidatedPaymentCount: number;
+  confirmedReceivedCount: number;
+  assistedDurations: number[];
+  marketplaceDurations: number[];
+  assistedPayments: Array<{ source: PaymentSource; voidedAt?: Date | null }>;
+  buyerNotifiedOrderIds: Set<string>;
+  funnelByMoment: Map<FunnelMoment, FunnelSets>;
+  funnelTotals: FunnelSets;
+  weeks: Map<string, WeekBucket>;
+}
 
-  const totalAssistedOrders = assistedOrders.length;
-  const totalMarketplaceOrders = marketplaceOrders.length;
+export function createMetricsAccumulator(): MetricsAccumulator {
+  const funnelByMoment = new Map<FunnelMoment, FunnelSets>();
+  for (const moment of ALL_FUNNEL_MOMENTS) {
+    funnelByMoment.set(moment, emptyFunnelSets());
+  }
+  return {
+    totalAssistedOrders: 0,
+    totalMarketplaceOrders: 0,
+    linkOpenedCount: 0,
+    totalClaimedCount: 0,
+    ordersWithValidatedPaymentCount: 0,
+    claimedWithValidatedPaymentCount: 0,
+    confirmedReceivedCount: 0,
+    assistedDurations: [],
+    marketplaceDurations: [],
+    assistedPayments: [],
+    buyerNotifiedOrderIds: new Set(),
+    funnelByMoment,
+    funnelTotals: emptyFunnelSets(),
+    weeks: new Map(),
+  };
+}
 
-  // 2. Proportion whose link was opened
-  const linkOpenedCount = assistedOrders.filter(
-    (o) => o.linkFirstOpenedAt != null,
-  ).length;
-  const linkOpenedRate =
-    totalAssistedOrders > 0 ? linkOpenedCount / totalAssistedOrders : 0;
+function firstValidPaymentMinutes(order: MetricOrderRow): number | null {
+  const validPayments = order.payments.filter(countsTowardPaid);
+  if (validPayments.length === 0) return null;
 
-  // 3. Proportion claimed with Google (overall & validated payment)
-  const totalClaimedCount = assistedOrders.filter(
-    (o) => o.claimedAt != null,
-  ).length;
-  const overallClaimRate =
-    totalAssistedOrders > 0 ? totalClaimedCount / totalAssistedOrders : 0;
-
-  const ordersWithValidatedPayment = assistedOrders.filter((o) =>
-    o.payments.some(countsTowardPaid),
+  const earliestPaymentMs = Math.min(
+    ...validPayments.map((payment) => {
+      const timestamp =
+        payment.source === "SELLER_RECORDED"
+          ? (payment.paidAt ?? payment.createdAt)
+          : (payment.reviewedAt ?? payment.paidAt ?? payment.createdAt);
+      return new Date(timestamp).getTime();
+    }),
   );
-  const ordersWithValidatedPaymentCount = ordersWithValidatedPayment.length;
+  const orderCreatedMs = new Date(order.createdAt).getTime();
+  return Math.max(
+    0,
+    Math.round(((earliestPaymentMs - orderCreatedMs) / 60000) * 10) / 10,
+  );
+}
 
-  const claimedWithValidatedPaymentCount = ordersWithValidatedPayment.filter(
-    (o) => o.claimedAt != null,
-  ).length;
+function addPaidAmount(
+  totals: Map<string, number>,
+  payment: MetricOrderPayment,
+) {
+  if (!countsTowardPaid(payment)) return;
+  const currency = payment.currency?.trim() || "PEN";
+  totals.set(currency, (totals.get(currency) ?? 0) + Number(payment.amount));
+}
+
+export function foldOrders(
+  accumulator: MetricsAccumulator,
+  orders: MetricOrderRow[],
+): void {
+  for (const order of orders) {
+    const assisted = order.source === "VENDOR_ASSISTED";
+    const marketplace = order.source === "MARKETPLACE";
+
+    if (assisted) {
+      accumulator.totalAssistedOrders++;
+      if (order.linkFirstOpenedAt != null) accumulator.linkOpenedCount++;
+      if (order.claimedAt != null) accumulator.totalClaimedCount++;
+      if (order.buyerConfirmedReceivedAt != null) {
+        accumulator.confirmedReceivedCount++;
+      }
+      if (order.payments.some(countsTowardPaid)) {
+        accumulator.ordersWithValidatedPaymentCount++;
+        if (order.claimedAt != null) {
+          accumulator.claimedWithValidatedPaymentCount++;
+        }
+      }
+      for (const payment of order.payments) {
+        accumulator.assistedPayments.push({
+          source: payment.source,
+          voidedAt: payment.voidedAt,
+        });
+      }
+    } else if (marketplace) {
+      accumulator.totalMarketplaceOrders++;
+    }
+
+    const duration = firstValidPaymentMinutes(order);
+    if (duration != null) {
+      if (assisted) accumulator.assistedDurations.push(duration);
+      else if (marketplace) accumulator.marketplaceDurations.push(duration);
+    }
+
+    const weekStartDate = getUtcWeekStartDate(new Date(order.createdAt));
+    const key = `${weekStartDate}:${order.storeId}`;
+    let week = accumulator.weeks.get(key);
+    if (!week) {
+      week = {
+        weekStartDate,
+        storeId: order.storeId,
+        storeName: order.store?.name ?? order.storeId,
+        assistedOrdersCount: 0,
+        marketplaceOrdersCount: 0,
+        assistedRevenue: new Map(),
+        marketplaceRevenue: new Map(),
+        buyerCounts: new Map(),
+      };
+      accumulator.weeks.set(key, week);
+    }
+    if (assisted) week.assistedOrdersCount++;
+    if (marketplace) week.marketplaceOrdersCount++;
+
+    const revenue = assisted
+      ? week.assistedRevenue
+      : marketplace
+        ? week.marketplaceRevenue
+        : null;
+    if (revenue) {
+      for (const payment of order.payments) addPaidAmount(revenue, payment);
+    }
+
+    const buyerKey = getBuyerKey(order);
+    week.buyerCounts.set(buyerKey, (week.buyerCounts.get(buyerKey) ?? 0) + 1);
+  }
+}
+
+export function foldEvents(
+  accumulator: MetricsAccumulator,
+  events: MetricOrderEventRow[],
+): void {
+  for (const event of events) {
+    if (event.type === "BUYER_NOTIFIED") {
+      accumulator.buyerNotifiedOrderIds.add(event.orderId);
+    }
+    const stage = EVENT_TYPE_TO_STAGE[event.type];
+    if (!stage) continue;
+    const moment = resolveMoment(event.payload);
+    accumulator.funnelByMoment.get(moment)?.[stage].add(event.orderId);
+    accumulator.funnelTotals[stage].add(event.orderId);
+  }
+}
+
+function funnelMoment(
+  moment: string,
+  sets: FunnelSets,
+): FunnelMomentMetricsDto {
+  return {
+    moment,
+    shownCount: sets.shown.size,
+    clickedCount: sets.clicked.size,
+    dismissedCount: sets.dismissed.size,
+    claimedCount: sets.claimed.size,
+  };
+}
+
+function currencyAmounts(totals: Map<string, number>): CurrencyAmountDto[] {
+  return [...totals.entries()]
+    .map(([currency, amount]) => ({
+      currency,
+      amount: Math.round(amount * 100) / 100,
+    }))
+    .sort((a, b) => a.currency.localeCompare(b.currency));
+}
+
+export function finalizeMetrics(
+  accumulator: MetricsAccumulator,
+): AdminAssistedOrderMetricsResponseDto {
+  const { totalAssistedOrders, ordersWithValidatedPaymentCount } = accumulator;
   const validatedClaimRate =
     ordersWithValidatedPaymentCount > 0
-      ? claimedWithValidatedPaymentCount / ordersWithValidatedPaymentCount
+      ? accumulator.claimedWithValidatedPaymentCount /
+        ordersWithValidatedPaymentCount
       : 0;
-
   const targetClaimRateHypothesis = TARGET_CLAIM_RATE_HYPOTHESIS;
   // Guardrail: must be strictly false if 0 validated payment orders exist
   const belowTargetClaimRate =
     ordersWithValidatedPaymentCount > 0 &&
     validatedClaimRate < targetClaimRateHypothesis;
 
-  // 5. G1 buyer notice & G3 confirmed reception
-  const buyerNotifiedOrderIds = new Set(
-    events.filter((e) => e.type === "BUYER_NOTIFIED").map((e) => e.orderId),
-  );
-  const buyerNoticeCount = buyerNotifiedOrderIds.size;
-  const buyerNoticeRate =
-    totalAssistedOrders > 0 ? buyerNoticeCount / totalAssistedOrders : 0;
-
-  const confirmedReceivedCount = assistedOrders.filter(
-    (o) => o.buyerConfirmedReceivedAt != null,
-  ).length;
-  const confirmedReceivedRate =
-    totalAssistedOrders > 0 ? confirmedReceivedCount / totalAssistedOrders : 0;
-
-  // 7. Time from order creation to first valid payment (duration clamped to >= 0)
-  const assistedDurations: number[] = [];
-  const marketplaceDurations: number[] = [];
-
-  for (const order of orders) {
-    const validPayments = order.payments.filter(countsTowardPaid);
-    if (validPayments.length === 0) continue;
-
-    const validTimestamps = validPayments.map((p) => {
-      const t =
-        p.source === "SELLER_RECORDED"
-          ? (p.paidAt ?? p.createdAt)
-          : (p.reviewedAt ?? p.paidAt ?? p.createdAt);
-      return new Date(t).getTime();
-    });
-
-    const earliestPaymentMs = Math.min(...validTimestamps);
-    const orderCreatedMs = new Date(order.createdAt).getTime();
-    const durationMinutes = Math.max(
-      0,
-      Math.round(((earliestPaymentMs - orderCreatedMs) / 60000) * 10) / 10,
-    );
-
-    if (order.source === "VENDOR_ASSISTED") {
-      assistedDurations.push(durationMinutes);
-    } else if (order.source === "MARKETPLACE") {
-      marketplaceDurations.push(durationMinutes);
-    }
-  }
-
   const timeToFirstValidPayment: TimeToPaymentSummaryDto = {
-    assistedAvgMinutes: computeAvg(assistedDurations),
-    assistedMedianMinutes: computeMedian(assistedDurations),
-    marketplaceAvgMinutes: computeAvg(marketplaceDurations),
-    marketplaceMedianMinutes: computeMedian(marketplaceDurations),
+    assistedAvgMinutes: computeAvg(accumulator.assistedDurations),
+    assistedMedianMinutes: computeMedian(accumulator.assistedDurations),
+    marketplaceAvgMinutes: computeAvg(accumulator.marketplaceDurations),
+    marketplaceMedianMinutes: computeMedian(accumulator.marketplaceDurations),
   };
-
-  // 8. Payment source breakdown (on assisted orders)
-  const assistedPayments = assistedOrders.flatMap((o) => o.payments);
-  const paymentSources = computePaymentSources(assistedPayments);
 
   const summary: AdminAssistedOrderMetricsSummaryDto = {
     totalAssistedOrders,
-    totalMarketplaceOrders,
-    linkOpenedCount,
-    linkOpenedRate,
-    totalClaimedCount,
-    overallClaimRate,
+    totalMarketplaceOrders: accumulator.totalMarketplaceOrders,
+    linkOpenedCount: accumulator.linkOpenedCount,
+    linkOpenedRate:
+      totalAssistedOrders > 0
+        ? accumulator.linkOpenedCount / totalAssistedOrders
+        : 0,
+    totalClaimedCount: accumulator.totalClaimedCount,
+    overallClaimRate:
+      totalAssistedOrders > 0
+        ? accumulator.totalClaimedCount / totalAssistedOrders
+        : 0,
     ordersWithValidatedPaymentCount,
-    claimedWithValidatedPaymentCount,
+    claimedWithValidatedPaymentCount:
+      accumulator.claimedWithValidatedPaymentCount,
     validatedClaimRate,
     targetClaimRateHypothesis,
     belowTargetClaimRate,
-    buyerNoticeCount,
-    buyerNoticeRate,
-    confirmedReceivedCount,
-    confirmedReceivedRate,
+    buyerNoticeCount: accumulator.buyerNotifiedOrderIds.size,
+    buyerNoticeRate:
+      totalAssistedOrders > 0
+        ? accumulator.buyerNotifiedOrderIds.size / totalAssistedOrders
+        : 0,
+    confirmedReceivedCount: accumulator.confirmedReceivedCount,
+    confirmedReceivedRate:
+      totalAssistedOrders > 0
+        ? accumulator.confirmedReceivedCount / totalAssistedOrders
+        : 0,
     timeToFirstValidPayment,
-    paymentSources,
+    paymentSources: computePaymentSources(accumulator.assistedPayments),
   };
 
-  // 4. Invitation funnel by moment
-  const invitationFunnel = aggregateInvitationFunnel(events);
-
-  // 1 & 6. Weekly summary grouped by store with repeat buyers
-  const weekStoreMap = new Map<
-    string,
-    {
-      weekStartDate: string;
-      storeId: string;
-      storeName: string;
-      orders: MetricOrderRow[];
-    }
-  >();
-
-  for (const order of orders) {
-    const weekStartDate = getUtcWeekStartDate(new Date(order.createdAt));
-    const key = `${weekStartDate}:${order.storeId}`;
-    let entry = weekStoreMap.get(key);
-    if (!entry) {
-      entry = {
-        weekStartDate,
-        storeId: order.storeId,
-        storeName: order.store?.name ?? order.storeId,
-        orders: [],
-      };
-      weekStoreMap.set(key, entry);
-    }
-    entry.orders.push(order);
-  }
-
-  const weeklyStoreBreakdown: WeeklyStoreBreakdownDto[] = [];
-  for (const entry of weekStoreMap.values()) {
-    const assisted = entry.orders.filter((o) => o.source === "VENDOR_ASSISTED");
-    const marketplace = entry.orders.filter((o) => o.source === "MARKETPLACE");
-
-    let assistedRevenue = 0;
-    for (const o of assisted) {
-      for (const p of o.payments) {
-        if (countsTowardPaid(p)) {
-          assistedRevenue += Number(p.amount);
-        }
-      }
-    }
-
-    let marketplaceRevenue = 0;
-    for (const o of marketplace) {
-      for (const p of o.payments) {
-        if (countsTowardPaid(p)) {
-          marketplaceRevenue += Number(p.amount);
-        }
-      }
-    }
-
-    // Server-side repeat buyer grouping with normalized phone priority (Zero PII exposed)
-    const buyerCounts = new Map<string, number>();
-    for (const o of entry.orders) {
-      const buyerKey = getBuyerKey(o);
-      buyerCounts.set(buyerKey, (buyerCounts.get(buyerKey) ?? 0) + 1);
-    }
-
-    const distinctBuyers = buyerCounts.size;
+  const weeklyStoreBreakdown: WeeklyStoreBreakdownDto[] = [
+    ...accumulator.weeks.values(),
+  ].map((week) => {
+    const distinctBuyers = week.buyerCounts.size;
     let repeatBuyers = 0;
-    for (const count of buyerCounts.values()) {
+    for (const count of week.buyerCounts.values()) {
       if (count >= 2) repeatBuyers++;
     }
-    const repeatBuyerRate =
-      distinctBuyers > 0 ? repeatBuyers / distinctBuyers : 0;
-
-    weeklyStoreBreakdown.push({
-      weekStartDate: entry.weekStartDate,
-      storeId: entry.storeId,
-      storeName: entry.storeName,
-      assistedOrdersCount: assisted.length,
-      marketplaceOrdersCount: marketplace.length,
-      assistedRevenue: Math.round(assistedRevenue * 100) / 100,
-      marketplaceRevenue: Math.round(marketplaceRevenue * 100) / 100,
+    return {
+      weekStartDate: week.weekStartDate,
+      storeId: week.storeId,
+      storeName: week.storeName,
+      assistedOrdersCount: week.assistedOrdersCount,
+      marketplaceOrdersCount: week.marketplaceOrdersCount,
+      assistedRevenueByCurrency: currencyAmounts(week.assistedRevenue),
+      marketplaceRevenueByCurrency: currencyAmounts(week.marketplaceRevenue),
       distinctBuyers,
       repeatBuyers,
-      repeatBuyerRate,
-    });
-  }
+      repeatBuyerRate: distinctBuyers > 0 ? repeatBuyers / distinctBuyers : 0,
+    };
+  });
 
-  // Sort by week descending, then store name ascending
   weeklyStoreBreakdown.sort((a, b) => {
     if (a.weekStartDate !== b.weekStartDate) {
       return b.weekStartDate.localeCompare(a.weekStartDate);
@@ -443,7 +473,35 @@ export function calculateAdminAssistedOrderMetrics(
 
   return {
     summary,
-    invitationFunnel,
+    invitationFunnel: {
+      byMoment: ALL_FUNNEL_MOMENTS.map((moment) =>
+        funnelMoment(moment, accumulator.funnelByMoment.get(moment)!),
+      ),
+      totals: funnelMoment("total", accumulator.funnelTotals),
+    },
     weeklyStoreBreakdown,
   };
+}
+
+/**
+ * Aggregates invitation funnel events by moment. Stage totals count distinct
+ * orders across every moment, so one order shown twice is one shown order.
+ */
+export function aggregateInvitationFunnel(events: MetricOrderEventRow[]) {
+  const accumulator = createMetricsAccumulator();
+  foldEvents(accumulator, events);
+  return finalizeMetrics(accumulator).invitationFunnel;
+}
+
+/**
+ * Pure calculation function for all 8 assisted order pilot metrics.
+ */
+export function calculateAdminAssistedOrderMetrics(
+  orders: MetricOrderRow[],
+  events: MetricOrderEventRow[],
+): AdminAssistedOrderMetricsResponseDto {
+  const accumulator = createMetricsAccumulator();
+  foldOrders(accumulator, orders);
+  foldEvents(accumulator, events);
+  return finalizeMetrics(accumulator);
 }

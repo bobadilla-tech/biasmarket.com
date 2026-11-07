@@ -113,6 +113,20 @@ export class InvitationFunnelMetricsDto {
   totals: FunnelMomentMetricsDto;
 }
 
+export class CurrencyAmountDto {
+  @ApiProperty({
+    description: "ISO 4217 currency code of the settled payments",
+    example: "PEN",
+  })
+  currency: string;
+
+  @ApiProperty({
+    description: "Settled amount in this currency, rounded to cents",
+    example: 1350.5,
+  })
+  amount: number;
+}
+
 export class WeeklyStoreBreakdownDto {
   @ApiProperty({
     description: "ISO week start date (YYYY-MM-DD, Monday in UTC)",
@@ -132,11 +146,19 @@ export class WeeklyStoreBreakdownDto {
   @ApiProperty({ description: "Volume of marketplace orders" })
   marketplaceOrdersCount: number;
 
-  @ApiProperty({ description: "Settled revenue from assisted orders" })
-  assistedRevenue: number;
+  @ApiProperty({
+    type: () => [CurrencyAmountDto],
+    description:
+      "Settled assisted-order revenue summed separately per payment currency",
+  })
+  assistedRevenueByCurrency: CurrencyAmountDto[];
 
-  @ApiProperty({ description: "Settled revenue from marketplace orders" })
-  marketplaceRevenue: number;
+  @ApiProperty({
+    type: () => [CurrencyAmountDto],
+    description:
+      "Settled marketplace revenue summed separately per payment currency",
+  })
+  marketplaceRevenueByCurrency: CurrencyAmountDto[];
 
   @ApiProperty({
     description: "Count of distinct buyer entities in this store and week",

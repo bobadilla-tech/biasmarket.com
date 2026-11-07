@@ -2618,14 +2618,30 @@ export default async () => {
                     .FunnelMomentMetricsDto,
               },
             },
+            CurrencyAmountDto: {
+              currency: { required: true, type: () => String },
+              amount: { required: true, type: () => Number },
+            },
             WeeklyStoreBreakdownDto: {
               weekStartDate: { required: true, type: () => String },
               storeId: { required: true, type: () => String },
               storeName: { required: true, type: () => String },
               assistedOrdersCount: { required: true, type: () => Number },
               marketplaceOrdersCount: { required: true, type: () => Number },
-              assistedRevenue: { required: true, type: () => Number },
-              marketplaceRevenue: { required: true, type: () => Number },
+              assistedRevenueByCurrency: {
+                required: true,
+                type: () => [
+                  t['./modules/stats/dto/admin-assisted-order-metrics.dto.js']
+                    .CurrencyAmountDto,
+                ],
+              },
+              marketplaceRevenueByCurrency: {
+                required: true,
+                type: () => [
+                  t['./modules/stats/dto/admin-assisted-order-metrics.dto.js']
+                    .CurrencyAmountDto,
+                ],
+              },
               distinctBuyers: { required: true, type: () => Number },
               repeatBuyers: { required: true, type: () => Number },
               repeatBuyerRate: { required: true, type: () => Number },

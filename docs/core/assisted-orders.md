@@ -272,8 +272,15 @@ no duplicate or missing instrumentation was required.
 
 ### Catalog of 8 pilot metrics
 
-All metrics are calculated in memory by `admin-assisted-order-metrics.helper.ts`
-and exposed via `GET /api/admin/stats/assisted-orders`:
+The cohort is every assisted (`VENDOR_ASSISTED`) and marketplace
+(`MARKETPLACE`) order in the selected window, including cancelled orders.
+Cancelling an order does not remove its volume or earlier adoption events from
+these denominators.
+
+`GET /api/admin/stats/assisted-orders` loads orders and assisted-order events in
+id-cursor pages of 500 and folds each page into one accumulator in
+`admin-assisted-order-metrics.helper.ts`. A full-history request still returns
+complete results, and each Prisma payload stays bounded:
 
 1. **Weekly summary grouped by store.** Compares assisted (`VENDOR_ASSISTED`)
    and marketplace (`MARKETPLACE`) orders grouped by store (`storeId`) and ISO
@@ -283,7 +290,9 @@ and exposed via `GET /api/admin/stats/assisted-orders`:
    - **Gross merchandise volume / revenue:** Sum of `OrderPayment.amount` for
      active payments satisfying `countsTowardPaid` (`payment.voidedAt == null &&
 (payment.source === 'SELLER_RECORDED' || payment.reviewStatus === 'APPROVED')`),
-     computed separately for assisted and marketplace orders.
+     computed separately for assisted and marketplace orders and separately per
+     `OrderPayment.currency`. Amounts in different currencies are not added
+     together. A side with no settled payment returns an empty list.
    - **Distinct buyers:** Count of distinct buyer entities per store-week.
    - **Repeat buyers:** Count of distinct buyer entities with $\ge 2$ orders
      at the same store within that week.
@@ -396,7 +405,7 @@ window, platform operations will evaluate activating stronger backlog nudges.
 
 ### Data privacy invariants
 
-All metrics are computed server-side in memory and exposed strictly as aggregated
+All metrics are folded server-side from bounded pages and exposed strictly as aggregated
 totals, conversion rates, and monetary sums. Zero Personally Identifiable
 Information (PII) is transmitted over the API or rendered in the administrative
 interface:

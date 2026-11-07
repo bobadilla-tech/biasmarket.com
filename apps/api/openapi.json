@@ -11404,6 +11404,22 @@
         },
         "required": ["byMoment", "totals"]
       },
+      "CurrencyAmountDto": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "description": "ISO 4217 currency code of the settled payments",
+            "example": "PEN"
+          },
+          "amount": {
+            "type": "number",
+            "description": "Settled amount in this currency, rounded to cents",
+            "example": 1350.5
+          }
+        },
+        "required": ["currency", "amount"]
+      },
       "WeeklyStoreBreakdownDto": {
         "type": "object",
         "properties": {
@@ -11428,13 +11444,19 @@
             "type": "number",
             "description": "Volume of marketplace orders"
           },
-          "assistedRevenue": {
-            "type": "number",
-            "description": "Settled revenue from assisted orders"
+          "assistedRevenueByCurrency": {
+            "description": "Settled assisted-order revenue summed separately per payment currency",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CurrencyAmountDto"
+            }
           },
-          "marketplaceRevenue": {
-            "type": "number",
-            "description": "Settled revenue from marketplace orders"
+          "marketplaceRevenueByCurrency": {
+            "description": "Settled marketplace revenue summed separately per payment currency",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CurrencyAmountDto"
+            }
           },
           "distinctBuyers": {
             "type": "number",
@@ -11455,8 +11477,8 @@
           "storeName",
           "assistedOrdersCount",
           "marketplaceOrdersCount",
-          "assistedRevenue",
-          "marketplaceRevenue",
+          "assistedRevenueByCurrency",
+          "marketplaceRevenueByCurrency",
           "distinctBuyers",
           "repeatBuyers",
           "repeatBuyerRate"
