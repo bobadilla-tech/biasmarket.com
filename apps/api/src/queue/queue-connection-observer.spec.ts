@@ -60,4 +60,19 @@ describe("observeRedisConnection", () => {
       msg: "Redis connection re-established",
     });
   });
+
+  it("does not log an intentional queue shutdown", () => {
+    const backend = new EventEmitter();
+    const logger = { error: vi.fn(), warn: vi.fn() };
+    let isClosing = false;
+
+    observeRedisConnection(backend, "orders", logger, () => isClosing);
+
+    backend.emit("ready");
+    isClosing = true;
+    backend.emit("close");
+
+    expect(logger.error).not.toHaveBeenCalled();
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
 });

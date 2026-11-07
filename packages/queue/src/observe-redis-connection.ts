@@ -12,6 +12,7 @@ export function observeRedisConnection(
   backend: Pick<EventEmitter, "on">,
   queue: string,
   logger: RedisConnectionLogger,
+  isClosing: () => boolean = () => false,
 ): void {
   let hasConnected = false;
   let connectionFailed = false;
@@ -33,7 +34,7 @@ export function observeRedisConnection(
   });
 
   backend.on("close", () => {
-    if (!hasConnected) return;
+    if (!hasConnected || isClosing()) return;
     connectionFailed = true;
     if (failureLogged) return;
     failureLogged = true;

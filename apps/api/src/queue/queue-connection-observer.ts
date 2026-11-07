@@ -21,10 +21,15 @@ export class QueueConnectionObserver {
     ] as const;
 
     for (const [name, queue] of queues) {
-      observeRedisConnection(queue.backend, name, {
-        error: (fields) => this.logger.error(fields),
-        warn: (fields) => this.logger.warn(fields),
-      });
+      observeRedisConnection(
+        queue.backend,
+        name,
+        {
+          error: (fields) => this.logger.error(fields),
+          warn: (fields) => this.logger.warn(fields),
+        },
+        () => queue.closing !== undefined,
+      );
     }
   }
 }
