@@ -10,6 +10,7 @@ import type {
   CurrencyAmountDto,
   FunnelMomentMetricsDto,
   PaymentSourceBreakdownDto,
+  StoreRepeatBuyerMetricsDto,
   TimeToPaymentSummaryDto,
   WeeklyStoreBreakdownDto,
 } from "./dto/admin-assisted-order-metrics.dto.js";
@@ -205,6 +206,12 @@ interface WeekBucket {
   buyerCounts: Map<string, number>;
 }
 
+interface StoreBucket {
+  storeId: string;
+  storeName: string;
+  buyerCounts: Map<string, number>;
+}
+
 /**
  * Running totals for one metrics response. The service folds id-cursor pages
  * into one accumulator and drops each page, so a full-history request does not
@@ -225,6 +232,7 @@ export interface MetricsAccumulator {
   funnelByMoment: Map<FunnelMoment, FunnelSets>;
   funnelTotals: FunnelSets;
   weeks: Map<string, WeekBucket>;
+  stores: Map<string, StoreBucket>;
 }
 
 export function createMetricsAccumulator(): MetricsAccumulator {
@@ -247,6 +255,7 @@ export function createMetricsAccumulator(): MetricsAccumulator {
     funnelByMoment,
     funnelTotals: emptyFunnelSets(),
     weeks: new Map(),
+    stores: new Map(),
   };
 }
 
@@ -346,6 +355,17 @@ export function foldOrders(
 
     const buyerKey = getBuyerKey(order);
     week.buyerCounts.set(buyerKey, (week.buyerCounts.get(buyerKey) ?? 0) + 1);
+
+    let store = accumulator.stores.get(order.storeId);
+    if (!store) {
+      store = {
+        storeId: order.storeId,
+        storeName: order.store?.name ?? order.storeId,
+        buyerCounts: new Map(),
+      };
+      accumulator.stores.set(order.storeId, store);
+    }
+    store.buyerCounts.set(buyerKey, (store.buyerCounts.get(buyerKey) ?? 0) + 1);
   }
 }
 
@@ -385,6 +405,23 @@ function currencyAmounts(totals: Map<string, number>): CurrencyAmountDto[] {
       amount: Math.round(amount * 100) / 100,
     }))
     .sort((a, b) => a.currency.localeCompare(b.currency));
+}
+
+function summarizeBuyerCounts(buyerCounts: Map<string, number>): {
+  distinctBuyers: number;
+  repeatBuyers: number;
+  repeatBuyerRate: number;
+} {
+  const distinctBuyers = buyerCounts.size;
+  let repeatBuyers = 0;
+  for (const count of buyerCounts.values()) {
+    if (count >= 2) repeatBuyers++;
+  }
+  return {
+    distinctBuyers,
+    repeatBuyers,
+    repeatBuyerRate: distinctBuyers > 0 ? repeatBuyers / distinctBuyers : 0,
+  };
 }
 
 export function finalizeMetrics(
@@ -444,25 +481,16 @@ export function finalizeMetrics(
 
   const weeklyStoreBreakdown: WeeklyStoreBreakdownDto[] = [
     ...accumulator.weeks.values(),
-  ].map((week) => {
-    const distinctBuyers = week.buyerCounts.size;
-    let repeatBuyers = 0;
-    for (const count of week.buyerCounts.values()) {
-      if (count >= 2) repeatBuyers++;
-    }
-    return {
-      weekStartDate: week.weekStartDate,
-      storeId: week.storeId,
-      storeName: week.storeName,
-      assistedOrdersCount: week.assistedOrdersCount,
-      marketplaceOrdersCount: week.marketplaceOrdersCount,
-      assistedRevenueByCurrency: currencyAmounts(week.assistedRevenue),
-      marketplaceRevenueByCurrency: currencyAmounts(week.marketplaceRevenue),
-      distinctBuyers,
-      repeatBuyers,
-      repeatBuyerRate: distinctBuyers > 0 ? repeatBuyers / distinctBuyers : 0,
-    };
-  });
+  ].map((week) => ({
+    weekStartDate: week.weekStartDate,
+    storeId: week.storeId,
+    storeName: week.storeName,
+    assistedOrdersCount: week.assistedOrdersCount,
+    marketplaceOrdersCount: week.marketplaceOrdersCount,
+    assistedRevenueByCurrency: currencyAmounts(week.assistedRevenue),
+    marketplaceRevenueByCurrency: currencyAmounts(week.marketplaceRevenue),
+    ...summarizeBuyerCounts(week.buyerCounts),
+  }));
 
   weeklyStoreBreakdown.sort((a, b) => {
     if (a.weekStartDate !== b.weekStartDate) {
@@ -470,6 +498,20 @@ export function finalizeMetrics(
     }
     return a.storeName.localeCompare(b.storeName);
   });
+
+  const repeatBuyersByStore: StoreRepeatBuyerMetricsDto[] = [
+    ...accumulator.stores.values(),
+  ]
+    .map((store) => ({
+      storeId: store.storeId,
+      storeName: store.storeName,
+      ...summarizeBuyerCounts(store.buyerCounts),
+    }))
+    .sort(
+      (a, b) =>
+        b.repeatBuyerRate - a.repeatBuyerRate ||
+        a.storeName.localeCompare(b.storeName),
+    );
 
   return {
     summary,
@@ -480,6 +522,7 @@ export function finalizeMetrics(
       totals: funnelMoment("total", accumulator.funnelTotals),
     },
     weeklyStoreBreakdown,
+    repeatBuyersByStore,
   };
 }
 

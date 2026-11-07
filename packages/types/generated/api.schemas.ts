@@ -2942,6 +2942,19 @@ export interface WeeklyStoreBreakdownDto {
   repeatBuyerRate: number;
 }
 
+export interface StoreRepeatBuyerMetricsDto {
+  /** Store identifier */
+  storeId: string;
+  /** Store name */
+  storeName: string;
+  /** Count of distinct buyer entities at this store in the selected period */
+  distinctBuyers: number;
+  /** Count of repeat buyer entities (>= 2 orders) at this store in the selected period */
+  repeatBuyers: number;
+  /** Proportion of repeat buyers (0.0 - 1.0) */
+  repeatBuyerRate: number;
+}
+
 export interface AdminAssistedOrderMetricsResponseDto {
   /** Summary indicators and conversion rates for assisted orders */
   summary: AdminAssistedOrderMetricsSummaryDto;
@@ -2949,6 +2962,8 @@ export interface AdminAssistedOrderMetricsResponseDto {
   invitationFunnel: InvitationFunnelMetricsDto;
   /** Weekly volume, revenue, and repeat buyer comparison grouped by store */
   weeklyStoreBreakdown: WeeklyStoreBreakdownDto[];
+  /** Period-level distinct and repeat buyers per store (cross-week) */
+  repeatBuyersByStore: StoreRepeatBuyerMetricsDto[];
 }
 
 export interface RegisterCustomerDto {

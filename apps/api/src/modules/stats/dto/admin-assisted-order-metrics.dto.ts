@@ -175,6 +175,29 @@ export class WeeklyStoreBreakdownDto {
   repeatBuyerRate: number;
 }
 
+export class StoreRepeatBuyerMetricsDto {
+  @ApiProperty({ description: "Store identifier" })
+  storeId: string;
+
+  @ApiProperty({ description: "Store name" })
+  storeName: string;
+
+  @ApiProperty({
+    description:
+      "Count of distinct buyer entities at this store in the selected period",
+  })
+  distinctBuyers: number;
+
+  @ApiProperty({
+    description:
+      "Count of repeat buyer entities (>= 2 orders) at this store in the selected period",
+  })
+  repeatBuyers: number;
+
+  @ApiProperty({ description: "Proportion of repeat buyers (0.0 - 1.0)" })
+  repeatBuyerRate: number;
+}
+
 export class AdminAssistedOrderMetricsSummaryDto {
   @ApiProperty({ description: "Total assisted orders in the selected period" })
   totalAssistedOrders: number;
@@ -277,4 +300,11 @@ export class AdminAssistedOrderMetricsResponseDto {
       "Weekly volume, revenue, and repeat buyer comparison grouped by store",
   })
   weeklyStoreBreakdown: WeeklyStoreBreakdownDto[];
+
+  @ApiProperty({
+    type: () => [StoreRepeatBuyerMetricsDto],
+    description:
+      "Period-level distinct and repeat buyers per store (cross-week)",
+  })
+  repeatBuyersByStore: StoreRepeatBuyerMetricsDto[];
 }

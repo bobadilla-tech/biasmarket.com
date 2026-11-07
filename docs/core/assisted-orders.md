@@ -299,12 +299,15 @@ complete results, and each Prisma payload stays bounded:
    - **Repeat buyer rate:** $\frac{\text{repeat buyers}}{\text{distinct buyers}}$
      (0.0 if distinct buyers is 0).
 2. **Link opened proportion.** Proportion of assisted orders whose private
-   link was opened by the buyer's browser:
+   link was opened:
    - **Numerator:** Assisted orders where `linkFirstOpenedAt IS NOT NULL`.
    - **Denominator:** Total assisted orders (`Order.source = 'VENDOR_ASSISTED'`).
    - **Formula:** $\frac{\text{Count}(linkFirstOpenedAt \neq \text{null})}{\text{Total assisted orders}}$
-     (0.0 if total is 0). Crawlers and link previews do not execute client
-     scripts and therefore do not trigger an open.
+     (0.0 if total is 0). The flag is stamped by the first browser read that
+     presents the token. Crawlers and link previews do not execute client
+     scripts and therefore do not trigger an open; a seller who opens the link
+     to check it does count, because the read itself does not reveal who holds
+     the token.
 3. **Claim rates (overall and validated payment).**
    - **Overall claim rate:** Proportion of assisted orders claimed with a
      Google account across all assisted orders.
@@ -345,12 +348,16 @@ complete results, and each Prisma payload stays bounded:
      - **Denominator:** Total assisted orders.
      - **Formula:** $\frac{\text{Count}(buyerConfirmedReceivedAt \neq \text{null})}{\text{Total assisted orders}}$
        (0.0 if total is 0).
-6. **Privacy-preserving repeat buyers.** Repeat buyers per store evaluated
-   server-side by grouping on normalized phone (`Order.customerPhoneNormalized`
-   or normalized `Order.customerPhone`), falling back to `Order.buyerAccountId`,
+6. **Privacy-preserving repeat buyers.** Buyers grouped per store server-side
+   on normalized phone (`Order.customerPhoneNormalized` or normalized
+   `Order.customerPhone`), falling back to `Order.buyerAccountId`,
    `Order.customerId`, or `Order.id`.
-   - Distinct buyers and repeat buyers ($\ge 2$ orders) are calculated in
-     memory per store and time window.
+   - **Period-level (`repeatBuyersByStore`):** groups each buyer across the
+     whole selected window, so two orders in different weeks still count as one
+     returning buyer. Each row reports the store, distinct buyers, repeat buyers
+     ($\ge 2$ orders at that store) and the repeat-buyer rate.
+   - **Weekly breakdown:** each `weeklyStoreBreakdown` row applies the same
+     grouping inside its store-week, for week-over-week comparison.
    - Zero phone numbers, phone hashes, or customer UUIDs are exposed in the
      API response or rendered in the UI; only aggregate counts and rates are
      returned.

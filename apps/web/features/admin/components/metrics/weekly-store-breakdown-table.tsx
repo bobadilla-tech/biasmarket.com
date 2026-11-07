@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
+import { EmptyState } from "@/components/shared/empty-state";
 import type { WeeklyStoreBreakdown } from "../../api/admin-metrics.api";
 
 interface WeeklyStoreBreakdownTableProps {
@@ -47,9 +48,7 @@ export function WeeklyStoreBreakdownTable({
 
       <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white shadow-sm">
         {breakdown.length === 0 ? (
-          <p className="px-6 py-10 text-center text-sm text-gray-500">
-            {t("empty")}
-          </p>
+          <EmptyState message={t("empty")} />
         ) : (
           <table className="w-full min-w-[800px] text-sm">
             <thead>

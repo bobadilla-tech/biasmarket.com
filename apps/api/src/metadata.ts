@@ -2646,6 +2646,13 @@ export default async () => {
               repeatBuyers: { required: true, type: () => Number },
               repeatBuyerRate: { required: true, type: () => Number },
             },
+            StoreRepeatBuyerMetricsDto: {
+              storeId: { required: true, type: () => String },
+              storeName: { required: true, type: () => String },
+              distinctBuyers: { required: true, type: () => Number },
+              repeatBuyers: { required: true, type: () => Number },
+              repeatBuyerRate: { required: true, type: () => Number },
+            },
             AdminAssistedOrderMetricsSummaryDto: {
               totalAssistedOrders: { required: true, type: () => Number },
               totalMarketplaceOrders: { required: true, type: () => Number },
@@ -2699,6 +2706,13 @@ export default async () => {
                 type: () => [
                   t['./modules/stats/dto/admin-assisted-order-metrics.dto.js']
                     .WeeklyStoreBreakdownDto,
+                ],
+              },
+              repeatBuyersByStore: {
+                required: true,
+                type: () => [
+                  t['./modules/stats/dto/admin-assisted-order-metrics.dto.js']
+                    .StoreRepeatBuyerMetricsDto,
                 ],
               },
             },

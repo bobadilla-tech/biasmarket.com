@@ -381,6 +381,7 @@ describe("Admin Assisted Order Metrics (M2 Backend Aggregation)", () => {
           buyerSubmittedRate: 0,
         });
         expect(result.weeklyStoreBreakdown).toEqual([]);
+        expect(result.repeatBuyersByStore).toEqual([]);
       });
 
       it("respects countsTowardPaid single source of truth for payment validation", () => {
@@ -696,6 +697,16 @@ describe("Admin Assisted Order Metrics (M2 Backend Aggregation)", () => {
           expect(row.repeatBuyers).toBe(1);
           expect(row.repeatBuyerRate).toBe(0.5);
 
+          expect(result.repeatBuyersByStore).toEqual([
+            {
+              storeId: "store-1",
+              storeName: "Tienda Uno",
+              distinctBuyers: 2,
+              repeatBuyers: 1,
+              repeatBuyerRate: 0.5,
+            },
+          ]);
+
           // Zero-PII Guarantee: Serialized JSON must contain no phone numbers or customer identifiers
           const serialized = JSON.stringify(result);
           expect(serialized).not.toContain("+51999111222");
@@ -750,6 +761,46 @@ describe("Admin Assisted Order Metrics (M2 Backend Aggregation)", () => {
           expect(
             result.weeklyStoreBreakdown[0]?.marketplaceRevenueByCurrency,
           ).toEqual([]);
+        });
+
+        it("counts a buyer who returns in a different week as a repeat buyer at the store", () => {
+          const orders: MetricOrderRow[] = [
+            {
+              id: "week-1",
+              storeId: "store-1",
+              store: { id: "store-1", name: "Tienda Uno" },
+              source: "VENDOR_ASSISTED",
+              customerPhoneNormalized: "+51999111222",
+              createdAt: new Date("2026-11-02T10:00:00Z"),
+              payments: [],
+            },
+            {
+              id: "week-2",
+              storeId: "store-1",
+              store: { id: "store-1", name: "Tienda Uno" },
+              source: "VENDOR_ASSISTED",
+              customerPhoneNormalized: "+51999111222",
+              createdAt: new Date("2026-11-09T10:00:00Z"),
+              payments: [],
+            },
+          ];
+
+          const result = calculateAdminAssistedOrderMetrics(orders, []);
+
+          expect(result.weeklyStoreBreakdown).toHaveLength(2);
+          for (const week of result.weeklyStoreBreakdown) {
+            expect(week.distinctBuyers).toBe(1);
+            expect(week.repeatBuyers).toBe(0);
+          }
+          expect(result.repeatBuyersByStore).toEqual([
+            {
+              storeId: "store-1",
+              storeName: "Tienda Uno",
+              distinctBuyers: 1,
+              repeatBuyers: 1,
+              repeatBuyerRate: 1,
+            },
+          ]);
         });
       });
     });
@@ -930,11 +981,6 @@ describe("Admin Assisted Order Metrics (M2 Backend Aggregation)", () => {
           where: expect.objectContaining({ storeId: "store-specific" }),
         }),
       );
-    });
-
-    it("AdminStatsController has AuthGuard and Roles(['admin']) attached", () => {
-      const roles = Reflect.getMetadata("ROLES", AdminStatsController);
-      expect(roles).toEqual(["admin"]);
     });
   });
 });

@@ -6,6 +6,7 @@ import type {
   FunnelMomentMetricsDto,
   InvitationFunnelMetricsDto,
   PaymentSourceBreakdownDto,
+  StoreRepeatBuyerMetricsDto,
   TimeToPaymentSummaryDto,
   WeeklyStoreBreakdownDto,
 } from "@biasmarket/types";
@@ -17,6 +18,7 @@ export type PaymentSourceBreakdown = PaymentSourceBreakdownDto;
 export type FunnelMomentMetrics = FunnelMomentMetricsDto;
 export type InvitationFunnelMetrics = InvitationFunnelMetricsDto;
 export type WeeklyStoreBreakdown = WeeklyStoreBreakdownDto;
+export type StoreRepeatBuyerMetrics = StoreRepeatBuyerMetricsDto;
 export type AdminAssistedOrderMetricsSummary =
   AdminAssistedOrderMetricsSummaryDto;
 export type AdminAssistedOrderMetricsResponse =

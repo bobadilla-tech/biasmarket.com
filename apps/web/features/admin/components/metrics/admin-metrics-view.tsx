@@ -5,6 +5,7 @@ import { MetricsSummaryCards } from "./metrics-summary-cards";
 import { HypothesisCallout } from "./hypothesis-callout";
 import { InvitationFunnelCard } from "./invitation-funnel-card";
 import { WeeklyStoreBreakdownTable } from "./weekly-store-breakdown-table";
+import { RepeatBuyersByStoreCard } from "./repeat-buyers-by-store-card";
 
 interface AdminMetricsViewProps {
   data: AdminAssistedOrderMetricsResponse;
@@ -24,6 +25,9 @@ export function AdminMetricsView({ data }: AdminMetricsViewProps) {
 
       {/* Weekly Store Breakdown Table */}
       <WeeklyStoreBreakdownTable breakdown={data.weeklyStoreBreakdown} />
+
+      {/* Period-level repeat buyers per store */}
+      <RepeatBuyersByStoreCard rows={data.repeatBuyersByStore} />
     </div>
   );
 }

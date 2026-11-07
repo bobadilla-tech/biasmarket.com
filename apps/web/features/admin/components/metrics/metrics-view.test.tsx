@@ -110,6 +110,22 @@ const mockMetricsData: AdminAssistedOrderMetricsResponse = {
       repeatBuyerRate: 0.375,
     },
   ],
+  repeatBuyersByStore: [
+    {
+      storeId: "store-1",
+      storeName: "K-Pop Goods Lima",
+      distinctBuyers: 35,
+      repeatBuyers: 10,
+      repeatBuyerRate: 0.286,
+    },
+    {
+      storeId: "store-2",
+      storeName: "Photocard Haven",
+      distinctBuyers: 40,
+      repeatBuyers: 15,
+      repeatBuyerRate: 0.375,
+    },
+  ],
 };
 
 describe("AdminMetricsView", () => {
@@ -148,8 +164,12 @@ describe("AdminMetricsView", () => {
     expect(screen.getByText("Línea de tiempo")).toBeTruthy();
 
     // Weekly Store breakdown
-    expect(screen.getByText("K-Pop Goods Lima")).toBeTruthy();
-    expect(screen.getByText("Photocard Haven")).toBeTruthy();
+    expect(
+      screen.getAllByText("K-Pop Goods Lima").length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText("Photocard Haven").length,
+    ).toBeGreaterThanOrEqual(1);
     const text = container.textContent ?? "";
     expect(text).toMatch(/1[,.]?350[,.]50/);
     expect(text).toMatch(/2[,.]?100[,.]00/);
@@ -158,9 +178,22 @@ describe("AdminMetricsView", () => {
     expect(text).toContain(" · ");
     expect(screen.getAllByText("N/D").length).toBeGreaterThanOrEqual(1);
 
+    // Period-level repeat buyers per store
+    expect(screen.getByText("Compradores recurrentes por tienda")).toBeTruthy();
+    const repeatTable = screen.getByTestId("repeat-buyers-table");
+    expect(repeatTable.textContent).toMatch(/28\.6%/);
+    expect(repeatTable.textContent).toMatch(/37\.5%/);
+
+    // Time-to-payment labels: median headline, average comparison, no "Mkt"
+    const timeCard = screen.getByTestId("card-time-to-payment");
+    expect(timeCard.textContent).toContain("Mediana 10 min");
+    expect(timeCard.textContent).toContain("Promedio 14.5 min");
+    expect(timeCard.textContent).toContain("Promedio marketplace 25.2 min");
+    expect(timeCard.textContent).not.toContain("Mkt");
+
     // Touch targets and responsive wrappers
     const tables = container.querySelectorAll("table");
-    expect(tables.length).toBe(2); // funnel table + store breakdown table
+    expect(tables.length).toBe(3); // funnel + weekly breakdown + repeat buyers
     tables.forEach((table) => {
       const wrapper = table.parentElement;
       expect(wrapper?.classList.contains("overflow-x-auto")).toBe(true);
@@ -203,6 +236,12 @@ describe("AdminMetricsView", () => {
     expect(screen.queryByText("En meta (≥ 30%)")).toBeNull();
     expect(screen.queryByTestId("hypothesis-evaluation-alert")).toBeNull();
     expect(screen.getByText("—")).toBeTruthy();
+
+    const validatedCard = screen.getByTestId("card-validated-claim");
+    expect(validatedCard.textContent).toContain("N/D");
+    expect(validatedCard.textContent).not.toContain("0.0%");
+    expect(validatedCard.innerHTML).toContain("bg-gray-100");
+    expect(validatedCard.innerHTML).not.toContain("text-emerald-600");
   });
 
   test("uses English hypothesis labels on the English route", () => {
@@ -225,6 +264,21 @@ describe("AdminMetricsView", () => {
 
     expect(
       screen.getByText("No hay datos de órdenes para el período seleccionado."),
+    ).toBeTruthy();
+  });
+
+  test("displays an empty state when no store has buyer data", () => {
+    const emptyRepeatData: AdminAssistedOrderMetricsResponse = {
+      ...mockMetricsData,
+      repeatBuyersByStore: [],
+    };
+
+    renderWithProviders(<AdminMetricsView data={emptyRepeatData} />, "es");
+
+    expect(
+      screen.getByText(
+        "No hay datos de compradores para el período seleccionado.",
+      ),
     ).toBeTruthy();
   });
 

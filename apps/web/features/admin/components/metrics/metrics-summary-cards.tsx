@@ -23,6 +23,7 @@ function formatPercent(value: number): string {
 
 export function MetricsSummaryCards({ summary }: MetricsSummaryCardsProps) {
   const t = useTranslations("admin.metrics");
+  const hasValidatedPayments = summary.ordersWithValidatedPaymentCount > 0;
 
   const cards = [
     {
@@ -52,13 +53,17 @@ export function MetricsSummaryCards({ summary }: MetricsSummaryCardsProps) {
     {
       id: "validated-claim",
       title: t("cards.validatedClaimRate"),
-      value: formatPercent(summary.validatedClaimRate),
+      value: hasValidatedPayments
+        ? formatPercent(summary.validatedClaimRate)
+        : t("cards.notAvailable"),
       subtitle: `${summary.claimedWithValidatedPaymentCount} / ${summary.ordersWithValidatedPaymentCount}`,
       badge: t("cards.targetComparison"),
       icon: ArrowUpRight,
-      iconColor: summary.belowTargetClaimRate
-        ? "text-amber-600 bg-amber-50"
-        : "text-emerald-600 bg-emerald-50",
+      iconColor: !hasValidatedPayments
+        ? "text-gray-500 bg-gray-100"
+        : summary.belowTargetClaimRate
+          ? "text-amber-600 bg-amber-50"
+          : "text-emerald-600 bg-emerald-50",
     },
     {
       id: "buyer-notice",
@@ -81,13 +86,19 @@ export function MetricsSummaryCards({ summary }: MetricsSummaryCardsProps) {
       title: t("cards.timeToPayment"),
       value:
         summary.timeToFirstValidPayment.assistedMedianMinutes != null
-          ? `${summary.timeToFirstValidPayment.assistedMedianMinutes} min`
+          ? t("cards.medianMinutes", {
+              minutes: summary.timeToFirstValidPayment.assistedMedianMinutes,
+            })
           : t("cards.notAvailable"),
       subtitle: `${t("cards.avgMinutes", {
         minutes:
           summary.timeToFirstValidPayment.assistedAvgMinutes ??
           t("cards.notAvailable"),
-      })} · Mkt: ${summary.timeToFirstValidPayment.marketplaceMedianMinutes ?? t("cards.notAvailable")} min`,
+      })} · ${t("cards.marketplaceAvgMinutes", {
+        minutes:
+          summary.timeToFirstValidPayment.marketplaceAvgMinutes ??
+          t("cards.notAvailable"),
+      })}`,
       icon: Clock,
       iconColor: "text-amber-600 bg-amber-50",
     },

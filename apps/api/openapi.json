@@ -11484,6 +11484,38 @@
           "repeatBuyerRate"
         ]
       },
+      "StoreRepeatBuyerMetricsDto": {
+        "type": "object",
+        "properties": {
+          "storeId": {
+            "type": "string",
+            "description": "Store identifier"
+          },
+          "storeName": {
+            "type": "string",
+            "description": "Store name"
+          },
+          "distinctBuyers": {
+            "type": "number",
+            "description": "Count of distinct buyer entities at this store in the selected period"
+          },
+          "repeatBuyers": {
+            "type": "number",
+            "description": "Count of repeat buyer entities (>= 2 orders) at this store in the selected period"
+          },
+          "repeatBuyerRate": {
+            "type": "number",
+            "description": "Proportion of repeat buyers (0.0 - 1.0)"
+          }
+        },
+        "required": [
+          "storeId",
+          "storeName",
+          "distinctBuyers",
+          "repeatBuyers",
+          "repeatBuyerRate"
+        ]
+      },
       "AdminAssistedOrderMetricsResponseDto": {
         "type": "object",
         "properties": {
@@ -11509,9 +11541,21 @@
             "items": {
               "$ref": "#/components/schemas/WeeklyStoreBreakdownDto"
             }
+          },
+          "repeatBuyersByStore": {
+            "description": "Period-level distinct and repeat buyers per store (cross-week)",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StoreRepeatBuyerMetricsDto"
+            }
           }
         },
-        "required": ["summary", "invitationFunnel", "weeklyStoreBreakdown"]
+        "required": [
+          "summary",
+          "invitationFunnel",
+          "weeklyStoreBreakdown",
+          "repeatBuyersByStore"
+        ]
       },
       "RegisterCustomerDto": {
         "type": "object",

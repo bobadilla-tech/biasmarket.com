@@ -148,6 +148,7 @@
       "targetComparison": "Target: 30%",
       "avgMinutes": "Avg {minutes} min",
       "medianMinutes": "Median {minutes} min",
+      "marketplaceAvgMinutes": "Marketplace avg {minutes} min",
       "notAvailable": "N/A"
     },
     "funnel": {
@@ -180,6 +181,11 @@
       "repeatBuyers": "Repeat buyers",
       "repeatRate": "Repeat rate",
       "empty": "No order data for the selected period."
+    },
+    "repeatBuyers": {
+      "title": "Repeat Buyers by Store",
+      "subtitle": "Buyers with two or more orders at the same store in the selected period",
+      "empty": "No buyer data for the selected period."
     }
   }
 }

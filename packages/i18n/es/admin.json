@@ -113,7 +113,7 @@
   },
   "metrics": {
     "title": "Métricas del piloto de órdenes asistidas",
-    "subtitle": "Indicadores de adopción, apertura de links, reclamo de cuentas y validación de pagos.",
+    "subtitle": "Indicadores de adopción, apertura de enlaces, reclamo de cuentas y validación de pagos.",
     "filters": {
       "dateRange": "Rango de fechas",
       "allTime": "Todo el historial",
@@ -136,7 +136,7 @@
     "cards": {
       "totalAssisted": "Órdenes asistidas",
       "totalMarketplace": "Órdenes marketplace",
-      "linkOpenedRate": "Apertura de link",
+      "linkOpenedRate": "Apertura de enlace",
       "overallClaimRate": "Reclamo general",
       "validatedClaimRate": "Reclamo con pago validado",
       "buyerNoticeRate": "Aviso manual (G1)",
@@ -148,6 +148,7 @@
       "targetComparison": "Meta: 30%",
       "avgMinutes": "Promedio {minutes} min",
       "medianMinutes": "Mediana {minutes} min",
+      "marketplaceAvgMinutes": "Promedio marketplace {minutes} min",
       "notAvailable": "N/D"
     },
     "funnel": {
@@ -180,6 +181,11 @@
       "repeatBuyers": "Compradores recurrentes",
       "repeatRate": "Tasa de recurrencia",
       "empty": "No hay datos de órdenes para el período seleccionado."
+    },
+    "repeatBuyers": {
+      "title": "Compradores recurrentes por tienda",
+      "subtitle": "Compradores con dos o más pedidos en la misma tienda en el período seleccionado",
+      "empty": "No hay datos de compradores para el período seleccionado."
     }
   }
 }
