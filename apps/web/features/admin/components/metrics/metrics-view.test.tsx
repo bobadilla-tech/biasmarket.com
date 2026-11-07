@@ -88,8 +88,11 @@ const mockMetricsData: AdminAssistedOrderMetricsResponse = {
       storeName: "K-Pop Goods Lima",
       assistedOrdersCount: 45,
       marketplaceOrdersCount: 20,
-      assistedRevenue: 1350.5,
-      marketplaceRevenue: 800.0,
+      assistedRevenueByCurrency: [{ currency: "PEN", amount: 1350.5 }],
+      marketplaceRevenueByCurrency: [
+        { currency: "PEN", amount: 500 },
+        { currency: "USD", amount: 300 },
+      ],
       distinctBuyers: 35,
       repeatBuyers: 10,
       repeatBuyerRate: 0.286,
@@ -100,8 +103,8 @@ const mockMetricsData: AdminAssistedOrderMetricsResponse = {
       storeName: "Photocard Haven",
       assistedOrdersCount: 55,
       marketplaceOrdersCount: 30,
-      assistedRevenue: 2100.0,
-      marketplaceRevenue: 1200.0,
+      assistedRevenueByCurrency: [{ currency: "PEN", amount: 2100 }],
+      marketplaceRevenueByCurrency: [],
       distinctBuyers: 40,
       repeatBuyers: 15,
       repeatBuyerRate: 0.375,
@@ -147,8 +150,13 @@ describe("AdminMetricsView", () => {
     // Weekly Store breakdown
     expect(screen.getByText("K-Pop Goods Lima")).toBeTruthy();
     expect(screen.getByText("Photocard Haven")).toBeTruthy();
-    expect(screen.getByText("S/ 1350.50")).toBeTruthy();
-    expect(screen.getByText("S/ 2100.00")).toBeTruthy();
+    const text = container.textContent ?? "";
+    expect(text).toMatch(/1[,.]?350[,.]50/);
+    expect(text).toMatch(/2[,.]?100[,.]00/);
+    expect(text).toMatch(/500[,.]00/);
+    expect(text).toMatch(/300[,.]00/);
+    expect(text).toContain(" · ");
+    expect(screen.getAllByText("N/D").length).toBeGreaterThanOrEqual(1);
 
     // Touch targets and responsive wrappers
     const tables = container.querySelectorAll("table");

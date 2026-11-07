@@ -1,14 +1,30 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { WeeklyStoreBreakdown } from "../../api/admin-metrics.api";
 
 interface WeeklyStoreBreakdownTableProps {
   breakdown: WeeklyStoreBreakdown[];
 }
 
-function formatCurrency(amount: number): string {
-  return `S/ ${amount.toFixed(2)}`;
+function formatCurrencyAmounts(
+  amounts: Array<{ currency: string; amount: number }>,
+  locale: string,
+  emptyLabel: string,
+): string {
+  if (amounts.length === 0) return emptyLabel;
+  return amounts
+    .map((row) => {
+      try {
+        return new Intl.NumberFormat(locale, {
+          style: "currency",
+          currency: row.currency,
+        }).format(row.amount);
+      } catch {
+        return `${row.amount.toFixed(2)} ${row.currency}`;
+      }
+    })
+    .join(" · ");
 }
 
 function formatPercent(value: number): string {
@@ -19,6 +35,8 @@ export function WeeklyStoreBreakdownTable({
   breakdown,
 }: WeeklyStoreBreakdownTableProps) {
   const t = useTranslations("admin.metrics.table");
+  const tCards = useTranslations("admin.metrics.cards");
+  const locale = useLocale();
 
   return (
     <div className="flex flex-col gap-3">
@@ -80,10 +98,18 @@ export function WeeklyStoreBreakdownTable({
                     {row.marketplaceOrdersCount.toLocaleString()}
                   </td>
                   <td className="px-6 py-3.5 text-right text-gray-900">
-                    {formatCurrency(row.assistedRevenue)}
+                    {formatCurrencyAmounts(
+                      row.assistedRevenueByCurrency,
+                      locale,
+                      tCards("notAvailable"),
+                    )}
                   </td>
                   <td className="px-6 py-3.5 text-right text-gray-600">
-                    {formatCurrency(row.marketplaceRevenue)}
+                    {formatCurrencyAmounts(
+                      row.marketplaceRevenueByCurrency,
+                      locale,
+                      tCards("notAvailable"),
+                    )}
                   </td>
                   <td className="px-6 py-3.5 text-right text-gray-600">
                     {row.distinctBuyers.toLocaleString()}
