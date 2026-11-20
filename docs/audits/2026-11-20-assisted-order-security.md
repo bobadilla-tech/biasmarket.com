@@ -20,6 +20,33 @@ and tests. It does not certify production configuration or pilot operations.
 | Data deletion and retention behavior.                                                                                                                                  | `apps/api/src/modules/orders/application/assisted-order-identity-retention.usecase.spec.ts` and `apps/api/test/assisted-orders.e2e-spec.ts` cover buyer-request erasure and expiry retention; operational steps are documented in `docs/core/assisted-order-retention-operations.md` and `docs/core/assisted-orders.md`.                                                                                                                                                                                                                         |
 | Google OAuth uses minimal scope.                                                                                                                                       | `apps/api/src/modules/customer-auth/buyer-google.controller.spec.ts` asserts the requested scope is exactly `openid email profile`.                                                                                                                                                                                                                                                                                                                                                                                                              |
 
+## #462 acceptance coverage
+
+- **Testable #279 criteria mapped:** the table above links each backend-testable
+  criterion to its test or documentation evidence. UI, organizational policy,
+  and deployment-only criteria are listed below as limits.
+- **Cross-tenant seller access:** `assisted-order-journey.e2e-spec.ts`,
+  `assisted-order-links.e2e-spec.ts`, and `assisted-orders.e2e-spec.ts` cover
+  foreign order reads/mutations and assisted-order actions;
+  `related-orders.e2e-spec.ts` covers foreign customer detail by ID, related
+  order history, and lookup scoping.
+- **Buyer token scope:** `public-orders.e2e-spec.ts` covers invalid and revoked
+  tokens and verifies two distinct valid tokens resolve to their respective
+  orders. The #462 addition verifies a matching phone cannot read the order or
+  record buyer activity.
+- **Sensitive-field handling:** event allow-list and audit tests cover
+  phone/token/email/notes in payloads and metadata. The API logger test checks
+  that an email query and session cookie are absent from request logs; Sentry
+  tests cover public-order token removal from URL and diagnostic path fields.
+  There is no test that arbitrary phone/email/note text embedded in a thrown
+  exception is scrubbed, so this map does not claim that behavior.
+- **Targeted tests and audit evidence:** the 11-file unit command below passed
+  with 214 tests. GitHub Actions [run 44789418084](https://github.com/bobadilla-tech/biasmarket.com/actions/runs/44789418084)
+  passed the `E2E (API)` check's `Run API E2E suite` step. The workflow runs
+  `bash scripts/ci/e2e.sh`, which invokes `pnpm --filter api test:e2e`. The
+  available check result is for the full API E2E suite; this audit does not
+  single out individual spec files based on that run.
+
 ## Criteria outside this backend test run
 
 - The public-page privacy notice is a UI criterion and was not inspected in this
@@ -35,7 +62,7 @@ and tests. It does not certify production configuration or pilot operations.
 ## Verification run
 
 - `pnpm --filter api exec vitest run src/modules/orders/application/create-assisted-order.usecase.spec.ts src/modules/orders/application/manage-assisted-order-link.usecase.spec.ts src/modules/orders/application/order-events.service.spec.ts src/modules/orders/application/public-order.service.spec.ts src/modules/orders/infrastructure/order.controller.spec.ts src/modules/orders/infrastructure/public-order-events.controller.spec.ts src/modules/customer-auth/buyer-google.controller.spec.ts src/common/error-tracking.spec.ts src/common/logging/logger.module.spec.ts src/common/scrub-request-url.spec.ts src/common/filters/all-exceptions.filter.spec.ts` — **passed: 11 files, 214 tests**.
-- `DATABASE_URL=postgresql://x:x@127.0.0.1:5432/x REDIS_URL=redis://127.0.0.1:6379 MAIL_DRIVER=file pnpm --filter api exec vitest run --config ./vitest.config.e2e.ts test/public-orders.e2e-spec.ts test/related-orders.e2e-spec.ts` — **not run to completion**. Both suites were skipped at setup because required `S3_BUCKET` configuration was missing; Redis was also unavailable at `127.0.0.1:6379`. `docker ps` confirmed that the Docker daemon is unavailable, so the repository's E2E datastore stack could not be started here. The newly added integration assertions therefore still need to run in CI or a configured local E2E environment.
+- `pnpm --filter api exec vitest run --config ./vitest.config.e2e.ts test/public-orders.e2e-spec.ts -t 'stores only the moment on invite events, dedupes SHOWN per moment, and ignores a claimed order'` — **local attempt stopped before tests ran** because PostgreSQL and Redis were unavailable at `127.0.0.1:5432` and `127.0.0.1:6379`. The CI E2E result above verifies the full API E2E suite.
 
 The unit tests establish the mapped code behavior at their test boundaries. They
 do not establish live deployment settings or real-user behavior.
