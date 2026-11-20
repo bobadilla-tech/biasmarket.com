@@ -24,7 +24,7 @@ export class ExpireOrdersUseCase {
         paymentStatus: { in: [...RESERVED_HOLD_STATUSES] },
         expiresAt: { lt: new Date() },
       },
-      include: { items: true, payments: true },
+      include: { items: true },
     });
 
     let cancelled = 0;
@@ -38,22 +38,41 @@ export class ExpireOrdersUseCase {
       );
       entity.expire();
 
-      // Default policy on auto-expiry: retain whatever the buyer already paid
-      // (partial deposit). The seller can refund it out-of-band; the recorded
-      // resolution keeps the money traceable, consistent with the manual
-      // cancel flow's retained/released accounting.
-      const { paidAmount } = computePaymentSummary(
-        order.requiredAmount,
-        order.payments,
-      );
-
       const stockAlerts: StockAlertPush[] = [];
       try {
         await this.prisma.$transaction(async (tx) => {
-          // Guard against a seller decision (verify/reject) landing between
-          // findMany and this transaction: only cancel if still holding a
-          // reserved status, otherwise skip stock mutation entirely instead of
-          // double-applying it.
+          // Match the order-first lock order used by payment creation and
+          // voiding. A payment that commits before this lock is acquired must
+          // be included in the retained amount; one that waits here will see
+          // the cancelled order after expiry commits.
+          const [lockedOrder] = await tx.$queryRaw<Array<{ id: string }>>`
+            SELECT "id" FROM "Order"
+            WHERE "id" = ${order.id}
+              AND "paymentStatus" IN (${Prisma.join([...RESERVED_HOLD_STATUSES])})
+            FOR UPDATE
+          `;
+          if (!lockedOrder) return;
+
+          const payments = await tx.orderPayment.findMany({
+            where: { orderId: order.id, storeId: order.storeId },
+            select: {
+              amount: true,
+              source: true,
+              reviewStatus: true,
+              voidedAt: true,
+            },
+          });
+          // Default policy on auto-expiry: retain whatever is paid when the
+          // order lock is held (partial deposit). The seller can refund it
+          // out-of-band; the recorded resolution keeps it traceable.
+          const { paidAmount } = computePaymentSummary(
+            order.requiredAmount,
+            payments,
+          );
+
+          // Keep the status guard as a defensive check while the row lock is
+          // held. This avoids cancelling or releasing stock twice if the
+          // candidate changed before the lock was obtained.
           const guard = await tx.order.updateMany({
             where: {
               id: order.id,
