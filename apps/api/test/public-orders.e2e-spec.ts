@@ -41,6 +41,9 @@ describe("public orders (e2e)", () => {
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix("api");
+    // Let E2E requests select an isolated throttler bucket with
+    // X-Forwarded-For, matching production's trusted proxy setup.
+    app.getHttpAdapter().getInstance().set("trust proxy", 1);
     app.useGlobalPipes(
       new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
     );
@@ -553,6 +556,7 @@ describe("public orders (e2e)", () => {
       const post = (body: Record<string, unknown>) =>
         request(app.getHttpServer())
           .post(`/api/public/orders/${token}/events`)
+          .set("X-Forwarded-For", "198.51.100.42")
           .send(body);
 
       await post({ type: "INVITE_SHOWN", moment: "pago_validado" }).expect(204);
