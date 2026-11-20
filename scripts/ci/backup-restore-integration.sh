@@ -6,11 +6,14 @@ set -Eeuo pipefail
 ROOT="${GITHUB_WORKSPACE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 source "$ROOT/scripts/ci/e2e-images.sh"
 
-NETWORK="biasmarket-backup-restore-${GITHUB_RUN_ID:-local}-$$"
-PG_SOURCE="postgres-source"
-PG_RESTORE="postgres-restore"
-MINIO_SOURCE="minio-source"
-MINIO_RESTORE="minio-restore"
+RUN_SUFFIX="${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}-$$"
+NETWORK="biasmarket-backup-restore-${RUN_SUFFIX}"
+PG_SOURCE="biasmarket-pg-source-${RUN_SUFFIX}"
+PG_RESTORE="biasmarket-pg-restore-${RUN_SUFFIX}"
+MINIO_SOURCE="biasmarket-minio-source-${RUN_SUFFIX}"
+MINIO_RESTORE="biasmarket-minio-restore-${RUN_SUFFIX}"
+CREATED_CONTAINERS=()
+NETWORK_CREATED=0
 PG_IMAGE="$(e2e_image_tag "$E2E_POSTGRES_REF")"
 MINIO_IMAGE="$(e2e_image_tag "$E2E_MINIO_REF")"
 BACKUP_IMAGE="biasmarket-backup-restore:${GITHUB_SHA:-local}"
@@ -21,16 +24,20 @@ DB_PASSWORD="ephemeral-backup-ci-db-password"
 
 cleanup() {
   local status=$?
-  if ((status != 0)); then
-    for container in "$PG_SOURCE" "$PG_RESTORE" "$MINIO_SOURCE" "$MINIO_RESTORE"; do
+  if ((status != 0)) && ((${#CREATED_CONTAINERS[@]} > 0)); then
+    for container in "${CREATED_CONTAINERS[@]}"; do
       if docker inspect "$container" >/dev/null 2>&1; then
         echo "--- logs: $container ---" >&2
         docker logs "$container" 2>&1 | tail -80 >&2 || true
       fi
     done
   fi
-  docker rm -f "$PG_SOURCE" "$PG_RESTORE" "$MINIO_SOURCE" "$MINIO_RESTORE" >/dev/null 2>&1 || true
-  docker network rm "$NETWORK" >/dev/null 2>&1 || true
+  if ((${#CREATED_CONTAINERS[@]} > 0)); then
+    docker rm --force --volumes "${CREATED_CONTAINERS[@]}" >/dev/null 2>&1 || true
+  fi
+  if ((NETWORK_CREATED)); then
+    docker network rm "$NETWORK" >/dev/null 2>&1 || true
+  fi
   sudo rm -rf -- "$TEMP_ROOT" || true
   exit "$status"
 }
@@ -40,20 +47,25 @@ e2e_ensure_image "$E2E_POSTGRES_REF"
 e2e_ensure_image "$E2E_MINIO_REF"
 docker build --file "$ROOT/infra/docker/backup.Dockerfile" --tag "$BACKUP_IMAGE" "$ROOT"
 docker network create "$NETWORK" >/dev/null
+NETWORK_CREATED=1
 
-docker run --detach --name "$PG_SOURCE" --network "$NETWORK" \
+docker run --detach --name "$PG_SOURCE" --network "$NETWORK" --network-alias postgres-source \
   --env POSTGRES_USER=backup_ci --env "POSTGRES_PASSWORD=$DB_PASSWORD" \
   --env POSTGRES_DB=backup_ci "$PG_IMAGE" >/dev/null
-docker run --detach --name "$PG_RESTORE" --network "$NETWORK" \
+CREATED_CONTAINERS+=("$PG_SOURCE")
+docker run --detach --name "$PG_RESTORE" --network "$NETWORK" --network-alias postgres-restore \
   --env POSTGRES_USER=backup_ci --env "POSTGRES_PASSWORD=$DB_PASSWORD" \
   --env POSTGRES_DB=backup_ci "$PG_IMAGE" >/dev/null
+CREATED_CONTAINERS+=("$PG_RESTORE")
 
-docker run --detach --name "$MINIO_SOURCE" --network "$NETWORK" \
+docker run --detach --name "$MINIO_SOURCE" --network "$NETWORK" --network-alias minio-source \
   --env MINIO_ROOT_USER="$ACCESS_KEY" --env MINIO_ROOT_PASSWORD="$SECRET_KEY" \
   "$MINIO_IMAGE" server /data --console-address ":9001" >/dev/null
-docker run --detach --name "$MINIO_RESTORE" --network "$NETWORK" \
+CREATED_CONTAINERS+=("$MINIO_SOURCE")
+docker run --detach --name "$MINIO_RESTORE" --network "$NETWORK" --network-alias minio-restore \
   --env MINIO_ROOT_USER="$ACCESS_KEY" --env MINIO_ROOT_PASSWORD="$SECRET_KEY" \
   "$MINIO_IMAGE" server /data --console-address ":9001" >/dev/null
+CREATED_CONTAINERS+=("$MINIO_RESTORE")
 
 mkdir -p "$TEMP_ROOT/stage" "$TEMP_ROOT/repository"
 sudo chown -R 10001:10001 "$TEMP_ROOT/stage" "$TEMP_ROOT/repository"
