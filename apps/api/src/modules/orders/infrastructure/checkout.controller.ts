@@ -243,7 +243,8 @@ export class CheckoutController {
         return {
           order: toCheckoutOrderDto(replay),
           buyerAccountLinked: this.orderBelongsToSession(replay, req),
-          whatsappUrl: null,
+          whatsappUrl:
+            await this.createOrder.buildCheckoutReplayWhatsAppUrl(replay),
         };
       }
     }

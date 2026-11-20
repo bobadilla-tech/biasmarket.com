@@ -36,12 +36,79 @@ export class CreateOrderUseCase {
     if (!store) throw new NotFoundException("Tienda no encontrada");
     const replay = await this.prisma.order.findFirst({
       where: { storeId: store.id, checkoutIdempotencyKey: idempotencyKey },
-      include: { items: true, payments: true },
+      include: {
+        items: { include: { product: true, variant: true } },
+        payments: true,
+      },
     });
     if (replay && dto) {
       resolveReplay(replay, dto);
     }
     return replay;
+  }
+
+  async buildCheckoutReplayWhatsAppUrl(order: {
+    id: string;
+    storeId: string;
+    items: Array<{
+      quantity: number;
+      unitPriceAtPurchase: { toNumber(): number };
+      product: { name: string };
+      variant: { name: string } | null;
+    }>;
+    totalAmount: { toNumber(): number };
+    currency: string;
+    deliveryMethodType: string;
+    deliveryDetails: unknown;
+    pickupDate: Date | null;
+    paymentMethod: string | null;
+    customerName: string | null;
+    customerPhone: string;
+  }) {
+    const store = await this.prisma.store.findUnique({
+      where: { id: order.storeId },
+      select: { name: true, whatsappNumber: true },
+    });
+    if (!store?.whatsappNumber) return null;
+
+    const orderTemplate = await this.prisma.whatsAppMessageTemplate.findUnique({
+      where: {
+        storeId_type: { storeId: order.storeId, type: "NEW_ORDER" },
+      },
+    });
+    const deliveryDetails =
+      order.deliveryDetails && typeof order.deliveryDetails === "object"
+        ? (order.deliveryDetails as Record<string, unknown>)
+        : {};
+
+    return buildWhatsAppUrl(
+      store.whatsappNumber,
+      buildWhatsAppOrderMessage(
+        {
+          orderId: order.id,
+          storeName: store.name,
+          items: order.items.map((item) => ({
+            name: item.variant
+              ? `${item.product.name} (${item.variant.name})`
+              : item.product.name,
+            quantity: item.quantity,
+            unitPrice: item.unitPriceAtPurchase.toNumber(),
+          })),
+          totalAmount: order.totalAmount.toNumber(),
+          currency: order.currency,
+          deliveryMethodType: order.deliveryMethodType,
+          pickupPointLabel:
+            typeof deliveryDetails.pickupPointLabel === "string"
+              ? deliveryDetails.pickupPointLabel
+              : null,
+          pickupDate: order.pickupDate,
+          paymentMethod: order.paymentMethod,
+          customerName: order.customerName,
+          customerPhone: order.customerPhone,
+        },
+        orderTemplate?.template,
+      ),
+    );
   }
 
   // `proof` is the buyer's checkout-time proof-of-payment upload (already
@@ -64,10 +131,17 @@ export class CreateOrderUseCase {
     if (idempotencyKey) {
       const replay = await this.prisma.order.findFirst({
         where: { storeId: store.id, checkoutIdempotencyKey: idempotencyKey },
-        include: { items: true, payments: true },
+        include: {
+          items: { include: { product: true, variant: true } },
+          payments: true,
+        },
       });
       if (replay) {
-        return { order: resolveReplay(replay, dto), whatsappUrl: null };
+        const order = resolveReplay(replay, dto);
+        return {
+          order,
+          whatsappUrl: await this.buildCheckoutReplayWhatsAppUrl(order),
+        };
       }
     }
 
@@ -172,10 +246,17 @@ export class CreateOrderUseCase {
       if (!idempotencyKey || !isIdempotencyKeyConflict(error)) throw error;
       const replay = await this.prisma.order.findFirst({
         where: { storeId: store.id, checkoutIdempotencyKey: idempotencyKey },
-        include: { items: true, payments: true },
+        include: {
+          items: { include: { product: true, variant: true } },
+          payments: true,
+        },
       });
       if (!replay) throw error;
-      return { order: resolveReplay(replay, dto), whatsappUrl: null };
+      const order = resolveReplay(replay, dto);
+      return {
+        order,
+        whatsappUrl: await this.buildCheckoutReplayWhatsAppUrl(order),
+      };
     }
 
     const {

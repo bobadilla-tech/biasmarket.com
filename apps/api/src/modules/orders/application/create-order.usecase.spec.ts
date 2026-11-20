@@ -1101,7 +1101,51 @@ describe("CreateOrderUseCase", () => {
     });
   });
 
+  describe("checkout replay WhatsApp message", () => {
+    it("renders stored order details with the store's current NEW_ORDER template", async () => {
+      prisma.whatsAppMessageTemplate.findUnique.mockResolvedValue({
+        template: "Retry {{orderRef}} {{items}} {{pickupPoint}}",
+      });
+
+      const url = await useCase.buildCheckoutReplayWhatsAppUrl({
+        id: "order-123456",
+        storeId: store.id,
+        items: [
+          {
+            quantity: 2,
+            unitPriceAtPurchase: new FakeDecimal(10),
+            product: { name: "Widget" },
+            variant: { name: "Large" },
+          },
+        ],
+        totalAmount: new FakeDecimal(20),
+        currency: "PEN",
+        deliveryMethodType: "PICKUP",
+        deliveryDetails: { pickupPointLabel: "Main point" },
+        pickupDate: null,
+        paymentMethod: "CASH",
+        customerName: "Jane",
+        customerPhone: dto.customerPhone,
+      });
+
+      expect(url).toContain(
+        encodeURIComponent(
+          "Retry #123456 2x Widget (Large) - 10.00 PEN c/u Main point",
+        ),
+      );
+      expect(prisma.whatsAppMessageTemplate.findUnique).toHaveBeenCalledWith({
+        where: { storeId_type: { storeId: store.id, type: "NEW_ORDER" } },
+      });
+    });
+  });
+
   describe("checkout idempotency replay", () => {
+    beforeEach(() => {
+      vi.spyOn(useCase, "buildCheckoutReplayWhatsAppUrl").mockResolvedValue(
+        null,
+      );
+    });
+
     it("returns existing order when idempotency key and order data match", async () => {
       const existingOrder = {
         id: "order-replay-1",
