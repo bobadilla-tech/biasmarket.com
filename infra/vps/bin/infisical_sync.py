@@ -12,7 +12,7 @@ import os
 import re
 import shutil
 import stat
-import subprocess
+import subprocess  # nosec B404 -- required to invoke the fixed Infisical CLI; calls use argv lists with shell disabled.
 import sys
 import tempfile
 import time
@@ -135,7 +135,7 @@ def verify_cli(expected_version: str) -> None:
     if not os.path.isfile(cli) or not os.access(cli, os.X_OK):
         raise SyncError("Infisical CLI is not installed")
     try:
-        result = subprocess.run(["/usr/bin/infisical", "--version"], capture_output=True, text=True, check=False, timeout=30)
+        result = subprocess.run(["/usr/bin/infisical", "--version"], capture_output=True, text=True, check=False, timeout=30, shell=False)  # nosec B603 -- fixed executable and constant argument; no shell.
     except subprocess.TimeoutExpired as exc:
         raise SyncError("Infisical CLI version check timed out") from exc
     output = f"{result.stdout}\n{result.stderr}".strip()
@@ -203,7 +203,8 @@ def export_env(
             stderr=subprocess.DEVNULL,
             check=False,
             timeout=120,
-        )
+            shell=False,
+        )  # nosec B603 -- fixed executable; only allow-listed scope/path values in a direct argv list; no shell.
     except subprocess.TimeoutExpired as exc:
         raise SyncError("Infisical secret export timed out") from exc
     if result.returncode != 0 or not output.is_file():

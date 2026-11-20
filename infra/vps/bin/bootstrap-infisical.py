@@ -70,10 +70,10 @@ def main() -> int:
             source = SYSTEMD_SOURCE / name
             target = SYSTEMD_TARGET / name
             atomic_write(target, source.read_bytes(), 0o644)
-        import subprocess
+        import subprocess  # nosec B404 -- required to invoke fixed systemd tooling with constant argument lists.
 
-        subprocess.run(["/usr/bin/systemctl", "daemon-reload"], check=True)
-        subprocess.run(["/usr/bin/systemctl", "enable", "--now", "biasmarket-infisical-sync.timer"], check=True)
+        subprocess.run(["/usr/bin/systemctl", "daemon-reload"], check=True, shell=False)  # nosec B603 -- fixed executable and constant arguments; no shell.
+        subprocess.run(["/usr/bin/systemctl", "enable", "--now", "biasmarket-infisical-sync.timer"], check=True, shell=False)  # nosec B603 -- fixed executable and constant arguments; no shell.
     except Exception as exc:
         print(f"Infisical bootstrap failed ({type(exc).__name__}); existing cached env files were retained when validation or sync failed.", file=sys.stderr)
         return 1
