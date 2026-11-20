@@ -17,14 +17,14 @@ appId: com.biasmarket.mobile
 - openLink: biasmarket:///account
 - assertVisible: "^(?:Buyer session active|Sesión de comprador activa)$"
 - openLink: biasmarket:///store/${STORE_SLUG}/product/${PRODUCT_ID}
-- assertVisible: ${PRODUCT_NAME}
+- assertVisible: ${PRODUCT_NAME_REGEX}
 - tapOn: "^(?:Add to cart|Añadir al carrito)$"
 - tapOn: "^(?:Cart|Carrito).*1.*$"
 - tapOn: "^(?:Continue to checkout|Continuar al pago)$"
 - assertVisible: "^(?:Checkout|Finalizar compra)$"
 - tapOn: "^(?:Pickup|Recojo)$"
-- tapOn: ${PICKUP_LABEL}
-- tapOn: ${PAYMENT_METHOD}
+- tapOn: ${PICKUP_LABEL_REGEX}
+- tapOn: ${PAYMENT_METHOD_REGEX}
 - tapOn: "^(?:Choose image|Elegir imagen)$"
 - tapOn: ".*payment-proof.*"
 - assertVisible: "^(?:Proof ready: .*payment-proof.*|Comprobante listo: .*payment-proof.*)$"

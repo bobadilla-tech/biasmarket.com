@@ -12,6 +12,12 @@ enabled pickup point with no required pickup date, and an enabled manual payment
 method. Configure the EAS `preview` environment's `EXPO_PUBLIC_API_URL` to the
 staging API. The payment-proof image in `fixtures/` is synthetic QA data.
 
+The workflow checks that the EAS `preview` environment defines
+`EXPO_PUBLIC_API_URL` as an absolute HTTPS API base URL ending in `/api` before
+building. Dynamic product, pickup, and payment labels are escaped as literal
+text before being passed to Maestro selectors, which interpret selector values
+as regular expressions.
+
 The release workflow builds the EAS preview APK, installs it in the Android
 emulator, and runs this flow on pushes to `mobile-release`. It intentionally
 fails before building if the staging fixture credentials are absent. It installs

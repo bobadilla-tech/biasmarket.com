@@ -21,6 +21,10 @@ for name in "${required[@]}"; do
   fi
 done
 
+PRODUCT_NAME_REGEX=$(node scripts/ci/mobile-maestro-config.mjs escape "$PRODUCT_NAME")
+PICKUP_LABEL_REGEX=$(node scripts/ci/mobile-maestro-config.mjs escape "$PICKUP_LABEL")
+PAYMENT_METHOD_REGEX=$(node scripts/ci/mobile-maestro-config.mjs escape "$PAYMENT_METHOD")
+
 cd apps/mobile
 pnpm dlx eas-cli build:run --platform android --id "$BUILD_ID" --non-interactive
 adb shell mkdir -p /sdcard/Pictures
@@ -29,8 +33,8 @@ adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:
 maestro test .maestro/flows/buyer-checkout-proof-order.yaml \
   --env STORE_SLUG="$STORE_SLUG" \
   --env PRODUCT_ID="$PRODUCT_ID" \
-  --env PRODUCT_NAME="$PRODUCT_NAME" \
+  --env PRODUCT_NAME_REGEX="$PRODUCT_NAME_REGEX" \
   --env BUYER_PHONE="$BUYER_PHONE" \
   --env BUYER_PASSWORD="$BUYER_PASSWORD" \
-  --env PICKUP_LABEL="$PICKUP_LABEL" \
-  --env PAYMENT_METHOD="$PAYMENT_METHOD"
+  --env PICKUP_LABEL_REGEX="$PICKUP_LABEL_REGEX" \
+  --env PAYMENT_METHOD_REGEX="$PAYMENT_METHOD_REGEX"

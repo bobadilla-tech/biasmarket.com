@@ -1171,6 +1171,11 @@ jobs:
       - name: Guard script tests
         run: node --test scripts/ci/check-workspace-scripts.test.mjs
 
+      - name: Maestro config syntax and tests
+        run: |
+          node --check scripts/ci/mobile-maestro-config.mjs
+          node --test scripts/ci/mobile-maestro-config.test.mjs
+
       # The Google stub is a Node preload used by the web E2E job only. It has
       # no linter of its own (neither shellcheck nor the web ESLint config
       # covers scripts/ci/*.mjs), so syntax-check it and run its self-test.
