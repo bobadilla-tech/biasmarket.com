@@ -32,6 +32,8 @@ function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : null;
 }
 
+const EMPTY_ORDERS: never[] = [];
+
 export function OrdersPageClient() {
   const t = useTranslations("dashboard.orders");
   const tCommon = useTranslations("common");
@@ -39,7 +41,7 @@ export function OrdersPageClient() {
   const searchParams = useSearchParams();
 
   const ordersQuery = useOrders(storeId, tCommon("networkError"));
-  const orders = ordersQuery.data ?? [];
+  const orders = ordersQuery.data ?? EMPTY_ORDERS;
   const enabledMethodsQuery = useEnabledPaymentMethods(
     storeId,
     tCommon("networkError"),

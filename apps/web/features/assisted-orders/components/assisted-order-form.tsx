@@ -54,6 +54,7 @@ import { OrderItemRow } from "./order-item-row";
 const controlClass =
   "min-h-11 rounded-xl border border-input bg-white text-base text-[#341b55] md:text-sm";
 const inputClass = cn(controlClass, "w-full px-3");
+const EMPTY_ARRAY: never[] = [];
 
 function toDateInputValue(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -105,10 +106,10 @@ export function AssistedOrderForm({
   // corrected resubmit would be answered with the old order.
   const idempotencyKey = useRef<string | null>(null);
 
-  const methods = deliveryOptions.data?.methods ?? [];
-  const points = deliveryOptions.data?.points ?? [];
-  const paymentMethods = deliveryOptions.data?.paymentMethods ?? [];
-  const couriers = deliveryOptions.data?.couriers ?? [];
+  const methods = deliveryOptions.data?.methods ?? EMPTY_ARRAY;
+  const points = deliveryOptions.data?.points ?? EMPTY_ARRAY;
+  const paymentMethods = deliveryOptions.data?.paymentMethods ?? EMPTY_ARRAY;
+  const couriers = deliveryOptions.data?.couriers ?? EMPTY_ARRAY;
   const weekday = deliveryOptions.data?.weekday;
 
   const requiringDate = useMemo(

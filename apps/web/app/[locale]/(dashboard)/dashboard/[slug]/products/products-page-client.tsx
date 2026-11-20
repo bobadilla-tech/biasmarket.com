@@ -46,6 +46,8 @@ function asCurrency(value: string | undefined): Currency {
     : SUPPORTED_CURRENCIES[0];
 }
 
+const EMPTY_ARRAY: never[] = [];
+
 export function ProductsPageClient() {
   const t = useTranslations("dashboard");
   const tCommon = useTranslations("common");
@@ -60,8 +62,8 @@ export function ProductsPageClient() {
 
   const productsQuery = useProducts(storeId, tCommon("networkError"));
   const categoriesQuery = useCategories(storeId, tCommon("networkError"));
-  const products = productsQuery.data ?? [];
-  const categories = categoriesQuery.data ?? [];
+  const products = productsQuery.data ?? EMPTY_ARRAY;
+  const categories = categoriesQuery.data ?? EMPTY_ARRAY;
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [search, setSearch] = useState("");
