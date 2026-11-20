@@ -20,6 +20,7 @@ describe("ReviewPaymentUseCase", () => {
   let prisma: {
     store: { findUnique: Mock };
     order: { findUnique: Mock; updateMany: Mock; findUniqueOrThrow: Mock };
+    orderPayment: { findMany: Mock; updateMany: Mock };
     productVariant: { findUnique: Mock; update: Mock };
     product: { findUnique: Mock };
     auditLog: { create: Mock };
@@ -52,6 +53,10 @@ describe("ReviewPaymentUseCase", () => {
         findUnique: vi.fn(),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         findUniqueOrThrow: vi.fn(),
+      },
+      orderPayment: {
+        findMany: vi.fn().mockResolvedValue([]),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       productVariant: { findUnique: vi.fn(), update: vi.fn() },
       product: { findUnique: vi.fn() },
@@ -387,6 +392,44 @@ describe("ReviewPaymentUseCase", () => {
         paymentRejectionReason: "Comprobante adulterado",
       },
     });
+  });
+
+  it("closes pending buyer proofs when rejecting the order", async () => {
+    prisma.order.findUnique.mockResolvedValue({
+      id: orderId,
+      storeId,
+      paymentStatus: "PENDING_PAYMENT",
+      fulfillmentStatus: "ORDERING",
+      requiredAmount,
+      items: [],
+    });
+    prisma.order.findUniqueOrThrow.mockResolvedValue({
+      id: orderId,
+      paymentStatus: "REJECTED",
+    });
+    prisma.orderPayment.findMany.mockResolvedValue([{ id: "proof-1" }]);
+
+    await useCase.execute(orderId, storeId, ownerId, "reject");
+
+    expect(prisma.orderPayment.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          orderId,
+          storeId,
+          source: "BUYER_SUBMITTED",
+          reviewStatus: "PENDING_REVIEW",
+        }),
+        data: expect.objectContaining({ reviewStatus: "REJECTED" }),
+      }),
+    );
+    expect(events.record).toHaveBeenCalledWith(
+      prisma,
+      expect.objectContaining({
+        type: "PAYMENT_REJECTED",
+        actor: "SELLER",
+        payload: { paymentId: "proof-1" },
+      }),
+    );
   });
 
   it("includes the escaped rejection reason in the buyer email", async () => {

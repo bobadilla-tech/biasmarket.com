@@ -6,6 +6,7 @@ import { NotificationsService } from "../../notifications/notifications.service.
 import type { StockAlertPush } from "../../notifications/notifications.service.js";
 import { Order } from "../domain/order.entity.js";
 import { OrderEventsService } from "./order-events.service.js";
+import { closePendingBuyerProofs } from "./close-pending-proofs.js";
 import { RESERVED_HOLD_STATUSES } from "../domain/hold-statuses.js";
 
 @Injectable()
@@ -70,6 +71,12 @@ export class ExpireOrdersUseCase {
           });
           if (guard.count === 0) return;
           cancelled++;
+
+          await closePendingBuyerProofs(tx, this.events, {
+            orderId: order.id,
+            storeId: order.storeId,
+            actor: "SYSTEM",
+          });
 
           await tx.auditLog.create({
             data: {
