@@ -210,6 +210,8 @@ as the api (it reads the same `SENTRY_DSN`).
 
 The proposed scheduled-backup policy and its implementation blockers are in
 [backup-plan.md](backup-plan.md). No scheduled off-box backup is active yet.
+The manual `biasmarket-backup-config.service` only validates the future
+runtime environment; it does not perform or schedule a backup.
 
 ### Pre-migration dumps
 

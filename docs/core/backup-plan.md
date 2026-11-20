@@ -7,6 +7,10 @@ short-lived pre-migration Postgres dumps described in
 [operations.md](operations.md#pre-migration-dumps); those files and all MinIO
 objects remain on the VPS.
 
+The PR adds only a runtime-config validator and a manual systemd preflight
+unit. It does not back up data, initialize a restic repository, or install or
+enable a scheduled timer.
+
 ## Proposed policy
 
 - **Coverage:** a full Postgres backup and the `S3_BUCKET` (`products`),
@@ -46,8 +50,10 @@ objects remain on the VPS.
   destination credentials and repository password at runtime from Infisical
   or another approved environment/secret injection mechanism. Never put secret
   values in Git, Terraform state, cloud-init, command-line arguments, or logs.
-  Infisical is not currently integrated in this repository, so its runtime
-  delivery path must be established before choosing it as the source.
+  The agreed runtime path is a root-owned `env/backup.env` under
+  `/home/deploy/biasmarket`, delivered by Infisical. The broader integration
+  is tracked separately in issue #228; this PR only adds a manual preflight
+  that reads that file through systemd.
 - **Scheduling and alerting:** use a dedicated systemd oneshot service and
   timer, following the existing migration-watchdog unit pattern. Send a Kuma
   push heartbeat only after a verified successful backup; a missed heartbeat
@@ -136,3 +142,14 @@ items still block a production-capable change:
 - Existing systemd watchdog units and Kuma push monitors provide a pattern for
   scheduling and missed-heartbeat alerting. A real-time notification receiver
   is not configured by repository code.
+
+## Config preflight artifact
+
+`infra/vps/bin/backup-config-check.sh --self-test` validates the checker using
+fake values without network access. On a provisioned VPS,
+`systemctl start biasmarket-backup-config.service` validates the root-owned
+`env/backup.env` through systemd's `EnvironmentFile` parser. The service only
+checks required settings, HTTPS destination shape, passphrase length, and
+distinct source bucket names; it does not connect to any service or disclose
+setting values. The `.example` file contains names and non-secret defaults
+only.
