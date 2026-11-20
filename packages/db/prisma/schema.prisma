@@ -366,6 +366,7 @@ model Order {
   // Non-null after a seller releases a claim. Only the emailed, account-bound
   // reclaim ticket for this release can claim the order again.
   claimReleaseId           String?
+  claimReleaseExpiresAt    DateTime?
   // Set when fulfilment becomes terminal; starts the assisted identity-retention clock.
   closedAt                 DateTime?
   // Identity was erased after a buyer request or retention.

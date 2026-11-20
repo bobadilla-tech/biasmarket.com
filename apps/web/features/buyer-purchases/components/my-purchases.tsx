@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
@@ -14,6 +14,7 @@ import { LoadingState } from "@/components/shared/loading-state";
 import { ClaimErrorBanner } from "./claim-error-banner";
 import { OriginLabel } from "./origin-label";
 import { claimStartUrl } from "@/features/public-order/lib/claim-url";
+import { useExchangeReclaimTicket } from "../mutations/use-exchange-reclaim-ticket";
 import { useGlobalLogout } from "../mutations/use-global-logout";
 import {
   globalAccountKeys,
@@ -47,9 +48,7 @@ function groupByStore(orders: GlobalAccountOrderResponseDto[]): StoreGroup[] {
 export function MyPurchases({ claimCode }: { claimCode?: string }) {
   const t = useTranslations("storefront.myPurchases");
   const locale = useLocale();
-  const [reclaimState, setReclaimState] = useState<
-    "idle" | "working" | "error"
-  >("idle");
+  const reclaim = useExchangeReclaimTicket();
   const profile = useGlobalAccount();
   const orders = useGlobalOrders(Boolean(profile.data));
   const logout = useGlobalLogout();
@@ -77,14 +76,12 @@ export function MyPurchases({ claimCode }: { claimCode?: string }) {
       "",
       `${window.location.pathname}${window.location.search}`,
     );
-    setReclaimState("working");
-    apiClient.publicOrders
-      .exchangeReclaimTicket({ ticket })
-      .then(() => window.location.assign(claimStartUrl(locale)))
-      .catch(() => setReclaimState("error"));
-  }, [locale]);
+    reclaim.mutate(ticket, {
+      onSuccess: () => window.location.assign(claimStartUrl(locale)),
+    });
+  }, [locale, reclaim.mutate]);
 
-  if (reclaimState === "working") {
+  if (reclaim.isPending) {
     return (
       <p role="status" className="text-sm text-gray-600">
         {t("reclaiming")}
@@ -98,7 +95,7 @@ export function MyPurchases({ claimCode }: { claimCode?: string }) {
     return (
       <div className="flex flex-col items-center gap-6">
         <ClaimErrorBanner code={claimCode} />
-        {reclaimState === "error" ? (
+        {reclaim.isError ? (
           <p role="alert" className="text-sm text-red-700">
             {t("reclaimError")}
           </p>
@@ -127,7 +124,7 @@ export function MyPurchases({ claimCode }: { claimCode?: string }) {
   return (
     <div className="flex flex-col gap-8">
       <ClaimErrorBanner code={claimCode} />
-      {reclaimState === "error" ? (
+      {reclaim.isError ? (
         <p role="alert" className="text-sm text-red-700">
           {t("reclaimError")}
         </p>

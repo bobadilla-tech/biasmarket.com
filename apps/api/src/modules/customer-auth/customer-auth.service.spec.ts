@@ -760,6 +760,7 @@ describe("CustomerAuthService", () => {
       claimedAt: null,
       buyerAccountId: null,
       claimReleaseId: null,
+      claimReleaseExpiresAt: null,
       accessTokenHash: hash,
       accessTokenRevokedAt: null,
       payments: [approved],
@@ -800,7 +801,10 @@ describe("CustomerAuthService", () => {
           paymentStatus: { not: "CANCELLED" },
           claimedAt: null,
           buyerAccountId: null,
-          claimReleaseId: null,
+          OR: [
+            { claimReleaseId: null },
+            { claimReleaseExpiresAt: { lte: expect.any(Date) } },
+          ],
           accessTokenRevokedAt: null,
           accessTokenHash: { startsWith: ticket.linkFp },
         },
@@ -808,6 +812,7 @@ describe("CustomerAuthService", () => {
           buyerAccountId: "buyer-new",
           claimedAt: expect.any(Date),
           claimReleaseId: null,
+          claimReleaseExpiresAt: null,
         },
       });
       expect(prisma.customerStoreLink.upsert).toHaveBeenCalledWith(
@@ -875,6 +880,7 @@ describe("CustomerAuthService", () => {
             buyerAccountId: "buyer-old",
             claimedAt: expect.any(Date),
             claimReleaseId: null,
+            claimReleaseExpiresAt: null,
           },
         }),
       );
@@ -893,6 +899,7 @@ describe("CustomerAuthService", () => {
       prisma.order.findFirst.mockResolvedValue(
         order({
           claimReleaseId: "release-1",
+          claimReleaseExpiresAt: new Date(Date.now() + 60_000),
           accessTokenHash: "0".repeat(64),
           accessTokenRevokedAt: new Date(),
         }),
@@ -909,10 +916,60 @@ describe("CustomerAuthService", () => {
           data: expect.objectContaining({
             buyerAccountId: "buyer-1",
             claimReleaseId: null,
+            claimReleaseExpiresAt: null,
           }),
         }),
       );
       expect(notifications.pushToStoreOwner).toHaveBeenCalledTimes(1);
+    });
+
+    it("allows a normal link claim after the 24-hour reclaim reservation expires", async () => {
+      prisma.order.findFirst.mockResolvedValue(
+        order({
+          claimReleaseId: "release-1",
+          claimReleaseExpiresAt: new Date(Date.now() - 1),
+        }),
+      );
+
+      await service.claimWithGoogle(identity, ticket);
+
+      expect(prisma.order.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: [
+              { claimReleaseId: null },
+              { claimReleaseExpiresAt: { lte: expect.any(Date) } },
+            ],
+          }),
+          data: expect.objectContaining({
+            buyerAccountId: "buyer-new",
+            claimReleaseId: null,
+            claimReleaseExpiresAt: null,
+          }),
+        }),
+      );
+    });
+
+    it("rejects an otherwise-valid reclaim ticket after its reservation expires", async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue({
+        id: "buyer-1",
+        passwordVersion: 2,
+      });
+      prisma.order.findFirst.mockResolvedValue(
+        order({
+          claimReleaseId: "release-1",
+          claimReleaseExpiresAt: new Date(Date.now() - 1),
+        }),
+      );
+
+      await expect(
+        service.claimWithGoogle(identity, {
+          ...ticket,
+          releaseId: "release-1",
+          reclaimBuyerAccountId: "buyer-1",
+        }),
+      ).rejects.toMatchObject({ code: "already_claimed" });
+      expect(prisma.order.updateMany).not.toHaveBeenCalled();
     });
 
     it("refuses a reclaim ticket presented by a different Google account", async () => {
@@ -952,6 +1009,7 @@ describe("CustomerAuthService", () => {
             buyerAccountId: "buyer-new",
             claimedAt: expect.any(Date),
             claimReleaseId: null,
+            claimReleaseExpiresAt: null,
           },
         }),
       );

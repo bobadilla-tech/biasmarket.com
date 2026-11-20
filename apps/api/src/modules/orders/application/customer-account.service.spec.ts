@@ -82,6 +82,20 @@ describe("CustomerAccountService", () => {
     expect(message.html).toContain("BM-123");
   });
 
+  it("sends a release notice to an email address without an unsafe reclaim link", async () => {
+    await service.sendClaimReleasedEmail({
+      email: "buyer@example.com",
+      storeName: "Shop",
+      orderNumber: "BM-123",
+      ticket: null,
+    });
+    const message = mailer.send.mock.calls[0]![0];
+    expect(message.to).toBe("buyer@example.com");
+    expect(message.html).toContain("contacta a la tienda");
+    expect(message.html).toContain("Contact the store");
+    expect(message.html).not.toContain("#reclaim=");
+  });
+
   describe("findOrCreateCustomer", () => {
     const PHONE = "+51988888888";
     const winner = {

@@ -303,6 +303,7 @@ export class CustomerAuthService {
         claimedAt: true,
         buyerAccountId: true,
         claimReleaseId: true,
+        claimReleaseExpiresAt: true,
         accessTokenHash: true,
         accessTokenRevokedAt: true,
         payments: {
@@ -328,11 +329,16 @@ export class CustomerAuthService {
         }
         throw new ClaimOrderError("already_claimed");
       }
+      const releaseActive =
+        order.claimReleaseId !== null &&
+        (!order.claimReleaseExpiresAt ||
+          order.claimReleaseExpiresAt.getTime() > Date.now());
       if (
         (reclaimBuyerAccountId &&
-          (!ticket.releaseId || order.claimReleaseId !== ticket.releaseId)) ||
-        (!reclaimBuyerAccountId &&
-          (ticket.releaseId || order.claimReleaseId !== null))
+          (!ticket.releaseId ||
+            order.claimReleaseId !== ticket.releaseId ||
+            !releaseActive)) ||
+        (!reclaimBuyerAccountId && (ticket.releaseId || releaseActive))
       ) {
         throw new ClaimOrderError("already_claimed");
       }
@@ -364,7 +370,17 @@ export class CustomerAuthService {
           paymentStatus: { not: "CANCELLED" },
           claimedAt: null,
           buyerAccountId: null,
-          claimReleaseId: ticket.releaseId ?? null,
+          ...(reclaimBuyerAccountId
+            ? {
+                claimReleaseId: ticket.releaseId,
+                claimReleaseExpiresAt: { gt: new Date() },
+              }
+            : {
+                OR: [
+                  { claimReleaseId: null },
+                  { claimReleaseExpiresAt: { lte: new Date() } },
+                ],
+              }),
           ...(!reclaimBuyerAccountId
             ? {
                 accessTokenRevokedAt: null,
@@ -376,6 +392,7 @@ export class CustomerAuthService {
           buyerAccountId: account.id,
           claimedAt: new Date(),
           claimReleaseId: null,
+          claimReleaseExpiresAt: null,
         },
       });
       if (count !== 1) throw new ClaimOrderError("already_claimed");

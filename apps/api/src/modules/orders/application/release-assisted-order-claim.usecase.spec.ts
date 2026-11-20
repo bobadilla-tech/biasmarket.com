@@ -4,6 +4,7 @@ import { ReleaseAssistedOrderClaimUseCase } from "./release-assisted-order-claim
 import { PrismaService } from "../../../prisma/prisma.service.js";
 import { OrderEventsService } from "./order-events.service.js";
 import { CustomerAccountService } from "./customer-account.service.js";
+import { verifyClaimTicket } from "../../customer-auth/claim-ticket.js";
 
 describe("ReleaseAssistedOrderClaimUseCase", () => {
   let useCase: ReleaseAssistedOrderClaimUseCase;
@@ -67,6 +68,7 @@ describe("ReleaseAssistedOrderClaimUseCase", () => {
         claimedAt: null,
         buyerAccountId: null,
         claimReleaseId: expect.any(String),
+        claimReleaseExpiresAt: expect.any(Date),
       }),
     });
     expect(events.record).toHaveBeenCalledWith(
@@ -87,6 +89,11 @@ describe("ReleaseAssistedOrderClaimUseCase", () => {
         email: "buyer@example.com",
         ticket: expect.any(String),
       }),
+    );
+    const update = prisma.order.updateMany.mock.calls[0]![0];
+    const email = customerAccount.sendClaimReleasedEmail.mock.calls[0]![0];
+    expect(verifyClaimTicket(email.ticket)?.exp).toBe(
+      update.data.claimReleaseExpiresAt.getTime(),
     );
   });
 
@@ -113,7 +120,7 @@ describe("ReleaseAssistedOrderClaimUseCase", () => {
     expect(prisma.order.updateMany).not.toHaveBeenCalled();
   });
 
-  it("releases the claim without mailing an unverified or unavailable account", async () => {
+  it("sends a release notice but no reclaim capability to an unverified account", async () => {
     prisma.order.findFirst.mockResolvedValue({
       id: "order-1",
       source: "VENDOR_ASSISTED",
@@ -129,6 +136,23 @@ describe("ReleaseAssistedOrderClaimUseCase", () => {
     });
     await useCase.execute(store, "seller-1", "order-1");
     expect(prisma.order.updateMany).toHaveBeenCalled();
+    expect(customerAccount.sendClaimReleasedEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: "buyer@example.com",
+        ticket: null,
+      }),
+    );
+  });
+
+  it("does not send a release notice when the former account has no email", async () => {
+    prisma.order.findFirst.mockResolvedValue({
+      id: "order-1",
+      source: "VENDOR_ASSISTED",
+      claimedAt: new Date(),
+      buyerAccountId: "buyer-1",
+      buyerAccount: { email: null, emailVerified: false, googleSub: null },
+    });
+    await useCase.execute(store, "seller-1", "order-1");
     expect(customerAccount.sendClaimReleasedEmail).not.toHaveBeenCalled();
   });
 });

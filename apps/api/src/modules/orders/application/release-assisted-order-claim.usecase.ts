@@ -9,7 +9,10 @@ import { orderRef } from "@biasmarket/utils/order-ref";
 import { PrismaService } from "../../../prisma/prisma.service.js";
 import { CustomerAccountService } from "./customer-account.service.js";
 import { OrderEventsService } from "./order-events.service.js";
-import { signReclaimTicket } from "../../customer-auth/claim-ticket.js";
+import {
+  RECLAIM_TICKET_TTL_MS,
+  signReclaimTicket,
+} from "../../customer-auth/claim-ticket.js";
 
 @Injectable()
 export class ReleaseAssistedOrderClaimUseCase {
@@ -55,6 +58,11 @@ export class ReleaseAssistedOrderClaimUseCase {
         throw new ConflictException("El pedido no tiene un reclamo activo");
       }
 
+      const releasedAt = Date.now();
+      const claimReleaseExpiresAt = new Date(
+        releasedAt + RECLAIM_TICKET_TTL_MS,
+      );
+
       const { count } = await tx.order.updateMany({
         where: {
           id: order.id,
@@ -67,6 +75,7 @@ export class ReleaseAssistedOrderClaimUseCase {
           claimedAt: null,
           buyerAccountId: null,
           claimReleaseId: releaseId,
+          claimReleaseExpiresAt,
         },
       });
       if (count !== 1) {
@@ -91,30 +100,29 @@ export class ReleaseAssistedOrderClaimUseCase {
       });
 
       const buyer = order.buyerAccount;
-      if (
-        !buyer?.email ||
-        !buyer.emailVerified ||
-        !buyer.googleSub ||
-        !order.accessTokenHash ||
-        order.accessTokenRevokedAt
-      ) {
-        return { email: null, reclaimTicket: null };
-      }
-
-      const reclaimTicket = signReclaimTicket({
-        orderId: order.id,
-        accessTokenHash: order.accessTokenHash,
-        releaseId,
-        reclaimBuyerAccountId: order.buyerAccountId,
-      });
+      const reclaimTicket =
+        buyer?.emailVerified &&
+        buyer.googleSub &&
+        order.accessTokenHash &&
+        !order.accessTokenRevokedAt
+          ? signReclaimTicket(
+              {
+                orderId: order.id,
+                accessTokenHash: order.accessTokenHash,
+                releaseId,
+                reclaimBuyerAccountId: order.buyerAccountId,
+              },
+              releasedAt,
+            )
+          : null;
 
       return {
-        email: buyer.email,
+        email: buyer?.email ?? null,
         reclaimTicket,
       };
     });
 
-    if (released.email && released.reclaimTicket) {
+    if (released.email) {
       await this.customerAccount.sendClaimReleasedEmail({
         email: released.email,
         storeName: store.name,

@@ -173,11 +173,15 @@ this section is the order side.
   too late. The claim upserts a `CustomerStoreLink`, records a `CLAIMED` event
   and writes an `order.claimed` audit row, and the buyer lands on the order in
   their purchases page.
-- **Release and reclaim.** A release creates a 24-hour ticket bound to that
-  buyer account and release id. The ticket is sent to the account's verified
-  email, arrives in a URL fragment, and is exchanged for the existing HttpOnly
-  OAuth cookie before Google sign-in. The callback requires the same Google
-  account and current release id; a successful reclaim clears the release id.
+- **Release and reclaim.** A release reserves the order for 24 hours and
+  creates a ticket bound to that buyer account and release id. The ticket is
+  sent to a verified account email, arrives in a URL fragment, and is exchanged
+  for the existing HttpOnly OAuth cookie before Google sign-in. The callback
+  requires the same Google account and current release id; a successful
+  reclaim clears the reservation. When the reservation expires, the original
+  public order link may claim the order again. A release notice still goes to
+  any former buyer account with an email address, but an account-bound link is
+  included only when the account and active order link support it.
 - **After a claim.** The order is no longer eligible for the scheduled identity
   erasure (below), the phone can no longer be corrected, and the buyer owns it
   through their account.
