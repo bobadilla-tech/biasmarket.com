@@ -8,7 +8,7 @@ currently has only the short-lived pre-migration Postgres dumps described in
 objects remain on the VPS.
 
 The PR adds a oneshot backup service, version-aware MinIO exporter, Restic
-snapshot verification, a daily timer, and config watcher. Successful deploys
+snapshot metadata checks, a daily timer, and config watcher. Successful deploys
 install the systemd units and enable the timer only after `backup.env` passes
 preflight; the watcher retries when Infisical later creates or changes that
 file. This PR does not initialize a production Restic repository, enable MinIO
@@ -45,7 +45,9 @@ versioning in production, or provision backup credentials.
 - **Schedule:** one complete backup per day, with a proposed 02:00 UTC start.
   This gives a maximum nominal recovery point age of 24 hours. The backup must
   be treated as failed unless both database and all three bucket inputs have
-  completed and the remote snapshot is readable. `biasmarket-backup.timer`
+  completed and the remote snapshot is present with a passing repository
+  metadata check. `restic check` does not read every data pack, so damaged
+  payloads can go undetected until a restore reads them. `biasmarket-backup.timer`
   implements this cadence with `Persistent=true`; the deploy hook enables it
   after the root-owned runtime config passes preflight.
 - **Retention:** keep 30 daily and 12 monthly recovery points. If restic is
@@ -109,8 +111,97 @@ The harness calls the production `backup_once` path; its only test seam allows
 that local repository and suppresses the external Kuma heartbeat. It places
 delete markers after `pg_dump`, restores the snapshot into clean Postgres and
 MinIO services, and verifies database references, exact selected MinIO
-version IDs, object checksums, and public/private bucket access. Run it locally
-with `bash scripts/ci/backup-restore-integration.sh` when Docker is available.
+version IDs, object checksums, and public/private bucket access. The restore
+steps in `infra/vps/tests/backup_restore_integration.py::restore_and_verify`
+are the executable reference for this rehearsal. Run it locally with
+`bash scripts/ci/backup-restore-integration.sh` when Docker is available; the
+expected final line is `Disposable backup restore passed: Postgres rows and all
+three MinIO objects restored; version IDs matched, including delete-marker
+cases.`
+
+For an operator rehearsal, use an isolated target database and empty target
+buckets. Supply Restic, Postgres, and S3 credentials through the approved
+root-only secret environment; do not put secret values in command arguments or
+shell history. Select and record the snapshot ID after checking its host and
+tag, then restore into a mode-0700 directory:
+
+```sh
+umask 077
+install -d -m 0700 "$RESTORE_ROOT"
+restic snapshots --host biasmarket-production --tag biasmarket-production
+restic restore "$SNAPSHOT_ID" --target "$RESTORE_ROOT"
+test -s "$RESTORE_ROOT/postgres.dump"
+test -s "$RESTORE_ROOT/manifest.json"
+createdb "$RESTORE_DATABASE"
+PGPASSFILE=/root/.pgpass pg_restore --exit-on-error --no-owner --no-acl \
+  --dbname "$RESTORE_DATABASE" "$RESTORE_ROOT/postgres.dump"
+```
+
+The expected result is a successful `pg_restore` exit and a populated isolated
+database. The CI fixture additionally checks that its `restore_probe` row has
+the value `database-restored` and that its `object_references` rows exactly
+match the restored manifest.
+
+For MinIO, configure a protected `mc` alias named `restore` for the isolated
+target. Create or confirm the three empty buckets, enable versioning before
+uploading, and apply the same public/private access policy as the source:
+
+```sh
+mc mb --ignore-existing restore/products
+mc mb --ignore-existing restore/logos
+mc mb --ignore-existing restore/payments
+mc version enable restore/products
+mc version enable restore/logos
+mc version enable restore/payments
+mc anonymous set download restore/products
+mc anonymous set download restore/logos
+mc anonymous set none restore/payments
+```
+
+Restore each manifest entry to its original bucket and key using its `file`
+path under `$RESTORE_ROOT` and `put_object` with the entry's `contentType`:
+
+```sh
+python3 - <<'PY'
+import json
+import os
+from pathlib import Path
+
+import boto3
+
+root = Path(os.environ["RESTORE_ROOT"]).resolve()
+manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+client = boto3.client(
+    "s3",
+    endpoint_url=os.environ["RESTORE_MINIO_ENDPOINT"],
+    region_name=os.environ.get("AWS_DEFAULT_REGION", "us-east-1"),
+)
+for item in manifest["objects"]:
+    source = (root / item["file"]).resolve()
+    if root not in source.parents or not source.is_file():
+        raise SystemExit(f"unsafe or missing manifest file: {item['file']}")
+    if source.stat().st_size != item["size"]:
+        raise SystemExit(f"size mismatch for {item['bucket']}/{item['key']}")
+    with source.open("rb") as body:
+        client.put_object(
+            Bucket=item["bucket"],
+            Key=item["key"],
+            Body=body,
+            ContentType=item["contentType"],
+        )
+    stored = client.head_object(Bucket=item["bucket"], Key=item["key"])
+    if stored["ContentLength"] != item["size"]:
+        raise SystemExit(f"restored size mismatch for {item['bucket']}/{item['key']}")
+print(f"restored {len(manifest['objects'])} objects from the manifest")
+PY
+```
+
+The expected result is that every manifest entry is present with the recorded
+size, anonymous reads from `products` and `logos` succeed, and anonymous reads
+from `payments` return 403. The CI rehearsal also compares restored bytes with
+fixture checksums and confirms corresponding Postgres references. A successful
+`restic check` alone does not establish these payload or application-level
+restore results.
 
 The remaining production rehearsal steps are:
 
@@ -184,10 +275,12 @@ These items still block a production backup:
   history.
 - `infra/vps/backup.py` checks versioning and list-version access before
   dumping, lists object versions after `pg_dump`, downloads each selected
-  value by explicit `VersionId`, records a manifest, verifies that the Restic
-  snapshot is readable, applies Restic retention, and runs `restic check`
-  before reporting success. Its unit tests cover delete-marker interleaving,
-  a safe post-snapshot upload extra, and exact-version downloads.
+  value by explicit `VersionId`, records a manifest, confirms that the Restic
+  snapshot ID appears in repository metadata, applies Restic retention, and
+  runs `restic check` before reporting success. These operations check snapshot
+  metadata, not every data pack; payload integrity is exercised when restoring
+  and reading the files. Its unit tests cover delete-marker interleaving, a
+  safe post-snapshot upload extra, and exact-version downloads.
 - MinIO versioning increases source-volume usage as object deletions and
   overwrites accumulate. The app's UUID keys avoid normal overwrites, but
   deletes still leave prior values. Monitor per-bucket versioned usage and
