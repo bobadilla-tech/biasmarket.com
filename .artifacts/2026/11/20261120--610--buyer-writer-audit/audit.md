@@ -22,7 +22,7 @@ This is a source audit, not a concurrency proof. It records current transaction 
 | `CustomerAuthService.setPasswordFromToken` | Read account, hash password, then standalone `updateMany`; not wrapped in a transaction. | Filters by account id and requires at least one identity field remain; checks affected count. The account state used for the earlier confirm-token check is a stale pre-hash read. | Service unit tests cover invalid, replayed, erased-account, and erase-during-hash cases. |
 | `resolveGoogleAccount` via `loginWithGoogle` / claim | Standalone account lookup/create. Store login then calls standalone `ensureStoreLink` upsert. | Google account create catches unique violation and re-reads by `googleSub`; no transaction is retained across the recoverable unique conflict. Link is idempotent on `(buyerAccountId, storeId)`. | Unit tests cover existing Google account, concurrent first-login unique conflict, and store-link call; no deletion race E2E. |
 | `CustomerAuthService.changePassword` | Standalone account read, password verification/hash, standalone account update. | Update is by id only, no version/credential predicate at write. | Unit tests cover correct and incorrect password behavior. |
-| `CustomerAuthService.updateProfile` | Standalone account read/validation followed by standalone account update. | Email/phone duplicate checks happen before the update. Staging pending values is by id only; pending-phone confirmation has a separate phone-lock transaction below. | Unit tests cover staged email/phone and duplicate prechecks; no multi-writer transaction test. |
+| `CustomerAuthService.updateProfile` | Standalone account read/validation followed by standalone account update. | Stages `name`, `countryCode`, `pendingEmail`, and `pendingPhone` in one update by id only. Email/phone duplicate checks happen before that update. Pending-phone confirmation has a separate target-phone-lock transaction below. `pendingEmail` is a relevant deletion writer: staging must enter through the account lock; confirmation separately uses id + exact pendingEmail + live-account guards. | Unit tests cover staged email/phone and duplicate prechecks; confirmation-vs-deletion regression is covered after #602, but there is no concurrent multi-writer transaction test. |
 | `CustomerAuthService.confirmAccount` | Confirmation/read first. Email verification and email-change application are standalone writes. Change-phone alone opens a transaction: lock the target phone, look up collision, guarded update, re-read account. | Email-change uses `updateMany` with id, exact pending email, and non-erased-account predicate; checks count. Change-phone uses `updateMany` with id and pendingPhone non-null, but does not check count before re-reading. The target phone advisory lock serializes with checkout and other phone changes. | Unit tests cover each token purpose and the target-phone lock path; not a real concurrent database test. |
 | Sources | [customer-auth.service.ts:100-155](https://github.com/bobadilla-tech/biasmarket.com/blob/8fe4895fd57778da93293395bdd04c6be8a5e928/apps/api/src/modules/customer-auth/customer-auth.service.ts#L100), [customer-auth.service.ts:382-405](https://github.com/bobadilla-tech/biasmarket.com/blob/8fe4895fd57778da93293395bdd04c6be8a5e928/apps/api/src/modules/customer-auth/customer-auth.service.ts#L382), [customer-auth.service.ts:438-468](https://github.com/bobadilla-tech/biasmarket.com/blob/8fe4895fd57778da93293395bdd04c6be8a5e928/apps/api/src/modules/customer-auth/customer-auth.service.ts#L438), [customer-auth.service.ts:520-605](https://github.com/bobadilla-tech/biasmarket.com/blob/8fe4895fd57778da93293395bdd04c6be8a5e928/apps/api/src/modules/customer-auth/customer-auth.service.ts#L520), [customer-auth.service.ts:390-480](https://github.com/bobadilla-tech/biasmarket.com/blob/8fe4895fd57778da93293395bdd04c6be8a5e928/apps/api/src/modules/customer-auth/customer-auth.service.ts#L390), [customer-auth.service.spec.ts:99-259](https://github.com/bobadilla-tech/biasmarket.com/blob/8fe4895fd57778da93293395bdd04c6be8a5e928/apps/api/src/modules/customer-auth/customer-auth.service.spec.ts#L99), [customer-auth.service.spec.ts:419-755](https://github.com/bobadilla-tech/biasmarket.com/blob/8fe4895fd57778da93293395bdd04c6be8a5e928/apps/api/src/modules/customer-auth/customer-auth.service.spec.ts#L419). | | |
 
@@ -86,6 +86,63 @@ Standalone credential/profile writes that do not change phone or child records s
 - Confirm the maintenance migration is guaranteed not to overlap API traffic; otherwise add it to the lock protocol or remove it from the supported writer set.
 - Confirm claimed-order retention joins the phone/account/order hierarchy and unclaimed retention stays isolated, while preserving the existing no-`FOR UPDATE` Customer rule and shared assisted-customer advisory key.
 - Add real-database E2E races for deletion vs checkout, Google claim, phone attach, address create, and store-link upsert; focused mocked transaction tests alone do not prove the order or absence of deadlocks.
+
+## Reviewer follow-up: lock bootstrap and race-test gate
+
+The lock sequence above needs an entry procedure for operations that receive only an account id, plus coordinated entry for Google and phone-change flows. This follow-up keeps the earlier no-`FOR UPDATE` Customer constraint and does not claim that the proposed protocol is proven.
+
+### ID-only lock bootstrap and retry
+
+Use this procedure for account deletion, address operations, session-scoped account writes, and any other entry point that starts with only `buyerAccountId`:
+
+1. Outside the transaction, read the account's current phone as a **hint only**. Do not authorize a write from this snapshot.
+2. Start a fresh transaction. If the hint has a phone, acquire its normalized `buyer-phone:` advisory lock first. For phone changes, acquire both the snapshotted current phone and normalized target phone in sorted order.
+3. Select the account row `FOR UPDATE`, then re-read phone, identity fields, and pending fields in the same transaction.
+4. If the locked row's phone differs from the hint, roll back the whole transaction and retry from step 1. This includes the null-to-phone case: do not acquire a newly discovered phone lock after taking the account row lock. A phone-less row that remains phone-less can proceed from the row lock.
+5. After the snapshot matches, take affected Order row locks in ascending id order, then affected Address and CustomerStoreLink row locks in stable order, then any sorted `assisted-customer:` locks and Customer writes. Recheck authorization predicates after locks.
+6. Bound retries (for example, three fresh transaction attempts). On repeated phone churn, return a retryable conflict; never continue with a partial, unsorted lock set.
+
+Phone updates must use the same entry order. The pending-phone confirmation path snapshots current and pending phone values, locks those keys sorted, locks/re-reads BuyerAccount, verifies the pending value still matches, checks target-phone ownership, then performs a guarded write and checks the affected count. Concurrent staging of `pendingPhone` must also lock BuyerAccount and condition its update on the account still being live. The `pendingEmail` staging update in `updateProfile` likewise enters through the account lock and must not stage onto an erased account.
+
+### Google and store-link lock entry
+
+Google account resolution may stay outside a transaction to recover from unique-key conflicts. Once an account id is resolved, every transactional write must re-enter the identity protocol:
+
+- Snapshot the account phone, then take the phone advisory lock if present, lock BuyerAccount `FOR UPDATE`, and re-read that the account is still live and still corresponds to the resolved Google subject.
+- For Google login with a store, upsert CustomerStoreLink only after that check and lock. If deletion won and cleared the Google identity, do not link from the stale pre-delete resolution; retry resolution outside the aborted transaction only if the product policy allows it.
+- Google claim follows phone (if present) → BuyerAccount → Order row → CustomerStoreLink. The current Order-first lock needs to move behind the account lock. Keep the claimability and token predicates on the conditional Order update and require exactly one row to win.
+- Phone-password login and all session link upserts use the same account-root check before CustomerStoreLink upsert. Phone-less Google accounts skip the phone lock and start at the account row lock.
+
+### Required transaction assertions
+
+Before implementation is accepted, transaction-focused tests should assert the actual lock and guard sequence, not only mock the final Prisma payload:
+
+| Path | Required assertion |
+| --- | --- |
+| ID-only deletion/address entry | Phone advisory lock (when snapshot phone exists) precedes BuyerAccount `FOR UPDATE`; locked phone is re-read; any changed/null-to-phone snapshot causes rollback and a fresh retry; then affected Orders are locked in sorted id order. |
+| Checkout / phone attach | The identity trace is phone → BuyerAccount → link/customer writes → new Order insert (with checkout's inventory locks recorded as a separate prefix); phone attach predicate includes `id` + `phone: null` and requires count 1. |
+| Google claim | Account lock precedes Order lock; re-read confirms a live Google-bound account; conditional Order update repeats claimability/token/null predicates and requires count 1; CustomerStoreLink follows the winning update. |
+| Phone/email change | Sorted old/target phone locks precede BuyerAccount lock; pending value is re-read under lock; writes are conditional on live account and matching pending value, with affected count checked. |
+| Address create/update/delete | BuyerAccount lock precedes address writes; ownership is part of the write predicate; concurrent default changes serialize, with at most one default address after commit. |
+| Store-link upsert | BuyerAccount lock and live-account recheck precede the composite-key upsert; after deletion commits, no link may remain for the cleared identity. |
+| Customer helper/retention | Sorted assisted-customer advisory lock precedes Customer mutation; never use `FOR UPDATE` on Customer; claimed retention also follows phone/account/order before the assisted-customer lock. |
+
+The transaction tests should assert lock SQL ordering and retry on snapshot mismatch, affected-row counts for every conditional update, stable order-id ordering, and absence of writes after a failed guard. No test should depend on sleeps.
+
+### Deterministic E2E race matrix
+
+Use a test-only deferred barrier at the shared lock-entry seam: pause the winner after it owns the stated lock, start the competing API operation, wait for a barrier signal that it reached that lock request, then release the winner. Exercise both winner orders where the expected result differs. Do not use timing sleeps.
+
+| Race | Barrier placement | Expected database invariants after both requests settle |
+| --- | --- | --- |
+| Deletion vs checkout | Pause checkout after phone + BuyerAccount lock and before link/Customer/Order writes; start deletion and wait at the same phone lock. Then release checkout. Also run deletion-first, with checkout waiting at the phone key. | Checkout-first then delete: the order remains as a merchant record with `buyerAccountId = null`; deleted account has cleared credentials/phone, and no Address or CustomerStoreLink remains. Delete-first: checkout must not attach to the erased account; either it fails as erased or creates a distinct account per approved product policy. No order references the erased account and no duplicate phone accounts exist. |
+| Deletion vs Google claim | Pause claim after account lock and before locking the order; start deletion and wait on account/phone lock. Repeat with deletion holding the account lock first. | No order references an erased account after commit; no CustomerStoreLink remains for it; a claim has at most one winning CLAIMED event. A stale resolved Google account must not create a link or claim after deletion; any retry must resolve the current identity policy. |
+| Deletion vs phone attach | Pause phone confirmation after sorted old/target phone locks and account lock; start deletion. Repeat with deletion bootstrapping a null-phone snapshot while attach wins before it obtains the row lock. | Deletion-first cannot be undone by stale pendingPhone data. Attach-first forces deletion's null-to-phone snapshot mismatch to roll back/retry with the phone lock. Final erased account has no phone/pendingPhone; target phone is unique; no attach writes after an erased-account guard fails. |
+| Deletion vs address create | Pause address create after BuyerAccount lock and before count/default/create; start deletion at its account lock. Repeat deletion-first. | Create-first then delete leaves zero addresses for the erased account. Delete-first makes create reject the erased account. In every committed state there is at most one default address per account. |
+| Deletion vs pendingEmail staging/confirmation | Pause `updateProfile` or `confirmAccount` after account-lock acquisition and before writing the pending value; start deletion at the same account lock. Repeat deletion-first. | Update-first then delete leaves no `pendingEmail` or live email on the erased account. Delete-first makes staging/confirmation fail its live-account guard; a stale confirmation token cannot restore either the pending or current email. |
+| Deletion vs CustomerStoreLink upsert | Pause login/Google store-link flow after BuyerAccount lock and before composite-key upsert; start deletion at that lock. Repeat deletion-first. | Upsert-first then delete leaves no link; delete-first rejects/no-ops the stale upsert. No link remains for a cleared account, and duplicate composite links never appear. |
+
+For each case, assert both operation outcomes and the final database rows, not only HTTP statuses. The tests should use isolated accounts/phones/stores, clean up links before stores, and keep E2E rounds small. These are proposed acceptance checks; none were run or implemented in this documentation change.
 
 ## Coverage summary
 
