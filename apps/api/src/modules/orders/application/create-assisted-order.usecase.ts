@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common";
 import type { Prisma, Store } from "@biasmarket/db";
 import { validatePhone } from "@biasmarket/utils/phone-country";
+import { isPaymentMethodConfigured } from "@biasmarket/utils/payment-methods";
 import {
   assertVendorAssistedOrder,
   AssistedOrderInvariantError,
@@ -78,6 +79,17 @@ export class CreateAssistedOrderUseCase {
     const previousOrders = await this.customers.countPreviousOrders(
       store.id,
       phone,
+    );
+    const configuredPaymentMethods =
+      await this.prisma.paymentMethodConfig.findMany({
+        where: { storeId: store.id, enabled: true },
+        select: { method: true, details: true },
+      });
+    const paymentMethodConfigured = configuredPaymentMethods.some((config) =>
+      isPaymentMethodConfigured(
+        config.method,
+        config.details as Record<string, unknown> | null,
+      ),
     );
 
     // Lock order (same as checkout, see order-creation.core.ts): pickup point
@@ -190,6 +202,7 @@ export class CreateAssistedOrderUseCase {
       order,
       accessUrl: buildOrderAccessUrl(token, store.slug),
       previousOrders,
+      isPaymentMethodConfigured: paymentMethodConfigured,
     };
   }
 

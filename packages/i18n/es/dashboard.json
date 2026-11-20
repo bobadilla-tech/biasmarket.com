@@ -1105,6 +1105,7 @@
       "linkLabel": "Enlace privado del comprador",
       "linkNotice": "Este enlace solo se muestra aquí: cópialo antes de salir. Después podrás generar uno nuevo desde el pedido.",
       "summary": "Pedido {ref} · {total}",
+      "paymentMethodNotConfigured": "No hay ningún método de pago configurado. El comprador no verá cómo pagar. Configura uno en Pagos antes de compartir este enlace.",
       "messageLabel": "Mensaje para el comprador",
       "messageDescription": "Incluye su enlace privado. Puedes copiarlo o abrirlo directo en WhatsApp. No abras el enlace tú: al abrirlo ya no podrás corregir el número.",
       "openWhatsapp": "Abrir WhatsApp",

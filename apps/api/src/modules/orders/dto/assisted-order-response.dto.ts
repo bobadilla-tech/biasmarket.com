@@ -21,6 +21,12 @@ export class CreateAssistedOrderResponseDto {
       "Earlier orders of this store for the same WhatsApp number (advisory).",
   })
   previousOrders: number;
+
+  @ApiProperty({
+    description:
+      "Whether the store has at least one enabled payment method configured for buyers.",
+  })
+  isPaymentMethodConfigured: boolean;
 }
 
 // `regenerate` and `correct-phone` return the full seller order (as the

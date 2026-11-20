@@ -9323,9 +9323,18 @@
           "previousOrders": {
             "type": "number",
             "description": "Earlier orders of this store for the same WhatsApp number (advisory)."
+          },
+          "isPaymentMethodConfigured": {
+            "type": "boolean",
+            "description": "Whether the store has at least one enabled payment method configured for buyers."
           }
         },
-        "required": ["order", "accessUrl", "previousOrders"]
+        "required": [
+          "order",
+          "accessUrl",
+          "previousOrders",
+          "isPaymentMethodConfigured"
+        ]
       },
       "AssistedOrderLinkResponseDto": {
         "type": "object",

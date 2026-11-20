@@ -1720,6 +1720,8 @@ export interface CreateAssistedOrderResponseDto {
   accessUrl: string;
   /** Earlier orders of this store for the same WhatsApp number (advisory). */
   previousOrders: number;
+  /** Whether the store has at least one enabled payment method configured for buyers. */
+  isPaymentMethodConfigured: boolean;
 }
 
 export interface AssistedOrderLinkResponseDto {

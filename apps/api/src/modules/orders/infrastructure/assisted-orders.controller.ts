@@ -62,7 +62,7 @@ export class AssistedOrdersController {
       req.headers[IDEMPOTENCY_KEY_HEADER],
     );
     const store = await this.orders.assertOwnership(storeId, session.user.id);
-    const { order, accessUrl, previousOrders } =
+    const { order, accessUrl, previousOrders, isPaymentMethodConfigured } =
       await this.createAssistedOrder.execute(
         store,
         session.user.id,
@@ -72,7 +72,12 @@ export class AssistedOrdersController {
     // The response carries the only copy of the private link.
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("Referrer-Policy", "no-referrer");
-    return { order: toCheckoutOrderDto(order), accessUrl, previousOrders };
+    return {
+      order: toCheckoutOrderDto(order),
+      accessUrl,
+      previousOrders,
+      isPaymentMethodConfigured,
+    };
   }
 
   // Rotates the private link: the previous one stops working at once.
