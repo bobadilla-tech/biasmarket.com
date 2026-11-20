@@ -285,8 +285,8 @@ browser drops an error when any exception stack frame's `filename`,
 `abs_path` or `function` contains `<obscura:bootstrap>`, which identifies the
 headless crawler noise described in the same issue. Both filters run before the
 shared event scrubber and have unit tests in
-`apps/web/lib/sentry-noise.test.ts` proving matching events are dropped and
-ordinary events are retained.
+`apps/web/lib/sentry-noise.test.ts` that assert matching and non-matching
+results for the filter predicates.
 
 The `Invariant: Expected RSC response` scanner events are not filtered by the
 SDK. The proposed Caddy block is tracked separately in
