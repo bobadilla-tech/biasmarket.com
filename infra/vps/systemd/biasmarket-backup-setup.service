@@ -1,0 +1,8 @@
+[Unit]
+Description=Validate backup config and activate daily backup timer
+After=local-fs.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/home/deploy/biasmarket/bin/backup-setup.sh

@@ -84,6 +84,23 @@ phase() {
   PHASE_STARTED_AT="$now"
 }
 
+# Once normal provisioning installs the narrow sudoers rule, each successful
+# sync/deploy refreshes backup systemd units and activates the timer only if
+# the root-owned runtime config passes its preflight. The path unit installed
+# by this helper retries when Infisical later creates or changes backup.env.
+# A missing/invalid backup config is visible in deploy output and systemd's
+# journal, but cannot turn an otherwise successful application cutover red.
+activate_backup_schedule() {
+  if [[ ! -x "$ROOT_DIR/bin/backup-setup.sh" ]]; then
+    log_warn "Backup setup helper is missing; no backup units were installed."
+    return 0
+  fi
+  if ! sudo -n "$ROOT_DIR/bin/backup-setup.sh"; then
+    log_warn "Backup config is missing or invalid, or backup unit activation failed; inspect biasmarket-backup-setup.service before relying on scheduled backups."
+  fi
+  return 0
+}
+
 teardown_candidate() {
   local color="$1"
   log_warn "Tearing down candidate color=$color"
@@ -278,6 +295,7 @@ cmd_deploy() {
   schedule_cleanup || log_warn "Failed to schedule automatic cleanup — old color ($current_color) must be cleaned up manually via deploy.sh --cleanup." || true
 
   append_history "deploy sha=$sha color=$candidate_color outcome=success previous_color=$current_color"
+  activate_backup_schedule
   log_info "Deploy complete. Live color=$candidate_color sha=$sha."
   log_info "Previous color ($current_color) is left running as the rollback target — cleaned up by a later scheduled --cleanup run, or use --rollback now if something looks wrong."
 }
@@ -466,6 +484,7 @@ cmd_bootstrap() {
   atomic_write "$ROLLBACK_TARGET_SET_AT_FILE" ""
 
   append_history "bootstrap sha=$sha color=$color outcome=success"
+  activate_backup_schedule
   log_info "Bootstrap complete. Live color=$color sha=$sha. The other color ($(other_color "$color")) is not running yet — the next normal deploy starts it."
 }
 

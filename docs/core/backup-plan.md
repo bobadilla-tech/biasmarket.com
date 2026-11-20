@@ -8,9 +8,11 @@ currently has only the short-lived pre-migration Postgres dumps described in
 objects remain on the VPS.
 
 The PR adds a oneshot backup service, version-aware MinIO exporter, Restic
-snapshot verification, a daily timer unit, and a runtime-config validator. It
-does not initialize a production Restic repository, enable MinIO versioning
-in production, provision credentials, or enable the timer.
+snapshot verification, a daily timer, and config watcher. Successful deploys
+install the systemd units and enable the timer only after `backup.env` passes
+preflight; the watcher retries when Infisical later creates or changes that
+file. This PR does not initialize a production Restic repository, enable MinIO
+versioning in production, or provision backup credentials.
 
 ## Proposed policy
 
@@ -44,8 +46,8 @@ in production, provision credentials, or enable the timer.
   This gives a maximum nominal recovery point age of 24 hours. The backup must
   be treated as failed unless both database and all three bucket inputs have
   completed and the remote snapshot is readable. `biasmarket-backup.timer`
-  implements this cadence with `Persistent=true`; install and enable it only
-  after production prerequisites below are met.
+  implements this cadence with `Persistent=true`; the deploy hook enables it
+  after the root-owned runtime config passes preflight.
 - **Retention:** keep 30 daily and 12 monthly recovery points. If restic is
   selected, model this as `forget --keep-daily 30 --keep-monthly 12`; verify
   the exact retained snapshots with `--dry-run` before enabling pruning.
@@ -140,10 +142,17 @@ These items still block a production backup:
    documentation only and were not run against production.
 3. The runtime path is agreed as a root-owned environment file under
    `/home/deploy/biasmarket/env/`, delivered by Infisical. Consume it with a
-   dedicated systemd `EnvironmentFile`; keep this scoped to backup secrets and
-   do not change `env/shared.env`, Terraform, cloud-init, or the broader
-   Infisical integration tracked by issue #228. The production schedule remains
-   disabled until credentials and the push URL are provisioned.
+   dedicated systemd `EnvironmentFile`; keep this scoped to backup secrets in
+   `env/backup.env`, separate from `env/shared.env` and the broader Infisical
+   integration tracked by issue #228. Cloud-init grants deploy sudo access to
+   the setup helper; changing `user_data` can trigger a VPS reinstall, so do
+   not apply that infrastructure change without reviewing the Terraform
+   plan. The setup helper leaves the timer disabled and logs a failure while
+   credentials or the push URL are missing or malformed, then enables it
+   automatically when the config passes its shape check. The check does not
+   contact either storage service or validate MinIO versioning. Provision the
+   config only after those production prerequisites and the disposable restore
+   rehearsal are complete.
 4. Before production capture, inspect VPS disk capacity and choose a protected
    staging filesystem. The service stages plaintext Postgres and object files
    under `state/backup-stage`, owned by the dedicated container UID 10001 with
