@@ -19,6 +19,12 @@ import { requiredEnv } from "../../../config/env.validation.js";
 import { withPaymentSummary } from "../../../common/payment-summary.js";
 import { upsertAssistedCustomer } from "./assisted-customer.js";
 import { toAccountOrderDto } from "../../customer-auth/dto/account-order-response.dto.js";
+import {
+  hasLiveBuyerIdentity,
+  lockBuyerAccountRow,
+  lockBuyerPhone,
+  withBuyerAccountLock,
+} from "../../customer-auth/buyer-account-lock.js";
 
 // The loser of an identity race, or a checkout that must not touch an existing
 // buyer: the order is placed as a guest order and nothing is linked.
@@ -133,7 +139,7 @@ export class CustomerAccountService {
     needsVerificationEmail: boolean;
   }> {
     const normalizedPhone = normalizePhone(phone);
-    await this.lockBuyerPhone(tx, normalizedPhone);
+    await lockBuyerPhone(tx, normalizedPhone);
 
     let buyerAccount = await tx.buyerAccount.findUnique({
       where: { phone: normalizedPhone },
@@ -158,11 +164,26 @@ export class CustomerAccountService {
         own.email?.toLowerCase() === email.toLowerCase();
 
       if (own && sessionOwnsEmail) {
-        // The same Google session posting two checkouts with different phones
-        // takes two different advisory locks, so guard on the row itself.
+        // A phone-less Google account can attach one phone only. Take the
+        // account row after the new phone key and re-read under that lock.
+        await lockBuyerAccountRow(tx, own.id);
+        const current = await tx.buyerAccount.findUnique({
+          where: { id: own.id },
+        });
+        if (
+          !current ||
+          current.passwordVersion !== session?.passwordVersion ||
+          current.phone !== null ||
+          current.email?.toLowerCase() !== email.toLowerCase()
+        )
+          return GUEST_RESULT;
         const { count } = await tx.buyerAccount.updateMany({
-          where: { id: own.id, phone: null },
-          data: { phone: normalizedPhone, name: own.name ?? name },
+          where: {
+            id: own.id,
+            phone: null,
+            passwordVersion: session?.passwordVersion,
+          },
+          data: { phone: normalizedPhone, name: current.name ?? name },
         });
         if (count === 0) return GUEST_RESULT;
         // Never fall through to the create path: the account now holds the
@@ -240,16 +261,6 @@ export class CustomerAccountService {
     });
 
     return { customer, buyerAccount, needsVerificationEmail };
-  }
-
-  // Serialises everything that writes the buyer identity of one phone. The
-  // same technique as `OrderEventsService.recordInvite`; `hashtext` is 32 bits
-  // so a collision only costs a spurious wait.
-  private async lockBuyerPhone(
-    tx: Prisma.TransactionClient | PrismaService,
-    normalizedPhone: string,
-  ): Promise<void> {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`buyer-phone:${normalizedPhone}`}))`;
   }
 
   async sendVerificationEmail(
@@ -411,66 +422,64 @@ export class CustomerAccountService {
       throw new BadRequestException("Enlace inválido o expirado");
     }
 
-    if (verified.purpose === "confirm" && !buyerAccount.emailVerified) {
-      buyerAccount = await this.prisma.buyerAccount.update({
-        where: { id: buyerAccount.id },
-        data: { emailVerified: true },
-      });
-    } else if (
-      verified.purpose === "change-email" &&
-      buyerAccount.pendingEmail
-    ) {
-      const pendingEmail = buyerAccount.pendingEmail;
-      const updated = await this.prisma.buyerAccount.updateMany({
-        where: {
-          id: buyerAccount.id,
-          pendingEmail,
-          OR: [
-            { phone: { not: null } },
-            { email: { not: null } },
-            { googleSub: { not: null } },
-            { passwordHash: { not: null } },
-          ],
-        },
-        data: {
-          email: pendingEmail,
-          pendingEmail: null,
-          emailVerified: true,
-        },
-      });
-      if (updated.count !== 1) {
-        throw new BadRequestException("Enlace inválido o expirado");
-      }
-      buyerAccount = await this.prisma.buyerAccount.findUniqueOrThrow({
-        where: { id: buyerAccount.id },
-      });
-    } else if (
-      verified.purpose === "change-phone" &&
-      buyerAccount.pendingPhone
-    ) {
-      const normalizedPhone = normalizePhone(buyerAccount.pendingPhone);
-      const accountId = buyerAccount.id;
-      // Same advisory lock as checkout, so a confirm racing a checkout for the
-      // same new phone ends in a 409 or a guest order, never a 500.
-      buyerAccount = await this.prisma.$transaction(async (tx) => {
-        await this.lockBuyerPhone(tx, normalizedPhone);
-        const existing = await tx.buyerAccount.findUnique({
-          where: { phone: normalizedPhone },
-        });
-        if (existing && existing.id !== accountId) {
-          throw new ConflictException(
-            "Ya existe un comprador con ese número de teléfono",
-          );
+    const updatedAccount = await withBuyerAccountLock(
+      this.prisma,
+      buyerAccount.id,
+      async (tx, current) => {
+        if (!hasLiveBuyerIdentity(current)) {
+          throw new BadRequestException("Enlace inválido o expirado");
         }
-        // A double-clicked confirm must not misapply: only the first one still
-        // sees a pending phone, the second just re-reads the account.
-        await tx.buyerAccount.updateMany({
-          where: { id: accountId, pendingPhone: { not: null } },
-          data: { phone: normalizedPhone, pendingPhone: null },
-        });
-        return tx.buyerAccount.findUniqueOrThrow({ where: { id: accountId } });
-      });
-    }
+        if (verified.purpose === "confirm" && !current.emailVerified) {
+          return tx.buyerAccount.update({
+            where: { id: current.id },
+            data: { emailVerified: true },
+          });
+        }
+        if (verified.purpose === "change-email" && current.pendingEmail) {
+          const updated = await tx.buyerAccount.updateMany({
+            where: { id: current.id, pendingEmail: current.pendingEmail },
+            data: {
+              email: current.pendingEmail,
+              pendingEmail: null,
+              emailVerified: true,
+            },
+          });
+          if (updated.count !== 1)
+            throw new ConflictException(
+              "La cuenta cambió; vuelve a solicitar el enlace",
+            );
+          return tx.buyerAccount.findUniqueOrThrow({
+            where: { id: current.id },
+          });
+        }
+        if (verified.purpose === "change-phone" && current.pendingPhone) {
+          const normalizedPhone = normalizePhone(current.pendingPhone);
+          const existing = await tx.buyerAccount.findUnique({
+            where: { phone: normalizedPhone },
+          });
+          if (existing && existing.id !== current.id) {
+            throw new ConflictException(
+              "Ya existe un comprador con ese número de teléfono",
+            );
+          }
+          const changed = await tx.buyerAccount.updateMany({
+            where: { id: current.id, pendingPhone: current.pendingPhone },
+            data: { phone: normalizedPhone, pendingPhone: null },
+          });
+          if (changed.count !== 1)
+            throw new ConflictException(
+              "La cuenta cambió; vuelve a solicitar el enlace",
+            );
+          return tx.buyerAccount.findUniqueOrThrow({
+            where: { id: current.id },
+          });
+        }
+        return current;
+      },
+    );
+    if (!updatedAccount)
+      throw new BadRequestException("Enlace inválido o expirado");
+    buyerAccount = updatedAccount;
 
     const orders = await this.prisma.order.findMany({
       where: { buyerAccountId: buyerAccount.id, storeId: store.id },
