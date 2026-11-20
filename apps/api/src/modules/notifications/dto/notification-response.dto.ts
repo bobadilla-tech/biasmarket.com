@@ -15,13 +15,15 @@ export class NotificationResponseDto {
       "OUT_OF_STOCK",
       "PAYMENT_PROOF_SUBMITTED",
       "RECEIPT_CONFIRMED",
+      "ORDER_CLAIMED",
     ],
   })
   type:
     | "LOW_STOCK"
     | "OUT_OF_STOCK"
     | "PAYMENT_PROOF_SUBMITTED"
-    | "RECEIPT_CONFIRMED";
+    | "RECEIPT_CONFIRMED"
+    | "ORDER_CLAIMED";
 
   @ApiProperty()
   entityType: string;

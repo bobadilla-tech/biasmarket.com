@@ -65,6 +65,23 @@ describe("CustomerAccountService", () => {
     service = module.get(CustomerAccountService);
   });
 
+  it("sends the reclaim capability only in the email link fragment", async () => {
+    await service.sendClaimReleasedEmail({
+      email: "buyer@example.com",
+      storeName: "<Shop>",
+      orderNumber: "BM-123",
+      ticket: "signed.ticket",
+    });
+    const message = mailer.send.mock.calls[0]![0];
+    expect(message.to).toBe("buyer@example.com");
+    expect(message.html).toContain(
+      "https://web.example.com/es/my-purchases#reclaim=signed.ticket",
+    );
+    expect(message.html).not.toContain("?reclaim=");
+    expect(message.html).toContain("&lt;Shop&gt;");
+    expect(message.html).toContain("BM-123");
+  });
+
   describe("findOrCreateCustomer", () => {
     const PHONE = "+51988888888";
     const winner = {

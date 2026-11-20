@@ -21,6 +21,7 @@ import {
 } from "../application/idempotency-key.js";
 import { CreateAssistedOrderUseCase } from "../application/create-assisted-order.usecase.js";
 import { ManageAssistedOrderLinkUseCase } from "../application/manage-assisted-order-link.usecase.js";
+import { ReleaseAssistedOrderClaimUseCase } from "../application/release-assisted-order-claim.usecase.js";
 import { BuyerNoticeDto } from "../dto/buyer-notice.dto.js";
 import { CorrectBuyerPhoneDto } from "../dto/correct-buyer-phone.dto.js";
 import { CreateAssistedOrderDto } from "../dto/create-assisted-order.dto.js";
@@ -41,6 +42,7 @@ export class AssistedOrdersController {
     private orders: OrderRepository,
     private createAssistedOrder: CreateAssistedOrderUseCase,
     private manageLink: ManageAssistedOrderLinkUseCase,
+    private releaseClaim: ReleaseAssistedOrderClaimUseCase,
   ) {}
 
   @Post("assisted")
@@ -128,6 +130,20 @@ export class AssistedOrdersController {
   ): Promise<void> {
     const store = await this.orders.assertOwnership(storeId, session.user.id);
     await this.manageLink.recordBuyerNotice(store, orderId, dto.notice);
+  }
+
+  @Post(":orderId/claim-release")
+  @HttpCode(204)
+  @ApiNoContentResponse()
+  @UseGuards(SellerThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  async releaseOrderClaim(
+    @Param("storeId") storeId: string,
+    @Param("orderId") orderId: string,
+    @Session() session: UserSession,
+  ): Promise<void> {
+    const store = await this.orders.assertOwnership(storeId, session.user.id);
+    await this.releaseClaim.execute(store, session.user.id, orderId);
   }
 
   private async linkResponse(

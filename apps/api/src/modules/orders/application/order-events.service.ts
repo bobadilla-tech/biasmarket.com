@@ -166,6 +166,7 @@ export class OrderEventsService {
         fulfillmentStatus: true,
         claimedAt: true,
         buyerAccountId: true,
+        claimReleaseId: true,
         packedPhotoUrl: true,
       },
     });
@@ -224,6 +225,7 @@ export class OrderEventsService {
         paymentStatus: true,
         claimedAt: true,
         buyerAccountId: true,
+        claimReleaseId: true,
         accessTokenHash: true,
         accessTokenRevokedAt: true,
         payments: {
@@ -250,9 +252,10 @@ export class OrderEventsService {
     paymentStatus: string;
     claimedAt: Date | null;
     buyerAccountId: string | null;
+    claimReleaseId?: string | null;
     payments: Parameters<typeof countsTowardPaid>[0][];
   }) {
-    if (order.claimedAt || order.buyerAccountId) {
+    if (order.claimedAt || order.buyerAccountId || order.claimReleaseId) {
       throw new ConflictException("Este pedido ya fue guardado");
     }
     if (
@@ -280,6 +283,7 @@ export class OrderEventsService {
         paymentStatus: true,
         claimedAt: true,
         buyerAccountId: true,
+        claimReleaseId: true,
         accessTokenRevokedAt: true,
         payments: {
           select: {
@@ -316,6 +320,7 @@ export class OrderEventsService {
       order.paymentStatus === "REJECTED" ||
       order.claimedAt ||
       order.buyerAccountId ||
+      order.claimReleaseId ||
       !order.payments.some(countsTowardPaid)
     ) {
       return;

@@ -18,6 +18,7 @@ import { CustomerAccountService } from "../orders/application/customer-account.s
 import { OrderRepository } from "../orders/infrastructure/order.repository.js";
 import { OrderEventsService } from "../orders/application/order-events.service.js";
 import { toPublicTimeline } from "../orders/application/public-order-timeline.js";
+import { NotificationsService } from "../notifications/notifications.service.js";
 import { countsTowardPaid } from "../../common/payment-summary.js";
 import { type ClaimTicket, linkFingerprint } from "./claim-ticket.js";
 import { requiredEnv } from "../../config/env.validation.js";
@@ -45,6 +46,7 @@ export class CustomerAuthService {
     private customerAccount: CustomerAccountService,
     private orderRepository: OrderRepository,
     private events: OrderEventsService,
+    private notifications: NotificationsService,
   ) {}
 
   private async findStoreBySlug(slug: string) {
@@ -265,9 +267,26 @@ export class CustomerAuthService {
   // Never touches `BuyerAccount.phone` or `Order.phoneVerified`.
   async claimWithGoogle(
     identity: { sub: string; email: string; name: string | null },
-    ticket: Pick<ClaimTicket, "orderId" | "linkFp" | "moment">,
+    ticket: Pick<
+      ClaimTicket,
+      "orderId" | "linkFp" | "moment" | "releaseId" | "reclaimBuyerAccountId"
+    >,
   ): Promise<{ token: string; orderId: string }> {
-    const account = await this.resolveGoogleAccount(identity);
+    const reclaimBuyerAccountId = ticket.reclaimBuyerAccountId;
+    const account = reclaimBuyerAccountId
+      ? await this.prisma.buyerAccount.findUnique({
+          where: { googleSub: identity.sub },
+        })
+      : await this.resolveGoogleAccount(identity);
+    if (
+      !account ||
+      (reclaimBuyerAccountId && account.id !== reclaimBuyerAccountId)
+    ) {
+      throw new ClaimOrderError("invalid");
+    }
+
+    let createdClaim = false;
+    let claimedStoreId: string | undefined;
 
     await this.prisma.$transaction(async (tx) => {
       const locked = await tx.$queryRaw<{ id: string }[]>`
@@ -283,6 +302,7 @@ export class CustomerAuthService {
         paymentStatus: true,
         claimedAt: true,
         buyerAccountId: true,
+        claimReleaseId: true,
         accessTokenHash: true,
         accessTokenRevokedAt: true,
         payments: {
@@ -309,9 +329,21 @@ export class CustomerAuthService {
         throw new ClaimOrderError("already_claimed");
       }
       if (
-        order.accessTokenRevokedAt ||
-        !order.accessTokenHash ||
-        linkFingerprint(order.accessTokenHash) !== ticket.linkFp
+        (reclaimBuyerAccountId &&
+          (!ticket.releaseId || order.claimReleaseId !== ticket.releaseId)) ||
+        (!reclaimBuyerAccountId &&
+          (ticket.releaseId || order.claimReleaseId !== null))
+      ) {
+        throw new ClaimOrderError("already_claimed");
+      }
+      // A reclaim ticket is its own short-lived, account-bound capability.
+      // Rotating the public order link after release must not invalidate the
+      // email; ordinary claim tickets remain tied to the current link hash.
+      if (
+        !reclaimBuyerAccountId &&
+        (order.accessTokenRevokedAt ||
+          !order.accessTokenHash ||
+          linkFingerprint(order.accessTokenHash) !== ticket.linkFp)
       ) {
         throw new ClaimOrderError("invalid");
       }
@@ -332,10 +364,19 @@ export class CustomerAuthService {
           paymentStatus: { not: "CANCELLED" },
           claimedAt: null,
           buyerAccountId: null,
-          accessTokenRevokedAt: null,
-          accessTokenHash: { startsWith: ticket.linkFp },
+          claimReleaseId: ticket.releaseId ?? null,
+          ...(!reclaimBuyerAccountId
+            ? {
+                accessTokenRevokedAt: null,
+                accessTokenHash: { startsWith: ticket.linkFp },
+              }
+            : {}),
         },
-        data: { buyerAccountId: account.id, claimedAt: new Date() },
+        data: {
+          buyerAccountId: account.id,
+          claimedAt: new Date(),
+          claimReleaseId: null,
+        },
       });
       if (count !== 1) throw new ClaimOrderError("already_claimed");
 
@@ -357,7 +398,33 @@ export class CustomerAuthService {
           metadata: { actorType: "BUYER" },
         },
       });
+      await tx.notification.create({
+        data: {
+          storeId: order.storeId,
+          type: "ORDER_CLAIMED",
+          entityType: "Order",
+          entityId: order.id,
+          title: "Pedido guardado por el comprador",
+          body: "El comprador vinculó este pedido a su cuenta.",
+          metadata: {},
+        },
+      });
+      createdClaim = true;
+      claimedStoreId = order.storeId;
     });
+
+    if (createdClaim && claimedStoreId) {
+      await this.notifications.pushToStoreOwner({
+        storeId: claimedStoreId,
+        title: "Pedido guardado por el comprador",
+        body: "Un comprador vinculó un pedido a su cuenta.",
+        data: {
+          type: "ORDER_CLAIMED",
+          entityType: "Order",
+          entityId: ticket.orderId,
+        },
+      });
+    }
 
     return {
       token: this.issueSessionToken(account.id, account.passwordVersion),

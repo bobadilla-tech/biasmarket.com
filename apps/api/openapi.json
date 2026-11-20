@@ -2433,6 +2433,35 @@
         "tags": ["Order"]
       }
     },
+    "/stores/{storeId}/orders/{orderId}/claim-release": {
+      "post": {
+        "operationId": "AssistedOrdersController_releaseOrderClaim",
+        "parameters": [
+          {
+            "name": "storeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": ["Order"]
+      }
+    },
     "/stores/{slug}/checkout": {
       "post": {
         "operationId": "CheckoutController_create",
@@ -2716,6 +2745,28 @@
           }
         ],
         "tags": ["CustomerOrderPayments"]
+      }
+    },
+    "/public/orders/claim-reclaim-ticket": {
+      "post": {
+        "operationId": "PublicOrderEventsController_exchangeReclaimTicket",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReclaimTicketDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": ["PublicOrderEvents"]
       }
     },
     "/public/orders/{token}": {
@@ -7828,7 +7879,8 @@
               "LOW_STOCK",
               "OUT_OF_STOCK",
               "PAYMENT_PROOF_SUBMITTED",
-              "RECEIPT_CONFIRMED"
+              "RECEIPT_CONFIRMED",
+              "ORDER_CLAIMED"
             ],
             "type": "string"
           },
@@ -9600,6 +9652,17 @@
         },
         "required": ["customer", "orders"]
       },
+      "ReclaimTicketDto": {
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "type": "string",
+            "maxLength": 4096,
+            "description": "Short-lived, signed reclaim ticket from the email link."
+          }
+        },
+        "required": ["ticket"]
+      },
       "PublicOrderStoreResponseDto": {
         "type": "object",
         "properties": {
@@ -9911,6 +9974,10 @@
             "type": "boolean",
             "description": "Whether the order was saved to a buyer account."
           },
+          "reclaimPending": {
+            "type": "boolean",
+            "description": "True while a released claim can only be reclaimed with the emailed account-bound link."
+          },
           "lastUpdateAt": {
             "type": "string",
             "format": "date-time",
@@ -9986,6 +10053,7 @@
           "packedPhotoAvailable",
           "receiptConfirmedAt",
           "claimed",
+          "reclaimPending",
           "lastUpdateAt",
           "timeline",
           "hasValidatedPayment",

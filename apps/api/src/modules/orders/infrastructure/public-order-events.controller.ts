@@ -1,6 +1,7 @@
 import {
   Body,
   Body as NestBody,
+  BadRequestException,
   Controller,
   Get,
   Header,
@@ -37,8 +38,10 @@ import {
   CLAIM_TICKET_TTL_MS,
   claimCookieOptions,
   signClaimTicket,
+  verifyClaimTicket,
 } from "../../customer-auth/claim-ticket.js";
 import { ClaimTicketDto } from "../dto/claim-ticket.dto.js";
+import { ReclaimTicketDto } from "../dto/reclaim-ticket.dto.js";
 import { OrderEventsService } from "../application/order-events.service.js";
 import { PublicOrderService } from "../application/public-order.service.js";
 import { RecordInviteEventDto } from "../dto/record-invite-event.dto.js";
@@ -83,6 +86,35 @@ export class PublicOrderEventsController {
     private storage: StorageService,
     private proofs: BuyerPaymentProofService,
   ) {}
+
+  // The emailed capability travels in the page fragment, which the browser
+  // never sends in a request URL or Referer. This same-origin POST exchanges
+  // it for the existing path-scoped, httpOnly OAuth ticket cookie.
+  @Public()
+  @Post("claim-reclaim-ticket")
+  @Header("Cache-Control", "no-store")
+  @Header("Referrer-Policy", "no-referrer")
+  @HttpCode(204)
+  @ApiNoContentResponse()
+  @UseGuards(ThrottlerGuard, OriginGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  exchangeReclaimTicket(
+    @Headers("content-type") contentType: string | undefined,
+    @Body() dto: ReclaimTicketDto,
+    @Res({ passthrough: true }) res: Response,
+  ): void {
+    if (!contentType?.toLowerCase().startsWith("application/json")) {
+      throw new UnsupportedMediaTypeException();
+    }
+    const ticket = verifyClaimTicket(dto.ticket);
+    if (!ticket?.releaseId || !ticket.reclaimBuyerAccountId) {
+      throw new BadRequestException("Enlace inválido o expirado");
+    }
+    res.cookie(CLAIM_TICKET_COOKIE, dto.ticket, {
+      ...claimCookieOptions(),
+      maxAge: Math.max(0, ticket.exp - Date.now()),
+    });
+  }
 
   @Public()
   @Get(":token")
