@@ -98,7 +98,7 @@ Creating an assisted order accepts an optional `Idempotency-Key` header
 `OrderEvent` rows record what happened (`OrderEventType`: created, link opened,
 link regenerated, phone corrected, payment submitted, validated, rejected or
 voided, fulfillment advanced, packed photo added, tracking added, buyer
-notified, receipt confirmed, claimed, invite shown, clicked or dismissed, order
+notified, receipt confirmed, claimed, claim released, invite shown, clicked or dismissed, order
 cancelled), who did it (`OrderEventActor`: seller, buyer or system), and whether
 the buyer may see it (`visibleToBuyer`).
 
@@ -119,6 +119,11 @@ the buyer may see it (`visibleToBuyer`).
 - The `PAYMENT_SUBMITTED` event is separate from the `PAYMENT_SUBMITTED` payment
   status; see
   [security-payments.md §9.3](security-payments.md#93-state-summary).
+- A seller can release an assisted order claim from its detail view. The
+  transaction clears the account association, writes a seller-only
+  `CLAIM_RELEASED` event and `order.claim_released` audit row, and assigns a
+  release id. The old public order link cannot claim the order while a release
+  is pending.
 - Invite events (shown, clicked, dismissed) feed a funnel count for the "save
   your order" prompt. They are recorded only for orders the buyer could really
   be invited to, and "shown" and "clicked" are written once per order and page
@@ -168,6 +173,15 @@ this section is the order side.
   too late. The claim upserts a `CustomerStoreLink`, records a `CLAIMED` event
   and writes an `order.claimed` audit row, and the buyer lands on the order in
   their purchases page.
+- **Release and reclaim.** A release reserves the order for 24 hours and
+  creates a ticket bound to that buyer account and release id. The ticket is
+  sent to a verified account email, arrives in a URL fragment, and is exchanged
+  for the existing HttpOnly OAuth cookie before Google sign-in. The callback
+  requires the same Google account and current release id; a successful
+  reclaim clears the reservation. When the reservation expires, the original
+  public order link may claim the order again. A release notice still goes to
+  any former buyer account with an email address, but an account-bound link is
+  included only when the account and active order link support it.
 - **After a claim.** The order is no longer eligible for the scheduled identity
   erasure (below), the phone can no longer be corrected, and the buyer owns it
   through their account.
@@ -195,6 +209,7 @@ codes.
 | `order.cancelled`                                  | the seller cancels the order                                                           | seller                          |
 | `order.expired`                                    | the expiry sweep cancels an unpaid order                                               | system                          |
 | `order.claimed`                                    | a buyer claims the order                                                               | buyer account                   |
+| `order.claim_released`                             | the seller releases an assisted order claim                                            | seller                          |
 | `order.assisted_identity_erased`                   | an order's buyer identity is erased                                                    | system, or the support operator |
 | `customer.assisted_identity_erased`                | a store contact is erased with its last order                                          | system, or the support operator |
 | `order.assisted_closed_at_backfilled`              | an operator sets a verified close date on a reviewed legacy order                      | support operator                |

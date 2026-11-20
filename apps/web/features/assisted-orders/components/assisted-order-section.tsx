@@ -24,6 +24,7 @@ import { FormField } from "@/components/shared/form-a11y";
 import { useAssistedLinkTemplate } from "../queries/use-assisted-link-template";
 import { useRegenerateAccessLink } from "../mutations/use-regenerate-access-link";
 import { useCorrectBuyerPhone } from "../mutations/use-correct-buyer-phone";
+import { useReleaseOrderClaim } from "../mutations/use-release-order-claim";
 import { buildAssistedLinkMessage } from "../lib/assisted-link-message";
 import { LinkMessagePanel } from "./link-message-panel";
 import { RelatedOrders } from "./related-orders";
@@ -58,9 +59,11 @@ export function AssistedOrderSection({
   const template = useAssistedLinkTemplate(storeId);
   const regenerate = useRegenerateAccessLink(storeId);
   const correct = useCorrectBuyerPhone(storeId);
+  const releaseClaim = useReleaseOrderClaim(storeId);
 
   const [result, setResult] = useState<LinkResult | null>(null);
   const [confirmRegenerate, setConfirmRegenerate] = useState(false);
+  const [confirmRelease, setConfirmRelease] = useState(false);
   const [fixOpen, setFixOpen] = useState(false);
   const [phone, setPhone] = useState("+51");
   const [phoneError, setPhoneError] = useState<string | undefined>();
@@ -145,6 +148,9 @@ export function AssistedOrderSection({
   const actionError = regenerate.error
     ? errorMessage(regenerate.error, tErrors("generic"))
     : null;
+  const releaseError = releaseClaim.error
+    ? errorMessage(releaseClaim.error, tErrors("generic"))
+    : null;
 
   return (
     <div className="space-y-4 rounded-[24px] border border-[#eadcf8] bg-white p-5 shadow-sm">
@@ -193,6 +199,26 @@ export function AssistedOrderSection({
       ) : null}
 
       <RelatedOrders storeId={storeId} orderId={order.id} />
+
+      {order.claimedAt ? (
+        <div className="space-y-2 border-t border-[#f3ebff] pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setConfirmRelease(true)}
+            disabled={releaseClaim.isPending}
+            className="min-h-11 rounded-2xl px-5 text-sm font-semibold"
+          >
+            {releaseClaim.isPending ? t("releaseWorking") : t("releaseClaim")}
+          </Button>
+          <p className="text-xs text-[#8f7da8]">{t("releaseDescription")}</p>
+          {releaseError ? (
+            <p role="alert" className="text-sm text-error-foreground">
+              {releaseError}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="space-y-3 border-t border-[#f3ebff] pt-4">
         <h3 className="font-semibold text-[#2d1649]">{t("linkTitle")}</h3>
@@ -295,6 +321,40 @@ export function AssistedOrderSection({
               className="store-theme-primary-button min-h-11 rounded-xl"
             >
               {t("regenerateConfirm")}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmRelease} onOpenChange={setConfirmRelease}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("releaseTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("releaseBody")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmRelease(false)}
+              className="min-h-11 rounded-xl"
+            >
+              {t("cancel")}
+            </Button>
+            <Button
+              type="button"
+              disabled={releaseClaim.isPending}
+              onClick={async () => {
+                try {
+                  await releaseClaim.mutateAsync(order.id);
+                  setConfirmRelease(false);
+                } catch {
+                  // The error is shown beside the action.
+                }
+              }}
+              className="store-theme-primary-button min-h-11 rounded-xl"
+            >
+              {t("releaseConfirm")}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -620,6 +620,7 @@
       "OUT_OF_STOCK": "Out of stock",
       "PAYMENT_PROOF_SUBMITTED": "Payment proof submitted",
       "RECEIPT_CONFIRMED": "Receipt confirmed",
+      "ORDER_CLAIMED": "Order saved by buyer",
       "GENERIC": "Notification"
     }
   },
@@ -1157,7 +1158,13 @@
         }
       },
       "receiptConfirmed": "The buyer confirmed receipt on {date}",
-      "claimedBadge": "Claimed"
+      "claimedBadge": "Claimed",
+      "releaseClaim": "Release claim",
+      "releaseWorking": "Releasing…",
+      "releaseDescription": "The buyer will receive a secure email link to claim this order again.",
+      "releaseTitle": "Release this claim?",
+      "releaseBody": "The order will be removed from the buyer's saved purchases. They will receive a secure link by email to claim it again.",
+      "releaseConfirm": "Yes, release claim"
     },
     "buyerNotice": {
       "title": "Notify the buyer",

@@ -274,6 +274,12 @@ export class PublicOrderResponseDto {
   claimed: boolean;
 
   @ApiProperty({
+    description:
+      "True while a released claim can only be reclaimed with the emailed account-bound link.",
+  })
+  reclaimPending: boolean;
+
+  @ApiProperty({
     type: String,
     format: "date-time",
     description: "Time of the latest buyer-visible step (creation if none).",

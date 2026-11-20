@@ -363,6 +363,10 @@ model Order {
   linkFirstOpenedAt        DateTime?
   // When a buyer claimed the order. Who claimed it is buyerAccountId.
   claimedAt                DateTime?
+  // Non-null after a seller releases a claim. Only the emailed, account-bound
+  // reclaim ticket for this release can claim the order again.
+  claimReleaseId           String?
+  claimReleaseExpiresAt    DateTime?
   // Set when fulfilment becomes terminal; starts the assisted identity-retention clock.
   closedAt                 DateTime?
   // Identity was erased after a buyer request or retention.
@@ -454,6 +458,7 @@ enum OrderEventType {
   BUYER_NOTIFIED
   RECEIPT_CONFIRMED
   CLAIMED
+  CLAIM_RELEASED
   INVITE_SHOWN
   INVITE_CLICKED
   INVITE_DISMISSED
@@ -848,6 +853,7 @@ enum NotificationType {
   OUT_OF_STOCK
   PAYMENT_PROOF_SUBMITTED
   RECEIPT_CONFIRMED
+  ORDER_CLAIMED
 }
 
 model Notification {

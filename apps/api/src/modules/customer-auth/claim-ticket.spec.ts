@@ -5,8 +5,10 @@ import {
 } from "@biasmarket/utils/customer-account-token";
 import {
   CLAIM_TICKET_TTL_MS,
+  RECLAIM_TICKET_TTL_MS,
   linkFingerprint,
   signClaimTicket,
+  signReclaimTicket,
   verifyClaimTicket,
 } from "./claim-ticket.js";
 
@@ -40,6 +42,43 @@ describe("claim ticket", () => {
       2000,
     );
     expect(ticket).not.toHaveProperty("moment");
+  });
+
+  it("binds a reclaim ticket to one account and release for 24 hours", () => {
+    const value = signReclaimTicket(
+      {
+        orderId: "o1",
+        accessTokenHash: hash,
+        releaseId: "release-1",
+        reclaimBuyerAccountId: "buyer-1",
+      },
+      1000,
+    );
+    expect(verifyClaimTicket(value, 1000)).toEqual({
+      orderId: "o1",
+      linkFp: linkFingerprint(hash),
+      releaseId: "release-1",
+      reclaimBuyerAccountId: "buyer-1",
+      exp: 1000 + RECLAIM_TICKET_TTL_MS,
+    });
+    expect(
+      verifyClaimTicket(value, 1000 + RECLAIM_TICKET_TTL_MS + 1),
+    ).toBeNull();
+  });
+
+  it("rejects a reclaim ticket payload with only one binding field", () => {
+    const payload = Buffer.from(
+      JSON.stringify({
+        orderId: "o1",
+        linkFp: "abc",
+        releaseId: "release-1",
+        exp: 9e15,
+      }),
+    ).toString("base64url");
+    const signature = createHmac("sha256", "test-secret")
+      .update(`claim-ticket:${payload}`)
+      .digest("base64url");
+    expect(verifyClaimTicket(`${payload}.${signature}`)).toBeNull();
   });
 
   it("never carries the raw link hash, only its prefix", () => {

@@ -1,0 +1,4 @@
+ALTER TYPE "OrderEventType" ADD VALUE 'CLAIM_RELEASED';
+ALTER TYPE "NotificationType" ADD VALUE 'ORDER_CLAIMED';
+
+ALTER TABLE "Order" ADD COLUMN "claimReleaseId" TEXT;

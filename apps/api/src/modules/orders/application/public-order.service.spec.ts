@@ -218,6 +218,7 @@ describe("PublicOrderService", () => {
         "packedPhotoAvailable",
         "receiptConfirmedAt",
         "claimed",
+        "reclaimPending",
         "lastUpdateAt",
         "timeline",
         "hasValidatedPayment",
@@ -250,6 +251,22 @@ describe("PublicOrderService", () => {
       customerName: null,
     });
     expect((await service.getByToken("raw-token")).customerAlias).toBeNull();
+  });
+
+  it("stops advertising a reclaim flow when the release reservation expired", async () => {
+    events.requireOrderForToken.mockResolvedValue({
+      id: "order-1",
+      storeId: "store-1",
+    });
+    prisma.order.findUnique.mockResolvedValue({
+      ...orderRow,
+      claimReleaseId: "release-1",
+      claimReleaseExpiresAt: new Date(Date.now() - 1),
+    });
+
+    const result = await service.getByToken("raw-token");
+
+    expect(result.reclaimPending).toBe(false);
   });
 
   it("returns only payment methods that are actually configured", async () => {

@@ -208,6 +208,10 @@ export class PublicOrderService {
       packedPhotoAvailable: Boolean(order.packedPhotoUrl),
       receiptConfirmedAt: order.buyerConfirmedReceivedAt?.toISOString() ?? null,
       claimed,
+      reclaimPending:
+        order.claimReleaseId !== null &&
+        (!order.claimReleaseExpiresAt ||
+          order.claimReleaseExpiresAt.getTime() > Date.now()),
       lastUpdateAt: (
         visibleEvents.at(-1)?.createdAt ?? order.createdAt
       ).toISOString(),

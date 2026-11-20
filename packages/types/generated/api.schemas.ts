@@ -650,6 +650,7 @@ export const NotificationResponseDtoType = {
   OUT_OF_STOCK: "OUT_OF_STOCK",
   PAYMENT_PROOF_SUBMITTED: "PAYMENT_PROOF_SUBMITTED",
   RECEIPT_CONFIRMED: "RECEIPT_CONFIRMED",
+  ORDER_CLAIMED: "ORDER_CLAIMED",
 } as const;
 
 export type NotificationResponseDtoMetadata = { [key: string]: unknown };
@@ -1920,6 +1921,14 @@ export interface CustomerDetailResponseDto {
   orders: OrderResponseDto[];
 }
 
+export interface ReclaimTicketDto {
+  /**
+   * Short-lived, signed reclaim ticket from the email link.
+   * @maxLength 4096
+   */
+  ticket: string;
+}
+
 export type PublicOrderResponseDtoPaymentStatus =
   (typeof PublicOrderResponseDtoPaymentStatus)[keyof typeof PublicOrderResponseDtoPaymentStatus];
 
@@ -2193,6 +2202,8 @@ export interface PublicOrderResponseDto {
   receiptConfirmedAt: string | null;
   /** Whether the order was saved to a buyer account. */
   claimed: boolean;
+  /** True while a released claim can only be reclaimed with the emailed account-bound link. */
+  reclaimPending: boolean;
   /** Time of the latest buyer-visible step (creation if none). */
   lastUpdateAt: string;
   /** Dated steps, oldest first. Empty unless the order was claimed: it is an incentive to save the order, not an access control. */

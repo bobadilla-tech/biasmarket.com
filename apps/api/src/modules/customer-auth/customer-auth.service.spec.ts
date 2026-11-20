@@ -18,6 +18,7 @@ import { PrismaService } from "../../prisma/prisma.service.js";
 import { CustomerAccountService } from "../orders/application/customer-account.service.js";
 import { OrderRepository } from "../orders/infrastructure/order.repository.js";
 import { OrderEventsService } from "../orders/application/order-events.service.js";
+import { NotificationsService } from "../notifications/notifications.service.js";
 import { ClaimOrderError } from "./customer-auth.service.js";
 
 describe("CustomerAuthService", () => {
@@ -37,6 +38,7 @@ describe("CustomerAuthService", () => {
     store: { findUnique: Mock };
     order: { findMany: Mock; findFirst: Mock; updateMany: Mock };
     auditLog: { create: Mock };
+    notification: { create: Mock };
     $transaction: Mock;
     $queryRaw: Mock;
   };
@@ -47,6 +49,7 @@ describe("CustomerAuthService", () => {
     sendPhoneChangeConfirmation: Mock;
   };
   let orderRepository: { findRowByIdForStore: Mock };
+  let notifications: { pushToStoreOwner: Mock };
 
   const store = { id: "store-1", slug: "my-store" };
 
@@ -72,6 +75,7 @@ describe("CustomerAuthService", () => {
         updateMany: vi.fn(),
       },
       auditLog: { create: vi.fn() },
+      notification: { create: vi.fn() },
       $queryRaw: vi.fn().mockResolvedValue([{ id: "order-1" }]),
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
     };
@@ -82,6 +86,7 @@ describe("CustomerAuthService", () => {
       sendPhoneChangeConfirmation: vi.fn(),
     };
     orderRepository = { findRowByIdForStore: vi.fn() };
+    notifications = { pushToStoreOwner: vi.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -90,6 +95,7 @@ describe("CustomerAuthService", () => {
         { provide: CustomerAccountService, useValue: customerAccount },
         { provide: OrderRepository, useValue: orderRepository },
         { provide: OrderEventsService, useValue: events },
+        { provide: NotificationsService, useValue: notifications },
       ],
     }).compile();
 
@@ -449,7 +455,6 @@ describe("CustomerAuthService", () => {
         id: "buyer-1",
         passwordVersion: 2,
       });
-
       const token = await service.loginWithGoogle("my-store", identity);
 
       expect(sessionOf(token)).toEqual({
@@ -754,6 +759,8 @@ describe("CustomerAuthService", () => {
       paymentStatus: "VERIFIED",
       claimedAt: null,
       buyerAccountId: null,
+      claimReleaseId: null,
+      claimReleaseExpiresAt: null,
       accessTokenHash: hash,
       accessTokenRevokedAt: null,
       payments: [approved],
@@ -794,10 +801,19 @@ describe("CustomerAuthService", () => {
           paymentStatus: { not: "CANCELLED" },
           claimedAt: null,
           buyerAccountId: null,
+          OR: [
+            { claimReleaseId: null },
+            { claimReleaseExpiresAt: { lte: expect.any(Date) } },
+          ],
           accessTokenRevokedAt: null,
           accessTokenHash: { startsWith: ticket.linkFp },
         },
-        data: { buyerAccountId: "buyer-new", claimedAt: expect.any(Date) },
+        data: {
+          buyerAccountId: "buyer-new",
+          claimedAt: expect.any(Date),
+          claimReleaseId: null,
+          claimReleaseExpiresAt: null,
+        },
       });
       expect(prisma.customerStoreLink.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -822,6 +838,14 @@ describe("CustomerAuthService", () => {
           metadata: { actorType: "BUYER" },
         },
       });
+      expect(prisma.notification.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          storeId: "store-1",
+          type: "ORDER_CLAIMED",
+          entityId: "order-1",
+        }),
+      });
+      expect(notifications.pushToStoreOwner).toHaveBeenCalledTimes(1);
       expect(JSON.stringify(prisma.auditLog.create.mock.calls)).not.toMatch(
         /g-sub|b@example\.com|Buyer|token|phone|moment/,
       );
@@ -852,7 +876,12 @@ describe("CustomerAuthService", () => {
       expect(prisma.buyerAccount.create).not.toHaveBeenCalled();
       expect(prisma.order.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: { buyerAccountId: "buyer-old", claimedAt: expect.any(Date) },
+          data: {
+            buyerAccountId: "buyer-old",
+            claimedAt: expect.any(Date),
+            claimReleaseId: null,
+            claimReleaseExpiresAt: null,
+          },
         }),
       );
       expect(prisma.auditLog.create).toHaveBeenCalledTimes(1);
@@ -860,6 +889,112 @@ describe("CustomerAuthService", () => {
         buyerAccountId: "buyer-old",
         passwordVersion: 3,
       });
+    });
+
+    it("reclaims only for the account and release encoded in the emailed ticket", async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue({
+        id: "buyer-1",
+        passwordVersion: 2,
+      });
+      prisma.order.findFirst.mockResolvedValue(
+        order({
+          claimReleaseId: "release-1",
+          claimReleaseExpiresAt: new Date(Date.now() + 60_000),
+          accessTokenHash: "0".repeat(64),
+          accessTokenRevokedAt: new Date(),
+        }),
+      );
+      await service.claimWithGoogle(identity, {
+        ...ticket,
+        releaseId: "release-1",
+        reclaimBuyerAccountId: "buyer-1",
+      });
+      expect(prisma.buyerAccount.create).not.toHaveBeenCalled();
+      expect(prisma.order.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ claimReleaseId: "release-1" }),
+          data: expect.objectContaining({
+            buyerAccountId: "buyer-1",
+            claimReleaseId: null,
+            claimReleaseExpiresAt: null,
+          }),
+        }),
+      );
+      expect(notifications.pushToStoreOwner).toHaveBeenCalledTimes(1);
+    });
+
+    it("allows a normal link claim after the 24-hour reclaim reservation expires", async () => {
+      prisma.order.findFirst.mockResolvedValue(
+        order({
+          claimReleaseId: "release-1",
+          claimReleaseExpiresAt: new Date(Date.now() - 1),
+        }),
+      );
+
+      await service.claimWithGoogle(identity, ticket);
+
+      expect(prisma.order.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: [
+              { claimReleaseId: null },
+              { claimReleaseExpiresAt: { lte: expect.any(Date) } },
+            ],
+          }),
+          data: expect.objectContaining({
+            buyerAccountId: "buyer-new",
+            claimReleaseId: null,
+            claimReleaseExpiresAt: null,
+          }),
+        }),
+      );
+    });
+
+    it("rejects an otherwise-valid reclaim ticket after its reservation expires", async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue({
+        id: "buyer-1",
+        passwordVersion: 2,
+      });
+      prisma.order.findFirst.mockResolvedValue(
+        order({
+          claimReleaseId: "release-1",
+          claimReleaseExpiresAt: new Date(Date.now() - 1),
+        }),
+      );
+
+      await expect(
+        service.claimWithGoogle(identity, {
+          ...ticket,
+          releaseId: "release-1",
+          reclaimBuyerAccountId: "buyer-1",
+        }),
+      ).rejects.toMatchObject({ code: "already_claimed" });
+      expect(prisma.order.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("refuses a reclaim ticket presented by a different Google account", async () => {
+      prisma.buyerAccount.findUnique.mockResolvedValue(null);
+      await expect(
+        service.claimWithGoogle(identity, {
+          ...ticket,
+          releaseId: "release-1",
+          reclaimBuyerAccountId: "buyer-1",
+        }),
+      ).rejects.toMatchObject({ code: "invalid" });
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+      expect(prisma.buyerAccount.create).not.toHaveBeenCalled();
+    });
+
+    it("refuses an ordinary claim ticket while an email reclaim is pending", async () => {
+      prisma.order.findFirst.mockResolvedValue(
+        order({ claimReleaseId: "release-1" }),
+      );
+      await expect(
+        service.claimWithGoogle(identity, ticket),
+      ).rejects.toMatchObject({
+        code: "already_claimed",
+      });
+      expect(prisma.order.updateMany).not.toHaveBeenCalled();
     });
 
     it("never links a same-email account while claiming: the order binds to the Google account", async () => {
@@ -870,7 +1005,12 @@ describe("CustomerAuthService", () => {
       expect(prisma.buyerAccount.updateMany).not.toHaveBeenCalled();
       expect(prisma.order.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: { buyerAccountId: "buyer-new", claimedAt: expect.any(Date) },
+          data: {
+            buyerAccountId: "buyer-new",
+            claimedAt: expect.any(Date),
+            claimReleaseId: null,
+            claimReleaseExpiresAt: null,
+          },
         }),
       );
     });

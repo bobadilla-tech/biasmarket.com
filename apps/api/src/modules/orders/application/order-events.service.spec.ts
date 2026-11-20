@@ -435,6 +435,8 @@ describe("OrderEventsService", () => {
         fulfillmentStatus: true,
         claimedAt: true,
         buyerAccountId: true,
+        claimReleaseId: true,
+        claimReleaseExpiresAt: true,
         packedPhotoUrl: true,
       },
     });
@@ -623,6 +625,20 @@ describe("OrderEventsService", () => {
       expect(() =>
         service.assertClaimable({ ...base, buyerAccountId: "b1" }),
       ).toThrow(ConflictException);
+      expect(() =>
+        service.assertClaimable({
+          ...base,
+          claimReleaseId: "release-1",
+          claimReleaseExpiresAt: new Date(Date.now() + 60_000),
+        }),
+      ).toThrow(ConflictException);
+      expect(() =>
+        service.assertClaimable({
+          ...base,
+          claimReleaseId: "release-1",
+          claimReleaseExpiresAt: new Date(Date.now() - 1),
+        }),
+      ).not.toThrow();
       for (const patch of [
         { source: "MARKETPLACE" },
         { status: "CANCELLED" },
@@ -633,6 +649,15 @@ describe("OrderEventsService", () => {
           UnprocessableEntityException,
         );
       }
+    });
+
+    it("does not record invite events while a release email is pending", async () => {
+      prisma.order.findUnique.mockResolvedValue({
+        ...base,
+        claimReleaseId: "release-1",
+      });
+      await service.recordInvite(token, "INVITE_CLICKED");
+      expect(prisma.orderEvent.create).not.toHaveBeenCalled();
     });
   });
 });

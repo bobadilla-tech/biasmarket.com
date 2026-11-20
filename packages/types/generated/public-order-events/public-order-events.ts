@@ -9,12 +9,29 @@ import type {
   ClaimTicketDto,
   PublicOrderResponseDto,
   ReceiptConfirmedResponseDto,
+  ReclaimTicketDto,
   RecordInviteEventDto,
   SubmitPublicPaymentDto,
   SubmitPublicPaymentResponseDto,
 } from "../api.schemas.js";
 
 import { customFetch } from "../../http.js";
+
+export const getExchangeReclaimTicketUrl = () => {
+  return `/public/orders/claim-reclaim-ticket`;
+};
+
+export const exchangeReclaimTicket = async (
+  reclaimTicketDto: ReclaimTicketDto,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<void> => {
+  return customFetch<void>(getExchangeReclaimTicketUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(reclaimTicketDto),
+  });
+};
 
 export const getGetByTokenUrl = (token: string) => {
   return `/public/orders/${token}`;
