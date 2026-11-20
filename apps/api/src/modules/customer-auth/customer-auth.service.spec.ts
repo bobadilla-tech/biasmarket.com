@@ -235,6 +235,7 @@ describe("CustomerAuthService", () => {
         "buyer-1",
         "test-secret",
         "change-email",
+        "new@example.com",
       );
 
       await expect(
@@ -1512,20 +1513,51 @@ describe("CustomerAuthService", () => {
       );
     });
 
-    it("rejects an email already used by another buyer account, globally", async () => {
-      prisma.buyerAccount.findFirst.mockResolvedValue({ id: "other-buyer" });
+    it.each([
+      {
+        field: "email",
+        buyerAccount: { id: "other-buyer", email: "taken@example.com" },
+      },
+      {
+        field: "pendingEmail",
+        buyerAccount: {
+          id: "other-buyer",
+          pendingEmail: "taken@example.com",
+        },
+      },
+    ])(
+      "rejects a case-insensitive clash with another buyer's $field",
+      async ({ buyerAccount }) => {
+        prisma.buyerAccount.findFirst.mockResolvedValue(buyerAccount);
 
-      await expect(
-        service.updateProfile("my-store", session, {
-          name: "Old Name",
-          email: "taken@example.com",
-        }),
-      ).rejects.toBeInstanceOf(ConflictException);
-      expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
-      expect(prisma.buyerAccount.findFirst).toHaveBeenCalledWith({
-        where: { email: "taken@example.com", NOT: { id: "buyer-1" } },
-      });
-    });
+        await expect(
+          service.updateProfile("my-store", session, {
+            name: "Old Name",
+            email: "TAKEN@example.com",
+          }),
+        ).rejects.toBeInstanceOf(ConflictException);
+        expect(prisma.buyerAccount.update).not.toHaveBeenCalled();
+        expect(prisma.buyerAccount.findFirst).toHaveBeenCalledWith({
+          where: {
+            NOT: { id: "buyer-1" },
+            OR: [
+              {
+                email: {
+                  equals: "TAKEN@example.com",
+                  mode: "insensitive",
+                },
+              },
+              {
+                pendingEmail: {
+                  equals: "TAKEN@example.com",
+                  mode: "insensitive",
+                },
+              },
+            ],
+          },
+        });
+      },
+    );
 
     it("stages a new phone and sends a confirmation to the current verified email", async () => {
       prisma.buyerAccount.findUnique.mockResolvedValue(null);

@@ -9,7 +9,10 @@ import { Prisma } from "@biasmarket/db";
 import { CustomerAccountService } from "./customer-account.service.js";
 import { PrismaService } from "../../../prisma/prisma.service.js";
 import { MailerService } from "../../../mailer/mailer.service.js";
-import { createCustomerAccountToken } from "@biasmarket/utils/customer-account-token";
+import {
+  createCustomerAccountToken,
+  verifyCustomerAccountToken,
+} from "@biasmarket/utils/customer-account-token";
 
 describe("CustomerAccountService", () => {
   let service: CustomerAccountService;
@@ -469,6 +472,7 @@ describe("CustomerAccountService", () => {
           "buyer-1",
           "test-secret",
           purpose,
+          purpose === "change-email" ? "new@example.com" : undefined,
         );
         prisma.buyerAccount.findUnique.mockResolvedValue({
           id: "buyer-1",
@@ -496,6 +500,7 @@ describe("CustomerAccountService", () => {
         "buyer-1",
         "test-secret",
         "change-email",
+        "new@example.com",
       );
       prisma.buyerAccount.findUnique.mockResolvedValue({
         id: "buyer-1",
@@ -530,6 +535,31 @@ describe("CustomerAccountService", () => {
         },
       });
       expect(prisma.buyerAccount.findUniqueOrThrow).not.toHaveBeenCalled();
+      expect(prisma.order.findMany).not.toHaveBeenCalled();
+    });
+
+    it("rejects a stale change-email token after pendingEmail is re-pointed", async () => {
+      const token = createCustomerAccountToken(
+        "buyer-1",
+        "test-secret",
+        "change-email",
+        "first@example.com",
+      );
+      prisma.buyerAccount.findUnique.mockResolvedValue({
+        id: "buyer-1",
+        name: "Jane",
+        email: "old@example.com",
+        pendingEmail: "second@example.com",
+        phone: "+51988888888",
+        emailVerified: true,
+        passwordHash: "already-set",
+      });
+
+      await expect(service.confirmAccount(store.slug, token)).rejects.toThrow(
+        BadRequestException,
+      );
+
+      expect(prisma.buyerAccount.updateMany).not.toHaveBeenCalled();
       expect(prisma.order.findMany).not.toHaveBeenCalled();
     });
     it("marks the buyer account verified and returns their orders for this store", async () => {
@@ -608,6 +638,7 @@ describe("CustomerAccountService", () => {
         "buyer-1",
         "test-secret",
         "change-email",
+        "new@example.com",
       );
       const buyerAccount = {
         id: "buyer-1",
@@ -839,9 +870,18 @@ describe("CustomerAccountService", () => {
         "new@example.com",
       );
 
-      expect(mailer.send).toHaveBeenCalledWith(
-        expect.objectContaining({ to: "new@example.com" }),
-      );
+      const [message] = mailer.send.mock.calls[0] as [
+        { to: string; html: string },
+      ];
+      expect(message.to).toBe("new@example.com");
+      const token = message.html.match(/[?&]token=([^&<"]+)/)?.[1];
+      expect(token).toBeDefined();
+      expect(
+        verifyCustomerAccountToken(token!, "test-secret", "new@example.com"),
+      ).toEqual({ buyerAccountId: "buyer-1", purpose: "change-email" });
+      expect(
+        verifyCustomerAccountToken(token!, "test-secret", "other@example.com"),
+      ).toBeNull();
     });
   });
 

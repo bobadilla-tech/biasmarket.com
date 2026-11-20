@@ -651,8 +651,11 @@ export class CustomerAuthService {
       // not just one within the current store.
       const clash = await this.prisma.buyerAccount.findFirst({
         where: {
-          email: dto.email,
           NOT: { id: buyerAccount.id },
+          OR: [
+            { email: { equals: dto.email, mode: "insensitive" } },
+            { pendingEmail: { equals: dto.email, mode: "insensitive" } },
+          ],
         },
       });
       if (clash) throw new ConflictException("Este correo ya está en uso");

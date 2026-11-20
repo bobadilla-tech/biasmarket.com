@@ -349,6 +349,7 @@ export class CustomerAccountService {
         buyerAccount.id,
         secret,
         "change-email",
+        newEmail,
       );
       const url = this.confirmUrl(store.slug, token);
 
@@ -471,11 +472,15 @@ export class CustomerAccountService {
         where: { id: buyerAccount.id },
         data: { emailVerified: true },
       });
-    } else if (
-      verified.purpose === "change-email" &&
-      buyerAccount.pendingEmail
-    ) {
+    } else if (verified.purpose === "change-email") {
       const pendingEmail = buyerAccount.pendingEmail;
+      if (
+        !pendingEmail ||
+        !verifyCustomerAccountToken(token, secret, pendingEmail)
+      ) {
+        throw new BadRequestException("Enlace inválido o expirado");
+      }
+
       const updated = await this.prisma.buyerAccount.updateMany({
         where: {
           id: buyerAccount.id,

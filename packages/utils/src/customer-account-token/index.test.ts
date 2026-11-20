@@ -25,12 +25,43 @@ describe("customer account token", () => {
       "change-email",
       "change-phone",
     ] as const) {
-      const token = createCustomerAccountToken("buyer-1", secret, purpose);
+      const token = createCustomerAccountToken(
+        "buyer-1",
+        secret,
+        purpose,
+        purpose === "change-email" ? "new@example.com" : undefined,
+      );
       expect(verifyCustomerAccountToken(token, secret)).toEqual({
         buyerAccountId: "buyer-1",
         purpose,
       });
     }
+  });
+
+  it("binds a change-email token to the exact target address", () => {
+    const token = createCustomerAccountToken(
+      "buyer-1",
+      secret,
+      "change-email",
+      "New@Example.com",
+    );
+
+    expect(
+      verifyCustomerAccountToken(token, secret, "New@Example.com"),
+    ).toEqual({ buyerAccountId: "buyer-1", purpose: "change-email" });
+    expect(
+      verifyCustomerAccountToken(token, secret, "new@example.com"),
+    ).toBeNull();
+    expect(verifyCustomerAccountToken(token, secret)).toEqual({
+      buyerAccountId: "buyer-1",
+      purpose: "change-email",
+    });
+  });
+
+  it("requires a target address when creating a change-email token", () => {
+    expect(() =>
+      createCustomerAccountToken("buyer-1", secret, "change-email"),
+    ).toThrow("A target email is required for change-email tokens");
   });
 
   it("rejects a token signed with a different secret", () => {
