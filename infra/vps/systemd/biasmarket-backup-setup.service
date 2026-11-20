@@ -5,4 +5,4 @@ After=local-fs.target
 [Service]
 Type=oneshot
 User=root
-ExecStart=/home/deploy/biasmarket/bin/backup-setup.sh
+ExecStart=/usr/local/sbin/biasmarket-backup-setup

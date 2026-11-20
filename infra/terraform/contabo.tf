@@ -39,6 +39,12 @@ locals {
     host_public_key            = trimspace(tls_private_key.host.public_key_openssh)
     deploy_rsync_public_key    = trimspace(tls_private_key.deploy_rsync.public_key_openssh)
     deploy_dispatch_public_key = trimspace(tls_private_key.deploy_dispatch.public_key_openssh)
+    backup_setup_script        = file("${path.module}/../vps/bin/backup-setup.sh")
+    backup_config_unit         = file("${path.module}/../vps/systemd/biasmarket-backup-config.service")
+    backup_service_unit        = file("${path.module}/../vps/systemd/biasmarket-backup.service")
+    backup_timer_unit          = file("${path.module}/../vps/systemd/biasmarket-backup.timer")
+    backup_setup_path_unit     = file("${path.module}/../vps/systemd/biasmarket-backup-setup.path")
+    backup_setup_service_unit  = file("${path.module}/../vps/systemd/biasmarket-backup-setup.service")
   })
 }
 

@@ -8,11 +8,14 @@ currently has only the short-lived pre-migration Postgres dumps described in
 objects remain on the VPS.
 
 The PR adds a oneshot backup service, version-aware MinIO exporter, Restic
-snapshot metadata checks, a daily timer, and config watcher. Successful deploys
-install the systemd units and enable the timer only after `backup.env` passes
+snapshot metadata checks, a daily timer, and config watcher. Cloud-init installs
+the helper and systemd units as root-owned files outside the rsync-writable app
+tree. Successful deploys enable the timer only after `backup.env` passes
 preflight; the watcher retries when Infisical later creates or changes that
-file. This PR does not initialize a production Restic repository, enable MinIO
-versioning in production, or provision backup credentials.
+file. A persistent opt-out marker prevents deploys and config changes from
+re-enabling scheduled captures. This PR does not initialize a production Restic
+repository, enable MinIO versioning in production, or provision backup
+credentials.
 
 ## Proposed policy
 

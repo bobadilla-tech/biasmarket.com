@@ -211,13 +211,17 @@ as the api (it reads the same `SENTRY_DSN`).
 The backup policy, manual oneshot service, and production blockers are in
 [backup-plan.md](backup-plan.md). No scheduled off-box backup is active yet.
 `biasmarket-backup-config.service` only validates the runtime environment;
-`biasmarket-backup.service` performs one capture. After normal provisioning,
-successful deploys install the units and config watcher. A valid root-owned
+`biasmarket-backup.service` performs one capture. Cloud-init installs the
+root-owned units and config watcher; successful deploys invoke the setup helper.
+A valid root-owned
 `env/backup.env` automatically enables the daily timer; missing or invalid
 config leaves the timer disabled and reports the failure in deploy output and
-the setup service journal. The watcher retries when Infisical creates or
-updates the file. The preflight checks environment shape only; it does not
-verify remote connectivity, source bucket versioning, or restore readiness.
+the setup service journal. Cloud-init installs the root-owned setup helper and
+systemd units outside the rsync-writable application tree. The watcher uses
+`PathChanged` on `env/backup.env`, so it retries after a later config change
+without repeatedly activating because the file exists. The preflight checks
+environment shape only; it does not verify remote connectivity, source bucket
+versioning, or restore readiness.
 Provision the valid production config only after those prerequisites and the
 disposable restore rehearsal are complete.
 
@@ -230,16 +234,28 @@ sudo systemctl start biasmarket-backup.service
 sudo journalctl -u biasmarket-backup.service --since "10 min ago"
 ```
 
-The timer is enabled by the deployment setup helper after config preflight;
-inspect it with:
+The timer is enabled by the root-owned deployment setup helper after config
+preflight; inspect it with:
 
 ```bash
 sudo systemctl list-timers biasmarket-backup.timer
 sudo systemctl status biasmarket-backup-setup.path
 ```
 
-To stop scheduled captures, run
-`sudo systemctl disable --now biasmarket-backup.timer`.
+To keep deployments and config changes from re-enabling scheduled captures,
+create the persistent opt-out marker and disable the timer:
+
+```bash
+sudo install -o root -g root -m 0600 /dev/null /etc/biasmarket-backup-disabled
+sudo systemctl disable --now biasmarket-backup.timer
+```
+
+To remove the opt-out and run config preflight again:
+
+```bash
+sudo rm /etc/biasmarket-backup-disabled
+sudo /usr/local/sbin/biasmarket-backup-setup
+```
 
 ### Pre-migration dumps
 

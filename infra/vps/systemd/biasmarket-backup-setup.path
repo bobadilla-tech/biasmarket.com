@@ -2,8 +2,7 @@
 Description=Watch for provisioned Bias Market backup configuration
 
 [Path]
-PathExists=/home/deploy/biasmarket/env/backup.env
-PathChanged=/home/deploy/biasmarket/env
+PathChanged=/home/deploy/biasmarket/env/backup.env
 Unit=biasmarket-backup-setup.service
 
 [Install]

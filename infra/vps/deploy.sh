@@ -84,18 +84,14 @@ phase() {
   PHASE_STARTED_AT="$now"
 }
 
-# Once normal provisioning installs the narrow sudoers rule, each successful
-# sync/deploy refreshes backup systemd units and activates the timer only if
-# the root-owned runtime config passes its preflight. The path unit installed
-# by this helper retries when Infisical later creates or changes backup.env.
+# Cloud-init installs the root-owned helper and systemd units outside the
+# synced tree. Each successful deploy invokes that fixed helper to activate the
+# timer only if the runtime config passes preflight. Its path unit retries when
+# Infisical later creates or changes backup.env.
 # A missing/invalid backup config is visible in deploy output and systemd's
 # journal, but cannot turn an otherwise successful application cutover red.
 activate_backup_schedule() {
-  if [[ ! -x "$ROOT_DIR/bin/backup-setup.sh" ]]; then
-    log_warn "Backup setup helper is missing; no backup units were installed."
-    return 0
-  fi
-  if ! sudo -n "$ROOT_DIR/bin/backup-setup.sh"; then
+  if ! sudo -n /usr/local/sbin/biasmarket-backup-setup; then
     log_warn "Backup config is missing or invalid, or backup unit activation failed; inspect biasmarket-backup-setup.service before relying on scheduled backups."
   fi
   return 0

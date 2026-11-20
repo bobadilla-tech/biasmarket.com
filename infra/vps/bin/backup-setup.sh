@@ -1,28 +1,24 @@
 #!/usr/bin/env bash
-# Install backup units, watch for Infisical config, and enable the daily timer
-# only after the runtime preflight succeeds. Invoked by deploy.sh through the
-# narrow sudoers rule and by systemd when backup.env is created or changed.
+# Watch for Infisical config and enable the daily timer only after the runtime
+# preflight succeeds. This copy is installed root-owned by cloud-init, outside
+# the synced application tree.
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-UNIT_DIR=/etc/systemd/system
-ENV_FILE="$ROOT_DIR/env/backup.env"
+ENV_FILE=/home/deploy/biasmarket/env/backup.env
+OPT_OUT_FILE=/etc/biasmarket-backup-disabled
 
 if [[ "$(id -u)" -ne 0 ]]; then
   echo "backup-setup.sh must run as root" >&2
   exit 1
 fi
 
-for unit in \
-  biasmarket-backup-config.service \
-  biasmarket-backup.service \
-  biasmarket-backup.timer \
-  biasmarket-backup-setup.path \
-  biasmarket-backup-setup.service; do
-  install -o root -g root -m 0644 "$ROOT_DIR/systemd/$unit" "$UNIT_DIR/$unit"
-done
-systemctl daemon-reload
 systemctl enable --now biasmarket-backup-setup.path
+
+if [[ -e "$OPT_OUT_FILE" ]]; then
+  systemctl disable --now biasmarket-backup.timer >/dev/null 2>&1 || true
+  echo "scheduled backups remain disabled by $OPT_OUT_FILE"
+  exit 0
+fi
 
 if [[ ! -f "$ENV_FILE" ]]; then
   systemctl disable --now biasmarket-backup.timer >/dev/null 2>&1 || true
