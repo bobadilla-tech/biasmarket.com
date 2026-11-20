@@ -140,8 +140,8 @@
     }
   },
   "legal": {
-    "updated": "Última actualización: 20 de octubre de 2026",
     "privacy": {
+      "updated": "Última actualización: 20 de noviembre de 2026",
       "meta": {
         "title": "Política de Privacidad — Bias Market",
         "description": "Cómo Bias Market recopila, usa y protege tus datos personales."
@@ -161,6 +161,7 @@
             "Información del inicio de sesión con Google: si eliges \"Continuar con Google\", Google nos comparte tu nombre, correo, estado de verificación del correo, foto de perfil e identificador de cuenta de Google. Ver \"Datos de usuario de Google\" más abajo.",
             "Información de tiendas y pedidos: para vendedores, datos de la tienda, productos, precios e imágenes; para compradores, nombre, correo, teléfono, datos de entrega o retiro e historial de pedidos.",
             "Comprobantes de pago: imágenes o recibos que los compradores suben para acreditar un pago manual, visibles para el vendedor de ese pedido y para nosotros por soporte y prevención de fraude.",
+            "Token de notificaciones móviles: si permites las notificaciones mientras tienes la sesión iniciada, la app envía a nuestra API un token de Expo y la plataforma del dispositivo. Lo vinculamos a tu cuenta de comprador para enviarte una notificación cuando la tienda revise tu comprobante de pago.",
             "Mensajes: información que envías por formularios de contacto o correo de soporte.",
             "Información técnica: dirección IP, tipo de navegador y dispositivo, páginas solicitadas y fechas en los registros del servidor, y cookies esenciales para mantener tu sesión."
           ]
@@ -248,6 +249,7 @@
       ]
     },
     "terms": {
+      "updated": "Última actualización: 20 de octubre de 2026",
       "meta": {
         "title": "Términos del Servicio — Bias Market",
         "description": "Los términos que rigen el uso de Bias Market."
