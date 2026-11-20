@@ -275,6 +275,25 @@ not sampled.** The browser reports errors only (browser tracing is not enabled).
 To change a rate, edit the sampler and its tests; to reduce storage, lower
 `DEFAULT_TRACE_RATE` before dropping retention.
 
+### Known web error filters
+
+The web server drops Sentry error events whose message or exception value
+contains `The destination stream closed early.` This is the aborted React
+Server Component prefetch reported in
+[#534](https://github.com/bobadilla-tech/biasmarket.com/issues/534). The
+browser drops an error when any exception stack frame's `filename`,
+`abs_path` or `function` contains `<obscura:bootstrap>`, which identifies the
+headless crawler noise described in the same issue. Both filters run before the
+shared event scrubber and have unit tests in
+`apps/web/lib/sentry-noise.test.ts` proving matching events are dropped and
+ordinary events are retained.
+
+The `Invariant: Expected RSC response` scanner events are not filtered by the
+SDK. The proposed Caddy block is tracked separately in
+[#533](https://github.com/bobadilla-tech/biasmarket.com/issues/533). Existing
+GlitchTip issues from the old scrubber failure also require separate cleanup;
+this filter does not resolve stored issues.
+
 ## What must never be logged
 
 An assisted-order link carries a secret token in its path
