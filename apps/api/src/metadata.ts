@@ -1639,6 +1639,10 @@ export default async () => {
               },
               accessUrl: { required: true, type: () => String },
               previousOrders: { required: true, type: () => Number },
+              isPaymentMethodConfigured: {
+                required: true,
+                type: () => Boolean,
+              },
             },
             AssistedOrderLinkResponseDto: {
               order: {
