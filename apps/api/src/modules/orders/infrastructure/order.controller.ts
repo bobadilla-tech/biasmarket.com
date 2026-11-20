@@ -428,6 +428,27 @@ export class OrderController {
     private notifications: NotificationsService,
   ) {}
 
+  private async toOrderDetailWithDuplicateFlags(
+    row: OrderRow,
+  ): Promise<OrderDetailResponseDto> {
+    const possibleDuplicatePaymentIds =
+      await this.payments.findPossibleDuplicatePendingProofIds(
+        row.storeId,
+        row.payments
+          .filter(
+            (payment) =>
+              payment.source === "BUYER_SUBMITTED" &&
+              payment.reviewStatus === "PENDING_REVIEW",
+          )
+          .map(({ id, orderId, operationCode }) => ({
+            id,
+            orderId,
+            operationCode,
+          })),
+      );
+    return toOrderDetailDto(row, possibleDuplicatePaymentIds);
+  }
+
   @ApiQuery({ name: "paymentStatus", required: false, type: String })
   @ApiQuery({ name: "fulfillmentStatus", required: false, type: String })
   @Get()
@@ -471,22 +492,7 @@ export class OrderController {
   ): Promise<OrderDetailResponseDto> {
     await this.orders.assertOwnership(storeId, session.user.id);
     const row = await this.orders.findRowByIdForStore(orderId, storeId);
-    const possibleDuplicatePaymentIds =
-      await this.payments.findPossibleDuplicatePendingProofIds(
-        storeId,
-        row.payments
-          .filter(
-            (payment) =>
-              payment.source === "BUYER_SUBMITTED" &&
-              payment.reviewStatus === "PENDING_REVIEW",
-          )
-          .map(({ id, orderId, operationCode }) => ({
-            id,
-            orderId,
-            operationCode,
-          })),
-      );
-    return toOrderDetailDto(row, possibleDuplicatePaymentIds);
+    return this.toOrderDetailWithDuplicateFlags(row);
   }
 
   // Other orders of the same buyer phone in this store. Ownership first, then
@@ -609,7 +615,7 @@ export class OrderController {
       }
     });
 
-    return toOrderDetailDto(
+    return this.toOrderDetailWithDuplicateFlags(
       await this.orders.findRowByIdForStore(orderId, storeId),
     );
   }
@@ -673,7 +679,7 @@ export class OrderController {
       throw error;
     }
 
-    return toOrderDetailDto(
+    return this.toOrderDetailWithDuplicateFlags(
       await this.orders.findRowByIdForStore(orderId, storeId),
     );
   }
@@ -931,7 +937,7 @@ export class OrderController {
     }
 
     const updated = await this.orders.findRowByIdForStore(orderId, storeId);
-    return toOrderDetailDto(updated);
+    return this.toOrderDetailWithDuplicateFlags(updated);
   }
 
   // Approve/reject a single buyer-submitted proof-of-payment row (`source:
@@ -1176,7 +1182,7 @@ export class OrderController {
     }
 
     const updated = await this.orders.findRowByIdForStore(orderId, storeId);
-    return toOrderDetailDto(updated);
+    return this.toOrderDetailWithDuplicateFlags(updated);
   }
 
   @Patch(":orderId/payments/:paymentId/void")
@@ -1194,7 +1200,7 @@ export class OrderController {
       session.user.id,
       dto.reason,
     );
-    return toOrderDetailDto(
+    return this.toOrderDetailWithDuplicateFlags(
       await this.orders.findRowByIdForStore(orderId, storeId),
     );
   }

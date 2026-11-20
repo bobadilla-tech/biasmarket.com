@@ -790,6 +790,9 @@ describe("OrderController.getPaymentImage", () => {
           provide: OrderPaymentsService,
           useValue: {
             findDuplicateOperationCode: vi.fn().mockResolvedValue(null),
+            findPossibleDuplicatePendingProofIds: vi
+              .fn()
+              .mockResolvedValue(new Set()),
           },
         },
         { provide: PrismaService, useValue: {} },
@@ -969,6 +972,9 @@ describe("OrderController.shipping", () => {
           provide: OrderPaymentsService,
           useValue: {
             findDuplicateOperationCode: vi.fn().mockResolvedValue(null),
+            findPossibleDuplicatePendingProofIds: vi
+              .fn()
+              .mockResolvedValue(new Set()),
           },
         },
       ],
@@ -1275,6 +1281,9 @@ describe("OrderController.reviewPaymentProof", () => {
           provide: OrderPaymentsService,
           useValue: {
             findDuplicateOperationCode: vi.fn().mockResolvedValue(null),
+            findPossibleDuplicatePendingProofIds: vi
+              .fn()
+              .mockResolvedValue(new Set()),
           },
         },
         { provide: PrismaService, useValue: prisma },

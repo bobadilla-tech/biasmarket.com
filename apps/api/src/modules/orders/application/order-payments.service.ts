@@ -246,9 +246,10 @@ export class OrderPaymentsService {
     if (normalizedCodes.length === 0) return new Set();
 
     const existing = await this.prisma.$queryRaw<
-      Array<{ normalizedCode: string }>
+      Array<{ paymentId: string; normalizedCode: string }>
     >`
       SELECT DISTINCT
+        p."id" AS "paymentId",
         upper(regexp_replace(p."operationCode", '[^A-Za-z0-9]', '', 'g')) AS "normalizedCode"
       FROM "OrderPayment" p
       JOIN "Order" o ON o."id" = p."orderId"
@@ -259,14 +260,15 @@ export class OrderPaymentsService {
         AND p."reviewStatus" NOT IN ('REJECTED', 'PENDING_REVIEW')
         AND upper(regexp_replace(p."operationCode", '[^A-Za-z0-9]', '', 'g')) IN (${Prisma.join(normalizedCodes)})
     `;
-    const existingCodes = new Set(
-      existing.map(({ normalizedCode }) => normalizedCode),
-    );
     return new Set(
       candidates
-        .filter(({ operationCode }) => {
+        .filter(({ id, operationCode }) => {
           if (!operationCode) return false;
-          return existingCodes.has(normalizeOperationCode(operationCode));
+          const normalizedCode = normalizeOperationCode(operationCode);
+          return existing.some(
+            ({ paymentId, normalizedCode: existingCode }) =>
+              paymentId !== id && existingCode === normalizedCode,
+          );
         })
         .map(({ id }) => id),
     );

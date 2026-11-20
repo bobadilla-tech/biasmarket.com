@@ -256,17 +256,18 @@ describe("OrderPaymentsService.findPossibleDuplicatePendingProofIds", () => {
   it("flags only candidates matching an existing recorded or approved code", async () => {
     const queryRaw: Mock = vi
       .fn()
-      .mockResolvedValue([{ normalizedCode: "OP12" }]);
+      .mockResolvedValue([{ paymentId: "proof-1", normalizedCode: "OP12" }]);
     const result = await service(queryRaw).findPossibleDuplicatePendingProofIds(
       "store-1",
       [
         { id: "proof-1", orderId: "order-1", operationCode: " op-12 " },
-        { id: "proof-2", orderId: "order-2", operationCode: "OTHER" },
+        { id: "proof-2", orderId: "order-2", operationCode: "OP12" },
         { id: "proof-3", orderId: "order-3", operationCode: null },
+        { id: "proof-4", orderId: "order-4", operationCode: "OTHER" },
       ],
     );
 
-    expect(result).toEqual(new Set(["proof-1"]));
+    expect(result).toEqual(new Set(["proof-2"]));
     const [strings, ...params] = queryRaw.mock.calls[0]!;
     const sql = (strings as string[]).join("?");
     expect(sql).toContain('o."storeId" =');
