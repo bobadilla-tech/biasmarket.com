@@ -279,23 +279,6 @@ export class AssistedOrderIdentityRetentionUseCase {
     const erasedAt = new Date();
     const erase = async (tx: Prisma.TransactionClient): Promise<boolean> => {
       if (!(await lockBuyerOrderRow(tx, order.id))) return false;
-      const lockedOrder = await tx.order.findFirst({
-        where: { id: order.id, storeId: order.storeId },
-        select: {
-          buyerAccountId: true,
-          claimedAt: true,
-          status: true,
-          fulfillmentStatus: true,
-        },
-      });
-      if (
-        !lockedOrder ||
-        lockedOrder.buyerAccountId !== order.buyerAccountId ||
-        lockedOrder.claimedAt?.getTime() !== order.claimedAt?.getTime() ||
-        lockedOrder.status !== order.status ||
-        lockedOrder.fulfillmentStatus !== order.fulfillmentStatus
-      )
-        return false;
       const payments = await tx.orderPayment.findMany({
         where: { orderId: order.id, storeId: order.storeId },
         select: { imageUrl: true },
