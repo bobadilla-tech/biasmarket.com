@@ -6,6 +6,7 @@ from __future__ import annotations
 import getpass
 import json
 import os
+import stat
 import sys
 from pathlib import Path
 
@@ -45,8 +46,8 @@ def main() -> int:
 
     try:
         config_dir = DEFAULT_CONFIG.parent
-        config_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
-        os.chmod(config_dir, 0o700)
+        config_dir.mkdir(mode=stat.S_IRWXU, parents=True, exist_ok=True)
+        os.chmod(config_dir, stat.S_IRWXU)
         with file_lock(Path("/run/lock/biasmarket-infisical-sync.lock")):
             candidate = config_dir / ".infisical.json.candidate"
             atomic_write(candidate, (json.dumps(config, indent=2) + "\n").encode(), 0o600)
@@ -71,8 +72,8 @@ def main() -> int:
             atomic_write(target, source.read_bytes(), 0o644)
         import subprocess
 
-        subprocess.run(["systemctl", "daemon-reload"], check=True)
-        subprocess.run(["systemctl", "enable", "--now", "biasmarket-infisical-sync.timer"], check=True)
+        subprocess.run(["/usr/bin/systemctl", "daemon-reload"], check=True)
+        subprocess.run(["/usr/bin/systemctl", "enable", "--now", "biasmarket-infisical-sync.timer"], check=True)
     except Exception as exc:
         print(f"Infisical bootstrap failed ({type(exc).__name__}); existing cached env files were retained when validation or sync failed.", file=sys.stderr)
         return 1

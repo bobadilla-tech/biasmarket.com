@@ -27,6 +27,8 @@ from typing import Iterator
 DEFAULT_CONFIG = Path("/etc/biasmarket/infisical.json")
 CLI_VERSION = "0.45.13"
 KEY_PATTERN = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)=(.*)$")
+SCOPE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
+SECRET_PATH_PATTERN = re.compile(r"^/(?:[A-Za-z0-9._ -]+(?:/[A-Za-z0-9._ -]+)*)?$")
 REQUIRED_SHARED_KEYS = {
     "POSTGRES_PASSWORD",
     "DATABASE_URL",
@@ -118,24 +120,28 @@ def load_config(path: Path) -> dict[str, str]:
     parsed_domain = urllib.parse.urlsplit(config["domain"])
     if parsed_domain.scheme != "https" or not parsed_domain.hostname or parsed_domain.username or parsed_domain.password or parsed_domain.query or parsed_domain.fragment:
         raise SyncError("production Infisical domain must use HTTPS")
+    if not SCOPE_ID_PATTERN.fullmatch(config["project_id"]) or not SCOPE_ID_PATTERN.fullmatch(config["environment"]):
+        raise SyncError("Infisical project ID and environment must use letters, numbers, underscores, or hyphens")
+    for key in ("shared_path", "watchdog_path"):
+        if not SECRET_PATH_PATTERN.fullmatch(config[key]) or ".." in config[key].split("/"):
+            raise SyncError("Infisical secret paths contain unsupported characters")
     if config["cli_version"] != CLI_VERSION:
         raise SyncError(f"configuration requests an unsupported Infisical CLI version; expected {CLI_VERSION}")
     return config
 
 
-def verify_cli(expected_version: str) -> str:
-    cli = shutil.which("infisical")
-    if not cli:
+def verify_cli(expected_version: str) -> None:
+    cli = "/usr/bin/infisical"
+    if not os.path.isfile(cli) or not os.access(cli, os.X_OK):
         raise SyncError("Infisical CLI is not installed")
     try:
-        result = subprocess.run([cli, "--version"], capture_output=True, text=True, check=False, timeout=30)
+        result = subprocess.run(["/usr/bin/infisical", "--version"], capture_output=True, text=True, check=False, timeout=30)
     except subprocess.TimeoutExpired as exc:
         raise SyncError("Infisical CLI version check timed out") from exc
     output = f"{result.stdout}\n{result.stderr}".strip()
     version_pattern = re.compile(rf"(?<![0-9.])v?{re.escape(expected_version)}(?![0-9.])")
     if result.returncode != 0 or not version_pattern.search(output):
         raise SyncError(f"Infisical CLI version must be {expected_version}")
-    return cli
 
 
 def login(config: dict[str, str]) -> str:
@@ -166,7 +172,6 @@ def login(config: dict[str, str]) -> str:
 
 
 def export_env(
-    cli: str,
     config: dict[str, str],
     token: str,
     path: str,
@@ -184,7 +189,7 @@ def export_env(
     try:
         result = subprocess.run(
             [
-                cli,
+                "/usr/bin/infisical",
                 "export",
                 f"--env={config['environment']}",
                 f"--projectId={config['project_id']}",
@@ -246,7 +251,7 @@ def atomic_write(path: Path, content: bytes, mode: int, group_id: int | None = N
 
 def sync_once(root: Path, config_path: Path, check_only: bool = False, lock: bool = True) -> None:
     config = load_config(config_path)
-    cli = verify_cli(config["cli_version"])
+    verify_cli(config["cli_version"])
     env_dir = root / "env"
     state_dir = root / "state"
     shared_example = env_dir / "shared.env.example"
@@ -260,12 +265,12 @@ def sync_once(root: Path, config_path: Path, check_only: bool = False, lock: boo
         token = login(config)
         env_dir.mkdir(parents=True, exist_ok=True)
         stage_dir = Path(tempfile.mkdtemp(prefix=".infisical-sync-", dir=env_dir))
-        os.chmod(stage_dir, 0o700)
+        os.chmod(stage_dir, stat.S_IRWXU)
         try:
             shared_output = stage_dir / "shared.env"
             watchdog_output = stage_dir / "watchdog.env"
-            export_env(cli, config, token, config["shared_path"], shared_output)
-            export_env(cli, config, token, config["watchdog_path"], watchdog_output)
+            export_env(config, token, config["shared_path"], shared_output)
+            export_env(config, token, config["watchdog_path"], watchdog_output)
             validate_export(shared_output, shared_example, REQUIRED_SHARED_KEYS)
             validate_export(
                 watchdog_output,
