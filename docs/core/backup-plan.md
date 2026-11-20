@@ -16,7 +16,14 @@ objects remain on the VPS.
   bucket policies when restoring MinIO.
 - **Format:** use `pg_dump` custom format for scheduled Postgres recovery
   points; keep the existing plain-SQL pre-migration dump unchanged. Back up
-  MinIO at the object level, not by copying the live Docker volume. A restic
+  MinIO at the object level, not by copying the live Docker volume. A plain
+  live `mc mirror` is not sufficient for a consistent recovery point: it
+  copies current objects, not their version history. The app uploads an object
+  before committing its database reference, and some delete paths update the
+  database before deleting the object. The source buckets currently have no
+  versioning. The implementation must preserve object versions across the
+  database snapshot boundary or quiesce writes while capturing both stores.
+  A restic
   repository on an S3-compatible service is the preferred implementation
   candidate: it supports [S3-compatible endpoints](https://restic.readthedocs.io/en/stable/030_preparing_a_new_repo.html#s3-compatible-storage),
   encrypts data on the client, and can retain snapshots with a
@@ -84,17 +91,28 @@ items still block a production-capable change:
 1. Select the actual off-box provider/account, bucket, endpoint, region, and
    access policy. Confirm it is independent of the VPS failure domain and
    approve its cost and object lifecycle/versioning behavior.
-2. Select and verify runtime secret delivery. The current VPS stores runtime
-   environment files locally; Infisical is not wired into systemd or Compose.
-   Decide whether to add that integration or use a reviewed, root-readable
-   environment file that is created manually and never synced.
-3. Define how MinIO data is staged without exhausting the VPS disk or leaving
+2. Resolve the MinIO/Postgres consistency boundary. A candidate is source
+   bucket versioning plus a version-aware object export that preserves the
+   versions needed by the database snapshot; validate upload/delete races and
+   source-version cleanup in the local restore test. The other safe option is
+   to quiesce API writes for the full capture window. Do not use a current-only
+   `mc mirror` as the recovery source. Enabling versioning changes source
+   storage behavior and can grow the MinIO volume, so it needs its own review.
+3. The runtime path is agreed as a root-owned environment file under
+   `/home/deploy/biasmarket/env/`, delivered by Infisical. Consume it with a
+   dedicated systemd `EnvironmentFile`; keep this scoped to backup secrets and
+   do not change `env/shared.env`, Terraform, cloud-init, or the broader
+   Infisical integration tracked by issue #228. The production schedule remains
+   disabled until credentials and the push URL are provisioned.
+4. Define how MinIO data is staged without exhausting the VPS disk or leaving
    plaintext in temporary storage. Current disk capacity and free space were
    not inspected, and no production access was used for this review.
-4. Store and rehearse recovery of the client-side encryption credential outside
+5. Store and rehearse recovery of the client-side encryption credential outside
    the VPS, including who can retrieve it during a server-loss incident.
-5. Choose and test the alert receiver and verify its failure notification.
-6. Confirm the nominal 24-hour RPO is acceptable and set an RTO target for
+6. Verify the Kuma notification receiver and failure alert. The backup heartbeat
+   can use the existing push-monitor pattern, but this repository does not
+   provision the receiver or the backup monitor URL.
+7. Confirm the nominal 24-hour RPO is acceptable and set an RTO target for
    database plus object restoration.
 
 ## Evidence in the current repository
@@ -102,7 +120,15 @@ items still block a production-capable change:
 - `infra/vps/lib/migrate.sh` writes compressed plain-SQL pre-migration dumps to
   `releases/` and prunes them after 14 days by default.
 - `infra/vps/docker-compose.yml` defines the three MinIO buckets and stores
-  their objects only in the `minio_data` named volume.
+  their objects only in the `minio_data` named volume. `minio-init` creates
+  buckets and policies but does not enable bucket versioning.
+- The app's `StorageService` uploads bytes before writing the URL reference;
+  product removal and store deletion update Postgres before best-effort object
+  deletion. A capture that reads Postgres and the unversioned current MinIO
+  objects at different times can therefore restore a missing referenced
+  object. MinIO's [`mc mirror` documentation](https://docs.min.io/aistor/reference/cli/mc-mirror/)
+  says it copies current objects and does not synchronize object version
+  history.
 - `docs/core/provisioning.md` says a VPS reinstall wipes the database, MinIO,
   Kuma data, and local dumps. Its historical backup suggestions do not select
   an implemented destination.
