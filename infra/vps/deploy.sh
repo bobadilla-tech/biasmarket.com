@@ -167,7 +167,7 @@ assert_shared_env_checksum() {
   local expected
   expected="$(cat "$SHARED_ENV_CHECKSUM_FILE")"
   if [[ "$actual" != "$expected" ]]; then
-    die "env/shared.env checksum mismatch (expected $expected, got $actual). It changed since the last recorded baseline. If this is a reviewed, intentional secret rotation, update state/shared_env.sha256 by hand after confirming the new value, then re-run. Refusing to deploy."
+    die "env/shared.env checksum mismatch (expected $expected, got $actual). It changed since the last recorded baseline. If Infisical manages production secrets, inspect the Infisical sync service and its journal; otherwise complete the reviewed manual rotation procedure in docs/core/incident-response.md. Refusing to deploy."
   fi
 }
 

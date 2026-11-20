@@ -8,10 +8,12 @@ known dev issues.
   local env defaults. See [docker-dev.md](docker-dev.md) for the dev workflow
   and [docker.md](docker.md) for how the images are built.
 - `infra/vps/` — the only production Compose file, deploy state machine, Caddy,
-  runtime env templates, and operational scripts. See [deploy.md](deploy.md).
+  runtime env templates, Infisical cache synchronization, and operational
+  scripts. See [deploy.md](deploy.md).
 
 Deploying to production? The VPS is provisioned with Terraform from
-`infra/terraform/` (see [provisioning.md](provisioning.md)). See
+`infra/terraform/` (see [provisioning.md](provisioning.md)); production runtime
+secrets are synced from Infisical into a local last-known-good cache. See
 [deploy.md](deploy.md) and [blue-green-migrations.md](blue-green-migrations.md)
 for deployment, secrets, and verification.
 
