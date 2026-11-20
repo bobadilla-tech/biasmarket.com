@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
+import { Prisma } from "@biasmarket/db";
 import { PrismaService } from "../../../prisma/prisma.service.js";
 import {
   hasForbiddenChars,
@@ -35,6 +36,12 @@ export type ValidSellerPayment = {
   operationCode: string | null;
   paidAt: Date;
   confirmDuplicate: boolean;
+};
+
+export type PendingProofCandidate = {
+  id: string;
+  orderId: string;
+  operationCode: string | null | undefined;
 };
 
 /**
@@ -192,14 +199,12 @@ export class OrderPaymentsService {
    *
    * `storeId` must come from the authenticated store path after
    * `assertOwnership`, never from the body. The query joins `Order` and
-   * filters its `storeId` as well. Voided payments, REJECTED proofs and
-   * PENDING_REVIEW rows of `currentOrderId` itself are not duplicates. A code
-   * that normalizes to '' is skipped.
+   * filters its `storeId` as well. Voided, REJECTED, and unreviewed proofs
+   * are not evidence of a duplicate. A code that normalizes to '' is skipped.
    */
   async findDuplicateOperationCode(
     storeId: string,
     code: string,
-    { currentOrderId }: { currentOrderId: string },
   ): Promise<{ orderId: string } | null> {
     const normalized = normalizeOperationCode(code);
     if (!normalized) return null;
@@ -212,11 +217,60 @@ export class OrderPaymentsService {
         AND p."storeId" = ${storeId}
         AND p."operationCode" IS NOT NULL
         AND p."voidedAt" IS NULL
-        AND p."reviewStatus" <> 'REJECTED'
-        AND NOT (p."orderId" = ${currentOrderId} AND p."reviewStatus" = 'PENDING_REVIEW')
+        AND p."reviewStatus" NOT IN ('REJECTED', 'PENDING_REVIEW')
         AND upper(regexp_replace(p."operationCode", '[^A-Za-z0-9]', '', 'g')) = ${normalized}
       LIMIT 1
     `;
     return matches[0] ? { orderId: matches[0].orderId } : null;
+  }
+
+  /**
+   * Finds pending buyer proofs whose operation code matches a payment that is
+   * already recorded or approved in the same store. Other pending proofs are
+   * intentionally excluded: a buyer can choose an arbitrary code and must not
+   * be able to seed a false warning on another order.
+   */
+  async findPossibleDuplicatePendingProofIds(
+    storeId: string,
+    candidates: readonly PendingProofCandidate[],
+  ): Promise<Set<string>> {
+    const normalizedCodes = [
+      ...new Set(
+        candidates
+          .map(({ operationCode }) =>
+            operationCode ? normalizeOperationCode(operationCode) : "",
+          )
+          .filter(Boolean),
+      ),
+    ];
+    if (normalizedCodes.length === 0) return new Set();
+
+    const existing = await this.prisma.$queryRaw<
+      Array<{ paymentId: string; normalizedCode: string }>
+    >`
+      SELECT DISTINCT
+        p."id" AS "paymentId",
+        upper(regexp_replace(p."operationCode", '[^A-Za-z0-9]', '', 'g')) AS "normalizedCode"
+      FROM "OrderPayment" p
+      JOIN "Order" o ON o."id" = p."orderId"
+      WHERE o."storeId" = ${storeId}
+        AND p."storeId" = ${storeId}
+        AND p."operationCode" IS NOT NULL
+        AND p."voidedAt" IS NULL
+        AND p."reviewStatus" NOT IN ('REJECTED', 'PENDING_REVIEW')
+        AND upper(regexp_replace(p."operationCode", '[^A-Za-z0-9]', '', 'g')) IN (${Prisma.join(normalizedCodes)})
+    `;
+    return new Set(
+      candidates
+        .filter(({ id, operationCode }) => {
+          if (!operationCode) return false;
+          const normalizedCode = normalizeOperationCode(operationCode);
+          return existing.some(
+            ({ paymentId, normalizedCode: existingCode }) =>
+              paymentId !== id && existingCode === normalizedCode,
+          );
+        })
+        .map(({ id }) => id),
+    );
   }
 }

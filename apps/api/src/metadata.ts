@@ -1033,6 +1033,10 @@ export default async () => {
                 type: () => String,
                 nullable: true,
               },
+              isPossibleDuplicateOperationCode: {
+                required: true,
+                type: () => Boolean,
+              },
             },
             OrderResponseDto: {
               id: { required: true, type: () => String },

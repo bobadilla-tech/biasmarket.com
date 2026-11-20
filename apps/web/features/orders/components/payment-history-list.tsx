@@ -164,6 +164,16 @@ export function PaymentHistoryList({
                         t={t}
                       />
                     )}
+                    {payment.source === "BUYER_SUBMITTED" &&
+                      payment.reviewStatus === "PENDING_REVIEW" &&
+                      payment.isPossibleDuplicateOperationCode && (
+                        <span
+                          role="status"
+                          className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700"
+                        >
+                          {t("proofReview.possibleDuplicateOperationCode")}
+                        </span>
+                      )}
                   </span>
                   <span className="text-[11px] font-medium text-[#8f7da8]">
                     {formatOrderDate(

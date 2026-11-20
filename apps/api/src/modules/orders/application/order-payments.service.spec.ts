@@ -208,9 +208,7 @@ describe("OrderPaymentsService.findDuplicateOperationCode", () => {
   it("queries with an ASCII-only comparison scoped by store through the order", async () => {
     const queryRaw: Mock = vi.fn().mockResolvedValue([{ orderId: "order-9" }]);
     await expect(
-      service(queryRaw).findDuplicateOperationCode("store-1", " op-12 cd ", {
-        currentOrderId: "order-1",
-      }),
+      service(queryRaw).findDuplicateOperationCode("store-1", " op-12 cd "),
     ).resolves.toEqual({ orderId: "order-9" });
 
     const [strings, ...params] = queryRaw.mock.calls[0]!;
@@ -219,10 +217,8 @@ describe("OrderPaymentsService.findDuplicateOperationCode", () => {
     expect(sql).not.toContain("[[:alnum:]]");
     expect(sql).toContain('o."storeId" =');
     expect(sql).toContain('p."voidedAt" IS NULL');
-    expect(sql).toContain(`<> 'REJECTED'`);
-    expect(sql).toContain("'PENDING_REVIEW'");
+    expect(sql).toContain("NOT IN ('REJECTED', 'PENDING_REVIEW')");
     expect(params).toContain("store-1");
-    expect(params).toContain("order-1");
     expect(params).toContain("OP12CD");
   });
 
@@ -233,7 +229,6 @@ describe("OrderPaymentsService.findDuplicateOperationCode", () => {
     const found = await service(queryRaw).findDuplicateOperationCode(
       "s",
       "abc",
-      { currentOrderId: "o" },
     );
     expect(Object.keys(found!)).toEqual(["orderId"]);
   });
@@ -241,19 +236,56 @@ describe("OrderPaymentsService.findDuplicateOperationCode", () => {
   it("returns null when nothing matches", async () => {
     const queryRaw: Mock = vi.fn().mockResolvedValue([]);
     await expect(
-      service(queryRaw).findDuplicateOperationCode("s", "abc", {
-        currentOrderId: "o",
-      }),
+      service(queryRaw).findDuplicateOperationCode("s", "abc"),
     ).resolves.toBeNull();
   });
 
   it.each(["  ", "---", "ÁÉ"])("skips %j without querying", async (code) => {
     const queryRaw: Mock = vi.fn();
     await expect(
-      service(queryRaw).findDuplicateOperationCode("s", code, {
-        currentOrderId: "o",
-      }),
+      service(queryRaw).findDuplicateOperationCode("s", code),
     ).resolves.toBeNull();
+    expect(queryRaw).not.toHaveBeenCalled();
+  });
+});
+
+describe("OrderPaymentsService.findPossibleDuplicatePendingProofIds", () => {
+  const service = (queryRaw: Mock) =>
+    new OrderPaymentsService({ $queryRaw: queryRaw } as never as PrismaService);
+
+  it("flags only candidates matching an existing recorded or approved code", async () => {
+    const queryRaw: Mock = vi
+      .fn()
+      .mockResolvedValue([{ paymentId: "proof-1", normalizedCode: "OP12" }]);
+    const result = await service(queryRaw).findPossibleDuplicatePendingProofIds(
+      "store-1",
+      [
+        { id: "proof-1", orderId: "order-1", operationCode: " op-12 " },
+        { id: "proof-2", orderId: "order-2", operationCode: "OP12" },
+        { id: "proof-3", orderId: "order-3", operationCode: null },
+        { id: "proof-4", orderId: "order-4", operationCode: "OTHER" },
+      ],
+    );
+
+    expect(result).toEqual(new Set(["proof-2"]));
+    const [strings, ...params] = queryRaw.mock.calls[0]!;
+    const sql = (strings as string[]).join("?");
+    expect(sql).toContain('o."storeId" =');
+    expect(sql).toContain('p."storeId" =');
+    expect(sql).toContain("NOT IN ('REJECTED', 'PENDING_REVIEW')");
+    expect(params).toContain("store-1");
+    expect(JSON.stringify(params)).toContain("OP12");
+    expect(JSON.stringify(params)).toContain("OTHER");
+  });
+
+  it("does not query when there are no usable operation codes", async () => {
+    const queryRaw: Mock = vi.fn();
+    await expect(
+      service(queryRaw).findPossibleDuplicatePendingProofIds("store-1", [
+        { id: "proof-1", orderId: "order-1", operationCode: null },
+        { id: "proof-2", orderId: "order-2", operationCode: "---" },
+      ]),
+    ).resolves.toEqual(new Set());
     expect(queryRaw).not.toHaveBeenCalled();
   });
 });

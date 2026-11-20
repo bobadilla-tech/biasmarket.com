@@ -67,7 +67,7 @@ export class CustomersController {
         ...result.customer,
         createdAt: result.customer.createdAt.toISOString(),
       },
-      orders: result.orders.map(toOrderDto),
+      orders: result.orders.map((order) => toOrderDto(order)),
     };
   }
 }
