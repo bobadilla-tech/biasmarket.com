@@ -41,7 +41,7 @@ export type ValidSellerPayment = {
 export type PendingProofCandidate = {
   id: string;
   orderId: string;
-  operationCode: string | null;
+  operationCode: string | null | undefined;
 };
 
 /**
