@@ -451,6 +451,15 @@ jobs:
             turbo-mobile-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}
             turbo-mobile-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
+      - name: Build mobile workspace dependencies
+        run: pnpm turbo run build --filter=mobile...
+
+      - name: Export Android bundle
+        run: pnpm --filter mobile exec expo export --platform android --dev false --output-dir /tmp/mobile-export-smoke
+        env:
+          CI: "true"
+          EXPO_NO_TELEMETRY: "1"
+
       - name: Lint
         run: pnpm turbo run lint --filter=mobile
 
