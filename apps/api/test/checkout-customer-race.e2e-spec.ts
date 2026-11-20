@@ -4,6 +4,10 @@ import request from "supertest";
 import { randomInt, randomUUID } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import { PrismaService } from "../src/prisma/prisma.service.js";
+import { CustomerAuthService } from "../src/modules/customer-auth/customer-auth.service.js";
+import { AddressesService } from "../src/modules/addresses/addresses.service.js";
+import { hashPassword } from "better-auth/crypto";
+import { createCustomerSessionToken } from "@biasmarket/utils/customer-account-token";
 import { AppModule } from "./../src/app.module.js";
 import {
   deleteOrders,
@@ -19,6 +23,8 @@ import {
 describe("checkout customer race (e2e)", () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let customerAuth: CustomerAuthService;
+  let addresses: AddressesService;
   const runId = `${Date.now()}-${randomUUID().slice(0, 8)}`;
   const password = "correcthorsebatterystaple";
   const userIds: string[] = [];
@@ -104,6 +110,8 @@ describe("checkout customer race (e2e)", () => {
     );
     await app.init();
     prisma = moduleFixture.get(PrismaService);
+    customerAuth = moduleFixture.get(CustomerAuthService);
+    addresses = moduleFixture.get(AddressesService);
 
     sellerCookie = await signUp("race");
     storeSlug = `race-${runId}`;
@@ -255,4 +263,104 @@ describe("checkout customer race (e2e)", () => {
       });
     }
   }, 60_000);
+
+  it("serializes phone attachment against account deletion", async () => {
+    const phone = newPhone();
+    const email = `race-phone-less-${runId}@example.com`;
+    const account = await prisma.buyerAccount.create({
+      data: { email, emailVerified: true, googleSub: `race-sub-${runId}` },
+    });
+    const secret = process.env.CUSTOMER_ACCOUNT_TOKEN_SECRET;
+    if (!secret) throw new Error("CUSTOMER_ACCOUNT_TOKEN_SECRET is required");
+    const token = createCustomerSessionToken(
+      account.id,
+      account.passwordVersion,
+      secret,
+    );
+    const sessionCheckout = checkout(phone, email).set(
+      "Cookie",
+      `bm_customer_session=${token}`,
+    );
+
+    const [checkoutResult] = await Promise.all([
+      sessionCheckout,
+      customerAuth.deleteGlobalAccount(account.id),
+    ]);
+
+    expect(checkoutResult.status).toBe(201);
+    const deleted = await prisma.buyerAccount.findUniqueOrThrow({
+      where: { id: account.id },
+    });
+    expect(deleted).toMatchObject({
+      phone: null,
+      email: null,
+      googleSub: null,
+    });
+    expect(
+      await prisma.order.count({ where: { buyerAccountId: account.id } }),
+    ).toBe(0);
+  }, 30_000);
+
+  it("serializes address creation against account deletion", async () => {
+    const account = await prisma.buyerAccount.create({
+      data: {
+        phone: newPhone(),
+        email: `race-address-${runId}@example.com`,
+        emailVerified: true,
+      },
+    });
+
+    const results = await Promise.allSettled([
+      addresses.create(account.id, {
+        recipientName: "Race buyer",
+        phone: "+51911111111",
+        line1: "Av. Example 123",
+        city: "Lima",
+        isDefault: true,
+      }),
+      customerAuth.deleteGlobalAccount(account.id),
+    ]);
+
+    expect(results[1]).toMatchObject({ status: "fulfilled" });
+    const created = results[0];
+    if (created?.status === "rejected") {
+      expect(created.reason).toMatchObject({ status: 404 });
+    }
+    expect(
+      await prisma.address.count({ where: { buyerAccountId: account.id } }),
+    ).toBe(0);
+  }, 30_000);
+
+  it("serializes store-link upsert during login against account deletion", async () => {
+    const phone = newPhone();
+    const password = "buyer-password-for-race";
+    const account = await prisma.buyerAccount.create({
+      data: {
+        phone,
+        email: `race-link-${runId}@example.com`,
+        emailVerified: true,
+        passwordHash: await hashPassword(password),
+      },
+    });
+
+    const results = await Promise.allSettled([
+      customerAuth.login(storeSlug, phone, password),
+      customerAuth.deleteGlobalAccount(account.id),
+    ]);
+
+    expect(results[1]).toMatchObject({ status: "fulfilled" });
+    const deleted = await prisma.buyerAccount.findUniqueOrThrow({
+      where: { id: account.id },
+    });
+    expect(deleted).toMatchObject({
+      phone: null,
+      email: null,
+      passwordHash: null,
+    });
+    expect(
+      await prisma.customerStoreLink.count({
+        where: { buyerAccountId: account.id },
+      }),
+    ).toBe(0);
+  }, 30_000);
 });

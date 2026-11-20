@@ -24,6 +24,14 @@ import { requiredEnv } from "../../config/env.validation.js";
 import { withPaymentSummary } from "../../common/payment-summary.js";
 import { toAccountOrderDto } from "./dto/account-order-response.dto.js";
 import type { GlobalAccountOrderDetailResponseDto } from "./dto/global-account-response.dto.js";
+import {
+  hasLiveBuyerIdentity,
+  lockBuyerAddresses,
+  lockBuyerOrderRow,
+  lockBuyerOrders,
+  lockBuyerStoreLinks,
+  withBuyerAccountLock,
+} from "./buyer-account-lock.js";
 
 export type ClaimFailureCode = "already_claimed" | "not_claimable" | "invalid";
 
@@ -73,11 +81,20 @@ export class CustomerAuthService {
     buyerAccountId: string,
     storeId: string,
   ): Promise<void> {
-    await this.prisma.customerStoreLink.upsert({
-      where: { buyerAccountId_storeId: { buyerAccountId, storeId } },
-      create: { buyerAccountId, storeId },
-      update: {},
-    });
+    const linked = await withBuyerAccountLock(
+      this.prisma,
+      buyerAccountId,
+      async (tx, account) => {
+        if (!hasLiveBuyerIdentity(account)) return false;
+        await tx.customerStoreLink.upsert({
+          where: { buyerAccountId_storeId: { buyerAccountId, storeId } },
+          create: { buyerAccountId, storeId },
+          update: {},
+        });
+        return true;
+      },
+    );
+    if (!linked) throw new UnauthorizedException("No autenticado");
   }
 
   async register(
@@ -137,26 +154,31 @@ export class CustomerAuthService {
     }
 
     const passwordHash = await hashPassword(password);
-    const { count } = await this.prisma.buyerAccount.updateMany({
-      where: {
-        id: buyerAccount.id,
-        OR: [
-          { phone: { not: null } },
-          { email: { not: null } },
-          { googleSub: { not: null } },
-          { passwordHash: { not: null } },
-        ],
+    const changed = await withBuyerAccountLock(
+      this.prisma,
+      buyerAccount.id,
+      async (tx, current) => {
+        if (!hasLiveBuyerIdentity(current)) return false;
+        if (verified.purpose === "confirm" && current.passwordHash) {
+          throw new ConflictException(
+            "Esta cuenta ya tiene una contraseña configurada",
+          );
+        }
+        const { count } = await tx.buyerAccount.updateMany({
+          where: { id: buyerAccount.id },
+          data:
+            verified.purpose === "confirm"
+              ? {
+                  passwordHash,
+                  emailVerified: true,
+                  passwordVersion: { increment: 1 },
+                }
+              : { passwordHash, passwordVersion: { increment: 1 } },
+        });
+        return count === 1;
       },
-      data:
-        verified.purpose === "confirm"
-          ? {
-              passwordHash,
-              emailVerified: true,
-              passwordVersion: { increment: 1 },
-            }
-          : { passwordHash, passwordVersion: { increment: 1 } },
-    });
-    if (count === 0) {
+    );
+    if (!changed) {
       throw new BadRequestException("Enlace inválido o expirado");
     }
 
@@ -269,95 +291,105 @@ export class CustomerAuthService {
   ): Promise<{ token: string; orderId: string }> {
     const account = await this.resolveGoogleAccount(identity);
 
-    await this.prisma.$transaction(async (tx) => {
-      const locked = await tx.$queryRaw<{ id: string }[]>`
-        SELECT id FROM "Order" WHERE id = ${ticket.orderId} FOR UPDATE
-      `;
-      if (!locked.length) throw new ClaimOrderError("invalid");
-
-      const select = {
-        id: true,
-        storeId: true,
-        source: true,
-        status: true,
-        paymentStatus: true,
-        claimedAt: true,
-        buyerAccountId: true,
-        accessTokenHash: true,
-        accessTokenRevokedAt: true,
-        payments: {
-          select: {
-            amount: true,
-            source: true,
-            reviewStatus: true,
-            voidedAt: true,
-          },
-        },
-      } as const;
-      const order = await tx.order.findFirst({
-        where: { id: ticket.orderId },
-        select,
-      });
-      if (!order) throw new ClaimOrderError("invalid");
-
-      if (order.claimedAt || order.buyerAccountId) {
-        // Same account re-claiming is a success; anyone else is too late.
-        if (order.buyerAccountId === account.id) {
-          await this.upsertStoreLink(tx, account.id, order.storeId);
-          return;
+    const claimed = await withBuyerAccountLock(
+      this.prisma,
+      account.id,
+      async (tx, currentAccount) => {
+        if (
+          !hasLiveBuyerIdentity(currentAccount) ||
+          currentAccount.googleSub !== identity.sub
+        ) {
+          throw new ClaimOrderError("invalid");
         }
-        throw new ClaimOrderError("already_claimed");
-      }
-      if (
-        order.accessTokenRevokedAt ||
-        !order.accessTokenHash ||
-        linkFingerprint(order.accessTokenHash) !== ticket.linkFp
-      ) {
-        throw new ClaimOrderError("invalid");
-      }
-      if (
-        order.source !== "VENDOR_ASSISTED" ||
-        order.status === "CANCELLED" ||
-        order.paymentStatus === "CANCELLED" ||
-        !order.payments.some(countsTowardPaid)
-      ) {
-        throw new ClaimOrderError("not_claimable");
-      }
+        if (!(await lockBuyerOrderRow(tx, ticket.orderId)))
+          throw new ClaimOrderError("invalid");
 
-      const { count } = await tx.order.updateMany({
-        where: {
-          id: order.id,
-          source: "VENDOR_ASSISTED",
-          status: { not: "CANCELLED" },
-          paymentStatus: { not: "CANCELLED" },
-          claimedAt: null,
-          buyerAccountId: null,
-          accessTokenRevokedAt: null,
-          accessTokenHash: { startsWith: ticket.linkFp },
-        },
-        data: { buyerAccountId: account.id, claimedAt: new Date() },
-      });
-      if (count !== 1) throw new ClaimOrderError("already_claimed");
+        const select = {
+          id: true,
+          storeId: true,
+          source: true,
+          status: true,
+          paymentStatus: true,
+          claimedAt: true,
+          buyerAccountId: true,
+          accessTokenHash: true,
+          accessTokenRevokedAt: true,
+          payments: {
+            select: {
+              amount: true,
+              source: true,
+              reviewStatus: true,
+              voidedAt: true,
+            },
+          },
+        } as const;
+        const order = await tx.order.findFirst({
+          where: { id: ticket.orderId },
+          select,
+        });
+        if (!order) throw new ClaimOrderError("invalid");
 
-      await this.upsertStoreLink(tx, account.id, order.storeId);
-      await this.events.record(tx, {
-        orderId: order.id,
-        storeId: order.storeId,
-        type: "CLAIMED",
-        actor: "BUYER",
-        payload: ticket.moment ? { moment: ticket.moment } : {},
-      });
-      await tx.auditLog.create({
-        data: {
-          actorId: account.id,
+        if (order.claimedAt || order.buyerAccountId) {
+          // Same account re-claiming is a success; anyone else is too late.
+          if (order.buyerAccountId === account.id) {
+            await this.upsertStoreLink(tx, account.id, order.storeId);
+            return true;
+          }
+          throw new ClaimOrderError("already_claimed");
+        }
+        if (
+          order.accessTokenRevokedAt ||
+          !order.accessTokenHash ||
+          linkFingerprint(order.accessTokenHash) !== ticket.linkFp
+        ) {
+          throw new ClaimOrderError("invalid");
+        }
+        if (
+          order.source !== "VENDOR_ASSISTED" ||
+          order.status === "CANCELLED" ||
+          order.paymentStatus === "CANCELLED" ||
+          !order.payments.some(countsTowardPaid)
+        ) {
+          throw new ClaimOrderError("not_claimable");
+        }
+
+        const { count } = await tx.order.updateMany({
+          where: {
+            id: order.id,
+            source: "VENDOR_ASSISTED",
+            status: { not: "CANCELLED" },
+            paymentStatus: { not: "CANCELLED" },
+            claimedAt: null,
+            buyerAccountId: null,
+            accessTokenRevokedAt: null,
+            accessTokenHash: { startsWith: ticket.linkFp },
+          },
+          data: { buyerAccountId: account.id, claimedAt: new Date() },
+        });
+        if (count !== 1) throw new ClaimOrderError("already_claimed");
+
+        await this.upsertStoreLink(tx, account.id, order.storeId);
+        await this.events.record(tx, {
+          orderId: order.id,
           storeId: order.storeId,
-          action: "order.claimed",
-          entityType: "Order",
-          entityId: order.id,
-          metadata: { actorType: "BUYER" },
-        },
-      });
-    });
+          type: "CLAIMED",
+          actor: "BUYER",
+          payload: ticket.moment ? { moment: ticket.moment } : {},
+        });
+        await tx.auditLog.create({
+          data: {
+            actorId: account.id,
+            storeId: order.storeId,
+            action: "order.claimed",
+            entityType: "Order",
+            entityId: order.id,
+            metadata: { actorType: "BUYER" },
+          },
+        });
+        return true;
+      },
+    );
+    if (!claimed) throw new ClaimOrderError("invalid");
 
     return {
       token: this.issueSessionToken(account.id, account.passwordVersion),
@@ -459,10 +491,23 @@ export class CustomerAuthService {
     if (!valid) throw new BadRequestException("Contraseña actual incorrecta");
 
     const passwordHash = await hashPassword(newPassword);
-    const updated = await this.prisma.buyerAccount.update({
-      where: { id: buyerAccount.id },
-      data: { passwordHash, passwordVersion: { increment: 1 } },
-    });
+    const updated = await withBuyerAccountLock(
+      this.prisma,
+      buyerAccount.id,
+      async (tx, current) => {
+        if (
+          !hasLiveBuyerIdentity(current) ||
+          current.passwordHash !== buyerAccount.passwordHash
+        ) {
+          throw new UnauthorizedException("No autenticado");
+        }
+        return tx.buyerAccount.update({
+          where: { id: current.id },
+          data: { passwordHash, passwordVersion: { increment: 1 } },
+        });
+      },
+    );
+    if (!updated) throw new UnauthorizedException("No autenticado");
 
     return this.issueSessionToken(updated.id, updated.passwordVersion);
   }
@@ -545,58 +590,48 @@ export class CustomerAuthService {
   ) {
     const store = await this.findStoreBySlug(slug);
 
-    const buyerAccount = await this.prisma.buyerAccount.findUniqueOrThrow({
-      where: { id: session.buyerAccountId },
-    });
-
-    const data: {
-      name: string;
-      pendingEmail?: string;
-      pendingPhone?: string;
-      countryCode?: string | null;
-    } = { name: dto.name };
-
-    if (dto.countryCode !== undefined) data.countryCode = dto.countryCode;
-
     let sendEmailChangeTo: string | undefined;
     let sendPhoneChange = false;
-
-    if (dto.email && dto.email !== buyerAccount.email) {
-      // Global uniqueness check — the account is no longer store-scoped, so
-      // an email clash against any other `BuyerAccount` blocks the change,
-      // not just one within the current store.
-      const clash = await this.prisma.buyerAccount.findFirst({
-        where: {
-          email: dto.email,
-          NOT: { id: buyerAccount.id },
-        },
-      });
-      if (clash) throw new ConflictException("Este correo ya está en uso");
-
-      data.pendingEmail = dto.email;
-      sendEmailChangeTo = dto.email;
-    }
-
     const normalizedPhone = dto.phone ? normalizePhone(dto.phone) : undefined;
-    if (normalizedPhone && normalizedPhone !== buyerAccount.phone) {
-      if (!buyerAccount.emailVerified) {
-        throw new BadRequestException(
-          "Verifica tu correo antes de cambiar tu teléfono",
-        );
-      }
-      const clash = await this.prisma.buyerAccount.findUnique({
-        where: { phone: normalizedPhone },
-      });
-      if (clash) throw new ConflictException("Este teléfono ya está en uso");
-
-      data.pendingPhone = normalizedPhone;
-      sendPhoneChange = true;
-    }
-
-    const updated = await this.prisma.buyerAccount.update({
-      where: { id: buyerAccount.id },
-      data,
-    });
+    const updated = await withBuyerAccountLock(
+      this.prisma,
+      session.buyerAccountId,
+      async (tx, buyerAccount) => {
+        if (!hasLiveBuyerIdentity(buyerAccount))
+          throw new UnauthorizedException("No autenticado");
+        const data: {
+          name: string;
+          pendingEmail?: string;
+          pendingPhone?: string;
+          countryCode?: string | null;
+        } = { name: dto.name };
+        if (dto.countryCode !== undefined) data.countryCode = dto.countryCode;
+        if (dto.email && dto.email !== buyerAccount.email) {
+          const clash = await tx.buyerAccount.findFirst({
+            where: { email: dto.email, NOT: { id: buyerAccount.id } },
+          });
+          if (clash) throw new ConflictException("Este correo ya está en uso");
+          data.pendingEmail = dto.email;
+          sendEmailChangeTo = dto.email;
+        }
+        if (normalizedPhone && normalizedPhone !== buyerAccount.phone) {
+          if (!buyerAccount.emailVerified)
+            throw new BadRequestException(
+              "Verifica tu correo antes de cambiar tu teléfono",
+            );
+          const clash = await tx.buyerAccount.findUnique({
+            where: { phone: normalizedPhone },
+          });
+          if (clash)
+            throw new ConflictException("Este teléfono ya está en uso");
+          data.pendingPhone = normalizedPhone;
+          sendPhoneChange = true;
+        }
+        return tx.buyerAccount.update({ where: { id: buyerAccount.id }, data });
+      },
+      [normalizedPhone],
+    );
+    if (!updated) throw new UnauthorizedException("No autenticado");
 
     if (sendEmailChangeTo) {
       await this.customerAccount.sendEmailChangeConfirmation(
@@ -640,13 +675,10 @@ export class CustomerAuthService {
   }
 
   async deleteGlobalAccount(buyerAccountId: string): Promise<{ ok: true }> {
-    await this.prisma.$transaction(async (tx) => {
-      const account = await tx.buyerAccount.findUnique({
-        where: { id: buyerAccountId },
-        select: { id: true },
-      });
-      if (!account) return;
-
+    await withBuyerAccountLock(this.prisma, buyerAccountId, async (tx) => {
+      await lockBuyerOrders(tx, buyerAccountId);
+      await lockBuyerAddresses(tx, buyerAccountId);
+      await lockBuyerStoreLinks(tx, buyerAccountId);
       // Keep store order rows as merchant transaction records, but detach
       // them from the reusable buyer identity. Saved addresses and per-store
       // links are buyer-owned and are removed with the credentials.
@@ -671,6 +703,7 @@ export class CustomerAuthService {
           countryCode: null,
         },
       });
+      return true;
     });
 
     this.logger.log({ event: "buyer-account-deleted", buyerAccountId });

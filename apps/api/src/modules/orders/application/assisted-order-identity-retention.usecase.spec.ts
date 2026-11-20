@@ -7,6 +7,7 @@ describe("AssistedOrderIdentityRetentionUseCase", () => {
   let storage: { deleteImage: Mock };
   let prisma: {
     order: { findMany: Mock; findFirst: Mock; updateMany: Mock; count: Mock };
+    buyerAccount: { findUnique: Mock };
     orderPayment: { findMany: Mock; updateMany: Mock };
     assistedOrderMediaDeletion: {
       findMany: Mock;
@@ -17,6 +18,7 @@ describe("AssistedOrderIdentityRetentionUseCase", () => {
     auditLog: { create: Mock };
     $transaction: Mock;
     $executeRaw: Mock;
+    $queryRaw: Mock;
   };
 
   beforeEach(() => {
@@ -26,6 +28,14 @@ describe("AssistedOrderIdentityRetentionUseCase", () => {
         findFirst: vi.fn().mockResolvedValue({ packedPhotoUrl: null }),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         count: vi.fn().mockResolvedValue(0),
+      },
+      buyerAccount: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: "buyer-1",
+          phone: "+51987654321",
+          pendingPhone: null,
+          email: "buyer@example.com",
+        }),
       },
       customer: {
         findUnique: vi.fn().mockResolvedValue(null),
@@ -42,6 +52,7 @@ describe("AssistedOrderIdentityRetentionUseCase", () => {
       },
       auditLog: { create: vi.fn() },
       $executeRaw: vi.fn().mockResolvedValue(1),
+      $queryRaw: vi.fn().mockResolvedValue([{ id: "buyer-1" }]),
       $transaction: vi.fn((callback: (tx: unknown) => unknown) =>
         callback(prisma),
       ),

@@ -39,6 +39,7 @@ describe("CustomerAuthService", () => {
     auditLog: { create: Mock };
     $transaction: Mock;
     $queryRaw: Mock;
+    $executeRaw: Mock;
   };
   let events: { record: Mock; listForBuyer: Mock };
   let customerAccount: {
@@ -73,6 +74,7 @@ describe("CustomerAuthService", () => {
       },
       auditLog: { create: vi.fn() },
       $queryRaw: vi.fn().mockResolvedValue([{ id: "order-1" }]),
+      $executeRaw: vi.fn().mockResolvedValue(1),
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
     };
     events = { record: vi.fn(), listForBuyer: vi.fn().mockResolvedValue([]) };
@@ -114,15 +116,7 @@ describe("CustomerAuthService", () => {
 
       expect(result).toEqual({ ok: true });
       expect(prisma.buyerAccount.updateMany).toHaveBeenCalledWith({
-        where: {
-          id: "buyer-1",
-          OR: [
-            { phone: { not: null } },
-            { email: { not: null } },
-            { googleSub: { not: null } },
-            { passwordHash: { not: null } },
-          ],
-        },
+        where: { id: "buyer-1" },
         data: {
           passwordHash: expect.any(String),
           emailVerified: true,
@@ -208,15 +202,7 @@ describe("CustomerAuthService", () => {
 
       expect(result).toEqual({ ok: true });
       expect(prisma.buyerAccount.updateMany).toHaveBeenCalledWith({
-        where: {
-          id: "buyer-1",
-          OR: [
-            { phone: { not: null } },
-            { email: { not: null } },
-            { googleSub: { not: null } },
-            { passwordHash: { not: null } },
-          ],
-        },
+        where: { id: "buyer-1" },
         data: {
           passwordHash: expect.any(String),
           passwordVersion: { increment: 1 },
@@ -448,6 +434,8 @@ describe("CustomerAuthService", () => {
       prisma.buyerAccount.findUnique.mockResolvedValue({
         id: "buyer-1",
         passwordVersion: 2,
+        email: "buyer@example.com",
+        googleSub: identity.sub,
       });
 
       const token = await service.loginWithGoogle("my-store", identity);
@@ -472,7 +460,17 @@ describe("CustomerAuthService", () => {
       prisma.buyerAccount.create.mockResolvedValue({
         id: "buyer-new",
         passwordVersion: 0,
+        email: identity.email,
+        googleSub: identity.sub,
       });
+      prisma.buyerAccount.findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValue({
+          id: "buyer-new",
+          passwordVersion: 0,
+          email: identity.email,
+          googleSub: identity.sub,
+        });
       prisma.buyerAccount.findFirst.mockResolvedValue({ id: "buyer-old" });
 
       const token = await service.loginWithGoogle("my-store", identity);
@@ -497,7 +495,17 @@ describe("CustomerAuthService", () => {
       prisma.buyerAccount.create.mockResolvedValue({
         id: "buyer-new",
         passwordVersion: 0,
+        email: identity.email,
+        googleSub: identity.sub,
       });
+      prisma.buyerAccount.findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValue({
+          id: "buyer-new",
+          passwordVersion: 0,
+          email: identity.email,
+          googleSub: identity.sub,
+        });
       // The row a checkout created with the victim's email and the
       // attacker's phone, which the victim then confirmed.
       prisma.buyerAccount.findFirst.mockResolvedValue({ id: "attacker-owned" });
@@ -525,7 +533,17 @@ describe("CustomerAuthService", () => {
       prisma.buyerAccount.create.mockResolvedValue({
         id: "buyer-new",
         passwordVersion: 0,
+        email: identity.email,
+        googleSub: identity.sub,
       });
+      prisma.buyerAccount.findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValue({
+          id: "buyer-new",
+          passwordVersion: 0,
+          email: identity.email,
+          googleSub: identity.sub,
+        });
       prisma.buyerAccount.findFirst.mockResolvedValue(null);
 
       await service.loginWithGoogle("my-store", identity);
@@ -542,7 +560,17 @@ describe("CustomerAuthService", () => {
       prisma.buyerAccount.create.mockResolvedValue({
         id: "buyer-new",
         passwordVersion: 0,
+        email: identity.email,
+        googleSub: identity.sub,
       });
+      prisma.buyerAccount.findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValue({
+          id: "buyer-new",
+          passwordVersion: 0,
+          email: identity.email,
+          googleSub: identity.sub,
+        });
       prisma.buyerAccount.findFirst.mockRejectedValue(new Error("db blip"));
 
       const token = await service.loginWithGoogle("my-store", identity);
@@ -554,7 +582,12 @@ describe("CustomerAuthService", () => {
       const log = logged();
       prisma.buyerAccount.findUnique
         .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce({ id: "winner", passwordVersion: 0 });
+        .mockResolvedValue({
+          id: "winner",
+          passwordVersion: 0,
+          email: identity.email,
+          googleSub: identity.sub,
+        });
       prisma.buyerAccount.create.mockRejectedValue(
         new Prisma.PrismaClientKnownRequestError("unique", {
           code: "P2002",
@@ -762,12 +795,21 @@ describe("CustomerAuthService", () => {
 
     beforeEach(() => {
       // A brand-new Google account by default.
-      prisma.buyerAccount.findUnique.mockResolvedValue(null);
-      prisma.buyerAccount.findMany.mockResolvedValue([]);
-      prisma.buyerAccount.create.mockResolvedValue({
+      const createdAccount = {
         id: "buyer-new",
+        email: identity.email,
+        emailVerified: true,
+        googleSub: identity.sub,
+        phone: null,
+        pendingPhone: null,
         passwordVersion: 0,
-      });
+      };
+      prisma.buyerAccount.findUnique.mockImplementation(
+        async ({ where }: { where: { googleSub?: string } }) =>
+          where.googleSub ? null : createdAccount,
+      );
+      prisma.buyerAccount.findMany.mockResolvedValue([]);
+      prisma.buyerAccount.create.mockResolvedValue(createdAccount);
       prisma.order.findFirst.mockResolvedValue(order());
       prisma.order.updateMany.mockResolvedValue({ count: 1 });
     });
@@ -845,6 +887,10 @@ describe("CustomerAuthService", () => {
       prisma.buyerAccount.findUnique.mockResolvedValue({
         id: "buyer-old",
         passwordVersion: 3,
+        email: identity.email,
+        googleSub: identity.sub,
+        phone: null,
+        pendingPhone: null,
       });
 
       const result = await service.claimWithGoogle(identity, ticket);
@@ -877,8 +923,12 @@ describe("CustomerAuthService", () => {
 
     it("locks the order row before deciding", async () => {
       await service.claimWithGoogle(identity, ticket);
-      expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
-      expect(prisma.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      expect(prisma.$queryRaw).toHaveBeenCalledTimes(2);
+      expect(prisma.$queryRaw.mock.calls[0]![0].join("")).toContain(
+        '"BuyerAccount"',
+      );
+      expect(prisma.$queryRaw.mock.calls[1]![0].join("")).toContain('"Order"');
+      expect(prisma.$queryRaw.mock.invocationCallOrder[1]).toBeLessThan(
         prisma.order.findFirst.mock.invocationCallOrder[0]!,
       );
     });
@@ -956,6 +1006,10 @@ describe("CustomerAuthService", () => {
       prisma.buyerAccount.findUnique.mockResolvedValue({
         id: "buyer-old",
         passwordVersion: 1,
+        email: identity.email,
+        googleSub: identity.sub,
+        phone: null,
+        pendingPhone: null,
       });
       prisma.order.findFirst.mockResolvedValue(
         order({ claimedAt: new Date(), buyerAccountId: "buyer-old" }),
@@ -1057,15 +1111,7 @@ describe("CustomerAuthService", () => {
 
       expect(prisma.store.findUnique).not.toHaveBeenCalled();
       expect(prisma.buyerAccount.updateMany).toHaveBeenCalledWith({
-        where: {
-          id: "buyer-1",
-          OR: [
-            { phone: { not: null } },
-            { email: { not: null } },
-            { googleSub: { not: null } },
-            { passwordHash: { not: null } },
-          ],
-        },
+        where: { id: "buyer-1" },
         data: {
           passwordHash: expect.any(String),
           passwordVersion: { increment: 1 },
@@ -1296,6 +1342,7 @@ describe("CustomerAuthService", () => {
     };
 
     beforeEach(() => {
+      prisma.buyerAccount.findUnique.mockResolvedValue(currentBuyerAccount);
       prisma.buyerAccount.findUniqueOrThrow.mockResolvedValue(
         currentBuyerAccount,
       );
@@ -1388,7 +1435,10 @@ describe("CustomerAuthService", () => {
     });
 
     it("stages a new phone and sends a confirmation to the current verified email", async () => {
-      prisma.buyerAccount.findUnique.mockResolvedValue(null);
+      prisma.buyerAccount.findUnique
+        .mockResolvedValueOnce(currentBuyerAccount)
+        .mockResolvedValueOnce(currentBuyerAccount)
+        .mockResolvedValueOnce(null);
       prisma.buyerAccount.update.mockResolvedValue({
         ...currentBuyerAccount,
         pendingPhone: "+51900000001",
@@ -1410,7 +1460,7 @@ describe("CustomerAuthService", () => {
     });
 
     it("rejects a phone change when the current email isn't verified yet", async () => {
-      prisma.buyerAccount.findUniqueOrThrow.mockResolvedValue({
+      prisma.buyerAccount.findUnique.mockResolvedValue({
         ...currentBuyerAccount,
         emailVerified: false,
       });
@@ -1425,7 +1475,10 @@ describe("CustomerAuthService", () => {
     });
 
     it("rejects a phone already used by another buyer account, globally", async () => {
-      prisma.buyerAccount.findUnique.mockResolvedValue({ id: "other-buyer" });
+      prisma.buyerAccount.findUnique
+        .mockResolvedValueOnce(currentBuyerAccount)
+        .mockResolvedValueOnce(currentBuyerAccount)
+        .mockResolvedValueOnce({ id: "other-buyer" });
 
       await expect(
         service.updateProfile("my-store", session, {
@@ -1437,7 +1490,10 @@ describe("CustomerAuthService", () => {
     });
 
     it("normalizes a differently-formatted phone before the duplicate check and the write", async () => {
-      prisma.buyerAccount.findUnique.mockResolvedValue(null);
+      prisma.buyerAccount.findUnique
+        .mockResolvedValueOnce(currentBuyerAccount)
+        .mockResolvedValueOnce(currentBuyerAccount)
+        .mockResolvedValueOnce(null);
       prisma.buyerAccount.update.mockResolvedValue({
         ...currentBuyerAccount,
         pendingPhone: "+51900000001",
