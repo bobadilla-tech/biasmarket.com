@@ -7,6 +7,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { AppModule } from "./../src/app.module.js";
 import { AllExceptionsFilter } from "../src/common/filters/all-exceptions.filter.js";
 import { createOrderAccessToken } from "@biasmarket/utils/assisted-order";
+import { orderRef } from "@biasmarket/utils/order-ref";
 import {
   deleteOrders,
   mailerDevDir,
@@ -212,6 +213,48 @@ describe("public orders (e2e)", () => {
       expect(JSON.stringify(res.body)).not.toContain(unknown.token);
       expect(JSON.stringify(res.body)).not.toContain(revoked.token);
     }
+  });
+
+  it("scopes each public link to its order and does not accept a phone as a token", async () => {
+    const first = createOrderAccessToken();
+    const second = createOrderAccessToken();
+    const firstOrderId = await checkout();
+    const secondOrderId = await checkout();
+    await attachToken(firstOrderId, first.tokenHash);
+    await attachToken(secondOrderId, second.tokenHash);
+
+    const firstOrder = await request(app.getHttpServer())
+      .get(`/api/public/orders/${first.token}`)
+      .expect(200);
+    const secondOrder = await request(app.getHttpServer())
+      .get(`/api/public/orders/${second.token}`)
+      .expect(200);
+
+    expect(firstOrder.body.orderNumber).toBe(orderRef(firstOrderId));
+    expect(secondOrder.body.orderNumber).toBe(orderRef(secondOrderId));
+    expect(firstOrder.body.orderNumber).not.toBe(secondOrder.body.orderNumber);
+
+    // A phone number is not a credential. It cannot read an order or record
+    // buyer activity even when it matches the phone stored on both orders.
+    const phoneAsToken = await request(app.getHttpServer())
+      .get(`/api/public/orders/${encodeURIComponent(customerPhone)}`)
+      .expect(404);
+    privateLinkHeaders(phoneAsToken);
+    expect(phoneAsToken.body.path).toBe("/api/public/orders/:token");
+    expect(JSON.stringify(phoneAsToken.body)).not.toContain(customerPhone);
+
+    await request(app.getHttpServer())
+      .post(`/api/public/orders/${encodeURIComponent(customerPhone)}/events`)
+      .send({ type: "INVITE_SHOWN" })
+      .expect(404);
+    expect(
+      await prisma.orderEvent.count({
+        where: {
+          orderId: { in: [firstOrderId, secondOrderId] },
+          type: "INVITE_SHOWN",
+        },
+      }),
+    ).toBe(0);
   });
 
   it("returns the allow-listed courier address and a masked phone", async () => {
