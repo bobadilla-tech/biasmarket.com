@@ -17,6 +17,13 @@ function sign(payload: string, secret: string): string {
   return createHmac("sha256", secret).update(payload).digest("base64url");
 }
 
+function hashEmail(email: string, secret: string): string {
+  return createHmac("sha256", secret)
+    .update("customer-account-email:")
+    .update(email, "utf8")
+    .digest("base64url");
+}
+
 // `buyerAccountId` — these tokens (confirm/reset/change-email/change-phone)
 // identify a global `BuyerAccount`, not a per-store `Customer`, since buyer
 // auth moved onto the global identity model (see
@@ -25,9 +32,14 @@ export function createCustomerAccountToken(
   buyerAccountId: string,
   secret: string,
   purpose: CustomerAccountTokenPurpose = "confirm",
+  targetEmail?: string,
 ): string {
-  const payload = `${buyerAccountId}.${purpose}.${
-    Date.now() + ttlForPurpose(purpose)
+  if (purpose === "change-email" && !targetEmail) {
+    throw new Error("A target email is required for change-email tokens");
+  }
+
+  const payload = `${buyerAccountId}.${purpose}.${Date.now() + ttlForPurpose(purpose)}${
+    purpose === "change-email" ? `.${hashEmail(targetEmail!, secret)}` : ""
   }`;
   const encodedPayload = Buffer.from(payload, "utf8").toString("base64url");
   return `${encodedPayload}.${sign(payload, secret)}`;
@@ -36,6 +48,7 @@ export function createCustomerAccountToken(
 export function verifyCustomerAccountToken(
   token: string,
   secret: string,
+  expectedTargetEmail?: string,
 ): { buyerAccountId: string; purpose: CustomerAccountTokenPurpose } | null {
   const [encodedPayload, signature] = token.split(".");
   if (!encodedPayload || !signature) return null;
@@ -50,7 +63,8 @@ export function verifyCustomerAccountToken(
     return null;
   }
 
-  const [buyerAccountId, purposeRaw, expiresAtRaw] = payload.split(".");
+  const [buyerAccountId, purposeRaw, expiresAtRaw, targetEmailHash, ...extra] =
+    payload.split(".");
   const expiresAt = Number(expiresAtRaw);
   const validPurposes: CustomerAccountTokenPurpose[] = [
     "confirm",
@@ -63,9 +77,23 @@ export function verifyCustomerAccountToken(
     !buyerAccountId ||
     !purpose ||
     !Number.isFinite(expiresAt) ||
-    Date.now() > expiresAt
+    Date.now() > expiresAt ||
+    extra.length > 0 ||
+    (purpose === "change-email" && !targetEmailHash) ||
+    (purpose !== "change-email" && targetEmailHash !== undefined)
   ) {
     return null;
+  }
+
+  if (expectedTargetEmail !== undefined && purpose === "change-email") {
+    const expectedHash = Buffer.from(hashEmail(expectedTargetEmail, secret));
+    const actualHash = Buffer.from(targetEmailHash!);
+    if (
+      expectedHash.length !== actualHash.length ||
+      !timingSafeEqual(expectedHash, actualHash)
+    ) {
+      return null;
+    }
   }
 
   return { buyerAccountId, purpose };
