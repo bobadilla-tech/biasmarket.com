@@ -56,10 +56,11 @@ export function FormErrorSummary({
   messages: string[];
 }) {
   const summaryRef = useRef<HTMLDivElement>(null);
+  const messagesKey = messages.join("\u0000");
 
   useEffect(() => {
     if (messages.length > 0) summaryRef.current?.focus();
-  }, [messages.length, messages.join("\u0000")]);
+  }, [messages.length, messagesKey]);
 
   if (messages.length === 0) return null;
 

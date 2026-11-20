@@ -32,9 +32,10 @@ export function useProductDetails(
   storeId: string | undefined,
   productIds: string[],
 ) {
+  const productIdsKey = productIds.join("\u0000");
   const unique = useMemo(
-    () => [...new Set(productIds.filter(Boolean))],
-    [productIds.join("\u0000")],
+    () => [...new Set(productIdsKey.split("\u0000").filter(Boolean))],
+    [productIdsKey],
   );
   const results = useQueries({
     queries: unique.map((productId) => ({
