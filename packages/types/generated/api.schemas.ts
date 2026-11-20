@@ -902,6 +902,8 @@ export interface OrderPaymentResponseDto {
   reviewedAt: string | null;
   /** @nullable */
   reviewedBy: string | null;
+  /** Whether this pending buyer proof matches an existing recorded or approved payment in the seller's store. */
+  isPossibleDuplicateOperationCode: boolean;
 }
 
 export interface OrderResponseDto {

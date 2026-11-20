@@ -48,6 +48,7 @@ function payment(
     reviewStatus: "N_A",
     reviewedAt: null,
     reviewedBy: null,
+    isPossibleDuplicateOperationCode: false,
     ...overrides,
   } as OrderPaymentResponseDto;
 }
@@ -151,6 +152,36 @@ test("shows the operation code and prefers paidAt over createdAt", () => {
   ]);
   expect(screen.getByText("Operación OP-123")).toBeTruthy();
   expect(screen.getByText(/15 sep|sep 15|2026-09-15/i)).toBeTruthy();
+});
+
+test("flags a pending buyer proof with a possible duplicate operation code", () => {
+  renderList([
+    payment({
+      source: "BUYER_SUBMITTED",
+      reviewStatus: "PENDING_REVIEW",
+      operationCode: "OP-123",
+      isPossibleDuplicateOperationCode: true,
+    }),
+  ]);
+
+  expect(
+    screen.getByText("Posible número de operación duplicado"),
+  ).toBeTruthy();
+});
+
+test("does not show the possible duplicate flag for a proof that is not pending", () => {
+  renderList([
+    payment({
+      source: "BUYER_SUBMITTED",
+      reviewStatus: "APPROVED",
+      operationCode: "OP-123",
+      isPossibleDuplicateOperationCode: true,
+    }),
+  ]);
+
+  expect(
+    screen.queryByText("Posible número de operación duplicado"),
+  ).toBeNull();
 });
 
 test("the reason is required, trimmed, and sent with the payment", async () => {

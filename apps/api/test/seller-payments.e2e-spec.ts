@@ -301,10 +301,91 @@ describe("seller payments (e2e)", () => {
       operationCode: "CROSS-1",
     }).expect(201);
     expect(
-      await payments.findDuplicateOperationCode(other.storeId, "cross 1", {
-        currentOrderId: "x",
-      }),
+      await payments.findDuplicateOperationCode(other.storeId, "cross 1"),
     ).toEqual({ orderId: other.id });
+  });
+
+  it("flags pending buyer proofs against recorded payments and ignores other pending proofs", async () => {
+    const recordedOrder = await newOrder();
+    await addPayment(recordedOrder.storeId, recordedOrder.id, {
+      amount: "1.00",
+      method: "YAPE",
+      operationCode: "RECORDED-42",
+    }).expect(201);
+
+    const flaggedOrder = await newOrder();
+    const flaggedProof = await prisma.orderPayment.create({
+      data: {
+        orderId: flaggedOrder.id,
+        storeId: flaggedOrder.storeId,
+        amount: 1,
+        currency: "PEN",
+        method: "YAPE",
+        source: "BUYER_SUBMITTED",
+        reviewStatus: "PENDING_REVIEW",
+        operationCode: "recorded 42",
+      },
+    });
+
+    const pendingOrder = await newOrder();
+    const pendingProof = await prisma.orderPayment.create({
+      data: {
+        orderId: pendingOrder.id,
+        storeId: pendingOrder.storeId,
+        amount: 1,
+        currency: "PEN",
+        method: "YAPE",
+        source: "BUYER_SUBMITTED",
+        reviewStatus: "PENDING_REVIEW",
+        operationCode: "BUYER-CHOSEN-7",
+      },
+    });
+    const secondPendingOrder = await newOrder();
+    const secondPendingProof = await prisma.orderPayment.create({
+      data: {
+        orderId: secondPendingOrder.id,
+        storeId: secondPendingOrder.storeId,
+        amount: 1,
+        currency: "PEN",
+        method: "YAPE",
+        source: "BUYER_SUBMITTED",
+        reviewStatus: "PENDING_REVIEW",
+        operationCode: "buyer chosen 7",
+      },
+    });
+
+    const detail = await request(app.getHttpServer())
+      .get(`/api/stores/${flaggedOrder.storeId}/orders/${flaggedOrder.id}`)
+      .set("Cookie", sessionCookie)
+      .expect(200);
+    expect(
+      detail.body.payments.find(
+        (payment: { id: string }) => payment.id === flaggedProof.id,
+      ).isPossibleDuplicateOperationCode,
+    ).toBe(true);
+    expect(
+      await payments.findDuplicateOperationCode(
+        pendingOrder.storeId,
+        "BUYER-CHOSEN-7",
+      ),
+    ).toBeNull();
+    expect(
+      await payments.findPossibleDuplicatePendingProofIds(
+        pendingOrder.storeId,
+        [
+          {
+            id: pendingProof.id,
+            orderId: pendingProof.orderId,
+            operationCode: pendingProof.operationCode,
+          },
+          {
+            id: secondPendingProof.id,
+            orderId: secondPendingProof.orderId,
+            operationCode: secondPendingProof.operationCode,
+          },
+        ],
+      ),
+    ).toEqual(new Set());
   });
 
   it("normalizes spaces, case, dashes and accents the same in SQL and TypeScript", async () => {
@@ -325,8 +406,7 @@ describe("seller payments (e2e)", () => {
       });
     await store("Ab 12-Cd");
     await store("CAFÉ-1");
-    const find = (code: string) =>
-      payments.findDuplicateOperationCode(s, code, { currentOrderId: "other" });
+    const find = (code: string) => payments.findDuplicateOperationCode(s, code);
     expect(await find("AB12CD")).toEqual({ orderId: a.id });
     expect(await find(" ab-12 cd")).toEqual({ orderId: a.id });
     // The accent drops out on both sides, so these collide by design.
@@ -347,14 +427,12 @@ describe("seller payments (e2e)", () => {
     });
     expect(row.operationCode).toBe("XY-77");
     const find = (code: string) =>
-      payments.findDuplicateOperationCode(a.storeId, code, {
-        currentOrderId: "other",
-      });
+      payments.findDuplicateOperationCode(a.storeId, code);
     expect(await find("xy77")).toEqual({ orderId: a.id });
     expect(await find("ＸＹ７７")).toEqual({ orderId: a.id });
   });
 
-  it("ignores voided payments, rejected proofs and pending proofs of the same order", async () => {
+  it("ignores voided payments, rejected proofs and all unreviewed proofs", async () => {
     const a = await newOrder();
     const b = await newOrder();
     const base = {
@@ -391,12 +469,11 @@ describe("seller payments (e2e)", () => {
         operationCode: "PEND-1",
       },
     });
-    const find = (code: string, currentOrderId: string) =>
-      payments.findDuplicateOperationCode(a.storeId, code, { currentOrderId });
-    expect(await find("void1", b.id)).toBeNull();
-    expect(await find("rej1", b.id)).toBeNull();
-    expect(await find("pend1", b.id)).toBeNull(); // same order
-    expect(await find("pend1", a.id)).toEqual({ orderId: b.id }); // another order
+    const find = (code: string) =>
+      payments.findDuplicateOperationCode(a.storeId, code);
+    expect(await find("void1")).toBeNull();
+    expect(await find("rej1")).toBeNull();
+    expect(await find("pend1")).toBeNull();
   });
 
   it("cannot exceed pending minus buyer proofs in review, then approving the proof settles the order", async () => {

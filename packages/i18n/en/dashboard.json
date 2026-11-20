@@ -858,7 +858,8 @@
       "pending": "Pending review",
       "approved": "Approved",
       "rejected": "Rejected",
-      "buyerSubmitted": "Sent by buyer"
+      "buyerSubmitted": "Sent by buyer",
+      "possibleDuplicateOperationCode": "Possible duplicate operation number"
     },
     "markAs": "Mark {status}",
     "fulfillmentLabels": {

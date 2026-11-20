@@ -59,6 +59,10 @@ describe("toOrderPaymentDto", () => {
 
     expect(response).not.toHaveProperty("recordedBy");
     expect(response).not.toHaveProperty("voidedBy");
+    expect(response.isPossibleDuplicateOperationCode).toBe(false);
+    expect(
+      toOrderPaymentDto(payment, true).isPossibleDuplicateOperationCode,
+    ).toBe(true);
   });
 });
 
@@ -71,7 +75,10 @@ describe("OrderController.addPayment", () => {
     saveStatus: Mock;
   };
   let reviewPayment: { execute: Mock };
-  let paymentsService: { findDuplicateOperationCode: Mock };
+  let paymentsService: {
+    findDuplicateOperationCode: Mock;
+    findPossibleDuplicatePendingProofIds: Mock;
+  };
   let storage: {
     uploadPaymentImage: Mock;
     getPaymentImageStream: Mock;
@@ -171,6 +178,9 @@ describe("OrderController.addPayment", () => {
     reviewPayment = { execute: vi.fn() };
     paymentsService = {
       findDuplicateOperationCode: vi.fn().mockResolvedValue(null),
+      findPossibleDuplicatePendingProofIds: vi
+        .fn()
+        .mockResolvedValue(new Set()),
     };
     storage = {
       uploadPaymentImage: vi.fn(),
@@ -556,7 +566,6 @@ describe("OrderController.addPayment", () => {
       expect(paymentsService.findDuplicateOperationCode).toHaveBeenCalledWith(
         storeId,
         "OP-1",
-        { currentOrderId: orderId },
       );
     });
 

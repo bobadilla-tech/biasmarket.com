@@ -330,6 +330,7 @@ function toOrderItemDto(item: OrderItemRow): OrderItemResponseDto {
 
 export function toOrderPaymentDto(
   payment: OrderPaymentRow,
+  isPossibleDuplicateOperationCode = false,
 ): OrderPaymentResponseDto {
   return {
     id: payment.id,
@@ -349,10 +350,14 @@ export function toOrderPaymentDto(
     reviewStatus: payment.reviewStatus,
     reviewedAt: payment.reviewedAt?.toISOString() ?? null,
     reviewedBy: payment.reviewedBy,
+    isPossibleDuplicateOperationCode,
   };
 }
 
-export function toOrderDto(row: OrderRow): OrderResponseDto {
+export function toOrderDto(
+  row: OrderRow,
+  possibleDuplicatePaymentIds: ReadonlySet<string> = new Set(),
+): OrderResponseDto {
   return {
     ...pickPublicOrderFields(row),
     deliveryDetails: row.deliveryDetails as Record<string, unknown> | null,
@@ -376,12 +381,17 @@ export function toOrderDto(row: OrderRow): OrderResponseDto {
     createdByName: row.createdBy?.name ?? null,
     packedPhotoAvailable: Boolean(row.packedPhotoUrl),
     items: row.items.map(toOrderItemDto),
-    payments: row.payments.map(toOrderPaymentDto),
+    payments: row.payments.map((payment) =>
+      toOrderPaymentDto(payment, possibleDuplicatePaymentIds.has(payment.id)),
+    ),
   };
 }
 
-function toOrderDetailDto(row: OrderRow): OrderDetailResponseDto {
-  return toOrderDto(row);
+function toOrderDetailDto(
+  row: OrderRow,
+  possibleDuplicatePaymentIds?: ReadonlySet<string>,
+): OrderDetailResponseDto {
+  return toOrderDto(row, possibleDuplicatePaymentIds);
 }
 
 function toOrderStatusDto(row: OrderStatusRow): OrderStatusResponseDto {
@@ -433,7 +443,24 @@ export class OrderController {
       paymentStatus,
       fulfillmentStatus,
     });
-    return rows.map(toOrderDto);
+    const possibleDuplicatePaymentIds =
+      await this.payments.findPossibleDuplicatePendingProofIds(
+        storeId,
+        rows.flatMap((row) =>
+          row.payments
+            .filter(
+              (payment) =>
+                payment.source === "BUYER_SUBMITTED" &&
+                payment.reviewStatus === "PENDING_REVIEW",
+            )
+            .map(({ id, orderId, operationCode }) => ({
+              id,
+              orderId,
+              operationCode,
+            })),
+        ),
+      );
+    return rows.map((row) => toOrderDto(row, possibleDuplicatePaymentIds));
   }
 
   @Get(":orderId")
@@ -444,7 +471,22 @@ export class OrderController {
   ): Promise<OrderDetailResponseDto> {
     await this.orders.assertOwnership(storeId, session.user.id);
     const row = await this.orders.findRowByIdForStore(orderId, storeId);
-    return toOrderDetailDto(row);
+    const possibleDuplicatePaymentIds =
+      await this.payments.findPossibleDuplicatePendingProofIds(
+        storeId,
+        row.payments
+          .filter(
+            (payment) =>
+              payment.source === "BUYER_SUBMITTED" &&
+              payment.reviewStatus === "PENDING_REVIEW",
+          )
+          .map(({ id, orderId, operationCode }) => ({
+            id,
+            orderId,
+            operationCode,
+          })),
+      );
+    return toOrderDetailDto(row, possibleDuplicatePaymentIds);
   }
 
   // Other orders of the same buyer phone in this store. Ownership first, then
@@ -706,7 +748,6 @@ export class OrderController {
       const duplicate = await this.payments.findDuplicateOperationCode(
         storeId,
         input.operationCode,
-        { currentOrderId: orderId },
       );
       if (duplicate) {
         throw new DuplicateOperationCodeException(duplicate.orderId);

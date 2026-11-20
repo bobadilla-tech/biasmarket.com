@@ -8149,6 +8149,10 @@
           "reviewedBy": {
             "type": "string",
             "nullable": true
+          },
+          "isPossibleDuplicateOperationCode": {
+            "type": "boolean",
+            "description": "Whether this pending buyer proof matches an existing recorded or approved payment in the seller's store."
           }
         },
         "required": [
@@ -8168,7 +8172,8 @@
           "source",
           "reviewStatus",
           "reviewedAt",
-          "reviewedBy"
+          "reviewedBy",
+          "isPossibleDuplicateOperationCode"
         ]
       },
       "OrderResponseDto": {
