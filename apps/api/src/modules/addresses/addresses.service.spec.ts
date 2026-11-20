@@ -17,7 +17,18 @@ describe("AddressesService", () => {
         update: vi.fn(),
         updateMany: vi.fn(),
         delete: vi.fn(),
+        deleteMany: vi.fn(),
       },
+      buyerAccount: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: "buyer_1",
+          phone: "+51987654321",
+          pendingPhone: null,
+          email: "buyer@example.com",
+        }),
+      },
+      $executeRaw: vi.fn().mockResolvedValue(1),
+      $queryRaw: vi.fn().mockResolvedValue([{ id: "buyer_1" }]),
       $transaction: vi.fn(async (cb) => cb(mockPrisma)),
     };
 
@@ -92,10 +103,7 @@ describe("AddressesService", () => {
 
   describe("update", () => {
     it("throws NotFoundException if address belongs to another buyer account", async () => {
-      mockPrisma.address.findUnique.mockResolvedValue({
-        id: "addr_1",
-        buyerAccountId: "buyer_2",
-      });
+      mockPrisma.address.findFirst.mockResolvedValue(null);
 
       await expect(
         service.update("buyer_1", "addr_1", { label: "Trabajo" }),
@@ -105,21 +113,20 @@ describe("AddressesService", () => {
 
   describe("delete", () => {
     it("deletes address and reassigns default if deleted address was default", async () => {
-      mockPrisma.address.findUnique.mockResolvedValue({
-        id: "addr_1",
-        buyerAccountId: "buyer_1",
-        isDefault: true,
-      });
-      mockPrisma.address.delete.mockResolvedValue({});
-      mockPrisma.address.findFirst.mockResolvedValue({
-        id: "addr_2",
-      });
+      mockPrisma.address.findFirst
+        .mockResolvedValueOnce({
+          id: "addr_1",
+          buyerAccountId: "buyer_1",
+          isDefault: true,
+        })
+        .mockResolvedValueOnce({ id: "addr_2" });
+      mockPrisma.address.deleteMany.mockResolvedValue({ count: 1 });
 
       const result = await service.delete("buyer_1", "addr_1");
 
       expect(result.success).toBe(true);
-      expect(mockPrisma.address.delete).toHaveBeenCalledWith({
-        where: { id: "addr_1" },
+      expect(mockPrisma.address.deleteMany).toHaveBeenCalledWith({
+        where: { id: "addr_1", buyerAccountId: "buyer_1" },
       });
       expect(mockPrisma.address.update).toHaveBeenCalledWith({
         where: { id: "addr_2" },
