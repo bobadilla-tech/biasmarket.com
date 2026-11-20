@@ -1,17 +1,14 @@
 {
   "auth": {
-    "loginDescription": "Ingresá con el nombre de tu tienda, tu teléfono y tu contraseña.",
     "loginAccountDescription": "Accedé con la tienda y el teléfono asociados a tu cuenta.",
     "signUpLink": "Configurá una contraseña con el enlace de invitación de tu tienda",
     "registerTitle": "Creá tu cuenta",
-    "registerDescription": "Usá el enlace de invitación que te envió tu tienda.",
     "registerSetupDescription": "Usá el enlace de confirmación y el teléfono de tu cuenta. Iniciaremos tu sesión después de guardar la contraseña.",
     "registrationComplete": "Tu contraseña se guardó, pero no se pudo iniciar sesión. Ingresá con tu tienda, teléfono y nueva contraseña.",
     "accountAlreadyRegistered": "Esta cuenta ya tiene contraseña. Iniciá sesión."
   },
   "cart": {
-    "title": "Tu carrito",
-    "empty": "Tu carrito está vacío."
+    "title": "Tu carrito"
   },
   "search": {
     "chooseStore": "Elegí una tienda para ver sus categorías."
@@ -22,7 +19,6 @@
     "replayMismatch": "No pudimos confirmar este pedido. Revisá Mis pedidos antes de volver a intentarlo.",
     "orderExpired": "Esta compra venció. Revisá tu carrito e intentá de nuevo.",
     "retryResetFailed": "No pudimos restablecer esta compra. Revisá Mis pedidos antes de volver a intentarlo.",
-    "paymentConfigFailed": "No se pudieron cargar las opciones de pago. Inténtalo de nuevo antes de confirmar tu pedido.",
     "configFailed": "No se pudieron cargar las opciones de compra. Intentá de nuevo antes de confirmar tu pedido.",
     "validation": {
       "customerName": "Ingresá tu nombre.",
