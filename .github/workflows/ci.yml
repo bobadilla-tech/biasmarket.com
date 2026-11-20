@@ -1217,6 +1217,9 @@ jobs:
         working-directory: infra/vps
         run: shellcheck -x ./*.sh
 
+      - name: Backup version race tests
+        run: python3 -m unittest discover -s infra/vps/tests -v
+
   e2e:
     name: E2E (API)
     # Run on pushes to main, relevant pull request changes, and explicit

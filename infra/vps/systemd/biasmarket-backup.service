@@ -1,0 +1,18 @@
+[Unit]
+Description=Create and verify one encrypted Bias Market off-box backup
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=/home/deploy/biasmarket/env/backup.env
+ExecStartPre=/home/deploy/biasmarket/bin/backup-config-check.sh --check
+ExecStart=/home/deploy/biasmarket/bin/backup.sh
+TimeoutStartSec=12h
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=read-only
+ProtectSystem=strict
+ReadWritePaths=/home/deploy/biasmarket/state

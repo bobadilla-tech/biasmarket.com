@@ -208,10 +208,11 @@ as the api (it reads the same `SENTRY_DSN`).
 
 ## Restore
 
-The proposed scheduled-backup policy and its implementation blockers are in
+The backup policy, manual oneshot service, and production blockers are in
 [backup-plan.md](backup-plan.md). No scheduled off-box backup is active yet.
-The manual `biasmarket-backup-config.service` only validates the future
-runtime environment; it does not perform or schedule a backup.
+`biasmarket-backup-config.service` only validates the runtime environment;
+`biasmarket-backup.service` performs one explicitly requested capture and has
+no timer.
 
 ### Pre-migration dumps
 

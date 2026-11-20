@@ -49,8 +49,9 @@ it. The front door for all docs is [../readme.md](../readme.md).
   deploy needs a migration or goes wrong.
 - [operations.md](operations.md): shared services, restore, and monitoring
   setup. Read this when operating db, redis, MinIO, or Uptime Kuma.
-- [backup-plan.md](backup-plan.md): proposed off-box backup policy, restore
-  acceptance test, config preflight, and decisions that block implementation.
+- [backup-plan.md](backup-plan.md): off-box backup policy, manual capture,
+  restore acceptance test, versioning/storage requirements, and production
+  blockers.
 - [caddy.md](caddy.md): the production reverse proxy. Read this when changing
   routing or TLS.
 - [observability.md](observability.md): where logs, errors and traces live, how
