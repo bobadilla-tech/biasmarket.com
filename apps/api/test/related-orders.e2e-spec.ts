@@ -238,4 +238,31 @@ describe("related orders (e2e)", () => {
     const asA = await lookup(storeA, aCookie).expect(200);
     expect(asA.body.previousOrders).toBe(1);
   });
+
+  it("does not let a seller read another store's contact by customer id", async () => {
+    const foreignPhone = "+51955000999";
+    const foreign = await prisma.customer.create({
+      data: {
+        storeId: storeB,
+        phone: foreignPhone,
+        name: "Private Contact",
+        email: "private-contact@example.com",
+      },
+    });
+
+    // Using the foreign store fails ownership before looking up the contact.
+    await request(app.getHttpServer())
+      .get(`/stores/${storeB}/customers/${foreign.id}`)
+      .set("Cookie", aCookie)
+      .expect(403);
+    // Using the seller's own store does not resolve an id from another store.
+    await request(app.getHttpServer())
+      .get(`/stores/${storeA}/customers/${foreign.id}`)
+      .set("Cookie", aCookie)
+      .expect(404);
+
+    expect(
+      await prisma.customer.findUniqueOrThrow({ where: { id: foreign.id } }),
+    ).toMatchObject({ phone: foreignPhone, name: "Private Contact" });
+  });
 });
