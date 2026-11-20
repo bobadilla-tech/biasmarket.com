@@ -105,6 +105,7 @@ export function ProductCard({
   return (
     <article
       data-store-card
+      data-catalog-product-id={product.id}
       className="group rounded-[1.35rem] border border-(--store-border) bg-(--store-card) p-2.5 shadow-[0_4px_14px_color-mix(in_srgb,var(--store-primary)_7%,transparent)] transition-[transform,box-shadow,border-color] duration-300 ease-out hover:-translate-y-1 hover:border-(--store-primary)/35 hover:shadow-[0_16px_32px_color-mix(in_srgb,var(--store-primary)_15%,transparent)] sm:p-2.5"
     >
       <Link href={`/store/${slug}/product/${product.id}`}>
