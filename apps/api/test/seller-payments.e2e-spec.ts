@@ -363,6 +363,17 @@ describe("seller payments (e2e)", () => {
         (payment: { id: string }) => payment.id === flaggedProof.id,
       ).isPossibleDuplicateOperationCode,
     ).toBe(true);
+    const orderList = await request(app.getHttpServer())
+      .get(`/api/stores/${flaggedOrder.storeId}/orders`)
+      .set("Cookie", sessionCookie)
+      .expect(200);
+    expect(
+      orderList.body
+        .find((order: { id: string }) => order.id === flaggedOrder.id)
+        .payments.find(
+          (payment: { id: string }) => payment.id === flaggedProof.id,
+        ).isPossibleDuplicateOperationCode,
+    ).toBe(true);
     expect(
       await payments.findDuplicateOperationCode(
         pendingOrder.storeId,
