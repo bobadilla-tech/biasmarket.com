@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
@@ -369,6 +370,117 @@ describe("StoreSectionRenderer catalog pagination", () => {
       expect(navigation.push).toHaveBeenCalledTimes(2);
     } finally {
       vi.useRealTimers();
+      vi.unstubAllGlobals();
+      navigation.search = "";
+    }
+  });
+
+  it("loads an earlier page from the top sentinel and keeps the current card anchored", async () => {
+    const observed: {
+      target: Element;
+      callback: IntersectionObserverCallback;
+    }[] = [];
+    class IntersectionObserverMock {
+      constructor(callback: IntersectionObserverCallback) {
+        this.callback = callback;
+      }
+      callback: IntersectionObserverCallback;
+      observe(target: Element) {
+        observed.push({ target, callback: this.callback });
+      }
+      disconnect() {}
+      unobserve() {}
+      takeRecords() {
+        return [];
+      }
+      root = null;
+      rootMargin = "";
+      thresholds = [0];
+    }
+    vi.stubGlobal("IntersectionObserver", IntersectionObserverMock);
+    navigation.search = "tab=productos&page=2";
+    navigation.push.mockClear();
+    const productSection = (id: string): RenderableSection[] => [
+      {
+        id: "catalog",
+        type: "COLLECTION",
+        collection: {
+          name: "",
+          products: [
+            {
+              productId: id,
+              product: {
+                id,
+                name: `Product ${id}`,
+                price: "10",
+                currency: "PEN",
+                soldOut: false,
+                discontinued: false,
+                variants: [],
+                availableUntil: null,
+                images: [],
+              },
+            },
+          ],
+        },
+      },
+    ];
+    const renderPage = (page: number, sections: RenderableSection[]) => (
+      <QueryClientProvider client={new QueryClient()}>
+        <NextIntlClientProvider locale="es" messages={getMessages("es")}>
+          <StoreSectionRenderer
+            slug="demo"
+            sections={sections}
+            catalogControls
+            serverSorted
+            catalogPagination={{ page, limit: 1, total: 3 }}
+          />
+        </NextIntlClientProvider>
+      </QueryClientProvider>
+    );
+
+    try {
+      const view = render(renderPage(2, productSection("product-2")));
+      const product = view.container.querySelector<HTMLElement>(
+        '[data-catalog-product-id="product-2"]',
+      );
+      expect(product).not.toBeNull();
+      const getRect = vi
+        .fn<() => DOMRect>()
+        .mockReturnValue({ top: 120 } as DOMRect);
+      product!.getBoundingClientRect = getRect;
+      const scrollBy = vi
+        .spyOn(window, "scrollBy")
+        .mockImplementation(() => {});
+
+      const previousSentinel = view.container.querySelector(
+        '[data-testid="catalog-previous-sentinel"]',
+      );
+      const previousObserver = observed.find(
+        ({ target }) => target === previousSentinel,
+      );
+      expect(previousObserver).toBeTruthy();
+      await act(async () => {
+        previousObserver?.callback(
+          [{ isIntersecting: true } as IntersectionObserverEntry],
+          {} as IntersectionObserver,
+        );
+      });
+      expect(navigation.push).toHaveBeenCalledWith(
+        "/es/store/demo?tab=productos",
+        { scroll: false },
+      );
+
+      getRect.mockReturnValue({ top: 360 } as DOMRect);
+      navigation.search = "tab=productos&page=1";
+      view.rerender(renderPage(1, productSection("product-1")));
+      await act(async () => {});
+      expect(scrollBy).toHaveBeenCalledWith(0, 240);
+      expect(
+        view.container.querySelector('[data-catalog-product-id="product-1"]'),
+      ).not.toBeNull();
+      scrollBy.mockRestore();
+    } finally {
       vi.unstubAllGlobals();
       navigation.search = "";
     }
