@@ -1,6 +1,7 @@
 import datetime as dt
 import importlib.util
 import os
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -54,6 +55,44 @@ class FakeVersionListingClient:
 
 
 class BackupVersionSelectionTests(unittest.TestCase):
+    def test_restic_backup_prefix_resolves_to_unique_full_snapshot_id(self):
+        full_id = "9f4e95df90138a200f9389e8b7b0fd82b0d705f48ffafa7ce5b4d9f2b71f4fa3"
+        results = [
+            subprocess.CompletedProcess(
+                args=[],
+                returncode=0,
+                stdout='{"message_type":"summary","snapshot_id":"9f4e95df"}\n',
+                stderr="",
+            ),
+            subprocess.CompletedProcess(
+                args=[], returncode=0, stdout=f'[{{"id":"{full_id}"}}]', stderr=""
+            ),
+        ]
+        with patch.object(backup.subprocess, "run", side_effect=results):
+            snapshot_id = backup.run_restic_backup(Path("/tmp/payload"))
+        self.assertEqual(snapshot_id, full_id)
+
+    def test_restic_backup_rejects_ambiguous_snapshot_prefix(self):
+        short_id = "9f4e95df"
+        results = [
+            subprocess.CompletedProcess(
+                args=[],
+                returncode=0,
+                stdout=f'{{"message_type":"summary","snapshot_id":"{short_id}"}}\n',
+                stderr="",
+            ),
+            subprocess.CompletedProcess(
+                args=[],
+                returncode=0,
+                stdout='[{"id":"9f4e95df90138a200f9389e8b7b0fd82b0d705f48ffafa7ce5b4d9f2b71f4fa3"},'
+                '{"id":"9f4e95df00138a200f9389e8b7b0fd82b0d705f48ffafa7ce5b4d9f2b71f4fa3"}]',
+                stderr="",
+            ),
+        ]
+        with patch.object(backup.subprocess, "run", side_effect=results):
+            with self.assertRaisesRegex(RuntimeError, "could not be read back"):
+                backup.run_restic_backup(Path("/tmp/payload"))
+
     def test_concurrent_delete_keeps_pre_snapshot_object_version(self):
         # Timeline: pg_dump takes its MVCC snapshot, then application deletion
         # adds a marker. ListObjectVersions includes the older readable value

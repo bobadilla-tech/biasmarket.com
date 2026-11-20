@@ -298,13 +298,16 @@ def run_restic_backup(payload: Path) -> str:
         for item in existing_snapshots
         if isinstance(item.get("id"), str)
     ]
-    if snapshot_id not in existing_ids:
+    matching_ids = [
+        item_id for item_id in existing_ids if item_id.startswith(snapshot_id)
+    ]
+    if len(matching_ids) != 1:
         raise RuntimeError(
             "Restic snapshot could not be read back "
             f"(snapshot_id={snapshot_id}, expected_host={RESTIC_HOST}, "
             f"expected_tag={RESTIC_TAG}, returned_ids={existing_ids[:10]})"
         )
-    return snapshot_id
+    return matching_ids[0]
 
 
 def prune_restic() -> None:
