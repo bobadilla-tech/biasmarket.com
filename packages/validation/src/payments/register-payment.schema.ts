@@ -14,6 +14,8 @@ export const PAYMENT_METHOD_TYPES = [
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png"];
 const ACCEPTED_IMAGE_EXTENSION = /\.(jpe?g|png)$/i;
+// Keep the accepted numeric syntax in sync with the backend's AMOUNT_PATTERN.
+const PAYMENT_AMOUNT_PATTERN = /^\d{1,9}(\.\d{1,2})?$/;
 
 /**
  * Mirrors the backend's validation for POST .../orders/:orderId/payments so
@@ -27,6 +29,7 @@ export function buildRegisterPaymentSchema(maxAmount: number) {
     amount: z
       .string()
       .min(1)
+      .refine((value) => PAYMENT_AMOUNT_PATTERN.test(value), "invalid amount")
       .refine((value) => {
         const parsed = Number(value);
         return Number.isFinite(parsed) && parsed > 0 && parsed <= maxAmount;
