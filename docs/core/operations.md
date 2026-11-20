@@ -263,6 +263,10 @@ sudo rm /etc/biasmarket-backup-disabled
 sudo /usr/local/sbin/biasmarket-backup-setup
 ```
 
+The one-time, data-only normalization of legacy payment operation codes is
+documented in
+[Order payment operation code NFKC backfill](order-payment-operation-code-nfkc-backfill.md).
+
 ### Pre-migration dumps
 
 Whenever a deploy has pending migrations, `deploy.sh` first takes a plain-SQL
