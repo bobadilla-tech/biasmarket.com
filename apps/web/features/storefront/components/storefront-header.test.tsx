@@ -27,10 +27,15 @@ test("renders the Bias Market brand, cart, and account link", () => {
   useCustomerProfile.mockReturnValue({ data: undefined, isPending: false });
   renderWithProviders(<StorefrontHeader slug="my-store" />);
 
-  expect(screen.getByText("Bias Market")).toBeTruthy();
+  expect(screen.getByAltText("Bias Market")).toBeTruthy();
   expect(
     screen.getByRole("link", { name: "Ir al inicio de Bias Market" }).className,
   ).toContain("hidden");
+  expect(
+    screen
+      .getByRole("link", { name: "Ir al inicio de Bias Market" })
+      .getAttribute("title"),
+  ).toBe("Ir al inicio de Bias Market");
   expect(
     screen
       .getByRole("link", { name: "Ir al inicio de Bias Market" })
