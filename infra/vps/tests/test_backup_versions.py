@@ -136,12 +136,12 @@ class BackupVersionSelectionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             env = {
                 "RESTIC_REPOSITORY": f"{directory}/repository",
-                "RESTIC_PASSWORD": "local-test-password-that-is-long-enough-123",
+                "RESTIC_PASSWORD": "local-test-password-that-is-long-enough-123",  # nosec B105 - fake value scoped to this unit test
                 "AWS_ACCESS_KEY_ID": "fake-access",
-                "AWS_SECRET_ACCESS_KEY": "fake-secret",
+                "AWS_SECRET_ACCESS_KEY": "fake-secret",  # nosec B105 - fake value scoped to this unit test
                 "BACKUP_SOURCE_ENDPOINT": "http://minio:9000",
                 "BACKUP_SOURCE_ACCESS_KEY": "fake-minio-access",
-                "BACKUP_SOURCE_SECRET_KEY": "fake-minio-secret",
+                "BACKUP_SOURCE_SECRET_KEY": "fake-minio-secret",  # nosec B105 - fake value scoped to this unit test
                 "KUMA_BACKUP_PUSH_URL": "https://status.example.test/api/push/fake-token",
                 "PGHOST": "postgres",
                 "PGUSER": "backup_test",

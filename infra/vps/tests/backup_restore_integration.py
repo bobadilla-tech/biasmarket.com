@@ -4,13 +4,13 @@
 from __future__ import annotations
 
 import hashlib
+import http.client
 import importlib.util
 import json
 import os
-import subprocess
+import re
+import subprocess  # nosec B404 - only fixed executable names and argv are used below
 import time
-import urllib.error
-import urllib.request
 from pathlib import Path
 from typing import Any
 
@@ -22,20 +22,34 @@ BACKUP_MODULE_PATH = Path("/usr/local/libexec/biasmarket-backup.py")
 BACKUP_STAGE = Path(os.environ["BACKUP_STAGE_DIR"])
 RESTORE_ROOT = BACKUP_STAGE / "restored-snapshot"
 SOURCE_BUCKETS = ("products", "logos", "payments")
+DATABASE_NAME = "backup_ci"
 MINIO_ACCESS_KEY = os.environ["BACKUP_SOURCE_ACCESS_KEY"]
 MINIO_SECRET_KEY = os.environ["BACKUP_SOURCE_SECRET_KEY"]
 
 
-def command(args: list[str], *, env: dict[str, str] | None = None) -> str:
+def command(args: list[str]) -> str:
     result = subprocess.run(
         args,
         check=True,
         capture_output=True,
         text=True,
-        env=env,
         shell=False,
-    )
+    )  # nosec B603 - callers use fixed executables and arguments in disposable CI services
     return result.stdout.strip()
+
+
+def set_environment(values: dict[str, str]) -> dict[str, str | None]:
+    previous = {name: os.environ.get(name) for name in values}
+    os.environ.update(values)
+    return previous
+
+
+def restore_environment(previous: dict[str, str | None]) -> None:
+    for name, value in previous.items():
+        if value is None:
+            os.environ.pop(name, None)
+        else:
+            os.environ[name] = value
 
 
 def s3_client(endpoint: str):
@@ -55,14 +69,26 @@ def wait_for_services() -> None:
             s3_client(os.environ["BACKUP_SOURCE_ENDPOINT"]).list_buckets()
             s3_client(os.environ["RESTORE_MINIO_ENDPOINT"]).list_buckets()
             subprocess.run(
-                ["pg_isready", "--host", os.environ["PGHOST"], "--port", os.environ["PGPORT"]],
+                [
+                    "pg_isready",
+                    "--host",
+                    "postgres-source",
+                    "--port",
+                    "5432",
+                ],
                 check=True,
                 capture_output=True,
                 text=True,
                 shell=False,
             )
             subprocess.run(
-                ["pg_isready", "--host", os.environ["RESTORE_PGHOST"], "--port", os.environ["RESTORE_PGPORT"]],
+                [
+                    "pg_isready",
+                    "--host",
+                    "postgres-restore",
+                    "--port",
+                    "5432",
+                ],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -143,16 +169,20 @@ def run_backup() -> tuple[str, dict[tuple[str, str], tuple[str, str]]]:
     backup.dump_postgres = dump_then_delete
     command(["restic", "init"])
     snapshot_id = backup.backup_once(allow_local_repository=True)
-    wrong_password_env = os.environ.copy()
-    wrong_password_env["RESTIC_PASSWORD"] = "definitely-not-the-test-repository-password"
-    wrong_password = subprocess.run(
-        ["restic", "snapshots", "--json"],
-        check=False,
-        capture_output=True,
-        text=True,
-        env=wrong_password_env,
-        shell=False,
-    )
+    original_password = os.environ["RESTIC_PASSWORD"]
+    try:
+        os.environ["RESTIC_PASSWORD"] = hashlib.sha256(
+            b"incorrect-ci-test-password"
+        ).hexdigest()
+        wrong_password = subprocess.run(
+            ["restic", "snapshots", "--json"],
+            check=False,
+            capture_output=True,
+            text=True,
+            shell=False,
+        )  # nosec B603 - fixed Restic command with an intentionally wrong test password
+    finally:
+        os.environ["RESTIC_PASSWORD"] = original_password
     if wrong_password.returncode == 0:
         raise AssertionError("Restic repository was readable with the wrong password")
     return snapshot_id, expected
@@ -163,28 +193,43 @@ def restore_and_verify(
     expected: dict[tuple[str, str], tuple[str, str]],
 ) -> None:
     RESTORE_ROOT.mkdir(mode=0o700, parents=True, exist_ok=True)
+    if not re.fullmatch(r"[0-9a-f]{64}", snapshot_id):
+        raise AssertionError("Restic returned an invalid snapshot identifier")
     command(["restic", "restore", snapshot_id, "--target", str(RESTORE_ROOT)])
     payload = RESTORE_ROOT / "postgres.dump"
     manifest_path = RESTORE_ROOT / "manifest.json"
     if not payload.is_file() or not manifest_path.is_file():
         raise AssertionError("Restic restore omitted the Postgres dump or object manifest")
 
-    restore_env = os.environ.copy()
-    restore_env.update(
-        PGHOST=os.environ["RESTORE_PGHOST"],
-        PGPORT=os.environ["RESTORE_PGPORT"],
-        PGUSER=os.environ["RESTORE_PGUSER"],
-        PGPASSWORD=os.environ["RESTORE_PGPASSWORD"],
-        PGDATABASE=os.environ["RESTORE_PGDATABASE"],
+    previous_restore_env = set_environment(
+        dict(
+            PGHOST=os.environ["RESTORE_PGHOST"],
+            PGPORT=os.environ["RESTORE_PGPORT"],
+            PGUSER=os.environ["RESTORE_PGUSER"],
+            PGPASSWORD=os.environ["RESTORE_PGPASSWORD"],
+            PGDATABASE=DATABASE_NAME,
+        )
     )
     command(
-        ["pg_restore", "--exit-on-error", "--no-owner", "--no-acl", "--dbname", os.environ["RESTORE_PGDATABASE"], str(payload)],
-        env=restore_env,
+        [
+            "pg_restore",
+            "--exit-on-error",
+            "--no-owner",
+            "--no-acl",
+            "--dbname",
+            DATABASE_NAME,
+            str(payload),
+        ],
     )
     database_result = command(
-        ["psql", "--no-psqlrc", "--tuples-only", "--no-align", "--command",
-         "SELECT label FROM restore_probe WHERE id = 1"],
-        env=restore_env,
+        [
+            "psql",
+            "--no-psqlrc",
+            "--tuples-only",
+            "--no-align",
+            "--command",
+            "SELECT label FROM restore_probe WHERE id = 1",
+        ],
     )
     if database_result != "database-restored":
         raise AssertionError(f"unexpected restored database row: {database_result!r}")
@@ -227,7 +272,15 @@ def restore_and_verify(
             raise AssertionError(
                 f"{identity} selected version {entry['versionId']!r}, expected {expected_version!r}"
             )
-        object_file = RESTORE_ROOT / entry["file"]
+        relative_file = Path(entry["file"])
+        if (
+            not relative_file.parts
+            or relative_file.is_absolute()
+            or ".." in relative_file.parts
+            or relative_file.parts[0] != "objects"
+        ):
+            raise AssertionError("backup manifest contains an unsafe object file path")
+        object_file = RESTORE_ROOT / relative_file
         contents = object_file.read_bytes()
         if hashlib.sha256(contents).hexdigest() != expected_hash:
             raise AssertionError(f"Restic restore returned the wrong bytes for {identity}")
@@ -241,28 +294,40 @@ def restore_and_verify(
         restored = restore_client.get_object(Bucket=bucket, Key=key)["Body"].read()
         if hashlib.sha256(restored).hexdigest() != expected_hash:
             raise AssertionError(f"MinIO restore returned the wrong bytes for {identity}")
-        url = f"{os.environ['RESTORE_MINIO_ENDPOINT']}/{bucket}/{key}"
+        connection = http.client.HTTPConnection(
+            "minio-restore", port=9000, timeout=10
+        )
+        try:
+            connection.request("GET", f"/{bucket}/{key}")
+            response = connection.getresponse()
+            anonymous_status = response.status
+            anonymous_body = response.read()
+        finally:
+            connection.close()
         if bucket in ("products", "logos"):
-            anonymous = urllib.request.urlopen(url, timeout=10).read()
-            if hashlib.sha256(anonymous).hexdigest() != expected_hash:
+            if (
+                anonymous_status != 200
+                or hashlib.sha256(anonymous_body).hexdigest() != expected_hash
+            ):
                 raise AssertionError(f"public restored object is unreadable: {identity}")
         else:
-            try:
-                urllib.request.urlopen(url, timeout=10)
-            except urllib.error.HTTPError as error:
-                if error.code != 403:
-                    raise
-            else:
+            if anonymous_status != 403:
                 raise AssertionError("restored payment proof is anonymously readable")
 
     references = command(
-        ["psql", "--no-psqlrc", "--tuples-only", "--no-align", "--command",
-         "SELECT bucket || '/' || object_key FROM object_references ORDER BY bucket, object_key"],
-        env=restore_env,
+        [
+            "psql",
+            "--no-psqlrc",
+            "--tuples-only",
+            "--no-align",
+            "--command",
+            "SELECT bucket || '/' || object_key FROM object_references ORDER BY bucket, object_key",
+        ],
     )
     expected_references = "\n".join(sorted(f"{bucket}/{key}" for bucket, key in expected))
     if references != expected_references:
         raise AssertionError(f"unexpected restored object references: {references!r}")
+    restore_environment(previous_restore_env)
 
 
 def main() -> None:
