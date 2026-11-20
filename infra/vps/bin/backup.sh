@@ -28,6 +28,7 @@ if [[ "$env_owner" != 0 || "$env_mode" != 600 ]]; then
 fi
 
 mkdir -p "$ROOT_DIR/state/backup-stage"
+chown 10001:10001 "$ROOT_DIR/state/backup-stage"
 chmod 0700 "$ROOT_DIR/state/backup-stage"
 
 # Used by compose() from lib/compose.sh.

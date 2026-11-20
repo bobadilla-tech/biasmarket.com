@@ -120,7 +120,8 @@ services:
 
   # Explicitly invoked, single-run backup job. No timer is installed or
   # enabled by this profile. The staging directory contains plaintext dumps
-  # while the job runs and must be protected as root-only host storage.
+  # while the job runs and must be protected, with access limited to the
+  # dedicated backup UID inside this container.
   backup:
     image: ghcr.io/bobadilla-tech/biasmarket-backup:${IMAGE_TAG:?IMAGE_TAG must be set — pass --env-file, see lib/compose.sh}
     profiles: [backup]

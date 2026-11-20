@@ -8,7 +8,7 @@ import hashlib
 import json
 import os
 import shutil
-import subprocess
+import subprocess  # nosec B404 - used only with fixed argv and shell=False
 import sys
 from pathlib import Path
 from typing import Any, Iterable
@@ -62,6 +62,19 @@ def require_env(name: str) -> str:
     return value
 
 
+def run_command(arguments: list[str]) -> subprocess.CompletedProcess[str]:
+    # Commands and flags are static. Dynamic values are individual argv
+    # entries, never shell text. Capture output to keep child errors out of
+    # the systemd journal.
+    return subprocess.run(  # nosec B603 - fixed argv, shell explicitly disabled
+        arguments,
+        check=True,
+        capture_output=True,
+        text=True,
+        shell=False,
+    )
+
+
 def validate_runtime() -> tuple[Path, list[str]]:
     required = [
         "RESTIC_REPOSITORY",
@@ -100,8 +113,8 @@ def validate_runtime() -> tuple[Path, list[str]]:
     stage = Path(os.environ["BACKUP_STAGE_DIR"])
     stage.mkdir(mode=0o700, parents=True, exist_ok=True)
     stage.chmod(0o700)
-    if stage.stat().st_uid != 0:
-        raise RuntimeError("BACKUP_STAGE_DIR must be root-owned")
+    if stage.stat().st_uid != os.getuid():
+        raise RuntimeError("BACKUP_STAGE_DIR must be owned by the backup process")
     return stage, buckets
 
 
@@ -137,12 +150,9 @@ def list_latest_versions(client: Any, bucket: str) -> list[dict[str, Any]]:
 
 
 def pg_database_size() -> int:
-    result = subprocess.run(
+    result = run_command(
         ["psql", "--no-psqlrc", "--tuples-only", "--no-align", "--command",
          "SELECT pg_database_size(current_database())"],
-        check=True,
-        capture_output=True,
-        text=True,
     )
     return int(result.stdout.strip())
 
@@ -167,9 +177,8 @@ def ensure_capacity(
 
 
 def dump_postgres(destination: Path) -> None:
-    subprocess.run(
+    run_command(
         ["pg_dump", "--format=custom", "--no-owner", "--no-acl", "--file", str(destination)],
-        check=True,
     )
     if destination.stat().st_size == 0:
         raise RuntimeError("Postgres dump is empty")
@@ -226,14 +235,11 @@ def export_objects(
 
 
 def run_restic_backup(payload: Path) -> str:
-    completed = subprocess.run(
+    completed = run_command(
         [
             "restic", "backup", "--json", "--host", RESTIC_HOST,
             "--tag", RESTIC_TAG, str(payload),
         ],
-        check=True,
-        capture_output=True,
-        text=True,
     )
     summary = None
     for line in completed.stdout.splitlines():
@@ -246,31 +252,35 @@ def run_restic_backup(payload: Path) -> str:
     snapshot_id = (summary or {}).get("snapshot_id")
     if not snapshot_id:
         raise RuntimeError("Restic did not report a completed snapshot")
-    subprocess.run(["restic", "cat", "snapshot", snapshot_id], check=True, capture_output=True)
+    run_command(["restic", "cat", "snapshot", snapshot_id])
     return snapshot_id
 
 
 def prune_restic() -> None:
-    subprocess.run(
+    run_command(
         [
             "restic", "forget", "--group-by", "host,tags", "--tag", RESTIC_TAG,
             "--keep-daily", "30", "--keep-monthly", "12", "--prune",
         ],
-        check=True,
-        capture_output=True,
-        text=True,
     )
-    subprocess.run(["restic", "check"], check=True, capture_output=True)
+    run_command(["restic", "check"])
 
 
 def send_success_heartbeat() -> None:
-    result = subprocess.run(
-        ["curl", "--fail", "--silent", "--show-error", "--max-time", "10", os.environ["KUMA_BACKUP_PUSH_URL"]],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode:
-        raise RuntimeError("Kuma backup heartbeat failed")
+    try:
+        run_command(
+            [
+                "curl",
+                "--fail",
+                "--silent",
+                "--show-error",
+                "--max-time",
+                "10",
+                os.environ["KUMA_BACKUP_PUSH_URL"],
+            ]
+        )
+    except subprocess.CalledProcessError:
+        raise RuntimeError("Kuma backup heartbeat failed") from None
 
 
 def backup_once() -> str:

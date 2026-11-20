@@ -144,11 +144,11 @@ These items still block a production backup:
    disabled until credentials and the push URL are provisioned.
 4. Before production capture, inspect VPS disk capacity and choose a protected
    staging filesystem. The service stages plaintext Postgres and object files
-   under `state/backup-stage` with root-only permissions, checks free space
-   before dumping and exporting, and removes the stage after each run. Restic
-   encrypts data before upload, but local staging is not encrypted by this
-   implementation. Do not run it until local disk capacity and protection are
-   accepted.
+   under `state/backup-stage`, owned by the dedicated container UID 10001 with
+   mode 0700. It checks free space before dumping and exporting and removes the
+   stage after each run. Restic encrypts data before upload, but local staging
+   is not encrypted by this implementation. Do not run it until local disk
+   capacity and protection are accepted.
 5. Store and rehearse recovery of the client-side encryption credential outside
    the VPS, including who can retrieve it during a server-loss incident.
 6. Verify the Kuma notification receiver and failure alert. The backup heartbeat
