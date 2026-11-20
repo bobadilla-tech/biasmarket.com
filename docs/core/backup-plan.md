@@ -7,10 +7,10 @@ currently has only the short-lived pre-migration Postgres dumps described in
 [operations.md](operations.md#pre-migration-dumps); those files and all MinIO
 objects remain on the VPS.
 
-The PR adds a manual oneshot backup service, version-aware MinIO exporter,
-Restic snapshot verification, and a runtime-config validator. It does not
-initialize a production Restic repository, enable MinIO versioning in
-production, provision credentials, or install or enable a scheduled timer.
+The PR adds a oneshot backup service, version-aware MinIO exporter, Restic
+snapshot verification, a daily timer unit, and a runtime-config validator. It
+does not initialize a production Restic repository, enable MinIO versioning
+in production, provision credentials, or enable the timer.
 
 ## Proposed policy
 
@@ -43,7 +43,9 @@ production, provision credentials, or install or enable a scheduled timer.
 - **Schedule:** one complete backup per day, with a proposed 02:00 UTC start.
   This gives a maximum nominal recovery point age of 24 hours. The backup must
   be treated as failed unless both database and all three bucket inputs have
-  completed and the remote snapshot is readable.
+  completed and the remote snapshot is readable. `biasmarket-backup.timer`
+  implements this cadence with `Persistent=true`; install and enable it only
+  after production prerequisites below are met.
 - **Retention:** keep 30 daily and 12 monthly recovery points. If restic is
   selected, model this as `forget --keep-daily 30 --keep-monthly 12`; verify
   the exact retained snapshots with `--dry-run` before enabling pruning.

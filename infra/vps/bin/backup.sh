@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Run one backup with the currently deployed backup image. No schedule is
-# installed; this is invoked manually through systemd after configuration.
+# Run one backup with the currently deployed backup image. The timer is a
+# separate unit and must be installed/enabled explicitly after validation.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

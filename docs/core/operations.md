@@ -212,7 +212,33 @@ The backup policy, manual oneshot service, and production blockers are in
 [backup-plan.md](backup-plan.md). No scheduled off-box backup is active yet.
 `biasmarket-backup-config.service` only validates the runtime environment;
 `biasmarket-backup.service` performs one explicitly requested capture and has
-no timer.
+no automatic trigger unless `biasmarket-backup.timer` is installed and
+enabled. The timer unit is provided but remains disabled until the restore and
+production prerequisites in the backup plan are met.
+
+After the off-box destination, root-owned `env/backup.env`, source bucket
+versioning/lifecycle, staging capacity, alert receiver, and disposable restore
+test are accepted, install the units and run one manual capture:
+
+```bash
+sudo install -o root -g root -m 0644 systemd/biasmarket-backup-config.service /etc/systemd/system/
+sudo install -o root -g root -m 0644 systemd/biasmarket-backup.service /etc/systemd/system/
+sudo install -o root -g root -m 0644 systemd/biasmarket-backup.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl start biasmarket-backup-config.service
+sudo systemctl start biasmarket-backup.service
+sudo journalctl -u biasmarket-backup.service --since "10 min ago"
+```
+
+Confirm the manual run and Kuma alert before enabling the daily timer:
+
+```bash
+sudo systemctl enable --now biasmarket-backup.timer
+sudo systemctl list-timers biasmarket-backup.timer
+```
+
+To stop scheduled captures, run
+`sudo systemctl disable --now biasmarket-backup.timer`.
 
 ### Pre-migration dumps
 
