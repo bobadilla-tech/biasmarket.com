@@ -1,0 +1,19 @@
+[Unit]
+Description=Refresh the Bias Market production secret cache from Infisical
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+ExecStart=/home/deploy/biasmarket/bin/infisical_sync.py
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+NoNewPrivileges=true
+ReadWritePaths=/home/deploy/biasmarket/env /home/deploy/biasmarket/state /run/lock
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LockPersonality=true
+MemoryDenyWriteExecute=true

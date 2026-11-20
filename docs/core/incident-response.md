@@ -192,16 +192,30 @@ The secret lives in two places that don't sync automatically:
    the webhook provider → edit the `X-Webhook-Secret` header value), stored in
    Kuma's SQLite.
 
-To rotate on the blue/green stack: `env/shared.env` is checksum-gated
-(`deploy.sh` refuses to deploy if it changes unexpectedly — see
-`blue-green-migrations.md`). Edit `MONITORING_WEBHOOK_SECRET`'s value in
-`/home/deploy/biasmarket/env/shared.env` by hand, update the recorded baseline
-(`sha256sum /home/deploy/biasmarket/env/shared.env | cut -d' ' -f1 > /home/deploy/biasmarket/state/shared_env.sha256`
-— write just the hash, matching the format `deploy.sh` itself writes), then
-restart both running app services that read it, explicitly naming the live
-color:
-`IMAGE_TAG="$(cat state/current_sha)" docker compose --env-file env/shared.env
-restart api-<live-color> workers-<live-color>`.
+When Infisical manages production, update `MONITORING_WEBHOOK_SECRET` in the
+configured production path, then run and inspect the sync:
+
+```bash
+sudo systemctl start biasmarket-infisical-sync.service
+sudo systemctl status biasmarket-infisical-sync.service
+```
+
+The sync validates the export and advances `state/shared_env.sha256` with the
+cached file. If sync fails, it keeps the previous cache and checksum; inspect
+the generic service error before retrying. For a reviewed manual rotation on a
+VPS not yet managed by Infisical, edit `env/shared.env` and update
+`state/shared_env.sha256` to its SHA-256 as a single line. Do not manually
+rewrite the checksum while Infisical is managing the cache.
+
+After the new cache is present, recreate both running app services that read
+it, explicitly naming the live color. A plain Compose `restart` does not reload
+container environment variables:
+
+```bash
+cd /home/deploy/biasmarket
+IMAGE_TAG="$(cat state/current_sha)" docker compose --env-file env/shared.env \
+  up -d --no-deps --force-recreate api-<live-color> workers-<live-color>
+```
 
 Then manually copy the new value into Kuma's webhook notification-provider
 config. Until you do, Kuma's webhook calls 401 — the Slack/Discord path is

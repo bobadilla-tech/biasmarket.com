@@ -1,0 +1,11 @@
+[Unit]
+Description=Refresh Bias Market production secrets every five minutes
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=5min
+RandomizedDelaySec=30s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

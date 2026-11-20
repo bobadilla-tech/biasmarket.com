@@ -132,7 +132,7 @@ contains no secrets. Constants are defined in `infra/vps/lib/state.sh`.
 | `last_deploy_result`                        | secret-free outcome of the latest run (SHA, outcome, phase); what CD polls                                        |
 | `deploy.lock`, `deploy.lock.meta`           | the `flock` file and who or what holds it, with the current phase                                                 |
 | `migration_pending`                         | present while a migration phase is in flight; watched by the systemd watchdog                                     |
-| `shared_env.sha256`                         | known-good checksum of `env/shared.env`, asserted on every invocation                                             |
+| `shared_env.sha256`                         | known-good checksum of `env/shared.env`, asserted on every invocation; advanced after a validated sync or reviewed manual rotation |
 | `scheduled_cleanup.pid`, `.meta`, `.log`    | the self-scheduled old-color cleanup (see [blue-green-migrations.md](blue-green-migrations.md#scheduled-cleanup)) |
 | `last_launch.log` (+ `.previous`)           | stderr of the latest dispatcher-launched run, rotated one deep                                                    |
 
@@ -142,9 +142,12 @@ and the `pre-migrate-*.sql.gz` dumps described in
 
 ## Configuration files
 
-Real env files live only on the VPS and are never committed or synced. The
-`.example` templates in `infra/vps/env/` carry the header comments; this table
-says who reads what. It names variable groups, not values.
+Real env files live only on the VPS and are never committed or synced by CD.
+After the production Infisical bootstrap, `env/shared.env` and
+`env/watchdog.env` are refreshed from the configured production paths by the
+root-owned timer; `.example` templates define their required key sets. The
+blue/green runtime files remain VPS-local. This table names variable groups,
+not values.
 
 | File                                            | Read by                                                                                       | Variable groups                                                                                                                                                                 |
 | ----------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -157,9 +160,12 @@ says who reads what. It names variable groups, not values.
 The security-critical names in `shared.env` are `BETTER_AUTH_SECRET`,
 `CUSTOMER_ACCOUNT_TOKEN_SECRET`, `INTERNAL_JOBS_SECRET` and the `GOOGLE_*` pair;
 see [security-payments.md](security-payments.md). `deploy.sh` refuses to run
-when `env/shared.env` no longer matches its recorded checksum, so a rotation is
-a reviewed, manual step (see the rotation procedure in
-[incident-response.md](incident-response.md#rotating-monitoring_webhook_secret)).
+when `env/shared.env` no longer matches its recorded checksum. A successful,
+validated Infisical sync advances the checksum with the cache; without Infisical,
+follow the reviewed manual procedure in
+[incident-response.md](incident-response.md#rotating-monitoring_webhook_secret).
+Refreshing the cache does not restart running containers. Deploy or explicitly
+restart consumers as directed by the rotation procedure.
 
 ## Verification
 

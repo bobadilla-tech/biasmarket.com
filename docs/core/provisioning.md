@@ -27,6 +27,15 @@ the repository.
 - the GitHub `production` environment, its five `DEPLOY_SSH_*` secrets, and the
   `NEXT_PUBLIC_*` repository variables (`github.tf`).
 
+Terraform currently generates and stores the three SSH private keys in its
+state; the deploy private keys are also written to GitHub environment secrets,
+and cloud-init embeds the host private key in `user_data`. This remains a
+known limitation of the existing SSH provisioning. The Infisical integration
+below does not move or rotate those keys, change cloud-init, or make a Terraform
+apply safe to run without reviewing instance replacement. A separate supervised
+SSH-key migration and VPS rebuild plan is required to remove them from Terraform
+state and cloud-init.
+
 `imports.tf` adopts resources that existed before Terraform did. Keep it while
 state is local: a fresh clone has no state, and without the import blocks
 `terraform plan` would propose creating a second VPS and duplicate DNS records.
@@ -312,22 +321,75 @@ Then, on the VPS as `deploy` (`sudo -iu deploy`, from
 ```bash
 chmod +x bin/ssh-deploy-dispatcher.sh bin/migration-watchdog.sh deploy.sh
 
-# populate real env files; see each .example's header comment for what goes in
-# it. These are production secrets and must be provisioned securely; they are
-# never committed or synced by CD.
-cp env/shared.env.example env/shared.env       # then edit
+# blue/green runtime files contain the per-color INTERNAL_API_URL only.
 cp env/blue.runtime.env.example env/blue.runtime.env
 cp env/green.runtime.env.example env/green.runtime.env
-cp env/watchdog.env.example env/watchdog.env   # KUMA_MIGRATION_PUSH_URL comes after Kuma is up
 ```
 
-`env/shared.env`, `env/blue.runtime.env`, `env/green.runtime.env` and
-`env/watchdog.env` are deliberately excluded from rsync and must exist on the
-VPS before bootstrap, created from the reviewed production secret values. Which
-variable groups matter is summarized in
+`env/shared.env` and `env/watchdog.env` are populated from the production
+Infisical project by the root-owned sync service. Do not copy the examples over
+these files after bootstrap. The color runtime files remain local and are not
+managed by Infisical. Variable groups are summarized in
 [deploy.md](deploy.md#configuration-files).
 
-Install the migration-watchdog systemd units:
+#### Configure the production machine identity
+
+Create a dedicated Infisical Machine Identity for the VPS, configure Universal
+Auth ([official guide](https://infisical.com/docs/documentation/platform/identities/universal-auth)),
+and grant it read-only access to the production secrets. Prefer a
+production-only project; if production shares a project with other environments,
+confirm the account supports a role scoped to the `prod` environment and the two
+secret paths before assigning it. The sync needs the `shared.env` and
+`watchdog.env` key sets only. Use a short Client Secret TTL or a documented
+rotation schedule, and set an expiry alert. Keep the Client ID and secret out of
+Terraform, cloud-init, GitHub, shell history, and CI. The Client Secret is
+entered interactively on the VPS and stored in
+`/etc/biasmarket/infisical.json`, readable only by root.
+
+Install the [Infisical CLI](https://github.com/Infisical/cli) using its official
+Debian package instructions, pin the release to
+[`v0.45.13`](https://github.com/Infisical/cli/releases/tag/v0.45.13), and verify
+`infisical --version` reports that version.
+The bootstrap intentionally rejects another CLI version until the repo pin is
+updated and reviewed. Use the actual Infisical HTTPS domain, project ID,
+environment slug, and secret paths from the production workspace; they are
+operator-specific and are not guessed by this repository.
+
+Run the bootstrap on the VPS after the repository sync has delivered the
+scripts, templates, and units:
+
+```bash
+sudo python3 /home/deploy/biasmarket/bin/bootstrap-infisical.py
+sudo systemctl status biasmarket-infisical-sync.timer
+sudo journalctl -u biasmarket-infisical-sync.service --since "10 min ago"
+```
+
+Bootstrap prompts for the non-secret scope and the Client Secret (hidden input),
+authenticates and validates both exports without changing the cache, then
+activates the root-only config, refreshes the cache, installs the timer, and
+enables it. It refuses missing template keys, required blank values, and
+template placeholders. On fetch or validation failure the existing env files
+and checksum baseline remain in place. `--check` authenticates and validates
+without changing the cache:
+
+```bash
+sudo /home/deploy/biasmarket/bin/infisical_sync.py --check
+```
+
+The service refreshes every five minutes. It updates `env/shared.env`,
+`env/watchdog.env`, and the `shared.env` checksum baseline under the deployment
+lock. Existing containers continue using their current environment; the next
+deployment reads the refreshed values. A failed sync leaves the last-known-good
+cache in place and reports a generic error without printing the token or secret
+values.
+
+For Client Secret rotation, add a second Client Secret in Infisical, rerun the
+interactive bootstrap with the new value, and revoke the previous Client Secret
+only after bootstrap and a sync both succeed. This avoids losing access if the
+new credential or scope is misconfigured.
+
+Install the migration-watchdog systemd units after the Infisical bootstrap has
+created `env/watchdog.env`:
 
 ```bash
 sudo cp /home/deploy/biasmarket/systemd/biasmarket-migration-watchdog.{service,timer} /etc/systemd/system/
