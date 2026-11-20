@@ -10,6 +10,8 @@ import os
 import shutil
 import subprocess  # nosec B404 - used only with fixed argv and shell=False
 import sys
+import urllib.error
+import urllib.request
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -60,19 +62,6 @@ def require_env(name: str) -> str:
     if not value:
         raise RuntimeError(f"missing required environment setting: {name}")
     return value
-
-
-def run_command(arguments: list[str]) -> subprocess.CompletedProcess[str]:
-    # Commands and flags are static. Dynamic values are individual argv
-    # entries, never shell text. Capture output to keep child errors out of
-    # the systemd journal.
-    return subprocess.run(  # nosec B603 - fixed argv, shell explicitly disabled
-        arguments,
-        check=True,
-        capture_output=True,
-        text=True,
-        shell=False,
-    )
 
 
 def validate_runtime() -> tuple[Path, list[str]]:
@@ -150,9 +139,19 @@ def list_latest_versions(client: Any, bucket: str) -> list[dict[str, Any]]:
 
 
 def pg_database_size() -> int:
-    result = run_command(
-        ["psql", "--no-psqlrc", "--tuples-only", "--no-align", "--command",
-         "SELECT pg_database_size(current_database())"],
+    result = subprocess.run(  # nosec B603 - fixed argv and shell=False
+        [
+            "psql",
+            "--no-psqlrc",
+            "--tuples-only",
+            "--no-align",
+            "--command",
+            "SELECT pg_database_size(current_database())",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+        shell=False,
     )
     return int(result.stdout.strip())
 
@@ -177,8 +176,19 @@ def ensure_capacity(
 
 
 def dump_postgres(destination: Path) -> None:
-    run_command(
-        ["pg_dump", "--format=custom", "--no-owner", "--no-acl", "--file", str(destination)],
+    if destination.name != "postgres.dump":
+        raise ValueError("Postgres dump destination must use its fixed filename")
+    subprocess.run(  # nosec B603 - fixed argv and shell=False
+        [
+            "pg_dump",
+            "--format=custom",
+            "--no-owner",
+            "--no-acl",
+            "--file=postgres.dump",
+        ],
+        cwd=destination.parent,
+        check=True,
+        shell=False,
     )
     if destination.stat().st_size == 0:
         raise RuntimeError("Postgres dump is empty")
@@ -235,11 +245,22 @@ def export_objects(
 
 
 def run_restic_backup(payload: Path) -> str:
-    completed = run_command(
+    completed = subprocess.run(  # nosec B603 - fixed argv and shell=False
         [
-            "restic", "backup", "--json", "--host", RESTIC_HOST,
-            "--tag", RESTIC_TAG, str(payload),
+            "restic",
+            "backup",
+            "--json",
+            "--host",
+            RESTIC_HOST,
+            "--tag",
+            RESTIC_TAG,
+            ".",
         ],
+        cwd=payload,
+        check=True,
+        capture_output=True,
+        text=True,
+        shell=False,
     )
     summary = None
     for line in completed.stdout.splitlines():
@@ -252,35 +273,76 @@ def run_restic_backup(payload: Path) -> str:
     snapshot_id = (summary or {}).get("snapshot_id")
     if not snapshot_id:
         raise RuntimeError("Restic did not report a completed snapshot")
-    run_command(["restic", "cat", "snapshot", snapshot_id])
+    snapshots = subprocess.run(  # nosec B603 - fixed argv and shell=False
+        [
+            "restic",
+            "snapshots",
+            "--json",
+            "--host",
+            RESTIC_HOST,
+            "--tag",
+            RESTIC_TAG,
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+        shell=False,
+    )
+    try:
+        existing_snapshots = json.loads(snapshots.stdout)
+    except json.JSONDecodeError as error:
+        raise RuntimeError("Restic returned invalid snapshot metadata") from error
+    if not any(item.get("id") == snapshot_id for item in existing_snapshots):
+        raise RuntimeError("Restic snapshot could not be read back")
     return snapshot_id
 
 
 def prune_restic() -> None:
-    run_command(
+    subprocess.run(  # nosec B603 - fixed argv and shell=False
         [
-            "restic", "forget", "--group-by", "host,tags", "--tag", RESTIC_TAG,
-            "--keep-daily", "30", "--keep-monthly", "12", "--prune",
+            "restic",
+            "forget",
+            "--group-by",
+            "host,tags",
+            "--tag",
+            RESTIC_TAG,
+            "--keep-daily",
+            "30",
+            "--keep-monthly",
+            "12",
+            "--prune",
         ],
+        check=True,
+        capture_output=True,
+        text=True,
+        shell=False,
     )
-    run_command(["restic", "check"])
+    subprocess.run(  # nosec B603 - fixed argv and shell=False
+        ["restic", "check"],
+        check=True,
+        capture_output=True,
+        text=True,
+        shell=False,
+    )
 
 
 def send_success_heartbeat() -> None:
     try:
-        run_command(
-            [
-                "curl",
-                "--fail",
-                "--silent",
-                "--show-error",
-                "--max-time",
-                "10",
-                os.environ["KUMA_BACKUP_PUSH_URL"],
-            ]
+        request = urllib.request.Request(
+            os.environ["KUMA_BACKUP_PUSH_URL"],
+            method="GET",
         )
-    except subprocess.CalledProcessError:
+        opener = urllib.request.build_opener(_NoRedirectHandler)
+        with opener.open(request, timeout=10) as response:
+            if response.status < 200 or response.status >= 300:
+                raise RuntimeError("Kuma backup heartbeat failed")
+    except (urllib.error.URLError, TimeoutError):
         raise RuntimeError("Kuma backup heartbeat failed") from None
+
+
+class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
 
 
 def backup_once() -> str:
