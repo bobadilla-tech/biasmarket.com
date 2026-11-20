@@ -8,6 +8,9 @@ set -euo pipefail
 : "${EVENT_NAME:?EVENT_NAME is required}"
 : "${RUN_E2E:?RUN_E2E is required}"
 : "${HYGIENE_RESULT:?HYGIENE_RESULT is required}"
+: "${BACKUP_RESTORE_RESULT:?BACKUP_RESTORE_RESULT is required}"
+: "${BACKUP_RESTORE_CHANGED:?BACKUP_RESTORE_CHANGED is required}"
+: "${RUN_BACKUP_RESTORE:?RUN_BACKUP_RESTORE is required}"
 
 if [[ "$DETECT_RESULT" != "success" ]]; then
   echo "Detect Changed Packages must succeed; got $DETECT_RESULT"
@@ -66,4 +69,23 @@ if [[ "$E2E_RESULT" != "$expected_e2e" ]]; then
   exit 1
 fi
 
-echo "All required checks passed; E2E result: $E2E_RESULT"
+if [[ "$BACKUP_RESTORE_CHANGED" != "true" && "$BACKUP_RESTORE_CHANGED" != "false" ]]; then
+  echo "Backup restore changed output is invalid: $BACKUP_RESTORE_CHANGED"
+  exit 1
+fi
+
+expected_backup_restore="skipped"
+if [[ "$EVENT_NAME" == "push" ]]; then
+  expected_backup_restore="success"
+elif [[ "$EVENT_NAME" == "pull_request" && "$BACKUP_RESTORE_CHANGED" == "true" ]]; then
+  expected_backup_restore="success"
+elif [[ "$EVENT_NAME" == "workflow_dispatch" && "$RUN_BACKUP_RESTORE" == "true" ]]; then
+  expected_backup_restore="success"
+fi
+
+if [[ "$BACKUP_RESTORE_RESULT" != "$expected_backup_restore" ]]; then
+  echo "Backup restore result is $BACKUP_RESTORE_RESULT; expected $expected_backup_restore for $EVENT_NAME (backup_restore_changed=$BACKUP_RESTORE_CHANGED, run_backup_restore=$RUN_BACKUP_RESTORE)"
+  exit 1
+fi
+
+echo "All required checks passed; E2E result: $E2E_RESULT; backup restore result: $BACKUP_RESTORE_RESULT"

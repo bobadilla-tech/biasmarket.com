@@ -100,29 +100,28 @@ versioning in production, or provision backup credentials.
 
 ## Restore acceptance test before production use
 
-Run a repeatable local test with disposable containers and no production
-credentials or endpoint before enabling production capture:
+CI runs the repeatable disposable integration in
+`scripts/ci/backup-restore-integration.sh` whenever the backup image, exporter,
+Compose wiring, systemd backup units, or integration test changes. It builds the
+backup image, starts pinned Postgres and MinIO services with source versioning
+enabled, and uses ephemeral credentials plus a local filesystem Restic repo.
+The harness calls the production `backup_once` path; its only test seam allows
+that local repository and suppresses the external Kuma heartbeat. It places
+delete markers after `pg_dump`, restores the snapshot into clean Postgres and
+MinIO services, and verifies database references, exact selected MinIO
+version IDs, object checksums, and public/private bucket access. Run it locally
+with `bash scripts/ci/backup-restore-integration.sh` when Docker is available.
 
-1. Start a scratch Postgres and MinIO, using a local S3-compatible backup target
-   (a second disposable MinIO instance is sufficient).
-2. Seed Postgres with representative schema and rows, and seed the products,
-   logos, and private payments buckets with distinct objects. Record object
-   checksums and verify the payment bucket has no anonymous read policy.
-3. Run the same backup entry point used by the manual systemd service against
-   these local services. Confirm a repository snapshot exists and that the
-   repository cannot be read without its encryption credential.
-4. Destroy the source containers and volumes. Create empty replacements, then
-   restore the selected snapshot using the documented recovery commands.
-5. Compare database schema/rows and each object checksum with the seeded
-   values. Verify the payment bucket remains private and public buckets remain
-   publicly readable only if that is still the intended application policy.
-6. Exercise retention against synthetic dated snapshots and assert that the
+The remaining production rehearsal steps are:
+
+1. Before production use, rehearse recovery from the selected offsite provider
+   and verify the restored database and object checksums.
+2. Exercise retention against synthetic dated snapshots and assert that the
    policy keeps 30 daily plus 12 monthly recovery points before enabling
    deletion against a real repository.
 
 Record the exact command and expected result in this document or the test
-script. A successful upload or repository check alone does not prove that a
-restore works. No production restore has been run as part of this plan.
+script. No production provider or restore has been used as part of this plan.
 
 ## Remaining blockers before production use
 
@@ -213,5 +212,5 @@ distinct source bucket names; it does not connect to any service or disclose
 setting values. `systemctl start biasmarket-backup.service` runs one capture
 using the currently deployed image and is manual only. The `.example` file
 contains names and non-secret defaults only. A disposable-container
-backup-and-restore rehearsal remains required before production use; the local
-Docker daemon was unavailable during implementation, so it was not run here.
+backup-and-restore integration runs in CI using ephemeral credentials and
+disposable containers. No production provider or restore has been used.

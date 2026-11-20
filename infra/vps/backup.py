@@ -64,7 +64,7 @@ def require_env(name: str) -> str:
     return value
 
 
-def validate_runtime() -> tuple[Path, list[str]]:
+def validate_runtime(*, allow_local_repository: bool = False) -> tuple[Path, list[str]]:
     required = [
         "RESTIC_REPOSITORY",
         "RESTIC_PASSWORD",
@@ -87,7 +87,12 @@ def validate_runtime() -> tuple[Path, list[str]]:
     if len(os.environ["RESTIC_PASSWORD"]) < 32:
         raise RuntimeError("RESTIC_PASSWORD must be at least 32 characters")
     repository = os.environ["RESTIC_REPOSITORY"]
-    if not repository.startswith("s3:https://"):
+    if allow_local_repository:
+        if os.environ.get("BIASMARKET_BACKUP_TEST_MODE") != "1":
+            raise RuntimeError("local Restic repositories are only allowed in backup test mode")
+        if not Path(repository).is_absolute():
+            raise RuntimeError("test Restic repository must be an absolute local path")
+    elif not repository.startswith("s3:https://"):
         raise RuntimeError("RESTIC_REPOSITORY must use s3:https://")
     endpoint = os.environ["BACKUP_SOURCE_ENDPOINT"]
     if not endpoint.startswith(("http://", "https://")):
@@ -345,8 +350,8 @@ class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
         return None
 
 
-def backup_once() -> str:
-    stage_root, buckets = validate_runtime()
+def backup_once(*, allow_local_repository: bool = False) -> str:
+    stage_root, buckets = validate_runtime(allow_local_repository=allow_local_repository)
     client = make_minio_client()
     assert_versioning_and_access(client, buckets)
     payload = stage_root / "payload"

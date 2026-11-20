@@ -1,8 +1,10 @@
 import datetime as dt
 import importlib.util
+import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 SCRIPT = Path(__file__).parents[1] / "backup.py"
@@ -129,6 +131,36 @@ class BackupVersionSelectionTests(unittest.TestCase):
                 client.requested_versions,
                 [("products", "products/uuid.jpg", "retained-version")],
             )
+
+    def test_local_repository_requires_explicit_backup_test_mode(self):
+        with tempfile.TemporaryDirectory() as directory:
+            env = {
+                "RESTIC_REPOSITORY": f"{directory}/repository",
+                "RESTIC_PASSWORD": "local-test-password-that-is-long-enough-123",
+                "AWS_ACCESS_KEY_ID": "fake-access",
+                "AWS_SECRET_ACCESS_KEY": "fake-secret",
+                "BACKUP_SOURCE_ENDPOINT": "http://minio:9000",
+                "BACKUP_SOURCE_ACCESS_KEY": "fake-minio-access",
+                "BACKUP_SOURCE_SECRET_KEY": "fake-minio-secret",
+                "KUMA_BACKUP_PUSH_URL": "https://status.example.test/api/push/fake-token",
+                "PGHOST": "postgres",
+                "PGUSER": "backup_test",
+                "PGPASSWORD": "fake-password",
+                "PGDATABASE": "backup_test",
+                "BACKUP_STAGE_DIR": f"{directory}/stage",
+                "S3_BUCKET": "products",
+                "S3_LOGO_BUCKET": "logos",
+                "S3_PAYMENT_BUCKET": "payments",
+            }
+            with patch.dict(os.environ, env, clear=True):
+                with self.assertRaisesRegex(RuntimeError, "s3:https://"):
+                    backup.validate_runtime()
+                with self.assertRaisesRegex(RuntimeError, "backup test mode"):
+                    backup.validate_runtime(allow_local_repository=True)
+                os.environ["BIASMARKET_BACKUP_TEST_MODE"] = "1"
+                stage, buckets = backup.validate_runtime(allow_local_repository=True)
+                self.assertEqual(stage, Path(env["BACKUP_STAGE_DIR"]))
+                self.assertEqual(buckets, ["products", "logos", "payments"])
 
 
 if __name__ == "__main__":
