@@ -109,8 +109,15 @@ ORDERING → IN_TRANSIT → READY → COMPLETED
 en todo momento, desde PENDING_PAYMENT hasta COMPLETED
 ```
 
-Si la orden expira sin pago registrado: `PENDING_PAYMENT` → `CANCELLED`
-automáticamente, sin acción del vendedor, hold liberado.
+Cuando una orden alcanza `expiresAt` mientras conserva el hold reservado, pasa
+a `CANCELLED` automáticamente y se libera el hold; el importe ya pagado queda
+retenido según la política de expiración. Si quedan comprobantes
+`PENDING_REVIEW`, se marcan `REJECTED` y cada uno genera un evento
+`PAYMENT_REJECTED`; el pedido no espera la revisión para expirar. Esta política
+sigue el cierre de comprobantes de
+[#397](https://github.com/bobadilla-tech/biasmarket.com/issues/397),
+implementado en [PR #648](https://github.com/bobadilla-tech/biasmarket.com/pull/648),
+y resuelve [#406](https://github.com/bobadilla-tech/biasmarket.com/issues/406).
 
 ## Accounts and order access
 
