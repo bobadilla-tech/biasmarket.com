@@ -86,6 +86,28 @@ that's not an incident on its own; check which color is currently live
 (`cat /home/deploy/biasmarket/state/current_color` on the VPS) before treating
 an internal monitor's down state as a problem.
 
+### External API uptime check
+
+[`external-api-uptime.yml`](../../.github/workflows/external-api-uptime.yml)
+runs on a GitHub-hosted runner every five minutes and requests
+`https://api.biasmarket.com/api/health`. It has no secrets and no GitHub token
+permissions. A non-2xx response or exhausted connection/request retries fails
+the workflow. The check is independent of the VPS and Uptime Kuma, but GitHub
+scheduled workflows are best-effort and can be delayed; use the Actions run
+history to inspect a failure or dispatch the workflow manually.
+
+GitHub Actions records a failed run but does not send this check to GlitchTip or
+the existing Slack/Discord incident channel. Configure GitHub workflow-failure
+notifications or another external notification route if a direct page is
+required. The check also covers only the public API health endpoint; it does
+not detect application errors that still return a healthy response.
+
+GlitchTip error alert rules remain an external maintainer setup. In
+`biasmarket-nestjs-api` and `bias-market-nextjs-app`, configure notifications
+for a new production issue and an error spike using the existing email/channel
+route, then send a controlled production test error and verify that it arrives.
+This repository change does not create or verify those GlitchTip rules.
+
 ## First triage step: isolate edge vs. app
 
 Every critical surface has an external and an internal monitor. Check both

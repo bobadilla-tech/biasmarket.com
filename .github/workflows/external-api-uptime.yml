@@ -1,0 +1,37 @@
+name: External API uptime
+
+# Runs independently of the VPS and its Uptime Kuma instance. GitHub's
+# scheduled workflows are best-effort, so this is an additional signal rather
+# than a guaranteed paging service.
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+# This job only makes an outbound HTTP request; it needs no repository token.
+permissions: {}
+
+jobs:
+  api-health:
+    name: Check public API health
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Request API health endpoint
+        env:
+          HEALTH_URL: https://api.biasmarket.com/api/health
+        run: |
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --location \
+            --connect-timeout 5 \
+            --max-time 10 \
+            --retry 2 \
+            --retry-delay 2 \
+            --retry-max-time 20 \
+            --retry-all-errors \
+            --output /dev/null \
+            --write-out 'HTTP %{http_code} in %{time_total}s\n' \
+            "$HEALTH_URL"
