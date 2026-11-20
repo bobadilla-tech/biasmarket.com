@@ -484,6 +484,8 @@
     "delivered": "Delivered"
   },
   "myPurchases": {
+    "reclaiming": "Securing your order link…",
+    "reclaimError": "This email link is invalid or expired. Ask the store to send a new one.",
     "title": "My purchases",
     "loggedOutTitle": "Log in to see your purchases",
     "loggedOutBody": "Log in with your phone and password, or continue with Google. If you are new, Google creates your buyer account in one click.",

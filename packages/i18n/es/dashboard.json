@@ -620,6 +620,7 @@
       "OUT_OF_STOCK": "Sin stock",
       "PAYMENT_PROOF_SUBMITTED": "Comprobante de pago enviado",
       "RECEIPT_CONFIRMED": "Recepción confirmada",
+      "ORDER_CLAIMED": "Pedido guardado por el comprador",
       "GENERIC": "Notificación"
     }
   },
@@ -1156,7 +1157,13 @@
         }
       },
       "receiptConfirmed": "El comprador confirmó la recepción el {date}",
-      "claimedBadge": "Reclamado"
+      "claimedBadge": "Reclamado",
+      "releaseClaim": "Liberar pedido",
+      "releaseWorking": "Liberando…",
+      "releaseDescription": "El comprador recibirá un enlace seguro por correo para guardar el pedido otra vez.",
+      "releaseTitle": "¿Liberar este pedido?",
+      "releaseBody": "El pedido dejará de aparecer entre las compras guardadas del comprador. Recibirá un enlace seguro por correo para guardarlo otra vez.",
+      "releaseConfirm": "Sí, liberar pedido"
     },
     "buyerNotice": {
       "title": "Avisar al comprador",

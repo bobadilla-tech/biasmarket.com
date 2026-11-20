@@ -68,6 +68,7 @@ export function makeOrder(
     packedPhotoAvailable: true,
     receiptConfirmedAt: null,
     claimed: false,
+    reclaimPending: false,
     lastUpdateAt: "2026-09-02T15:30:00.000Z",
     timeline: [],
     hasValidatedPayment: false,
