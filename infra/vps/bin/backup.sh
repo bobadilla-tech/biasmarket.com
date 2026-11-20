@@ -31,6 +31,15 @@ mkdir -p "$ROOT_DIR/state/backup-stage"
 chown 10001:10001 "$ROOT_DIR/state/backup-stage"
 chmod 0700 "$ROOT_DIR/state/backup-stage"
 
+# Serialize stale-stage cleanup, capture, and final cleanup. Systemd's timer
+# does not prevent an operator from starting another backup at the same time.
+umask 077
+exec 9>/run/lock/biasmarket-backup.lock
+if ! flock --exclusive --nonblock 9; then
+  echo "a Bias Market backup is already running" >&2
+  exit 75
+fi
+
 # Used by compose() from lib/compose.sh.
 # shellcheck disable=SC2034
 IMAGE_TAG="$tag"

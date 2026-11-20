@@ -15,4 +15,4 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectHome=read-only
 ProtectSystem=strict
-ReadWritePaths=/home/deploy/biasmarket/state
+ReadWritePaths=/home/deploy/biasmarket/state /run/lock
