@@ -23,8 +23,7 @@ objects remain on the VPS.
   database before deleting the object. The source buckets currently have no
   versioning. The implementation must preserve object versions across the
   database snapshot boundary or quiesce writes while capturing both stores.
-  A restic
-  repository on an S3-compatible service is the preferred implementation
+  A restic repository on an S3-compatible service is the preferred implementation
   candidate: it supports [S3-compatible endpoints](https://restic.readthedocs.io/en/stable/030_preparing_a_new_repo.html#s3-compatible-storage),
   encrypts data on the client, and can retain snapshots with a
   [daily/monthly policy](https://restic.readthedocs.io/en/stable/060_forget.html).
