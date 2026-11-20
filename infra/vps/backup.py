@@ -293,8 +293,17 @@ def run_restic_backup(payload: Path) -> str:
         existing_snapshots = json.loads(snapshots.stdout)
     except json.JSONDecodeError as error:
         raise RuntimeError("Restic returned invalid snapshot metadata") from error
-    if not any(item.get("id") == snapshot_id for item in existing_snapshots):
-        raise RuntimeError("Restic snapshot could not be read back")
+    existing_ids = [
+        item.get("id")
+        for item in existing_snapshots
+        if isinstance(item.get("id"), str)
+    ]
+    if snapshot_id not in existing_ids:
+        raise RuntimeError(
+            "Restic snapshot could not be read back "
+            f"(snapshot_id={snapshot_id}, expected_host={RESTIC_HOST}, "
+            f"expected_tag={RESTIC_TAG}, returned_ids={existing_ids[:10]})"
+        )
     return snapshot_id
 
 
