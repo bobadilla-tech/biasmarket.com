@@ -28,13 +28,13 @@ MINIO_SECRET_KEY = os.environ["BACKUP_SOURCE_SECRET_KEY"]
 
 
 def command(args: list[str]) -> str:
-    result = subprocess.run(
+    result = subprocess.run(  # nosec B603 - callers provide fixed CI-only commands
         args,
         check=True,
         capture_output=True,
         text=True,
         shell=False,
-    )  # nosec B603 - callers use fixed executables and arguments in disposable CI services
+    )
     return result.stdout.strip()
 
 
@@ -68,7 +68,7 @@ def wait_for_services() -> None:
         try:
             s3_client(os.environ["BACKUP_SOURCE_ENDPOINT"]).list_buckets()
             s3_client(os.environ["RESTORE_MINIO_ENDPOINT"]).list_buckets()
-            subprocess.run(
+            subprocess.run(  # nosec B603 - fixed readiness probe against the local CI service
                 [
                     "pg_isready",
                     "--host",
@@ -81,7 +81,7 @@ def wait_for_services() -> None:
                 text=True,
                 shell=False,
             )
-            subprocess.run(
+            subprocess.run(  # nosec B603 - fixed readiness probe against the local CI service
                 [
                     "pg_isready",
                     "--host",
@@ -174,13 +174,13 @@ def run_backup() -> tuple[str, dict[tuple[str, str], tuple[str, str]]]:
         os.environ["RESTIC_PASSWORD"] = hashlib.sha256(
             b"incorrect-ci-test-password"
         ).hexdigest()
-        wrong_password = subprocess.run(
+        wrong_password = subprocess.run(  # nosec B603 - fixed Restic command with a test-only wrong password
             ["restic", "snapshots", "--json"],
             check=False,
             capture_output=True,
             text=True,
             shell=False,
-        )  # nosec B603 - fixed Restic command with an intentionally wrong test password
+        )
     finally:
         os.environ["RESTIC_PASSWORD"] = original_password
     if wrong_password.returncode == 0:
