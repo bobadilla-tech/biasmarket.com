@@ -23,7 +23,9 @@ export async function LegalPage({
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
           {t(`${doc}.title`)}
         </h1>
-        <p className="mt-4 text-sm text-muted-foreground">{t("updated")}</p>
+        <p className="mt-4 text-sm text-muted-foreground">
+          {t(`${doc}.updated`)}
+        </p>
         {sections.map((section) => (
           <section key={section.heading} className="mt-10">
             <h2 className="text-xl font-semibold">{section.heading}</h2>
