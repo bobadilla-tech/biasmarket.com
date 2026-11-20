@@ -64,7 +64,7 @@ docker run --rm --network "$NETWORK" --user 10001:10001 \
   --volume "$ROOT/infra/vps/tests/backup_restore_integration.py:/test/backup_restore_integration.py:ro" \
   --volume "$TEMP_ROOT/stage:/stage" \
   --volume "$TEMP_ROOT/repository:/repo" \
-  --env BACKUP_TEST_MODE=1 \
+  --env BIASMARKET_BACKUP_TEST_MODE=1 \
   --env RESTIC_REPOSITORY=/repo \
   --env RESTIC_PASSWORD=ephemeral-restic-test-password-at-least-32-chars \
   --env AWS_ACCESS_KEY_ID=ephemeral-ci-access \

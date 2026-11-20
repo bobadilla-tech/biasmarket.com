@@ -27,17 +27,6 @@ MINIO_ACCESS_KEY = os.environ["BACKUP_SOURCE_ACCESS_KEY"]
 MINIO_SECRET_KEY = os.environ["BACKUP_SOURCE_SECRET_KEY"]
 
 
-def command(args: list[str]) -> str:
-    result = subprocess.run(  # nosec B603 - callers provide fixed CI-only commands
-        args,
-        check=True,
-        capture_output=True,
-        text=True,
-        shell=False,
-    )
-    return result.stdout.strip()
-
-
 def set_environment(values: dict[str, str]) -> dict[str, str | None]:
     previous = {name: os.environ.get(name) for name in values}
     os.environ.update(values)
@@ -131,7 +120,7 @@ def seed_source() -> tuple[dict[tuple[str, str], tuple[str, str]], list[tuple[st
             hashlib.sha256(current).hexdigest(),
         )
 
-    command(
+    subprocess.run(  # nosec B603 - fixed SQL seed against disposable Postgres
         [
             "psql", "--no-psqlrc", "--set", "ON_ERROR_STOP=1", "--command",
             "CREATE TABLE restore_probe (id integer PRIMARY KEY, label text NOT NULL); "
@@ -140,7 +129,11 @@ def seed_source() -> tuple[dict[tuple[str, str], tuple[str, str]], list[tuple[st
             "INSERT INTO object_references VALUES "
             "('products', 'product-image.txt'), ('logos', 'brand-logo.txt'), "
             "('payments', 'proof.txt');",
-        ]
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+        shell=False,
     )
     return expected, delete_after_dump
 
@@ -167,7 +160,9 @@ def run_backup() -> tuple[str, dict[tuple[str, str], tuple[str, str]]]:
                 raise AssertionError(f"MinIO did not create a delete marker for {bucket}/{key}")
 
     backup.dump_postgres = dump_then_delete
-    command(["restic", "init"])
+    subprocess.run(  # nosec B603 - fixed Restic initialization of the local CI repository
+        ["restic", "init"], check=True, capture_output=True, text=True, shell=False
+    )
     snapshot_id = backup.backup_once(allow_local_repository=True)
     original_password = os.environ["RESTIC_PASSWORD"]
     try:
@@ -195,7 +190,23 @@ def restore_and_verify(
     RESTORE_ROOT.mkdir(mode=0o700, parents=True, exist_ok=True)
     if not re.fullmatch(r"[0-9a-f]{64}", snapshot_id):
         raise AssertionError("Restic returned an invalid snapshot identifier")
-    command(["restic", "restore", snapshot_id, "--target", str(RESTORE_ROOT)])
+    subprocess.run(  # nosec B603 - fixed selector and target in the single-snapshot CI repository
+        [
+            "restic",
+            "restore",
+            "latest",
+            "--host",
+            "biasmarket-production",
+            "--tag",
+            "biasmarket-production",
+            "--target",
+            "/stage/restored-snapshot",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+        shell=False,
+    )
     payload = RESTORE_ROOT / "postgres.dump"
     manifest_path = RESTORE_ROOT / "manifest.json"
     if not payload.is_file() or not manifest_path.is_file():
@@ -210,7 +221,7 @@ def restore_and_verify(
             PGDATABASE=DATABASE_NAME,
         )
     )
-    command(
+    subprocess.run(  # nosec B603 - fixed pg_restore target and stage path in disposable CI
         [
             "pg_restore",
             "--exit-on-error",
@@ -218,10 +229,14 @@ def restore_and_verify(
             "--no-acl",
             "--dbname",
             DATABASE_NAME,
-            str(payload),
+            "/stage/restored-snapshot/postgres.dump",
         ],
+        check=True,
+        capture_output=True,
+        text=True,
+        shell=False,
     )
-    database_result = command(
+    database_result = subprocess.run(  # nosec B603 - fixed read-only query against disposable Postgres
         [
             "psql",
             "--no-psqlrc",
@@ -230,7 +245,11 @@ def restore_and_verify(
             "--command",
             "SELECT label FROM restore_probe WHERE id = 1",
         ],
-    )
+        check=True,
+        capture_output=True,
+        text=True,
+        shell=False,
+    ).stdout.strip()
     if database_result != "database-restored":
         raise AssertionError(f"unexpected restored database row: {database_result!r}")
 
@@ -314,7 +333,7 @@ def restore_and_verify(
             if anonymous_status != 403:
                 raise AssertionError("restored payment proof is anonymously readable")
 
-    references = command(
+    references = subprocess.run(  # nosec B603 - fixed read-only query against disposable Postgres
         [
             "psql",
             "--no-psqlrc",
@@ -323,7 +342,11 @@ def restore_and_verify(
             "--command",
             "SELECT bucket || '/' || object_key FROM object_references ORDER BY bucket, object_key",
         ],
-    )
+        check=True,
+        capture_output=True,
+        text=True,
+        shell=False,
+    ).stdout.strip()
     expected_references = "\n".join(sorted(f"{bucket}/{key}" for bucket, key in expected))
     if references != expected_references:
         raise AssertionError(f"unexpected restored object references: {references!r}")
