@@ -1197,6 +1197,12 @@ jobs:
       - name: Shellcheck CI scripts
         run: shellcheck scripts/ci/*.sh
 
+      # Run from the VPS runtime root so ShellCheck can follow the sourced
+      # libraries.
+      - name: Shellcheck VPS deploy entrypoint
+        working-directory: infra/vps
+        run: shellcheck -x ./*.sh
+
   e2e:
     name: E2E (API)
     # Run on pushes to main, relevant pull request changes, and explicit
