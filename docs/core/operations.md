@@ -208,6 +208,9 @@ as the api (it reads the same `SENTRY_DSN`).
 
 ## Restore
 
+The proposed scheduled-backup policy and its implementation blockers are in
+[backup-plan.md](backup-plan.md). No scheduled off-box backup is active yet.
+
 ### Pre-migration dumps
 
 Whenever a deploy has pending migrations, `deploy.sh` first takes a plain-SQL
@@ -292,8 +295,9 @@ The repository contains no scheduled backup of the database or of MinIO objects.
 The pre-migration dumps are the only dumps, they are short-lived and local to
 the server, and nothing in the repo copies MinIO's `minio_data` anywhere.
 Restoring uploaded images therefore needs a copy taken by other means. See the
+[backup plan](backup-plan.md) and
 [scheduled-backup issue](https://github.com/bobadilla-tech/biasmarket.com/issues/485)
-for the plan to change this.
+for the proposed policy and remaining decisions.
 
 ## Related
 
