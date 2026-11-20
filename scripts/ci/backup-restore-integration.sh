@@ -31,7 +31,7 @@ cleanup() {
   fi
   docker rm -f "$PG_SOURCE" "$PG_RESTORE" "$MINIO_SOURCE" "$MINIO_RESTORE" >/dev/null 2>&1 || true
   docker network rm "$NETWORK" >/dev/null 2>&1 || true
-  rm -rf "$TEMP_ROOT"
+  sudo rm -rf -- "$TEMP_ROOT" || true
   exit "$status"
 }
 trap cleanup EXIT
