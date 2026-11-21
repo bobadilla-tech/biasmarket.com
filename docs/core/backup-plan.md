@@ -32,14 +32,15 @@ credentials.
   before committing its database reference, and delete paths update the
   database before deleting the object. The source buckets currently have no
   versioning. The exporter requires versioning and reads exact object versions
-  by ID. It lists versions only after `pg_dump` finishes and selects the newest
-  non-delete version per key. This relies on the app's immutable UUID object
-  keys and its write ordering: object upload completes before the database
-  reference is committed; deletes happen after the database reference is
-  changed or removed. Thus a DB snapshot cannot reference a later upload, and
-  a later delete marker does not hide the referenced value version. This avoids
-  relying on database/MinIO clock alignment. Future code that overwrites keys
-  or changes upload/delete ordering must revisit this boundary.
+  by ID. It holds one exported PostgreSQL MVCC snapshot open while `pg_dump`
+  and the object-reference query use that same snapshot. The manifest marks
+  each MinIO candidate with `databaseReferenced`; restore skips entries marked
+  false. Therefore, a delete committed before the recovery point is excluded,
+  while a delete after that point remains restorable from its retained value
+  version. The exporter extracts URLs from the schema's object-reference
+  columns and matches the bucket/key path; changing storage URL formats or
+  adding reference columns requires updating this query. It does not compare
+  database and MinIO clocks.
   Restic is the selected backup tool. It supports
   [S3-compatible endpoints](https://restic.readthedocs.io/en/stable/030_preparing_a_new_repo.html#s3-compatible-storage),
   encrypts data on the client, and can retain snapshots with a
@@ -145,6 +146,25 @@ database. The CI fixture additionally checks that its `restore_probe` row has
 the value `database-restored` and that its `object_references` rows exactly
 match the restored manifest.
 
+Before restoring, load the root-only recovery environment file (mode `0600`)
+that holds the Restic password, Restic destination credentials, and separate
+`RESTORE_MINIO_ACCESS_KEY` / `RESTORE_MINIO_SECRET_KEY` target credentials.
+Export the required paths and target endpoint in the current shell; boto3 reads
+all three from `os.environ`:
+
+```sh
+set -a
+. /root/backup-restore.env
+set +a
+export RESTORE_ROOT=/root/restore/biasmarket
+export RESTORE_MINIO_ENDPOINT=https://minio-restore.example.internal
+```
+
+Keep credentials out of command arguments and shell history. The
+`RESTORE_MINIO_*` pair must authorize writes to the isolated target; Restic's
+`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` authorize only the off-box
+repository and must not be reused for MinIO.
+
 For MinIO, configure a protected `mc` alias named `restore` for the isolated
 target. Create or confirm the three empty buckets, enable versioning before
 uploading, and apply the same public/private access policy as the source:
@@ -177,9 +197,14 @@ manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
 client = boto3.client(
     "s3",
     endpoint_url=os.environ["RESTORE_MINIO_ENDPOINT"],
+    aws_access_key_id=os.environ["RESTORE_MINIO_ACCESS_KEY"],
+    aws_secret_access_key=os.environ["RESTORE_MINIO_SECRET_KEY"],
     region_name=os.environ.get("AWS_DEFAULT_REGION", "us-east-1"),
 )
+restored = 0
 for item in manifest["objects"]:
+    if not item["databaseReferenced"]:
+        continue
     source = (root / item["file"]).resolve()
     if root not in source.parents or not source.is_file():
         raise SystemExit(f"unsafe or missing manifest file: {item['file']}")
@@ -195,7 +220,8 @@ for item in manifest["objects"]:
     stored = client.head_object(Bucket=item["bucket"], Key=item["key"])
     if stored["ContentLength"] != item["size"]:
         raise SystemExit(f"restored size mismatch for {item['bucket']}/{item['key']}")
-print(f"restored {len(manifest['objects'])} objects from the manifest")
+    restored += 1
+print(f"restored {restored} database-referenced objects from the manifest")
 PY
 ```
 
@@ -258,6 +284,22 @@ These items still block a production backup:
 6. Verify the Kuma notification receiver and failure alert. The backup heartbeat
    can use the existing push-monitor pattern, but this repository does not
    provision the receiver or the backup monitor URL.
+
+## Updating backup units on the existing VPS
+
+Terraform ignores `user_data` changes for the adopted production instance
+because Contabo treats them as a reinstall. New instances still receive the
+current cloud-init template. To update the existing VPS, an administrator must
+review the change and install the version-controlled root-owned files through
+an approved SSH session; do not apply a Terraform replacement to deliver them.
+From a reviewed checkout, install `infra/vps/bin/backup-setup.sh` as
+`/usr/local/sbin/biasmarket-backup-setup` (root:root, mode 0755), install the
+five backup systemd units from `infra/vps/systemd/` under `/etc/systemd/system/`
+(root:root, mode 0644), and validate the sudoers entry against cloud-init
+before installing it at `/etc/sudoers.d/biasmarket-backup-setup` (root:root,
+mode 0440). Run `visudo -cf /etc/sudoers.d/biasmarket-backup-setup` and
+`systemctl daemon-reload` afterward. Do not enable the timer as part of a code
+update; the setup helper continues to gate it on the production configuration.
 7. Confirm the nominal 24-hour RPO is acceptable and set an RTO target for
    database plus object restoration.
 

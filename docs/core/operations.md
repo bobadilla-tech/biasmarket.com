@@ -331,19 +331,22 @@ it on a scratch copy before relying on it in an incident. Expect downtime.
 3. Run `deploy.sh --bootstrap <sha>` (first cutover). It starts the shared
    services, runs migrations against an empty database and brings up the first
    color, so the result is an empty application.
-4. To bring data back, restore a dump you kept off the server using steps 2 to 5
-   above, then deploy a commit that matches the dump's schema.
+4. Restore a scheduled Restic recovery point with the procedure in
+   [backup-plan.md](backup-plan.md#restore-acceptance-test-before-production-use).
+   This applies to scheduled snapshots; the plain-SQL pre-migration dumps
+   above remain a separate recovery source. Deploy a commit that matches the
+   restored schema.
 5. Re-run the Kuma setup (see [Uptime Kuma](#uptime-kuma)).
 
 ### What is not backed up
 
-The repository contains no scheduled backup of the database or of MinIO objects.
-The pre-migration dumps are the only dumps, they are short-lived and local to
-the server, and nothing in the repo copies MinIO's `minio_data` anywhere.
-Restoring uploaded images therefore needs a copy taken by other means. See the
-[backup plan](backup-plan.md) and
+No production scheduled backup is active until its production configuration
+and prerequisites are provisioned. The pre-migration dumps remain short-lived
+and local to the server; they do not include MinIO objects. See the
+[backup plan](backup-plan.md) for scheduled recovery details and production
+blockers, and
 [scheduled-backup issue](https://github.com/bobadilla-tech/biasmarket.com/issues/485)
-for the proposed policy and remaining decisions.
+for tracking.
 
 ## Related
 

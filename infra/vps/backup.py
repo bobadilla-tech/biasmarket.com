@@ -7,6 +7,7 @@ import datetime as dt
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess  # nosec B404 - used only with fixed argv and shell=False
 import sys
@@ -14,6 +15,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any, Iterable
+from urllib.parse import unquote, urlsplit
 
 
 RESTIC_HOST = "biasmarket-production"
@@ -180,23 +182,99 @@ def ensure_capacity(
         )
 
 
-def dump_postgres(destination: Path) -> None:
+DATABASE_REFERENCE_QUERY = r'''
+SELECT value FROM (
+  SELECT "logoUrl" AS value FROM "Store"
+  UNION ALL SELECT "bannerUrl" FROM "Store"
+  UNION ALL SELECT "publicOwnerAvatarUrl" FROM "Store"
+  UNION ALL SELECT "aboutMarkdown" FROM "Store"
+  UNION ALL SELECT unnest("images") FROM "Product"
+  UNION ALL SELECT "imageOverride" FROM "ProductVariant"
+  UNION ALL SELECT "imageUrl" FROM "Category"
+  UNION ALL SELECT "imageUrl" FROM "StoreReference"
+  UNION ALL SELECT "content"::text FROM "StoreSection"
+  UNION ALL SELECT "details"::text FROM "PaymentMethodConfig"
+  UNION ALL SELECT "packedPhotoUrl" FROM "Order"
+  UNION ALL SELECT "imageUrl" FROM "OrderPayment"
+) AS object_reference_values
+WHERE value IS NOT NULL;
+'''
+
+
+def parse_object_references(values: Iterable[str], buckets: list[str]) -> set[tuple[str, str]]:
+    references: set[tuple[str, str]] = set()
+    known_buckets = set(buckets)
+    for value in values:
+        for candidate in re.findall(r"https?://[^\s\"'<>]+", value):
+            # Markdown and JSON may attach punctuation to the URL. MinIO keys
+            # emitted by StorageService use UUID filenames and safe path chars.
+            candidate = candidate.rstrip(").,;]")
+            path_parts = [part for part in urlsplit(candidate).path.split("/") if part]
+            if len(path_parts) < 2:
+                continue
+            bucket = unquote(path_parts[0])
+            key = unquote("/".join(path_parts[1:]))
+            if bucket in known_buckets and key:
+                references.add((bucket, key))
+    return references
+
+
+def dump_postgres(destination: Path) -> set[tuple[str, str]]:
     if destination.name != "postgres.dump":
         raise ValueError("Postgres dump destination must use its fixed filename")
-    subprocess.run(  # nosec B603 - fixed argv and shell=False
-        [
-            "pg_dump",
-            "--format=custom",
-            "--no-owner",
-            "--no-acl",
-            "--file=postgres.dump",
-        ],
-        cwd=destination.parent,
-        check=True,
+    # Keep the exported MVCC snapshot alive while pg_dump and the reference
+    # query consume it. That makes the manifest's reference flags describe
+    # the exact database recovery point, independent of MinIO/database clocks.
+    snapshot = subprocess.Popen(  # nosec B603 - fixed argv and shell=False
+        ["psql", "--no-psqlrc", "--quiet", "--tuples-only", "--no-align"],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        bufsize=1,
         shell=False,
     )
+    assert snapshot.stdin is not None and snapshot.stdout is not None
+    snapshot.stdin.write("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;\n")
+    snapshot.stdin.write("SELECT pg_export_snapshot();\n")
+    snapshot.stdin.flush()
+    snapshot_id = snapshot.stdout.readline().strip()
+    if not re.fullmatch(r"[0-9A-Fa-f-]+", snapshot_id):
+        snapshot.kill()
+        raise RuntimeError("Postgres did not export a valid backup snapshot")
+    try:
+        subprocess.run(  # nosec B603 - fixed argv and shell=False
+            [
+                "pg_dump", "--format=custom", "--no-owner", "--no-acl",
+                f"--snapshot={snapshot_id}", "--file=postgres.dump",
+            ],
+            cwd=destination.parent,
+            check=True,
+            shell=False,
+        )
+        references_result = subprocess.run(  # nosec B603 - fixed psql query
+            [
+                "psql", "--no-psqlrc", "--tuples-only", "--no-align",
+                "--set", "ON_ERROR_STOP=1", "--command",
+                f"BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY; "
+                f"SET TRANSACTION SNAPSHOT '{snapshot_id}'; "
+                f"{DATABASE_REFERENCE_QUERY}",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            shell=False,
+        )
+        references = parse_object_references(
+            references_result.stdout.splitlines(), [os.environ[name] for name in BUCKET_ENV]
+        )
+    finally:
+        snapshot.stdin.write("ROLLBACK;\n\\q\n")
+        snapshot.stdin.flush()
+        snapshot.wait(timeout=30)
     if destination.stat().st_size == 0:
         raise RuntimeError("Postgres dump is empty")
+    return references
 
 
 def safe_object_name(bucket: str, key: str) -> str:
@@ -209,6 +287,7 @@ def export_objects(
     client: Any,
     selections: dict[str, list[dict[str, Any]]],
     payload: Path,
+    database_references: set[tuple[str, str]],
 ) -> list[dict[str, Any]]:
     objects_dir = payload / "objects"
     objects_dir.mkdir(mode=0o700)
@@ -217,6 +296,28 @@ def export_objects(
     for bucket, versions in selections.items():
         for version in versions:
             key = version["Key"]
+            referenced = (bucket, key) in database_references
+            if not referenced:
+                # Keep the disposition in the manifest for auditability, but
+                # do not copy orphaned/deleted bytes into the Restic payload.
+                manifest.append(
+                    {
+                        "bucket": bucket,
+                        "key": key,
+                        "versionId": version["VersionId"],
+                        "file": None,
+                        "size": int(version.get("Size", 0)),
+                        "etag": version.get("ETag", "").strip('"'),
+                        "contentType": version.get(
+                            "ContentType", "application/octet-stream"
+                        ),
+                        "lastModified": version["LastModified"]
+                        .astimezone(dt.timezone.utc)
+                        .isoformat(),
+                        "databaseReferenced": False,
+                    }
+                )
+                continue
             relative_name = safe_object_name(bucket, key)
             destination = payload / relative_name
             destination.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -244,6 +345,7 @@ def export_objects(
                     "etag": response.get("ETag", "").strip('"'),
                     "contentType": response.get("ContentType", "application/octet-stream"),
                     "lastModified": version["LastModified"].astimezone(dt.timezone.utc).isoformat(),
+                    "databaseReferenced": referenced,
                 }
             )
     return manifest
@@ -368,19 +470,16 @@ def backup_once(*, allow_local_repository: bool = False) -> str:
     if payload.exists():
         shutil.rmtree(payload)
 
-    # Object keys are UUID-based and immutable in StorageService. Capturing
-    # after pg_dump safely includes objects uploaded before the DB snapshot,
-    # even if a key is concurrently deleted after that snapshot: versioning
-    # retains its value version and delete markers are not selected. Uploads
-    # after the DB snapshot may be harmless extras. Do not change this to a
-    # timestamp cutoff without proving database/MinIO clock alignment.
+    # Export candidates after the MVCC snapshot. The manifest records which
+    # candidate keys were referenced by that exact snapshot; restore skips
+    # unreferenced keys, including objects deleted before the recovery point.
     selections = {bucket: list_latest_versions(client, bucket) for bucket in buckets}
     database_bytes = pg_database_size()
     ensure_capacity(stage_root, database_bytes, selections)
 
     payload.mkdir(mode=0o700)
     try:
-        dump_postgres(payload / "postgres.dump")
+        database_references = dump_postgres(payload / "postgres.dump")
         # List versions after pg_dump. The database snapshot is fixed before
         # listing begins: every referenced key was uploaded before its row
         # committed. UUID keys are immutable, so later uploads are extras;
@@ -394,7 +493,7 @@ def backup_once(*, allow_local_repository: bool = False) -> str:
         remaining = shutil.disk_usage(stage_root).free
         if remaining < actual_object_bytes + max(1024**3, actual_object_bytes // 5):
             raise RuntimeError("insufficient staging space for MinIO object export")
-        manifest = export_objects(client, selections, payload)
+        manifest = export_objects(client, selections, payload, database_references)
         manifest_path = payload / "manifest.json"
         manifest_path.write_text(
             json.dumps(

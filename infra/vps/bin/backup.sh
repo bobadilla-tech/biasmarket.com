@@ -49,4 +49,34 @@ source "$ROOT_DIR/lib/state.sh"
 # shellcheck source=../lib/compose.sh
 # shellcheck disable=SC1091
 source "$ROOT_DIR/lib/compose.sh"
-compose --profile backup run --rm backup
+
+# Run detached so a systemd stop/timeout can stop the exact one-off container,
+# then wait for Docker to confirm it exited before this process releases flock.
+container_id=""
+stop_backup() {
+  local signal="$1"
+  trap - INT TERM
+  if [[ -n "$container_id" ]]; then
+    docker stop --time 30 "$container_id" >/dev/null 2>&1 || true
+    docker wait "$container_id" >/dev/null 2>&1 || true
+    docker rm "$container_id" >/dev/null 2>&1 || true
+  fi
+  if [[ "$signal" == INT ]]; then
+    exit 130
+  fi
+  exit 143
+}
+trap 'stop_backup INT' INT
+trap 'stop_backup TERM' TERM
+
+container_id="$(compose --profile backup run --detach backup)"
+if [[ ! "$container_id" =~ ^[0-9a-f]{12,64}$ ]]; then
+  echo "docker compose did not return a valid backup container ID" >&2
+  exit 1
+fi
+container_status="$(docker wait "$container_id")"
+docker rm "$container_id" >/dev/null
+if [[ "$container_status" != 0 ]]; then
+  echo "backup container exited with status $container_status" >&2
+  exit "$container_status"
+fi

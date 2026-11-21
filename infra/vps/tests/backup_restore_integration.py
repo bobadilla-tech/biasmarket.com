@@ -120,6 +120,14 @@ def seed_source() -> tuple[dict[tuple[str, str], tuple[str, str]], list[tuple[st
             hashlib.sha256(current).hexdigest(),
         )
 
+    # Simulate a key deleted before the recovery point. Its old version still
+    # exists because versioning is enabled, but the database snapshot has no
+    # reference and restore must leave it deleted.
+    client.put_object(
+        Bucket="products", Key="deleted-before-snapshot.txt", Body=b"old-orphan"
+    )
+    client.delete_object(Bucket="products", Key="deleted-before-snapshot.txt")
+
     subprocess.run(  # nosec B603 - fixed SQL seed against disposable Postgres
         [
             "psql", "--no-psqlrc", "--set", "ON_ERROR_STOP=1", "--command",
@@ -128,7 +136,23 @@ def seed_source() -> tuple[dict[tuple[str, str], tuple[str, str]], list[tuple[st
             "CREATE TABLE object_references (bucket text NOT NULL, object_key text NOT NULL); "
             "INSERT INTO object_references VALUES "
             "('products', 'product-image.txt'), ('logos', 'brand-logo.txt'), "
-            "('payments', 'proof.txt');",
+            "('payments', 'proof.txt'); "
+            "CREATE TABLE \"Store\" (\"logoUrl\" text, \"bannerUrl\" text, "
+            "\"publicOwnerAvatarUrl\" text, \"aboutMarkdown\" text); "
+            "INSERT INTO \"Store\" (\"logoUrl\") VALUES "
+            "('https://cdn.example/logos/brand-logo.txt'); "
+            "CREATE TABLE \"Product\" (\"images\" text[] NOT NULL DEFAULT '{}'); "
+            "INSERT INTO \"Product\" VALUES "
+            "(ARRAY['https://cdn.example/products/product-image.txt']); "
+            "CREATE TABLE \"ProductVariant\" (\"imageOverride\" text); "
+            "CREATE TABLE \"Category\" (\"imageUrl\" text); "
+            "CREATE TABLE \"StoreReference\" (\"imageUrl\" text); "
+            "CREATE TABLE \"StoreSection\" (\"content\" jsonb); "
+            "CREATE TABLE \"PaymentMethodConfig\" (\"details\" jsonb); "
+            "CREATE TABLE \"Order\" (\"packedPhotoUrl\" text); "
+            "CREATE TABLE \"OrderPayment\" (\"imageUrl\" text); "
+            "INSERT INTO \"OrderPayment\" VALUES "
+            "('https://cdn.example/payments/proof.txt');",
         ],
         check=True,
         capture_output=True,
@@ -151,13 +175,14 @@ def run_backup() -> tuple[str, dict[tuple[str, str], tuple[str, str]]]:
     backup.send_success_heartbeat = lambda: None
     original_dump = backup.dump_postgres
 
-    def dump_then_delete(destination: Path) -> None:
-        original_dump(destination)
+    def dump_then_delete(destination: Path) -> set[tuple[str, str]]:
+        references = original_dump(destination)
         source = s3_client(os.environ["BACKUP_SOURCE_ENDPOINT"])
         for bucket, key in delete_after_dump:
             marker = source.delete_object(Bucket=bucket, Key=key)
             if not marker.get("VersionId"):
                 raise AssertionError(f"MinIO did not create a delete marker for {bucket}/{key}")
+        return references
 
     backup.dump_postgres = dump_then_delete
     subprocess.run(  # nosec B603 - fixed Restic initialization of the local CI repository
@@ -250,11 +275,16 @@ def restore_and_verify(
         raise AssertionError(f"unexpected restored database row: {database_result!r}")
 
     manifest: dict[str, Any] = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if len(manifest["objects"]) != len(expected):
-        raise AssertionError("backup exported old versions or included delete markers")
+    if len(manifest["objects"]) != len(expected) + 1:
+        raise AssertionError("backup omitted an object version or included an unexpected key")
     entries = {(item["bucket"], item["key"]): item for item in manifest["objects"]}
-    if set(entries) != set(expected):
+    deleted_before = ("products", "deleted-before-snapshot.txt")
+    if set(entries) != set(expected) | {deleted_before}:
         raise AssertionError(f"unexpected object set in manifest: {sorted(entries)}")
+    if entries[deleted_before]["databaseReferenced"]:
+        raise AssertionError("pre-snapshot deletion was marked as database referenced")
+    if any(not entries[item]["databaseReferenced"] for item in expected):
+        raise AssertionError("a database-referenced object was omitted from the manifest")
 
     restore_client = s3_client(os.environ["RESTORE_MINIO_ENDPOINT"])
     for bucket in SOURCE_BUCKETS:
@@ -281,7 +311,11 @@ def restore_and_verify(
             ),
         )
 
-    for identity, (expected_version, expected_hash) in expected.items():
+    for entry in manifest["objects"]:
+        if not entry["databaseReferenced"]:
+            continue
+        identity = (entry["bucket"], entry["key"])
+        expected_version, expected_hash = expected[identity]
         entry = entries[identity]
         if entry["versionId"] != expected_version:
             raise AssertionError(

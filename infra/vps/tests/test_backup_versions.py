@@ -152,13 +152,38 @@ class BackupVersionSelectionTests(unittest.TestCase):
         }
         with tempfile.TemporaryDirectory() as directory:
             payload = Path(directory)
-            manifest = backup.export_objects(client, selections, payload)
+            manifest = backup.export_objects(
+                client,
+                selections,
+                payload,
+                {("products", "products/uuid.jpg")},
+            )
             object_file = payload / manifest[0]["file"]
             self.assertEqual(object_file.read_bytes(), b"database-snapshot-object")
             self.assertEqual(
                 client.requested_versions,
                 [("products", "products/uuid.jpg", "retained-version")],
             )
+            self.assertTrue(manifest[0]["databaseReferenced"])
+
+    def test_export_records_but_does_not_copy_unreferenced_versions(self):
+        client = FakeClient()
+        timestamp = dt.datetime(2026, 11, 20, tzinfo=dt.timezone.utc)
+        selections = {
+            "products": [
+                {
+                    "Key": "products/deleted-before-recovery.jpg",
+                    "VersionId": "orphaned-version",
+                    "LastModified": timestamp,
+                    "Size": 24,
+                }
+            ]
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = backup.export_objects(client, selections, Path(directory), set())
+        self.assertFalse(manifest[0]["databaseReferenced"])
+        self.assertIsNone(manifest[0]["file"])
+        self.assertEqual(client.requested_versions, [])
 
     def test_local_repository_requires_explicit_backup_test_mode(self):
         with tempfile.TemporaryDirectory() as directory:

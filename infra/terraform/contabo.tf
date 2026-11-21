@@ -70,7 +70,10 @@ resource "contabo_instance" "main" {
   # perpetual diff. They are kept above as documentation of intent (and for a
   # future create), and ignored afterwards.
   lifecycle {
-    ignore_changes = [period, region]
+    # Contabo treats a user_data change as a VPS reinstall. Existing hosts
+    # receive helper updates through the administrator procedure in
+    # docs/core/backup-plan.md; new instances still get the current template.
+    ignore_changes = [period, region, user_data]
 
     # A plan that would destroy or replace the production VPS fails instead.
     # To really tear it down, remove this line first (and remember a Contabo
