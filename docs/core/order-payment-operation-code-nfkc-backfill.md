@@ -19,8 +19,11 @@ preflights and updates, so schedule it when a brief pause to payment writes is
 acceptable. The first report lists active, non-voided, non-rejected rows whose
 new comparison key would newly collide across orders within a store. If any are
 found, the script raises an error and rolls back without changing rows; resolve
-those values with the relevant store before rerunning. Existing collision keys
-that do not change under NFKC are not treated as newly introduced.
+those values with the relevant store before rerunning. The guard reports a
+normalized key found on multiple orders when at least one row's old comparison
+key differed from it. This also catches legacy values that previously
+normalized to an empty comparison key but become nonempty under NFKC, while
+leaving collisions that were already present unchanged out of the report.
 
 The second report lists legacy values whose comparison key remains empty.
 These rows do not collide: duplicate lookup skips empty incoming keys, and the
