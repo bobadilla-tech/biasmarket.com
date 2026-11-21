@@ -27,7 +27,8 @@ migration_database_url_with_lock_timeout() {
 
 migration_pre_snapshot() {
   local sha="$1"
-  local outfile="$RELEASES_DIR/pre-migrate-${sha}-$(date -u +%Y%m%dT%H%M%SZ).sql.gz"
+  local outfile
+  outfile="$RELEASES_DIR/pre-migrate-${sha}-$(date -u +%Y%m%dT%H%M%SZ).sql.gz"
   log_info "Taking pre-migration snapshot -> $(basename "$outfile")"
   # Runs against the always-on `db` service directly (not a candidate
   # container) — reads POSTGRES_USER/POSTGRES_DB from its own env_file.

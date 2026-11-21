@@ -37,6 +37,7 @@ schedule_cleanup() {
   # down, which must NOT resolve until the `exec` inside the child, at fire
   # time (decision 3 of the design doc). Keeps the fd number a single
   # source of truth (lib/lock.sh) instead of a bare literal repeated here.
+  # shellcheck disable=SC2016  # The inner script must expand variables when it runs, not now.
   setsid bash -c '
     exec '"$DEPLOY_LOCK_FD"'>&-  # close the inherited deploy-lock fd — a
                             # plain backgrounded fork duplicates all open
@@ -57,6 +58,7 @@ schedule_cleanup() {
   # a correctness one).
   atomic_write "$SCHEDULED_CLEANUP_PID_FILE" "$pid" \
     || { log_warn "Failed to record scheduled_cleanup.pid (pid=$pid still running, untracked)."; return 1; }
+  # shellcheck disable=SC2154  # sha and current_color are dynamically scoped by cmd_deploy.
   atomic_write "$SCHEDULED_CLEANUP_META_FILE" "$(cat <<EOF
 pid=$pid
 scheduled_by=$sha
