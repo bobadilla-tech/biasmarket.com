@@ -12,6 +12,7 @@ import { NotificationsService } from "../../notifications/notifications.service.
 import type { StockAlertPush } from "../../notifications/notifications.service.js";
 import { MailerService } from "../../../mailer/mailer.service.js";
 import { OrderEventsService } from "./order-events.service.js";
+import { closePendingBuyerProofs } from "./close-pending-proofs.js";
 
 function buildPaymentStatusEmailHtml(
   decision: "approve" | "reject",
@@ -106,6 +107,15 @@ export class ReviewPaymentUseCase {
         throw new ConflictException(
           "Este pedido ya fue revisado por otra solicitud.",
         );
+      }
+
+      if (decision === "reject") {
+        await closePendingBuyerProofs(tx, this.events, {
+          orderId,
+          storeId,
+          actor: "SELLER",
+          actorId: userId,
+        });
       }
 
       for (const item of row.items) {

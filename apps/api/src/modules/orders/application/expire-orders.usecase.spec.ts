@@ -21,6 +21,7 @@ describe("ExpireOrdersUseCase", () => {
   let events: { record: Mock };
   let prisma: {
     order: { findMany: Mock; updateMany: Mock };
+    orderPayment: { findMany: Mock; updateMany: Mock };
     auditLog: { create: Mock };
     productVariant: { findUnique: Mock; update: Mock };
     store: { findUnique: Mock };
@@ -32,6 +33,10 @@ describe("ExpireOrdersUseCase", () => {
     prisma = {
       order: {
         findMany: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+      orderPayment: {
+        findMany: vi.fn().mockResolvedValue([]),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       auditLog: { create: vi.fn() },
@@ -140,6 +145,36 @@ describe("ExpireOrdersUseCase", () => {
 
     expect(callbackRejected).toBe(true);
     expect(prisma.order.updateMany).toHaveBeenCalled();
+  });
+
+  it("closes pending buyer proofs as SYSTEM during expiry", async () => {
+    prisma.order.findMany.mockResolvedValue([order({ items: [] })]);
+    prisma.orderPayment.findMany.mockResolvedValue([{ id: "proof-1" }]);
+
+    await useCase.execute();
+
+    expect(prisma.orderPayment.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: "proof-1",
+          orderId: "order-1",
+          storeId: "store-1",
+          reviewStatus: "PENDING_REVIEW",
+        }),
+        data: expect.objectContaining({
+          reviewStatus: "REJECTED",
+          reviewedBy: null,
+        }),
+      }),
+    );
+    expect(events.record).toHaveBeenCalledWith(
+      prisma,
+      expect.objectContaining({
+        type: "PAYMENT_REJECTED",
+        actor: "SYSTEM",
+        payload: { paymentId: "proof-1" },
+      }),
+    );
   });
 
   it("skips releasing stock for unlimited (null stock) variants", async () => {
