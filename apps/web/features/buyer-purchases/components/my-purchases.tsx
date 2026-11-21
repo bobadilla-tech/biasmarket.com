@@ -48,7 +48,11 @@ function groupByStore(orders: GlobalAccountOrderResponseDto[]): StoreGroup[] {
 export function MyPurchases({ claimCode }: { claimCode?: string }) {
   const t = useTranslations("storefront.myPurchases");
   const locale = useLocale();
-  const reclaim = useExchangeReclaimTicket();
+  const {
+    mutate: exchangeReclaim,
+    isPending: isReclaimPending,
+    isError: isReclaimError,
+  } = useExchangeReclaimTicket();
   const profile = useGlobalAccount();
   const orders = useGlobalOrders(Boolean(profile.data));
   const logout = useGlobalLogout();
@@ -76,12 +80,12 @@ export function MyPurchases({ claimCode }: { claimCode?: string }) {
       "",
       `${window.location.pathname}${window.location.search}`,
     );
-    reclaim.mutate(ticket, {
+    exchangeReclaim(ticket, {
       onSuccess: () => window.location.assign(claimStartUrl(locale)),
     });
-  }, [locale, reclaim.mutate]);
+  }, [locale, exchangeReclaim]);
 
-  if (reclaim.isPending) {
+  if (isReclaimPending) {
     return (
       <p role="status" className="text-sm text-gray-600">
         {t("reclaiming")}
@@ -95,7 +99,7 @@ export function MyPurchases({ claimCode }: { claimCode?: string }) {
     return (
       <div className="flex flex-col items-center gap-6">
         <ClaimErrorBanner code={claimCode} />
-        {reclaim.isError ? (
+        {isReclaimError ? (
           <p role="alert" className="text-sm text-red-700">
             {t("reclaimError")}
           </p>
@@ -124,7 +128,7 @@ export function MyPurchases({ claimCode }: { claimCode?: string }) {
   return (
     <div className="flex flex-col gap-8">
       <ClaimErrorBanner code={claimCode} />
-      {reclaim.isError ? (
+      {isReclaimError ? (
         <p role="alert" className="text-sm text-red-700">
           {t("reclaimError")}
         </p>
