@@ -1,0 +1,9 @@
+[Unit]
+Description=Validate Bias Market backup runtime configuration (no backup)
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=/home/deploy/biasmarket/env/backup.env
+ExecStart=/usr/local/sbin/biasmarket-backup-config-check --check

@@ -61,7 +61,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        app: [api, web, workers]
+        app: [api, web, workers, backup]
     steps:
       - uses: actions/checkout@v7
         with:

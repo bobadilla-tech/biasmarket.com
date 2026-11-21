@@ -39,6 +39,15 @@ locals {
     host_public_key            = trimspace(tls_private_key.host.public_key_openssh)
     deploy_rsync_public_key    = trimspace(tls_private_key.deploy_rsync.public_key_openssh)
     deploy_dispatch_public_key = trimspace(tls_private_key.deploy_dispatch.public_key_openssh)
+    backup_setup_script        = file("${path.module}/../vps/bin/backup-setup.sh")
+    backup_script              = file("${path.module}/../vps/bin/backup.sh")
+    backup_config_check_script = file("${path.module}/../vps/bin/backup-config-check.sh")
+    backup_compose             = file("${path.module}/../vps/backup-compose.yml")
+    backup_config_unit         = file("${path.module}/../vps/systemd/biasmarket-backup-config.service")
+    backup_service_unit        = file("${path.module}/../vps/systemd/biasmarket-backup.service")
+    backup_timer_unit          = file("${path.module}/../vps/systemd/biasmarket-backup.timer")
+    backup_setup_path_unit     = file("${path.module}/../vps/systemd/biasmarket-backup-setup.path")
+    backup_setup_service_unit  = file("${path.module}/../vps/systemd/biasmarket-backup-setup.service")
   })
 }
 
@@ -64,7 +73,10 @@ resource "contabo_instance" "main" {
   # perpetual diff. They are kept above as documentation of intent (and for a
   # future create), and ignored afterwards.
   lifecycle {
-    ignore_changes = [period, region]
+    # Contabo treats a user_data change as a VPS reinstall. Existing hosts
+    # receive helper updates through the administrator procedure in
+    # docs/core/backup-plan.md; new instances still get the current template.
+    ignore_changes = [period, region, user_data]
 
     # A plan that would destroy or replace the production VPS fails instead.
     # To really tear it down, remove this line first (and remember a Contabo

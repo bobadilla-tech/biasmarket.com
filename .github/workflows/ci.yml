@@ -15,6 +15,10 @@ on:
         description: "Run the API E2E job on this manual run"
         type: boolean
         default: false
+      run_backup_restore:
+        description: "Run the disposable Postgres/MinIO/Restic backup restore integration"
+        type: boolean
+        default: false
   # merge_group is deliberately not wired. If a merge queue is enabled while
   # CI Success is required, add merge_group here first or the queue wedges.
 
@@ -64,6 +68,7 @@ jobs:
       sanity: ${{ steps.filter.outputs.sanity }}
       web_e2e: ${{ steps.filter.outputs.web_e2e }}
       api_e2e: ${{ steps.filter.outputs.api_e2e }}
+      backup_restore: ${{ steps.filter.outputs.backup_restore }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -88,6 +93,17 @@ jobs:
               - '.prettierrc'
               - 'eslint.config.mjs'
               - 'scripts/lint-changed-files.mjs'
+            backup_restore:
+              - 'infra/docker/backup.Dockerfile'
+              - 'infra/vps/bin/backup*.sh'
+              - 'infra/vps/backup.py'
+              - 'infra/vps/docker-compose.yml'
+              - 'infra/vps/env/backup.env.example'
+              - 'infra/vps/systemd/biasmarket-backup*'
+              - 'infra/vps/tests/**'
+              - 'scripts/ci/backup-restore-integration.sh'
+              - 'scripts/ci/e2e-images.sh'
+              - '.github/workflows/ci.yml'
             web:
               - 'apps/web/**'
               - 'packages/design-tokens/**'
@@ -1213,6 +1229,28 @@ jobs:
         working-directory: infra/vps
         run: find . -type f -name '*.sh' -print0 | xargs -0 shellcheck -x
 
+      - name: Backup version race tests
+        run: python3 -m unittest discover -s infra/vps/tests -v
+
+  backup-restore:
+    name: Backup Restore (Postgres + MinIO + Restic)
+    needs: detect-changes
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' && needs.detect-changes.outputs.backup_restore == 'true') ||
+      (github.event_name == 'workflow_dispatch' && inputs.run_backup_restore)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Run disposable backup and restore integration
+        run: bash scripts/ci/backup-restore-integration.sh
+
   e2e:
     name: E2E (API)
     # Run on pushes to main, relevant pull request changes, and explicit
@@ -1453,6 +1491,7 @@ jobs:
       - query
       - sanity
       - hygiene
+      - backup-restore
       - e2e
       - web-e2e
     if: always()
@@ -1480,6 +1519,7 @@ jobs:
           QUERY_RESULT: ${{ needs.query.result }}
           SANITY_RESULT: ${{ needs.sanity.result }}
           HYGIENE_RESULT: ${{ needs.hygiene.result }}
+          BACKUP_RESTORE_RESULT: ${{ needs.backup-restore.result }}
           E2E_RESULT: ${{ needs.e2e.result }}
           WEB_E2E_RESULT: ${{ needs.web-e2e.result }}
           API_CHANGED: ${{ needs.detect-changes.outputs.api }}
@@ -1497,7 +1537,9 @@ jobs:
           SANITY_CHANGED: ${{ needs.detect-changes.outputs.sanity }}
           WEB_E2E_CHANGED: ${{ needs.detect-changes.outputs.web_e2e }}
           API_E2E_CHANGED: ${{ needs.detect-changes.outputs.api_e2e }}
+          BACKUP_RESTORE_CHANGED: ${{ needs.detect-changes.outputs.backup_restore }}
           EVENT_NAME: ${{ github.event_name }}
           # Guard the boolean input with the event name; on push, inputs is null.
           RUN_E2E: ${{ github.event_name == 'workflow_dispatch' && inputs.run_e2e || false }}
+          RUN_BACKUP_RESTORE: ${{ github.event_name == 'workflow_dispatch' && inputs.run_backup_restore || false }}
         run: bash scripts/ci/check-ci-success.sh

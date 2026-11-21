@@ -1,0 +1,9 @@
+[Unit]
+Description=Watch for provisioned Bias Market backup configuration
+
+[Path]
+PathChanged=/home/deploy/biasmarket/env/backup.env
+Unit=biasmarket-backup-setup.service
+
+[Install]
+WantedBy=multi-user.target

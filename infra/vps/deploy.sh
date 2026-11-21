@@ -84,6 +84,19 @@ phase() {
   PHASE_STARTED_AT="$now"
 }
 
+# Cloud-init installs the root-owned backup runtime, Compose file, helper and units outside the
+# synced tree. Each successful deploy invokes that fixed helper to activate the
+# timer only if the runtime config passes preflight. Its path unit retries when
+# Infisical later creates or changes backup.env.
+# A missing/invalid backup config is visible in deploy output and systemd's
+# journal, but cannot turn an otherwise successful application cutover red.
+activate_backup_schedule() {
+  if ! sudo -n /usr/local/sbin/biasmarket-backup-setup; then
+    log_warn "Backup config is missing or invalid, or backup unit activation failed; inspect biasmarket-backup-setup.service before relying on scheduled backups."
+  fi
+  return 0
+}
+
 teardown_candidate() {
   local color="$1"
   log_warn "Tearing down candidate color=$color"
@@ -278,6 +291,7 @@ cmd_deploy() {
   schedule_cleanup || log_warn "Failed to schedule automatic cleanup — old color ($current_color) must be cleaned up manually via deploy.sh --cleanup." || true
 
   append_history "deploy sha=$sha color=$candidate_color outcome=success previous_color=$current_color"
+  activate_backup_schedule
   log_info "Deploy complete. Live color=$candidate_color sha=$sha."
   log_info "Previous color ($current_color) is left running as the rollback target — cleaned up by a later scheduled --cleanup run, or use --rollback now if something looks wrong."
 }
@@ -466,6 +480,7 @@ cmd_bootstrap() {
   atomic_write "$ROLLBACK_TARGET_SET_AT_FILE" ""
 
   append_history "bootstrap sha=$sha color=$color outcome=success"
+  activate_backup_schedule
   log_info "Bootstrap complete. Live color=$color sha=$sha. The other color ($(other_color "$color")) is not running yet — the next normal deploy starts it."
 }
 

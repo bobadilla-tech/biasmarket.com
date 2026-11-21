@@ -118,6 +118,34 @@ services:
     entrypoint: >
       sh -c "mc mb --ignore-existing local/${S3_BUCKET} && mc anonymous set download local/${S3_BUCKET} && mc mb --ignore-existing local/${S3_LOGO_BUCKET} && mc anonymous set download local/${S3_LOGO_BUCKET} && mc mb --ignore-existing local/${S3_PAYMENT_BUCKET}"
 
+  # Explicitly invoked, single-run backup job. No timer is installed or
+  # enabled by this profile. The staging directory contains plaintext dumps
+  # while the job runs and must be protected, with access limited to the
+  # dedicated backup UID inside this container.
+  backup:
+    image: ghcr.io/bobadilla-tech/biasmarket-backup:${IMAGE_TAG:?IMAGE_TAG must be set — pass --env-file, see lib/compose.sh}
+    profiles: [backup]
+    networks: [stack]
+    env_file:
+      - env/backup.env
+    environment:
+      - PGHOST=db
+      - PGPORT=5432
+      - PGUSER=${POSTGRES_USER}
+      - PGPASSWORD=${POSTGRES_PASSWORD}
+      - PGDATABASE=${POSTGRES_DB}
+      - BACKUP_STAGE_DIR=/backup-stage
+      - S3_PUBLIC_URL=${S3_PUBLIC_URL:?S3_PUBLIC_URL must be set}
+      - S3_LEGACY_PUBLIC_URLS=${S3_LEGACY_PUBLIC_URLS:-}
+    volumes:
+      - ./state/backup-stage:/backup-stage
+    depends_on:
+      db:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    restart: "no"
+
   uptime-kuma:
     image: louislam/uptime-kuma:1.23.16
     restart: unless-stopped

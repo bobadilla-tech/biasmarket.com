@@ -1,0 +1,27 @@
+name: biasmarket
+
+# Installed root-owned outside the rsync target. Keep this service definition
+# small so the privileged systemd wrapper never parses deploy-writable YAML.
+services:
+  backup:
+    image: ghcr.io/bobadilla-tech/biasmarket-backup:${IMAGE_TAG:?IMAGE_TAG must be set}
+    networks: [stack]
+    env_file:
+      - /home/deploy/biasmarket/env/backup.env
+    environment:
+      PGHOST: db
+      PGPORT: "5432"
+      PGUSER: ${POSTGRES_USER:?POSTGRES_USER must be set}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      PGDATABASE: ${POSTGRES_DB:?POSTGRES_DB must be set}
+      BACKUP_STAGE_DIR: /backup-stage
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL:?S3_PUBLIC_URL must be set}
+      S3_LEGACY_PUBLIC_URLS: ${S3_LEGACY_PUBLIC_URLS:-}
+    volumes:
+      - /var/lib/biasmarket-backup/stage:/backup-stage
+    restart: "no"
+
+networks:
+  stack:
+    external: true
+    name: biasmarket_stack
