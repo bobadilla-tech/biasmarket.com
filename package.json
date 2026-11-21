@@ -15,6 +15,7 @@
     "db:generate": "turbo run db:generate",
     "kuma:setup": "node scripts/setup-kuma.ts",
     "docker:dev": "docker compose -f infra/docker/docker-compose.dev.yml up --build",
+    "docker:dev:infisical": "node scripts/docker-dev-infisical.mjs",
     "docker:dev:down": "docker compose -f infra/docker/docker-compose.dev.yml down",
     "admin:create:dev": "docker compose -f infra/docker/docker-compose.dev.yml exec api pnpm --filter api run admin:create",
     "admin:promote:dev": "docker compose -f infra/docker/docker-compose.dev.yml exec api pnpm --filter api run admin:promote",

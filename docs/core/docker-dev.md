@@ -19,9 +19,31 @@ bind-mounted from the repo root so edits on the host are picked up immediately;
 volume (never a host-mounted `node_modules`, since native binaries like Prisma's
 engines are Linux-specific and the host here is macOS).
 
-Env vars come from `.env.example` (committed, safe defaults) with an optional,
-gitignored `.env.local` layered on top for personal overrides — not required to
-exist.
+The default `pnpm docker:dev` workflow uses `.env.example` (committed, safe
+defaults) with optional, gitignored `.env.local` overrides. To use the team's
+Infisical development project instead, install the Infisical CLI, log in with
+your developer account, then set the non-secret connection settings and use
+`pnpm docker:dev:infisical`:
+
+```bash
+export INFISICAL_DOMAIN="https://<team-infisical-host>"
+export INFISICAL_PROJECT_ID="<development-project-id>"
+export INFISICAL_ENV=dev
+infisical login
+pnpm docker:dev:infisical
+```
+
+`INFISICAL_PATH` optionally selects a folder and defaults to `/`. The command
+exports the selected development secrets into a mode-`0600` temporary file,
+uses it for Compose interpolation and container environment values, then
+removes it when Compose exits. Infisical values override `.env.example` and
+`.env.local`. Do not put Machine Identity credentials in shell startup files;
+local development uses each authorized developer's CLI login. Stop the stack
+with `pnpm docker:dev:down`.
+
+This is an opt-in migration path: the ordinary development command and CI
+fixtures remain unchanged until the team has populated and reviewed the
+Infisical development project.
 
 Prisma migrations run automatically (`prisma migrate deploy`) before the api
 starts, followed by the idempotent base seed (`apps/api/scripts/seed/run.ts`);
@@ -39,8 +61,8 @@ least 8 GB of RAM. It is working when the logs settle and `web` prints `Ready`;
 | ------------- | ----------------------- | ---------------------------------------------------------- |
 | `web`         | <http://localhost:3001> | Redirects to a locale, e.g. `/es`. Dashboard: `/es/login`. |
 | `api`         | <http://localhost:3000> | Routes are under `/api`, e.g. `/api/health`.               |
-| `minio`       | <http://localhost:9001> | Console. Login `admin` / `password123`.                    |
-| `db`, `redis` | `5432`, `6379`          | Credentials in `infra/docker/.env.example`.                |
+| `minio`       | <http://localhost:9001> | Console. Default login `admin` / `password123`; Infisical mode uses `S3_ACCESS_KEY` / `S3_SECRET_KEY`. |
+| `db`, `redis` | `5432`, `6379`          | Credentials come from `.env.example` or the selected Infisical development environment. |
 
 **`minio-init` showing as stopped/exited is normal.** It is a one-shot job that
 creates the buckets and exits with code 0. Every other service should stay
@@ -164,7 +186,8 @@ container.
 
 | Command                                          | What it does                                                                              |
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------- |
-| `pnpm docker:dev` / `pnpm docker:dev:down`       | Start (with build) or stop the dev stack.                                                 |
+| `pnpm docker:dev` / `pnpm docker:dev:down`       | Start (with build) or stop the default dev stack.                                        |
+| `pnpm docker:dev:infisical`                      | Start Compose with the authorized developer's Infisical development values.              |
 | `pnpm admin:create:dev` / `admin:promote:dev`    | Create an admin user, or promote an existing one. See [admin-access.md](admin-access.md). |
 | `pnpm seed:base:dev` / `seed:append:dev`         | Re-run the base seed, or add a labeled demo batch.                                        |
 | `pnpm dev`, `build`, `lint`, `typecheck`, `test` | Turbo tasks across the workspace.                                                         |

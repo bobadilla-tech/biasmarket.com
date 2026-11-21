@@ -1,8 +1,12 @@
 # Copy to terraform.tfvars (gitignored) and fill in.
 cloudflare_zone_id = "<zone id>"
+ssh_provisioning_mode = "legacy" # use "external" only for a new host with a fresh state
 contabo_instance_id = "<numeric instance id>"
 contabo_image_id    = "<image uuid>"
 admin_ssh_public_key = "<contents of your .pub file>"
+# External mode only: output from `scripts/external-ssh-credentials.sh generate`.
+# deploy_rsync_public_key    = "ssh-ed25519 <public-key> biasmarket-deploy-rsync"
+# deploy_dispatch_public_key = "ssh-ed25519 <public-key> biasmarket-deploy-dispatch"
 web_public_env = {
   NEXT_PUBLIC_API_URL           = "https://api.example.com"
   NEXT_PUBLIC_SITE_URL          = "https://example.com"

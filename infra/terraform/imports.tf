@@ -25,8 +25,10 @@ import {
 }
 
 import {
+  for_each = var.ssh_provisioning_mode == "legacy" && trimspace(var.contabo_instance_id) != "" ? { adopted = var.contabo_instance_id } : {}
+
   to = contabo_instance.main
-  id = var.contabo_instance_id
+  id = each.value
 }
 
 # The GitHub `production` environment and the NEXT_PUBLIC_* variables were
