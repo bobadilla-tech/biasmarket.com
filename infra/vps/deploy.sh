@@ -84,7 +84,7 @@ phase() {
   PHASE_STARTED_AT="$now"
 }
 
-# Cloud-init installs the root-owned helper and systemd units outside the
+# Cloud-init installs the root-owned backup runtime, Compose file, helper and units outside the
 # synced tree. Each successful deploy invokes that fixed helper to activate the
 # timer only if the runtime config passes preflight. Its path unit retries when
 # Infisical later creates or changes backup.env.

@@ -6,4 +6,4 @@ After=network-online.target
 Type=oneshot
 User=root
 EnvironmentFile=/home/deploy/biasmarket/env/backup.env
-ExecStart=/home/deploy/biasmarket/bin/backup-config-check.sh --check
+ExecStart=/usr/local/sbin/biasmarket-backup-config-check --check

@@ -41,14 +41,29 @@ write_files:
       PasswordAuthentication no
       KbdInteractiveAuthentication no
       PermitRootLogin prohibit-password
-  # Keep the backup setup helper and systemd units root-owned and outside the
-  # rrsync-writable application tree. deploy has Docker-group access already,
-  # but root services must not execute files replaced by an rsync deployment.
+  # Keep every root-executed backup script, its Compose configuration, and
+  # systemd units outside the rrsync-writable application tree. Root services
+  # must not execute code or YAML replaced by an rsync deployment.
   - path: /usr/local/sbin/biasmarket-backup-setup
     owner: root:root
     permissions: "0755"
     content: |
       ${indent(6, backup_setup_script)}
+  - path: /usr/local/sbin/biasmarket-backup
+    owner: root:root
+    permissions: "0755"
+    content: |
+      ${indent(6, backup_script)}
+  - path: /usr/local/sbin/biasmarket-backup-config-check
+    owner: root:root
+    permissions: "0755"
+    content: |
+      ${indent(6, backup_config_check_script)}
+  - path: /etc/biasmarket-backup-compose.yml
+    owner: root:root
+    permissions: "0644"
+    content: |
+      ${indent(6, backup_compose)}
   - path: /etc/systemd/system/biasmarket-backup-config.service
     owner: root:root
     permissions: "0644"
@@ -90,6 +105,8 @@ runcmd:
   - systemctl daemon-reload
   - mkdir -p /home/deploy/biasmarket/env /home/deploy/biasmarket/caddy/active /home/deploy/biasmarket/state /home/deploy/biasmarket/releases
   - chown -R deploy:deploy /home/deploy/biasmarket
+  - install -d -o root -g root -m 0711 /var/lib/biasmarket-backup
+  - install -d -o 10001 -g 10001 -m 0700 /var/lib/biasmarket-backup/stage
   # Firewall: SSH and web only. (Docker publishes only Caddy's 80/443.)
   - ufw default deny incoming
   - ufw default allow outgoing
