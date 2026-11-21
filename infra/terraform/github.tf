@@ -5,15 +5,24 @@
 locals {
   github_repo = "biasmarket.com"
 
-  # Values for the environment secrets. Derived from sensitive values (private
-  # keys), so this map cannot be iterated directly, see the for_each below.
-  deploy_secret_values = {
+  # Legacy values keep the already-adopted environment working. In external
+  # mode no SSH credential secret is read or written by Terraform; an operator
+  # installs them with the out-of-band helper after verifying the host key.
+  deploy_secret_values = var.ssh_provisioning_mode == "legacy" ? {
     DEPLOY_SSH_HOST         = local.vps_ipv4
     DEPLOY_SSH_USER         = "deploy"
-    DEPLOY_SSH_KNOWN_HOSTS  = "${local.vps_ipv4} ${trimspace(tls_private_key.host.public_key_openssh)}"
-    DEPLOY_SSH_KEY_RSYNC    = tls_private_key.deploy_rsync.private_key_openssh
-    DEPLOY_SSH_KEY_DISPATCH = tls_private_key.deploy_dispatch.private_key_openssh
-  }
+    DEPLOY_SSH_KNOWN_HOSTS  = "${local.vps_ipv4} ${trimspace(tls_private_key.host[0].public_key_openssh)}"
+    DEPLOY_SSH_KEY_RSYNC    = tls_private_key.deploy_rsync[0].private_key_openssh
+    DEPLOY_SSH_KEY_DISPATCH = tls_private_key.deploy_dispatch[0].private_key_openssh
+    } : {}
+
+  deploy_secret_names = var.ssh_provisioning_mode == "legacy" ? toset([
+    "DEPLOY_SSH_HOST",
+    "DEPLOY_SSH_USER",
+    "DEPLOY_SSH_KNOWN_HOSTS",
+    "DEPLOY_SSH_KEY_RSYNC",
+    "DEPLOY_SSH_KEY_DISPATCH",
+  ]) : toset([])
 }
 
 resource "github_repository_environment" "production" {
@@ -24,13 +33,7 @@ resource "github_repository_environment" "production" {
 # for_each cannot use a sensitive collection, so loop over the (non-secret)
 # names and index into the sensitive map inside the block.
 resource "github_actions_environment_secret" "deploy" {
-  for_each = toset([
-    "DEPLOY_SSH_HOST",
-    "DEPLOY_SSH_USER",
-    "DEPLOY_SSH_KNOWN_HOSTS",
-    "DEPLOY_SSH_KEY_RSYNC",
-    "DEPLOY_SSH_KEY_DISPATCH",
-  ])
+  for_each = local.deploy_secret_names
 
   repository      = local.github_repo
   environment     = github_repository_environment.production.environment
