@@ -50,10 +50,11 @@ import { PublicOrderResponseDto } from "../dto/public-order-response.dto.js";
 import { StorageService } from "../../../storage/storage.service.js";
 import { PAYMENT_PROOF_UPLOAD_LIMITS } from "../../../common/upload-limits.js";
 import {
-  IMAGE_UPLOAD_MIME_TYPES,
+  PROOF_UPLOAD_MIME_TYPES,
   UploadedFileValidationPipe,
   type ValidatedUploadedFile,
 } from "../../../common/uploaded-file-validation.pipe.js";
+import { paymentProofResponseOptions } from "../../../common/payment-proof-response.js";
 import {
   BuyerPaymentProofService,
   type BuyerProofOrder,
@@ -67,16 +68,12 @@ import { PublicOrderTokenGuard } from "./public-order-token.guard.js";
 import { PublicProofThrottlerGuard } from "./public-proof-throttler.guard.js";
 
 const PUBLIC_PROOF_PIPE = new UploadedFileValidationPipe({
-  allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
-  messages: { missingFile: "Adjunta un comprobante de pago" },
+  allowedMimeTypes: PROOF_UPLOAD_MIME_TYPES,
+  messages: {
+    missingFile: "Adjunta un comprobante de pago",
+    unsupportedType: "Solo JPEG, PNG o PDF",
+  },
 });
-
-// The image route only ever serves what the buyer uploaded, so the type is
-// forced from this list instead of trusting the stored object metadata.
-const PROOF_IMAGE_EXTENSIONS: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-};
 
 @Controller("public/orders")
 export class PublicOrderEventsController {
@@ -197,7 +194,7 @@ export class PublicOrderEventsController {
   @ApiParam({ name: "token", type: String })
   @ApiParam({ name: "paymentId", type: String })
   @ApiOkResponse({ schema: { type: "string", format: "binary" } })
-  @ApiProduces("image/jpeg", "image/png")
+  @ApiProduces("image/jpeg", "image/png", "application/pdf")
   @UseGuards(ThrottlerGuard, PublicOrderTokenGuard)
   @Throttle({ default: { ttl: 60_000, limit: 30 } })
   async getPaymentProofImage(
@@ -217,15 +214,12 @@ export class PublicOrderEventsController {
         throw error;
       });
     const { body, contentType } = stream;
-    const extension = PROOF_IMAGE_EXTENSIONS[contentType ?? ""];
-    if (!extension) {
+    const responseOptions = paymentProofResponseOptions(contentType);
+    if (!responseOptions) {
       body.destroy?.();
       throw new NotFoundException("Comprobante no encontrado");
     }
-    return new StreamableFile(body, {
-      type: contentType,
-      disposition: `inline; filename="comprobante.${extension}"`,
-    });
+    return new StreamableFile(body, responseOptions);
   }
 
   @Public()

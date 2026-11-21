@@ -23,6 +23,8 @@ import { ordersApi } from "../api/orders.api";
 import { useReviewPaymentProof } from "../mutations/use-review-payment-proof";
 import { useVoidPayment } from "../mutations/use-void-payment";
 import { canVoidPayment } from "../lib/payment-limits";
+import { isPdfBuyerProof } from "../lib/payment-proof";
+import { PaymentProofThumbnail } from "./payment-proof-thumbnail";
 import type { OrderPaymentResponseDto } from "@biasmarket/types";
 
 function ProofReviewBadge({
@@ -105,6 +107,7 @@ export function PaymentHistoryList({
                 payment.id,
               )
             : null;
+          const pdfProof = isPdfBuyerProof(payment);
           const methodLogo = payment.method
             ? PAYMENT_METHOD_LOGOS[payment.method]
             : undefined;
@@ -114,21 +117,18 @@ export function PaymentHistoryList({
               className="flex items-start gap-3 rounded-xl border border-[#f0e7f8] bg-[#fcf9ff] p-3 transition hover:bg-white"
             >
               {imageUrl ? (
-                <button
-                  type="button"
-                  onClick={() => onPreview(imageUrl)}
-                  aria-label={t("details.viewPaymentProof")}
+                <PaymentProofThumbnail
+                  url={imageUrl}
+                  isPdf={pdfProof}
+                  label={
+                    pdfProof
+                      ? t("details.downloadPaymentProof")
+                      : t("details.viewPaymentProof")
+                  }
+                  onPreview={() => onPreview(imageUrl)}
                   className="mt-0.5 flex size-7 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-[#f0e7f8] text-[var(--store-primary)]"
-                >
-                  <Image
-                    src={imageUrl}
-                    alt=""
-                    width={28}
-                    height={28}
-                    className="h-full w-full object-cover"
-                    unoptimized
-                  />
-                </button>
+                  imageClassName="h-full w-full object-cover"
+                />
               ) : (
                 <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#f0e7f8] text-[var(--store-primary)]">
                   <Receipt className="size-3.5" />

@@ -45,6 +45,8 @@ function jpeg(size: number): Buffer {
   return buf;
 }
 
+const pdf = Buffer.from("%PDF-1.7 buyer proof");
+
 // Both handlers throw this once the interceptor, the pipe and the note check
 // have passed, so a 404 with this message means "the request got through".
 const REACHED_HANDLER = "reached-handler";
@@ -52,6 +54,7 @@ const REACHED_HANDLER = "reached-handler";
 type Route = {
   name: string;
   url: string;
+  acceptsPdf: boolean;
   setup: () => Promise<TestingModule>;
 };
 
@@ -59,6 +62,7 @@ const routes: Route[] = [
   {
     name: "session buyer upload",
     url: "/stores/store-1/account/orders/order-1/payments",
+    acceptsPdf: true,
     setup: () =>
       Test.createTestingModule({
         imports: [ThrottlerModule.forRoot([{ ttl: 60_000, limit: 1000 }])],
@@ -100,6 +104,7 @@ const routes: Route[] = [
   {
     name: "seller addPayment",
     url: "/stores/store-1/orders/order-1/payments",
+    acceptsPdf: false,
     setup: () =>
       Test.createTestingModule({
         imports: [ThrottlerModule.forRoot([{ ttl: 60_000, limit: 1000 }])],
@@ -158,6 +163,20 @@ describe.each(routes)("payment proof upload limits: $name", (route) => {
       .attach("file", jpeg(1024), "proof.jpg");
     expect(res.status).toBe(404);
     expect(res.body.message).toBe(REACHED_HANDLER);
+  });
+
+  it("applies the PDF policy for this route", async () => {
+    const res = await post()
+      .field("amount", "10")
+      .field("method", "YAPE")
+      .attach("file", pdf, "proof.pdf");
+    if (route.acceptsPdf) {
+      expect(res.status).toBe(404);
+      expect(res.body.message).toBe(REACHED_HANDLER);
+    } else {
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe("Solo JPEG o PNG");
+    }
   });
 
   it("accepts exactly 5 MB", async () => {

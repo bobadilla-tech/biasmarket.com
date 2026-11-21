@@ -2250,7 +2250,7 @@ export interface SubmitPublicPaymentDto {
   operationCode?: string;
   /** Free text, max 500 chars. */
   note?: string;
-  /** JPEG or PNG proof of payment, up to 5 MB. */
+  /** JPEG, PNG, or PDF proof of payment, up to 5 MB. */
   file: Blob;
 }
 

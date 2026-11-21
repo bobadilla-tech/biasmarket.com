@@ -95,6 +95,23 @@ test("an approved buyer proof can be voided, a pending one cannot", () => {
   );
 });
 
+test("renders a buyer-submitted PDF as a download link", () => {
+  renderList([
+    payment({
+      source: "BUYER_SUBMITTED",
+      reviewStatus: "PENDING_REVIEW",
+      imageUrl: "https://private.example/payments/proof.pdf",
+    }),
+  ]);
+
+  expect(
+    screen
+      .getByRole("link", { name: "Descargar comprobante PDF" })
+      .getAttribute("href"),
+  ).toMatch(/\/payments\/p1\/image$/);
+  expect(screen.queryByRole("img")).toBeNull();
+});
+
 test.each([
   [
     "a CANCELLED order",

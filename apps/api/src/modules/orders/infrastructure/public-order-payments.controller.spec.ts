@@ -183,14 +183,17 @@ describe("PublicOrderEventsController proof upload routes", () => {
       expect(submit).not.toHaveBeenCalled();
     });
 
-    it("does not accept a PDF", async () => {
+    it("accepts a PDF proof and passes its detected type to the service", async () => {
       await request(app.getHttpServer())
         .post("/public/orders/tok/payments")
         .set("X-Forwarded-For", nextIp())
         .field("amount", "40")
         .field("method", "YAPE")
         .attach("file", Buffer.from("%PDF-1.4 x"), "proof.pdf")
-        .expect(400);
+        .expect(201);
+      expect(submit.mock.calls.at(-1)?.[0].file.detectedMimeType).toBe(
+        "application/pdf",
+      );
     });
 
     it("is throttled at 10 per minute per IP", async () => {
@@ -235,6 +238,19 @@ describe("PublicOrderEventsController proof upload routes", () => {
       expect(res.headers["content-disposition"]).toBe(
         'inline; filename="comprobante.jpg"',
       );
+    });
+
+    it("serves a buyer PDF as an attachment", async () => {
+      getPaymentImageStream.mockResolvedValue({
+        body: Readable.from(["%PDF-1.7"]),
+        contentType: "application/pdf",
+      });
+      const res = await get().expect(200);
+      expect(res.headers["content-type"]).toContain("application/pdf");
+      expect(res.headers["content-disposition"]).toBe(
+        'attachment; filename="comprobante.pdf"',
+      );
+      expect(res.headers["x-content-type-options"]).toBe("nosniff");
     });
 
     it("answers 404 for a content type outside the allow-list", async () => {

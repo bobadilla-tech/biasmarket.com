@@ -38,14 +38,18 @@ import { toOrderPaymentDto } from "./order.controller.js";
 import { countsTowardPaid } from "../../../common/payment-summary.js";
 import type { OrderPaymentResponseDto } from "../dto/order-response.dto.js";
 import {
-  IMAGE_UPLOAD_MIME_TYPES,
+  PROOF_UPLOAD_MIME_TYPES,
   UploadedFileValidationPipe,
   type ValidatedUploadedFile,
 } from "../../../common/uploaded-file-validation.pipe.js";
+import { paymentProofResponseOptions } from "../../../common/payment-proof-response.js";
 
 const CUSTOMER_PROOF_PIPE = new UploadedFileValidationPipe({
-  allowedMimeTypes: IMAGE_UPLOAD_MIME_TYPES,
-  messages: { missingFile: "Adjunta un comprobante de pago" },
+  allowedMimeTypes: PROOF_UPLOAD_MIME_TYPES,
+  messages: {
+    missingFile: "Adjunta un comprobante de pago",
+    unsupportedType: "Solo JPEG, PNG o PDF",
+  },
 });
 
 // Buyer-initiated counterpart to `OrderController.addPayment` — see
@@ -121,13 +125,17 @@ export class CustomerOrderPaymentsController {
     return toOrderPaymentDto(payment);
   }
 
-  // Authenticated streaming read for the buyer's own submitted proof image —
+  // Authenticated streaming read for the buyer's own submitted proof —
   // same private-bucket streaming pattern as the seller's
   // `OrderController.getPaymentImage`, gated by `findPaymentForBuyer`'s
   // compound ownership query instead of `assertOwnership`.
   @ApiParam({ name: "slug", type: String })
   @ApiOkResponse({ schema: { type: "string", format: "binary" } })
-  @ApiProduces("image/jpeg", "image/png")
+  @ApiProduces("image/jpeg", "image/png", "application/pdf")
+  @Header("Cache-Control", "private, no-store")
+  @Header("Referrer-Policy", "no-referrer")
+  @Header("X-Content-Type-Options", "nosniff")
+  @Header("Content-Security-Policy", "default-src 'none'; sandbox")
   // Helmet's default CORP (`same-origin`) makes the browser block this image
   // from being embedded by the web app's cross-origin `<img>` tags
   // (`ERR_BLOCKED_BY_RESPONSE.NotSameOrigin`) — the web frontend
@@ -157,6 +165,11 @@ export class CustomerOrderPaymentsController {
     const { body, contentType } = await this.storage.getPaymentImageStream(
       payment.imageUrl,
     );
-    return new StreamableFile(body, { type: contentType });
+    const responseOptions = paymentProofResponseOptions(contentType);
+    if (!responseOptions) {
+      body.destroy?.();
+      throw new NotFoundException("Comprobante no encontrado");
+    }
+    return new StreamableFile(body, responseOptions);
   }
 }

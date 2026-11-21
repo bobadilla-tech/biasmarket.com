@@ -62,10 +62,10 @@ describe("buildSubmitProofSchema", () => {
     );
   });
 
-  test("requires a JPEG/PNG file up to 5 MB", () => {
+  test("requires a JPEG, PNG, or PDF file up to 5 MB", () => {
     expect(errorsOf(3000, valid({ file: null }))).toContain("fileRequired");
     const pdf = new File(["x"], "proof.pdf", { type: "application/pdf" });
-    expect(errorsOf(3000, valid({ file: pdf }))).toContain("fileType");
+    expect(errorsOf(3000, valid({ file: pdf }))).toEqual([]);
     const big = new File([new Uint8Array(5 * 1024 * 1024 + 1)], "p.png", {
       type: "image/png",
     });
