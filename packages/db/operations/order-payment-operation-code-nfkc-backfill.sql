@@ -32,8 +32,8 @@ WITH collision_groups AS (
     AND "reviewStatus" <> 'REJECTED'
     AND new_key <> ''
   GROUP BY "storeId", new_key
-  HAVING count(DISTINCT old_key) > 1
-     AND count(DISTINCT "orderId") > 1
+  HAVING count(DISTINCT "orderId") > 1
+     AND bool_or(old_key <> new_key)
 )
 SELECT p."storeId",
        p.new_key AS normalized_comparison_key,
@@ -71,8 +71,8 @@ BEGIN
       AND "reviewStatus" <> 'REJECTED'
       AND new_key <> ''
     GROUP BY "storeId", new_key
-    HAVING count(DISTINCT old_key) > 1
-       AND count(DISTINCT "orderId") > 1
+    HAVING count(DISTINCT "orderId") > 1
+       AND bool_or(old_key <> new_key)
   ) THEN
     RAISE EXCEPTION
       'NFKC backfill stopped: newly colliding active operation codes were reported above';
