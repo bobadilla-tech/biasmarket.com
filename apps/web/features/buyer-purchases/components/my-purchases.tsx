@@ -1,9 +1,10 @@
 "use client";
 
 import { ChevronRight } from "lucide-react";
+import { useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { GlobalAccountOrderResponseDto } from "@biasmarket/types";
 import { apiClient } from "@/lib/api-client";
 import { Link } from "@/i18n/navigation";
@@ -12,6 +13,8 @@ import { CustomerLoginForm } from "@/features/customer-auth";
 import { LoadingState } from "@/components/shared/loading-state";
 import { ClaimErrorBanner } from "./claim-error-banner";
 import { OriginLabel } from "./origin-label";
+import { claimStartUrl } from "@/features/public-order/lib/claim-url";
+import { useExchangeReclaimTicket } from "../mutations/use-exchange-reclaim-ticket";
 import { useGlobalLogout } from "../mutations/use-global-logout";
 import {
   globalAccountKeys,
@@ -44,6 +47,8 @@ function groupByStore(orders: GlobalAccountOrderResponseDto[]): StoreGroup[] {
 
 export function MyPurchases({ claimCode }: { claimCode?: string }) {
   const t = useTranslations("storefront.myPurchases");
+  const locale = useLocale();
+  const reclaim = useExchangeReclaimTicket();
   const profile = useGlobalAccount();
   const orders = useGlobalOrders(Boolean(profile.data));
   const logout = useGlobalLogout();
@@ -60,12 +65,41 @@ export function MyPurchases({ claimCode }: { claimCode?: string }) {
     },
   });
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    const ticket = params.get("reclaim");
+    if (!ticket) return;
+    // Remove the one-time capability from browser history before making a
+    // request or rendering any page content.
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}${window.location.search}`,
+    );
+    reclaim.mutate(ticket, {
+      onSuccess: () => window.location.assign(claimStartUrl(locale)),
+    });
+  }, [locale, reclaim.mutate]);
+
+  if (reclaim.isPending) {
+    return (
+      <p role="status" className="text-sm text-gray-600">
+        {t("reclaiming")}
+      </p>
+    );
+  }
+
   if (profile.isPending) return <LoadingState />;
 
   if (profile.isError) {
     return (
       <div className="flex flex-col items-center gap-6">
         <ClaimErrorBanner code={claimCode} />
+        {reclaim.isError ? (
+          <p role="alert" className="text-sm text-red-700">
+            {t("reclaimError")}
+          </p>
+        ) : null}
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900">
             {t("loggedOutTitle")}
@@ -90,6 +124,11 @@ export function MyPurchases({ claimCode }: { claimCode?: string }) {
   return (
     <div className="flex flex-col gap-8">
       <ClaimErrorBanner code={claimCode} />
+      {reclaim.isError ? (
+        <p role="alert" className="text-sm text-red-700">
+          {t("reclaimError")}
+        </p>
+      ) : null}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">{t("title")}</h1>

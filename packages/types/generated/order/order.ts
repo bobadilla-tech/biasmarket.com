@@ -365,3 +365,18 @@ export const recordBuyerNotice = async (
     body: JSON.stringify(buyerNoticeDto),
   });
 };
+
+export const getReleaseOrderClaimUrl = (storeId: string, orderId: string) => {
+  return `/stores/${storeId}/orders/${orderId}/claim-release`;
+};
+
+export const releaseOrderClaim = async (
+  storeId: string,
+  orderId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<void> => {
+  return customFetch<void>(getReleaseOrderClaimUrl(storeId, orderId), {
+    ...options,
+    method: "POST",
+  });
+};

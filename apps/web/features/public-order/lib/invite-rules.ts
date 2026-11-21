@@ -16,6 +16,7 @@ type InviteOrder = Pick<
   // nothing to invite to.
   hasValidatedPayment?: boolean;
   claimed?: boolean;
+  reclaimPending?: boolean;
 };
 
 export interface InviteInput {
@@ -33,6 +34,7 @@ export interface InviteInput {
 export function isInviteEligible(order: InviteOrder): boolean {
   if (!order.hasValidatedPayment) return false;
   if (order.claimed) return false;
+  if (order.reclaimPending) return false;
   // Cancelled, expired (payment status CANCELLED) and rejected orders are
   // never invited.
   if (order.status === "CANCELLED" || order.paymentStatus === "CANCELLED") {

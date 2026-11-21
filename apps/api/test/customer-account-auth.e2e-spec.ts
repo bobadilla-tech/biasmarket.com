@@ -899,6 +899,7 @@ describe("customer account + customer auth (e2e)", () => {
         crossStoreBuyerAccountId,
         accountSecret,
         "change-email",
+        `pending-${runId}@example.com`,
       );
       const changePhoneToken = createCustomerAccountToken(
         crossStoreBuyerAccountId,

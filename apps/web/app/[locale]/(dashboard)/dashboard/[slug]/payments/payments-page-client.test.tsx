@@ -103,6 +103,7 @@ function buyerProof(
     reviewStatus: "PENDING_REVIEW",
     reviewedAt: null,
     reviewedBy: null,
+    isPossibleDuplicateOperationCode: false,
     ...overrides,
   };
 }
@@ -128,6 +129,7 @@ function sellerPayment(
     reviewStatus: "N_A",
     reviewedAt: null,
     reviewedBy: null,
+    isPossibleDuplicateOperationCode: false,
     ...overrides,
   };
 }

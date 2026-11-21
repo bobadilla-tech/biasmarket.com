@@ -67,7 +67,7 @@ export class StatsController {
     const result = await this.stats.getOverview(storeId, session.user.id);
     return {
       ...result,
-      recentOrders: result.recentOrders.map(toOrderDto),
+      recentOrders: result.recentOrders.map((order) => toOrderDto(order)),
       partialPaymentOrders: result.partialPaymentOrders.map(
         toPartialPaymentOrderDto,
       ),

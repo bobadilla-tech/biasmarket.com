@@ -759,6 +759,7 @@ export default async () => {
                   'OUT_OF_STOCK',
                   'PAYMENT_PROOF_SUBMITTED',
                   'RECEIPT_CONFIRMED',
+                  'ORDER_CLAIMED',
                 ],
               },
               entityType: { required: true, type: () => String },
@@ -1032,6 +1033,10 @@ export default async () => {
                 required: true,
                 type: () => String,
                 nullable: true,
+              },
+              isPossibleDuplicateOperationCode: {
+                required: true,
+                type: () => Boolean,
               },
             },
             OrderResponseDto: {
@@ -1456,6 +1461,40 @@ export default async () => {
           },
         ],
         [
+          import('./modules/customer-auth/dto/account-order-response.dto.js'),
+          {
+            AccountOrderResponseDto: {
+              id: { required: true, type: () => String },
+              paymentStatus: {
+                required: true,
+                enum: [
+                  'PENDING_PAYMENT',
+                  'PARTIALLY_PAID',
+                  'PAYMENT_SUBMITTED',
+                  'VERIFIED',
+                  'REJECTED',
+                  'CANCELLED',
+                ],
+              },
+              fulfillmentStatus: {
+                required: true,
+                enum: ['ORDERING', 'IN_TRANSIT', 'READY', 'COMPLETED'],
+              },
+              totalAmount: { required: true, type: () => String },
+              currency: { required: true, type: () => String },
+              createdAt: { required: true, type: () => String },
+              paidAmount: { required: true, type: () => Number },
+              pendingAmount: { required: true, type: () => Number },
+              paidPercentage: { required: true, type: () => Number },
+              source: {
+                required: true,
+                enum: ['MARKETPLACE', 'VENDOR_ASSISTED'],
+              },
+              claimedAt: { required: true, type: () => String, nullable: true },
+            },
+          },
+        ],
+        [
           import('./modules/orders/dto/buyer-notice.dto.js'),
           {
             BuyerNoticeDto: {
@@ -1639,6 +1678,10 @@ export default async () => {
               },
               accessUrl: { required: true, type: () => String },
               previousOrders: { required: true, type: () => Number },
+              isPaymentMethodConfigured: {
+                required: true,
+                type: () => Boolean,
+              },
             },
             AssistedOrderLinkResponseDto: {
               order: {
@@ -1648,40 +1691,6 @@ export default async () => {
                     .OrderDetailResponseDto,
               },
               accessUrl: { required: true, type: () => String },
-            },
-          },
-        ],
-        [
-          import('./modules/customer-auth/dto/account-order-response.dto.js'),
-          {
-            AccountOrderResponseDto: {
-              id: { required: true, type: () => String },
-              paymentStatus: {
-                required: true,
-                enum: [
-                  'PENDING_PAYMENT',
-                  'PARTIALLY_PAID',
-                  'PAYMENT_SUBMITTED',
-                  'VERIFIED',
-                  'REJECTED',
-                  'CANCELLED',
-                ],
-              },
-              fulfillmentStatus: {
-                required: true,
-                enum: ['ORDERING', 'IN_TRANSIT', 'READY', 'COMPLETED'],
-              },
-              totalAmount: { required: true, type: () => String },
-              currency: { required: true, type: () => String },
-              createdAt: { required: true, type: () => String },
-              paidAmount: { required: true, type: () => Number },
-              pendingAmount: { required: true, type: () => Number },
-              paidPercentage: { required: true, type: () => Number },
-              source: {
-                required: true,
-                enum: ['MARKETPLACE', 'VENDOR_ASSISTED'],
-              },
-              claimedAt: { required: true, type: () => String, nullable: true },
             },
           },
         ],
@@ -2084,6 +2093,7 @@ export default async () => {
                 nullable: true,
               },
               claimed: { required: true, type: () => Boolean },
+              reclaimPending: { required: true, type: () => Boolean },
               lastUpdateAt: { required: true, type: () => String },
               timeline: {
                 required: true,
@@ -2134,6 +2144,14 @@ export default async () => {
                   'adelanto_linea_de_tiempo',
                 ],
               },
+            },
+          },
+        ],
+        [
+          import('./modules/orders/dto/reclaim-ticket.dto.js'),
+          {
+            ReclaimTicketDto: {
+              ticket: { required: true, type: () => String, maxLength: 4096 },
             },
           },
         ],
@@ -3906,6 +3924,7 @@ export default async () => {
                   .AssistedOrderLinkResponseDto,
               },
               recordBuyerNotice: {},
+              releaseOrderClaim: {},
             },
           },
         ],
@@ -3971,6 +3990,7 @@ export default async () => {
           import('./modules/orders/infrastructure/public-order-events.controller.js'),
           {
             PublicOrderEventsController: {
+              exchangeReclaimTicket: {},
               getByToken: {
                 type: t['./modules/orders/dto/public-order-response.dto.js']
                   .PublicOrderResponseDto,

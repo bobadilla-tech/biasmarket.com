@@ -46,6 +46,7 @@ export function RestockInterestDialog({
 }: RestockInterestDialogProps) {
   const t = useTranslations("storefront.restockDialog");
   const requestRestock = useRequestRestock(slug);
+  const { reset: resetRequest } = requestRestock;
   const restoreFocusRef = useRef<HTMLElement | null>(null);
   const successHeadingRef = useRef<HTMLHeadingElement>(null);
 
@@ -55,20 +56,17 @@ export function RestockInterestDialog({
       defaultValues: { name: "", phone: "" },
     });
 
-  // Deliberately excludes the `useMutation` result object from the deps: it is
-  // recreated on every render (`{ ...result, mutate }`), so including it would
-  // re-run the effect after each `reset()` state update and loop forever
-  // ("Maximum update depth exceeded"). `reset` and `requestRestock.reset` are
-  // stable function references, so the effect only runs when `open` changes.
+  // The mutation result is recreated on render; use its stable reset method so
+  // resetting the form does not make this effect run on every render.
   useEffect(() => {
     if (open && document.activeElement instanceof HTMLElement) {
       restoreFocusRef.current = document.activeElement;
     }
     if (open) {
       reset({ name: "", phone: "" });
-      requestRestock.reset();
+      resetRequest();
     }
-  }, [open, reset, requestRestock.reset]);
+  }, [open, reset, resetRequest]);
 
   useEffect(() => {
     if (open && requestRestock.isSuccess) {

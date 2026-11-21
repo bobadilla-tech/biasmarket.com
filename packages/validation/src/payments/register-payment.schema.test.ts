@@ -23,6 +23,17 @@ test("rejects an amount greater than the pending amount", () => {
   expect(result.success).toBe(false);
 });
 
+test.each(["100.", "1e2"])("rejects amount syntax %s", (amount) => {
+  const schema = buildRegisterPaymentSchema(200);
+  const result = schema.safeParse({
+    amount,
+    method: "YAPE",
+    note: "",
+    file: null,
+  });
+  expect(result.success).toBe(false);
+});
+
 test("rejects a zero or negative amount", () => {
   const schema = buildRegisterPaymentSchema(60);
   const result = schema.safeParse({

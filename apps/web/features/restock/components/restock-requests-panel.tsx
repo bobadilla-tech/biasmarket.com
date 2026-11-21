@@ -49,6 +49,8 @@ function whatsappHref(phone: string): string {
   return `https://wa.me/${phone.replace(/\D/g, "")}`;
 }
 
+const EMPTY_REQUESTS: never[] = [];
+
 export function RestockRequestsPanel({
   storeId,
   errorMessage,
@@ -62,15 +64,13 @@ export function RestockRequestsPanel({
   const [sort, setSort] = useState<SortMode>("date");
   const { data, isLoading, error } = useRestockRequests(storeId, errorMessage);
 
-  const requests = data ?? [];
+  const requests = data ?? EMPTY_REQUESTS;
   const groups = useMemo(() => {
     const grouped = groupRequests(requests);
     if (sort === "count") {
       return grouped.sort((a, b) => b.requests.length - a.requests.length);
     }
-    return grouped.sort(
-      (a, b) => latestRequestDate(b) - latestRequestDate(a),
-    );
+    return grouped.sort((a, b) => latestRequestDate(b) - latestRequestDate(a));
   }, [requests, sort]);
 
   const dateFormatter = useMemo(
@@ -91,9 +91,7 @@ export function RestockRequestsPanel({
     <Card className="rounded-[30px] border-[#eadcf8] bg-white shadow-sm">
       <div className="flex flex-col gap-4 px-6 pt-6 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-[#2d1649]">
-            {t("title")}
-          </h2>
+          <h2 className="text-lg font-semibold text-[#2d1649]">{t("title")}</h2>
           <p className="mt-0.5 text-sm text-[#8f7da8]">{t("subtitle")}</p>
         </div>
         <div className="flex items-center gap-1 overflow-x-auto rounded-2xl border border-[#eadcf7] bg-white p-1">
@@ -117,17 +115,16 @@ export function RestockRequestsPanel({
       </div>
 
       <CardContent className="flex flex-col gap-4 px-6 pb-6 pt-5">
-        {isLoading
-          ? <LoadingState variant="inline" rows={3} />
-          : error
-          ? (
-            <ErrorState
-              message={error instanceof Error ? error.message : errorMessage}
-            />
-          )
-          : requests.length === 0
-          ? <EmptyState icon={PackageX} message={t("empty")} />
-          : groups.map((group) => (
+        {isLoading ? (
+          <LoadingState variant="inline" rows={3} />
+        ) : error ? (
+          <ErrorState
+            message={error instanceof Error ? error.message : errorMessage}
+          />
+        ) : requests.length === 0 ? (
+          <EmptyState icon={PackageX} message={t("empty")} />
+        ) : (
+          groups.map((group) => (
             <div
               key={`${group.productName}:${group.variantName ?? ""}`}
               className="rounded-2xl border border-[#f0e7f8] bg-white"
@@ -176,7 +173,8 @@ export function RestockRequestsPanel({
                 ))}
               </ul>
             </div>
-          ))}
+          ))
+        )}
       </CardContent>
     </Card>
   );

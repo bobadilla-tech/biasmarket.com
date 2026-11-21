@@ -185,6 +185,12 @@ export class OrderPaymentResponseDto {
 
   @ApiProperty({ type: String, nullable: true })
   reviewedBy: string | null;
+
+  @ApiProperty({
+    description:
+      "Whether this pending buyer proof matches an existing recorded or approved payment in the seller's store.",
+  })
+  isPossibleDuplicateOperationCode: boolean;
 }
 
 // `findAll`'s shape (via OrderRepository.withPaymentSummary) — no `proofs`.

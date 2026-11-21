@@ -484,6 +484,8 @@
     "delivered": "Entregado"
   },
   "myPurchases": {
+    "reclaiming": "Preparando el enlace seguro del pedido…",
+    "reclaimError": "Este enlace no es válido o venció. Pide a la tienda que envíe uno nuevo.",
     "title": "Mis compras",
     "loggedOutTitle": "Ingresa para ver tus compras",
     "loggedOutBody": "Ingresa con tu teléfono y contraseña, o continúa con Google. Si eres nuevo, Google crea tu cuenta de comprador en un clic.",

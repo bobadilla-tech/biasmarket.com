@@ -28,7 +28,8 @@ interface NotificationRow {
     | "LOW_STOCK"
     | "OUT_OF_STOCK"
     | "PAYMENT_PROOF_SUBMITTED"
-    | "RECEIPT_CONFIRMED";
+    | "RECEIPT_CONFIRMED"
+    | "ORDER_CLAIMED";
   entityType: string;
   entityId: string;
   title: string;

@@ -5,20 +5,31 @@ import userEvent from "@testing-library/user-event";
 import type { OrderResponseDto } from "@biasmarket/types";
 import { renderWithProviders } from "../../../test-utils/render-with-providers";
 
-const { regenerateAccessLink, correctBuyerPhone, findTemplate, findRelated } =
-  vi.hoisted(() => ({
-    regenerateAccessLink: vi.fn(),
-    correctBuyerPhone: vi.fn(),
-    findTemplate: vi.fn(),
-    findRelated: vi.fn(),
-  }));
+const {
+  regenerateAccessLink,
+  correctBuyerPhone,
+  releaseOrderClaim,
+  findTemplate,
+  findRelated,
+} = vi.hoisted(() => ({
+  regenerateAccessLink: vi.fn(),
+  correctBuyerPhone: vi.fn(),
+  releaseOrderClaim: vi.fn(),
+  findTemplate: vi.fn(),
+  findRelated: vi.fn(),
+}));
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ locale: "es", slug: "mi-tienda" }),
 }));
 vi.mock("@/lib/api-client", () => ({
   apiClient: {
-    orders: { regenerateAccessLink, correctBuyerPhone, findRelated },
+    orders: {
+      regenerateAccessLink,
+      correctBuyerPhone,
+      releaseOrderClaim,
+      findRelated,
+    },
     whatsappTemplates: { findOne: findTemplate },
   },
 }));
@@ -77,6 +88,7 @@ beforeEach(() => {
     order: { ...base, customerPhone: "+51999111222" },
     accessUrl: newLink,
   });
+  releaseOrderClaim.mockResolvedValue(undefined);
 });
 afterEach(() => {
   vi.clearAllMocks();
@@ -430,4 +442,20 @@ test("shows a Reclamado badge only once the buyer claimed the order, and no buye
   );
   expect(await screen.findByText("Reclamado")).toBeTruthy();
   expect(document.body.innerHTML).not.toContain("buyer-secret-id");
+});
+
+test("releases a claimed order only after confirmation", async () => {
+  const { user } = setup({
+    ...base,
+    claimedAt: "2026-10-02T10:00:00.000Z",
+  } as OrderResponseDto);
+  await user.click(
+    await screen.findByRole("button", { name: "Liberar pedido" }),
+  );
+  expect(screen.getByText("¿Liberar este pedido?")).toBeTruthy();
+  expect(releaseOrderClaim).not.toHaveBeenCalled();
+  await user.click(screen.getByRole("button", { name: "Sí, liberar pedido" }));
+  await waitFor(() =>
+    expect(releaseOrderClaim).toHaveBeenCalledWith("store-1", "order-abcdef"),
+  );
 });

@@ -14,7 +14,11 @@ export async function generateMetadata({
     namespace: "storefront.myPurchases",
   });
   // Per-buyer page behind a session cookie — nothing here to index.
-  return { title: t("title"), robots: { index: false, follow: false } };
+  return {
+    title: t("title"),
+    robots: { index: false, follow: false },
+    referrer: "no-referrer",
+  };
 }
 
 export default async function MyPurchasesPage({

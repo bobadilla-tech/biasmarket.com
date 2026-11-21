@@ -25,7 +25,13 @@ const dto = {
   items: [{ productId: "p", quantity: 1 }],
 } as CreateAssistedOrderDto;
 
-function setup(finalAmount: { lte: (n: number) => boolean }) {
+function setup(
+  finalAmount: { lte: (n: number) => boolean },
+  paymentMethods: Array<{
+    method: "YAPE" | "PLIN" | "TRANSFER" | "CASH";
+    details: Record<string, unknown> | null;
+  }> = [],
+) {
   vi.mocked(core.reserveItems).mockResolvedValue({
     orderData: { storeId: "store1" },
     finalAmount,
@@ -42,6 +48,9 @@ function setup(finalAmount: { lte: (n: number) => boolean }) {
   const prisma = {
     $transaction: vi.fn((cb: (t: unknown) => unknown) => cb(tx)),
     order: { findFirst: vi.fn().mockResolvedValue(null) },
+    paymentMethodConfig: {
+      findMany: vi.fn().mockResolvedValue(paymentMethods),
+    },
   };
   const notifications = { enqueueStockAlertPushes: vi.fn() };
   const events = { record: vi.fn() };
@@ -88,6 +97,7 @@ describe("CreateAssistedOrderUseCase", () => {
     });
     expect(JSON.stringify(data)).not.toContain(token);
     expect(result.previousOrders).toBe(2);
+    expect(result.isPaymentMethodConfigured).toBe(false);
     expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), {
       timeout: 15_000,
     });
@@ -100,6 +110,21 @@ describe("CreateAssistedOrderUseCase", () => {
     expect(audit).not.toContain(token);
     expect(audit).not.toContain("Sofi");
     expect(audit).not.toMatch(/\d{8,}/);
+  });
+
+  it("reports whether an enabled payment method has usable buyer details", async () => {
+    const { useCase, prisma } = setup({ lte: () => false }, [
+      { method: "YAPE", details: { phoneNumber: "" } },
+      { method: "TRANSFER", details: { bankName: "BCP" } },
+    ]);
+
+    const result = await useCase.execute(store, "user1", dto);
+
+    expect(result.isPaymentMethodConfigured).toBe(true);
+    expect(prisma.paymentMethodConfig.findMany).toHaveBeenCalledWith({
+      where: { storeId: store.id, enabled: true },
+      select: { method: true, details: true },
+    });
   });
 
   it("rejects a total of 0 so the transaction rolls back", async () => {

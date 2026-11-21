@@ -65,6 +65,9 @@ const REQUEST = { headers: {} } as never;
 function setup() {
   const createOrder = {
     findCheckoutReplay: vi.fn().mockResolvedValue(null),
+    buildCheckoutReplayWhatsAppUrl: vi
+      .fn()
+      .mockResolvedValue("https://wa.me/replay"),
     execute: vi.fn(),
   };
   const prisma = {
@@ -115,6 +118,10 @@ describe("checkout controller proof cleanup", () => {
 
     expect(result.order.id).toBe("order-1");
     expect(result.order.proofSubmitted).toBe(false);
+    expect(result.whatsappUrl).toBe("https://wa.me/replay");
+    expect(createOrder.buildCheckoutReplayWhatsAppUrl).toHaveBeenCalledWith(
+      ORDER,
+    );
     expect(createOrder.execute).not.toHaveBeenCalled();
     expect(storage.uploadPaymentImage).not.toHaveBeenCalled();
     expect(paymentConfig.findEnabledForSlug).not.toHaveBeenCalled();

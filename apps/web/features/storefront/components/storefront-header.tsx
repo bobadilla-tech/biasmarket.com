@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Sparkles } from "lucide-react";
+import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { AccountNavLink } from "@/features/customer-auth";
 import { CartLink } from "@/app/[locale]/(storefront)/store/[slug]/cart-link";
@@ -35,17 +35,16 @@ export function StorefrontHeader({
         <Link
           href="/"
           aria-label={t("header.biasMarketHome")}
+          title={t("header.biasMarketHome")}
           className="hidden min-h-11 shrink-0 items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--store-primary)] focus-visible:ring-offset-2 sm:flex"
         >
-          <span
-            aria-hidden="true"
-            className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-(--store-accent) to-(--store-primary) text-white shadow-[0_5px_14px_var(--store-shadow)] transition-transform duration-200 hover:rotate-6 hover:scale-105"
-          >
-            <Sparkles aria-hidden="true" className="size-[18px]" />
-          </span>
-          <span className="text-base font-bold tracking-tight text-(--store-text)">
-            Bias Market
-          </span>
+          <Image
+            src="/logos/horizontal.png"
+            alt="Bias Market"
+            width={164}
+            height={81}
+            className="h-9 w-auto object-contain"
+          />
         </Link>
         <div
           data-testid="storefront-compact-header"

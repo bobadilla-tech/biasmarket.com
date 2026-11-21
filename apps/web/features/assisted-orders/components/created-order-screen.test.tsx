@@ -14,7 +14,11 @@ const { CreatedOrderScreen } = await import("./created-order-screen");
 const link = `${window.location.origin}/es/store/k-store/pedido/tok_-123`;
 
 function created(
-  overrides: { accessUrl?: string; customerName?: string | null } = {},
+  overrides: {
+    accessUrl?: string;
+    customerName?: string | null;
+    isPaymentMethodConfigured?: boolean;
+  } = {},
 ): CreateAssistedOrderResponseDto {
   return {
     order: {
@@ -27,6 +31,7 @@ function created(
     },
     accessUrl: overrides.accessUrl ?? link,
     previousOrders: 0,
+    isPaymentMethodConfigured: overrides.isPaymentMethodConfigured ?? true,
   } as unknown as CreateAssistedOrderResponseDto;
 }
 
@@ -121,6 +126,17 @@ test("shows the order summary with a single #", async () => {
   setup();
   await messageBox();
   expect(screen.getByText("Pedido #ABCDEF · PEN 50.00")).toBeTruthy();
+});
+
+test("warns before the seller shares the link when no payment method is configured", async () => {
+  setup(created({ isPaymentMethodConfigured: false }));
+  const warning = await screen.findByText(
+    /No hay ningún método de pago configurado/,
+  );
+  expect(
+    warning.compareDocumentPosition(await messageBox()) &
+      Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
 });
 
 test("the private link is text only (never an anchor, so the seller can't stamp the first open) and is never stored", async () => {

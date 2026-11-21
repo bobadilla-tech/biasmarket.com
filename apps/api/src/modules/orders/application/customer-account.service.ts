@@ -95,6 +95,31 @@ function buildPhoneChangeEmailHtml(url: string, storeName: string): string {
   `;
 }
 
+function buildClaimReleasedEmailHtml(
+  url: string | null,
+  storeName: string,
+  orderNumber: string,
+): string {
+  const safeStoreName = escapeHtml(storeName);
+  const safeOrderNumber = escapeHtml(orderNumber);
+  const safeUrl = url ? escapeHtml(url) : null;
+  const spanishReclaim = safeUrl
+    ? `<p><a href="${safeUrl}">Volver a guardar el pedido</a></p><p>El enlace vence en 24 horas y solo funciona con la cuenta que tenía el pedido.</p>`
+    : `<p>Si quieres guardar el pedido otra vez, contacta a la tienda.</p>`;
+  const englishReclaim = safeUrl
+    ? `<p><a href="${safeUrl}">Save the order again</a></p><p>This link expires in 24 hours and only works with the account that held the order.</p>`
+    : `<p>Contact the store if you want to save the order again.</p>`;
+  return `
+    <p>Hola,</p>
+    <p>El vendedor liberó el pedido ${safeOrderNumber} de ${safeStoreName} de tu cuenta.</p>
+    ${spanishReclaim}
+    <hr />
+    <p>Hi,</p>
+    <p>The seller released order ${safeOrderNumber} from ${safeStoreName} from your account.</p>
+    ${englishReclaim}
+  `;
+}
+
 @Injectable()
 export class CustomerAccountService {
   private readonly logger = new Logger(CustomerAccountService.name);
@@ -324,6 +349,7 @@ export class CustomerAccountService {
         buyerAccount.id,
         secret,
         "change-email",
+        newEmail,
       );
       const url = this.confirmUrl(store.slug, token);
 
@@ -373,6 +399,36 @@ export class CustomerAccountService {
     }
   }
 
+  async sendClaimReleasedEmail(input: {
+    email: string;
+    storeName: string;
+    orderNumber: string;
+    ticket: string | null;
+  }): Promise<void> {
+    try {
+      const webUrl = process.env.WEB_URL ?? "http://localhost:3001";
+      let reclaimUrl: URL | null = null;
+      if (input.ticket) {
+        reclaimUrl = new URL("/es/my-purchases", webUrl);
+        reclaimUrl.hash = new URLSearchParams({
+          reclaim: input.ticket,
+        }).toString();
+      }
+
+      await this.mailer.send({
+        to: input.email,
+        subject: "Actualización de tu pedido — Bias Market / Order update",
+        html: buildClaimReleasedEmailHtml(
+          reclaimUrl?.toString() ?? null,
+          input.storeName,
+          input.orderNumber,
+        ),
+      });
+    } catch (err) {
+      this.logger.error("Failed to send claim release email", err);
+    }
+  }
+
   private globalResetUrl(token: string): string {
     const webUrl = process.env.WEB_URL ?? "http://localhost:3001";
     return `${webUrl}/my-purchases/reset-password?token=${token}`;
@@ -416,11 +472,15 @@ export class CustomerAccountService {
         where: { id: buyerAccount.id },
         data: { emailVerified: true },
       });
-    } else if (
-      verified.purpose === "change-email" &&
-      buyerAccount.pendingEmail
-    ) {
+    } else if (verified.purpose === "change-email") {
       const pendingEmail = buyerAccount.pendingEmail;
+      if (
+        !pendingEmail ||
+        !verifyCustomerAccountToken(token, secret, pendingEmail)
+      ) {
+        throw new BadRequestException("Enlace inválido o expirado");
+      }
+
       const updated = await this.prisma.buyerAccount.updateMany({
         where: {
           id: buyerAccount.id,

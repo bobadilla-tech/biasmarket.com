@@ -13,6 +13,7 @@ import { CustomersService } from "./application/customers.service.js";
 import { CreateOrderUseCase } from "./application/create-order.usecase.js";
 import { CreateAssistedOrderUseCase } from "./application/create-assisted-order.usecase.js";
 import { ManageAssistedOrderLinkUseCase } from "./application/manage-assisted-order-link.usecase.js";
+import { ReleaseAssistedOrderClaimUseCase } from "./application/release-assisted-order-claim.usecase.js";
 import { ReviewPaymentUseCase } from "./application/review-payment.usecase.js";
 import { AdvanceFulfillmentUseCase } from "./application/advance-fulfillment.usecase.js";
 import { CancelOrderUseCase } from "./application/cancel-order.usecase.js";
@@ -52,6 +53,7 @@ import { PaymentConfigModule } from "../payment-config/payment-config.module.js"
     CreateOrderUseCase,
     CreateAssistedOrderUseCase,
     ManageAssistedOrderLinkUseCase,
+    ReleaseAssistedOrderClaimUseCase,
     ReviewPaymentUseCase,
     AdvanceFulfillmentUseCase,
     CancelOrderUseCase,
@@ -74,6 +76,7 @@ import { PaymentConfigModule } from "../payment-config/payment-config.module.js"
     OrderRepository,
     OrderPaymentsService,
     OrderEventsService,
+    NotificationsModule,
   ],
 })
 export class OrdersModule {}

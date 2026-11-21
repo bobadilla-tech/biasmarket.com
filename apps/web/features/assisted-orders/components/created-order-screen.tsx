@@ -47,6 +47,15 @@ export function CreatedOrderScreen({
         })}
       </p>
 
+      {!created.isPaymentMethodConfigured ? (
+        <p
+          role="status"
+          className="rounded-xl bg-[#fff5e9] p-3 text-sm text-[#8a4b12]"
+        >
+          {t("paymentMethodNotConfigured")}
+        </p>
+      ) : null}
+
       <LinkMessagePanel
         message={message}
         phone={order.customerPhone}

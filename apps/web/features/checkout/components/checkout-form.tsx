@@ -146,6 +146,8 @@ function paymentMethodLabels(
   };
 }
 
+const EMPTY_ARRAY: never[] = [];
+
 export function CheckoutForm({
   slug,
   items,
@@ -161,10 +163,10 @@ export function CheckoutForm({
   const customerProfile = useCustomerProfile(slug);
   const submitCheckout = useSubmitCheckout(slug);
 
-  const methods = deliveryOptions.data?.methods ?? [];
-  const points = deliveryOptions.data?.points ?? [];
-  const paymentMethods = deliveryOptions.data?.paymentMethods ?? [];
-  const couriers = deliveryOptions.data?.couriers ?? [];
+  const methods = deliveryOptions.data?.methods ?? EMPTY_ARRAY;
+  const points = deliveryOptions.data?.points ?? EMPTY_ARRAY;
+  const paymentMethods = deliveryOptions.data?.paymentMethods ?? EMPTY_ARRAY;
+  const couriers = deliveryOptions.data?.couriers ?? EMPTY_ARRAY;
   const deliveryMethodsLoaded = !deliveryOptions.isPending;
   const mixedCurrencies = hasMixedCurrencies(items);
 
@@ -241,14 +243,12 @@ export function CheckoutForm({
       paymentProof: null,
     },
   });
+  const { getValues, setValue } = form;
 
   useEffect(() => {
     if (!deliveryOptions.data) return;
-    if (
-      deliveryOptions.data.methods[0] &&
-      !form.getValues("deliveryMethodType")
-    ) {
-      form.setValue("deliveryMethodType", deliveryOptions.data.methods[0].type);
+    if (deliveryOptions.data.methods[0] && !getValues("deliveryMethodType")) {
+      setValue("deliveryMethodType", deliveryOptions.data.methods[0].type);
     }
     // Keep the selected point valid whenever the points list changes: drop
     // a stale id. Default to the first available-today point when one
@@ -256,11 +256,11 @@ export function CheckoutForm({
     // leave the field unset so the buyer must explicitly choose a point and
     // pick a date — never auto-select a closed-today point with no date
     // attached.
-    const currentPointId = form.getValues("pickupPointId");
+    const currentPointId = getValues("pickupPointId");
     if (points.length === 0) {
-      if (currentPointId) form.setValue("pickupPointId", "");
+      if (currentPointId) setValue("pickupPointId", "");
     } else if (!points.some((point) => point.id === currentPointId)) {
-      form.setValue("pickupPointId", pointsAvailableToday[0]?.id ?? "");
+      setValue("pickupPointId", pointsAvailableToday[0]?.id ?? "");
     }
     // Prefer a genuinely-configured method when one exists, so a store
     // listing an unconfigured YAPE before a configured TRANSFER doesn't
@@ -274,17 +274,16 @@ export function CheckoutForm({
         (m) =>
           m.method !== "CASH" && isPaymentMethodConfigured(m.method, m.details),
       ) ?? paymentMethods[0];
-    if (preferredMethod && !form.getValues("paymentMethod")) {
-      form.setValue("paymentMethod", preferredMethod.method);
+    if (preferredMethod && !getValues("paymentMethod")) {
+      setValue("paymentMethod", preferredMethod.method);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     deliveryOptions.data,
     points,
     pointsAvailableToday,
     paymentMethods,
-    form.setValue,
-    form.getValues,
+    setValue,
+    getValues,
   ]);
 
   const customerName = form.watch("customerName");
@@ -361,9 +360,9 @@ export function CheckoutForm({
   // Reset payment type to FULL when partial is not available
   useEffect(() => {
     if (!partialAvailable && paymentType === "PARTIAL") {
-      form.setValue("paymentType", "FULL");
+      setValue("paymentType", "FULL");
     }
-  }, [partialAvailable, paymentType, form.setValue]);
+  }, [partialAvailable, paymentType, setValue]);
 
   // Notify parent of payment type changes for summary display
   useEffect(() => {

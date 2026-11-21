@@ -10,6 +10,7 @@ import { requiredEnv } from "../../config/env.validation.js";
 export const CLAIM_TICKET_COOKIE = "bm_claim";
 export const CLAIM_TICKET_PATH = "/api/account/google";
 export const CLAIM_TICKET_TTL_MS = 10 * 60 * 1000;
+export const RECLAIM_TICKET_TTL_MS = 24 * 60 * 60 * 1000;
 
 // Where on the order page the buyer decided to save the order.
 export const CLAIM_MOMENTS = [
@@ -27,6 +28,10 @@ export interface ClaimTicket {
   // revoking it, so the claim must also match this or a ticket minted from a
   // forwarded (replaced) link would stay valid for its full lifetime.
   linkFp: string;
+  // Present only for a seller-released claim. The ticket is bound to the
+  // buyer account that owned the claim and to that specific release.
+  releaseId?: string;
+  reclaimBuyerAccountId?: string;
   moment?: ClaimMoment;
   exp: number;
 }
@@ -53,17 +58,40 @@ export function claimCookieOptions() {
 }
 
 export function signClaimTicket(
-  input: { orderId: string; accessTokenHash: string; moment?: ClaimMoment },
+  input: {
+    orderId: string;
+    accessTokenHash: string;
+    moment?: ClaimMoment;
+    releaseId?: string;
+    reclaimBuyerAccountId?: string;
+  },
   now = Date.now(),
+  ttlMs = CLAIM_TICKET_TTL_MS,
 ): string {
   const body: ClaimTicket = {
     orderId: input.orderId,
     linkFp: linkFingerprint(input.accessTokenHash),
+    ...(input.releaseId ? { releaseId: input.releaseId } : {}),
+    ...(input.reclaimBuyerAccountId
+      ? { reclaimBuyerAccountId: input.reclaimBuyerAccountId }
+      : {}),
     ...(input.moment ? { moment: input.moment } : {}),
-    exp: now + CLAIM_TICKET_TTL_MS,
+    exp: now + ttlMs,
   };
   const payload = Buffer.from(JSON.stringify(body)).toString("base64url");
   return `${payload}.${sign(payload)}`;
+}
+
+export function signReclaimTicket(
+  input: {
+    orderId: string;
+    accessTokenHash: string;
+    releaseId: string;
+    reclaimBuyerAccountId: string;
+  },
+  now = Date.now(),
+): string {
+  return signClaimTicket(input, now, RECLAIM_TICKET_TTL_MS);
 }
 
 export function verifyClaimTicket(
@@ -98,9 +126,23 @@ export function verifyClaimTicket(
   ) {
     return null;
   }
+  if (
+    (body.releaseId !== undefined &&
+      (typeof body.releaseId !== "string" || !body.releaseId)) ||
+    (body.reclaimBuyerAccountId !== undefined &&
+      (typeof body.reclaimBuyerAccountId !== "string" ||
+        !body.reclaimBuyerAccountId)) ||
+    Boolean(body.releaseId) !== Boolean(body.reclaimBuyerAccountId)
+  ) {
+    return null;
+  }
   return {
     orderId: body.orderId,
     linkFp: body.linkFp,
+    ...(body.releaseId ? { releaseId: body.releaseId } : {}),
+    ...(body.reclaimBuyerAccountId
+      ? { reclaimBuyerAccountId: body.reclaimBuyerAccountId }
+      : {}),
     ...(body.moment ? { moment: body.moment } : {}),
     exp: body.exp,
   };

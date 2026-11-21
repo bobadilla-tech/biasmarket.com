@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  useLayoutEffect,
 } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -219,6 +220,12 @@ export function StoreSectionRenderer({
   const isLoadingMoreRef = useRef(false);
   const [loadStalled, setLoadStalled] = useState(false);
   const stallTimerRef = useRef<number | undefined>(undefined);
+  const pendingPrependAnchorRef = useRef<{
+    key: string;
+    page: number;
+    productId: string;
+    top: number;
+  } | null>(null);
   // The server and the hydration pass must render the sentinel; browsers
   // without IntersectionObserver switch to the manual button after hydrating.
   const observerSupported = useSyncExternalStore(
@@ -227,6 +234,7 @@ export function StoreSectionRenderer({
     () => true,
   );
   const catalogLoadSentinelRef = useRef<HTMLDivElement>(null);
+  const catalogPreviousSentinelRef = useRef<HTMLDivElement>(null);
   const catalogQueryKey = new URLSearchParams(searchString);
   catalogQueryKey.delete("page");
   const catalogKey = catalogQueryKey.toString();
@@ -243,6 +251,9 @@ export function StoreSectionRenderer({
       : [];
   const loadedCatalogPage = loadedCatalogPages.length
     ? Math.max(...loadedCatalogPages)
+    : currentPage;
+  const earliestCatalogPage = loadedCatalogPages.length
+    ? Math.min(...loadedCatalogPages)
     : currentPage;
   useEffect(() => {
     const dialog = referenceDialogRef.current;
@@ -267,7 +278,11 @@ export function StoreSectionRenderer({
     isLoadingMoreRef.current = false;
     window.clearTimeout(stallTimerRef.current);
     setLoadStalled(false);
+    if (pendingPrependAnchorRef.current?.key !== catalogKey) {
+      pendingPrependAnchorRef.current = null;
+    }
     if (!serverSorted) {
+      pendingPrependAnchorRef.current = null;
       setLoadedCatalog({
         key: catalogKey,
         pages: catalogSectionsForPage(currentPage, sections),
@@ -288,6 +303,32 @@ export function StoreSectionRenderer({
     });
   }, [catalogKey, currentPage, sections, serverSorted]);
 
+  // Run after the earlier page is merged so the same product stays at the
+  // same viewport offset while the new cards are inserted above it.
+  useLayoutEffect(() => {
+    const pendingAnchor = pendingPrependAnchorRef.current;
+    if (
+      !pendingAnchor ||
+      loadedCatalog.key !== pendingAnchor.key ||
+      !loadedCatalog.pages.has(pendingAnchor.page)
+    ) {
+      return;
+    }
+
+    const anchor = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-catalog-product-id]"),
+    ).find(
+      (product) => product.dataset.catalogProductId === pendingAnchor.productId,
+    );
+    if (anchor) {
+      window.scrollBy(
+        0,
+        anchor.getBoundingClientRect().top - pendingAnchor.top,
+      );
+    }
+    pendingPrependAnchorRef.current = null;
+  }, [loadedCatalog]);
+
   useEffect(() => () => window.clearTimeout(stallTimerRef.current), []);
 
   /* Single entry point for every catalog page request. The new page replaces
@@ -295,6 +336,32 @@ export function StoreSectionRenderer({
    * timer exposes a manual retry instead of leaving the spinner on forever. */
   const startLoad = useCallback(
     (page: number) => {
+      const earliestPage =
+        loadedCatalog.key === catalogKey
+          ? Math.min(...loadedCatalog.pages.keys())
+          : currentPage;
+      if (serverSorted && page < earliestPage) {
+        pendingPrependAnchorRef.current = null;
+        const products = Array.from(
+          document.querySelectorAll<HTMLElement>("[data-catalog-product-id]"),
+        );
+        const measuredProducts = products.map((product) => ({
+          product,
+          rect: product.getBoundingClientRect(),
+        }));
+        const anchor =
+          measuredProducts.find(
+            ({ rect }) => rect.top < window.innerHeight && rect.bottom > 0,
+          ) ?? measuredProducts.find(({ rect }) => rect.top >= 0);
+        if (anchor?.product.dataset.catalogProductId) {
+          pendingPrependAnchorRef.current = {
+            key: catalogKey,
+            page,
+            productId: anchor.product.dataset.catalogProductId,
+            top: anchor.rect.top,
+          };
+        }
+      }
       window.clearTimeout(stallTimerRef.current);
       isLoadingMoreRef.current = true;
       setIsLoadingMore(true);
@@ -308,8 +375,47 @@ export function StoreSectionRenderer({
         LOAD_STALL_MS,
       );
     },
-    [pathname, router, searchString],
+    [
+      catalogKey,
+      currentPage,
+      loadedCatalog,
+      pathname,
+      router,
+      searchString,
+      serverSorted,
+    ],
   );
+
+  useEffect(() => {
+    if (!serverSorted || earliestCatalogPage <= 1) return;
+
+    const sentinel = catalogPreviousSentinelRef.current;
+    if (
+      !sentinel ||
+      !observerSupported ||
+      typeof IntersectionObserver === "undefined"
+    ) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting || isLoadingMoreRef.current) return;
+        startLoad(earliestCatalogPage - 1);
+      },
+      { rootMargin: "500px 0px 0px 0px", threshold: 0 },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [
+    catalogKey,
+    earliestCatalogPage,
+    loadedCatalog,
+    observerSupported,
+    serverSorted,
+    startLoad,
+  ]);
 
   useEffect(() => {
     if (
@@ -649,6 +755,16 @@ export function StoreSectionRenderer({
                 </>
               )}
               <div className="min-w-0 space-y-5">
+                {serverSorted &&
+                  earliestCatalogPage > 1 &&
+                  observerSupported && (
+                    <div
+                      ref={catalogPreviousSentinelRef}
+                      data-testid="catalog-previous-sentinel"
+                      className="h-px"
+                      aria-hidden="true"
+                    />
+                  )}
                 {renderSections()}
                 {(normalizedQuery || categoryIds.length > 0) &&
                 !hasVisibleProducts ? (

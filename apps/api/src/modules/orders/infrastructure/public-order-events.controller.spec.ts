@@ -15,7 +15,10 @@ import { PublicOrderService } from "../application/public-order.service.js";
 import { StorageService } from "../../../storage/storage.service.js";
 import { BuyerPaymentProofService } from "../application/buyer-payment-proof.service.js";
 import { OriginGuard } from "../../customer-auth/origin.guard.js";
-import { verifyClaimTicket } from "../../customer-auth/claim-ticket.js";
+import {
+  signReclaimTicket,
+  verifyClaimTicket,
+} from "../../customer-auth/claim-ticket.js";
 import {
   ConflictException,
   UnprocessableEntityException,
@@ -104,6 +107,41 @@ describe("PublicOrderEventsController rate limit", () => {
       .expect(429);
     expect(limited.headers["cache-control"]).toBe("no-store");
     expect(limited.headers["referrer-policy"]).toBe("no-referrer");
+  });
+
+  it("exchanges a valid account-bound reclaim capability into the HttpOnly claim cookie", async () => {
+    const ticket = signReclaimTicket({
+      orderId: "order-1",
+      accessTokenHash: "d".repeat(64),
+      releaseId: "release-1",
+      reclaimBuyerAccountId: "buyer-1",
+    });
+    const response = await request(app.getHttpServer())
+      .post("/public/orders/claim-reclaim-ticket")
+      .set("Origin", "http://localhost:3001")
+      .send({ ticket })
+      .expect(204);
+    expect(response.headers["cache-control"]).toBe("no-store");
+    expect(response.headers["referrer-policy"]).toBe("no-referrer");
+    expect(response.headers["set-cookie"][0]).toContain("bm_claim=");
+    expect(response.headers["set-cookie"][0]).toContain("HttpOnly");
+    expect(response.headers["set-cookie"][0]).toContain(
+      "Path=/api/account/google",
+    );
+  });
+
+  it("rejects a general claim ticket on the reclaim exchange endpoint", async () => {
+    const { signClaimTicket } =
+      await import("../../customer-auth/claim-ticket.js");
+    const ticket = signClaimTicket({
+      orderId: "order-1",
+      accessTokenHash: "d".repeat(64),
+    });
+    await request(app.getHttpServer())
+      .post("/public/orders/claim-reclaim-ticket")
+      .set("Origin", "http://localhost:3001")
+      .send({ ticket })
+      .expect(400);
   });
 
   it("keeps the private-link headers on a 404", async () => {

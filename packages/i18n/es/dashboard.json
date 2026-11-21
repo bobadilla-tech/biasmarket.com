@@ -620,6 +620,7 @@
       "OUT_OF_STOCK": "Sin stock",
       "PAYMENT_PROOF_SUBMITTED": "Comprobante de pago enviado",
       "RECEIPT_CONFIRMED": "Recepción confirmada",
+      "ORDER_CLAIMED": "Pedido guardado por el comprador",
       "GENERIC": "Notificación"
     }
   },
@@ -858,7 +859,8 @@
       "pending": "Pendiente de revisión",
       "approved": "Aprobado",
       "rejected": "Rechazado",
-      "buyerSubmitted": "Enviado por el comprador"
+      "buyerSubmitted": "Enviado por el comprador",
+      "possibleDuplicateOperationCode": "Posible número de operación duplicado"
     },
     "markAs": "Marcar {status}",
     "fulfillmentLabels": {
@@ -1103,6 +1105,7 @@
       "linkLabel": "Enlace privado del comprador",
       "linkNotice": "Este enlace solo se muestra aquí: cópialo antes de salir. Después podrás generar uno nuevo desde el pedido.",
       "summary": "Pedido {ref} · {total}",
+      "paymentMethodNotConfigured": "No hay ningún método de pago configurado. El comprador no verá cómo pagar. Configura uno en Pagos antes de compartir este enlace.",
       "messageLabel": "Mensaje para el comprador",
       "messageDescription": "Incluye su enlace privado. Puedes copiarlo o abrirlo directo en WhatsApp. No abras el enlace tú: al abrirlo ya no podrás corregir el número.",
       "openWhatsapp": "Abrir WhatsApp",
@@ -1156,7 +1159,13 @@
         }
       },
       "receiptConfirmed": "El comprador confirmó la recepción el {date}",
-      "claimedBadge": "Reclamado"
+      "claimedBadge": "Reclamado",
+      "releaseClaim": "Liberar pedido",
+      "releaseWorking": "Liberando…",
+      "releaseDescription": "El comprador recibirá un enlace seguro por correo para guardar el pedido otra vez.",
+      "releaseTitle": "¿Liberar este pedido?",
+      "releaseBody": "El pedido dejará de aparecer entre las compras guardadas del comprador. Recibirá un enlace seguro por correo para guardarlo otra vez.",
+      "releaseConfirm": "Sí, liberar pedido"
     },
     "buyerNotice": {
       "title": "Avisar al comprador",
