@@ -204,6 +204,8 @@ class BackupVersionSelectionTests(unittest.TestCase):
                 "S3_BUCKET": "products",
                 "S3_LOGO_BUCKET": "logos",
                 "S3_PAYMENT_BUCKET": "payments",
+                "S3_PUBLIC_URL": "https://cdn.biasmarket.com",
+                "S3_LEGACY_PUBLIC_URLS": "https://cdn.biasmarket.com/old-path",
             }
             with patch.dict(os.environ, env, clear=True):
                 with self.assertRaisesRegex(RuntimeError, "s3:https://"):
@@ -214,6 +216,62 @@ class BackupVersionSelectionTests(unittest.TestCase):
                 stage, buckets = backup.validate_runtime(allow_local_repository=True)
                 self.assertEqual(stage, Path(env["BACKUP_STAGE_DIR"]))
                 self.assertEqual(buckets, ["products", "logos", "payments"])
+
+    def test_parse_markdown_image_destination_without_trailing_caption(self):
+        references = backup.parse_object_references(
+            ["![Photo](https://cdn.biasmarket.com/products/photo.jpg),caption"],
+            ["products", "logos", "payments"],
+        )
+        self.assertEqual(references, {("products", "photo.jpg")})
+
+    def test_parse_current_and_path_prefixed_legacy_public_bases(self):
+        with patch.dict(
+            os.environ,
+            {
+                "S3_PUBLIC_URL": "https://cdn.biasmarket.com",
+                "S3_LEGACY_PUBLIC_URLS": "https://cdn.biasmarket.com/old-path",
+            },
+            clear=True,
+        ):
+            references = backup.parse_object_references(
+                [
+                    "https://cdn.biasmarket.com/products/current.jpg",
+                    "https://cdn.biasmarket.com/old-path/logos/legacy.jpg",
+                ],
+                ["products", "logos", "payments"],
+            )
+        self.assertEqual(
+            references,
+            {("products", "current.jpg"), ("logos", "legacy.jpg")},
+        )
+
+    def test_skip_malformed_url_candidates_and_keep_valid_references(self):
+        references = backup.parse_object_references(
+            [
+                "broken https://[2001:db8::1/products/unmatched.jpg "
+                "and https://cdn.biasmarket.com/products/good.jpg"
+            ],
+            ["products", "logos", "payments"],
+        )
+        self.assertEqual(references, {("products", "good.jpg")})
+
+    def test_referenced_objects_must_have_a_readable_value_version(self):
+        selections = {
+            "products": [
+                {"Key": "present.jpg", "Size": 4},
+                {"Key": "orphan.jpg", "Size": 1000},
+            ],
+            "payments": [],
+        }
+        selected = backup.select_referenced_versions(
+            {("products", "present.jpg")}, selections
+        )
+        self.assertEqual(selected["products"], [selections["products"][0]])
+        self.assertEqual(selected["payments"], [])
+        with self.assertRaisesRegex(RuntimeError, "no readable value version"):
+            backup.select_referenced_versions(
+                {("payments", "missing-proof.jpg")}, selections
+            )
 
 
 if __name__ == "__main__":

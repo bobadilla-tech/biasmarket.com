@@ -135,6 +135,8 @@ services:
       - PGPASSWORD=${POSTGRES_PASSWORD}
       - PGDATABASE=${POSTGRES_DB}
       - BACKUP_STAGE_DIR=/backup-stage
+      - S3_PUBLIC_URL=${S3_PUBLIC_URL:?S3_PUBLIC_URL must be set}
+      - S3_LEGACY_PUBLIC_URLS=${S3_LEGACY_PUBLIC_URLS:-}
     volumes:
       - ./state/backup-stage:/backup-stage
     depends_on:

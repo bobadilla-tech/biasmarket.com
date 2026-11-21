@@ -21,6 +21,10 @@ from urllib.parse import unquote, urlsplit
 RESTIC_HOST = "biasmarket-production"
 RESTIC_TAG = "biasmarket-production"
 BUCKET_ENV = ("S3_BUCKET", "S3_LOGO_BUCKET", "S3_PAYMENT_BUCKET")
+MARKDOWN_LINK_RE = re.compile(
+    r"!?\[[^\]]*\]\(\s*(?:<([^>]+)>|([^\s)]+))(?:\s+['\"][^)]*['\"])?\s*\)"
+)
+URL_RE = re.compile(r"https?://[^\s\"'<>]+")
 
 
 def select_latest_object_versions(
@@ -81,6 +85,7 @@ def validate_runtime(*, allow_local_repository: bool = False) -> tuple[Path, lis
         "PGPASSWORD",
         "PGDATABASE",
         "BACKUP_STAGE_DIR",
+        "S3_PUBLIC_URL",
         *BUCKET_ENV,
     ]
     for name in required:
@@ -105,6 +110,23 @@ def validate_runtime(*, allow_local_repository: bool = False) -> tuple[Path, lis
     buckets = [os.environ[name] for name in BUCKET_ENV]
     if len(set(buckets)) != len(buckets):
         raise RuntimeError("the three MinIO bucket names must be distinct")
+    public_bases = [os.environ["S3_PUBLIC_URL"]]
+    public_bases.extend(
+        base.strip()
+        for base in os.environ.get("S3_LEGACY_PUBLIC_URLS", "").split(",")
+        if base.strip()
+    )
+    for base in public_bases:
+        parsed = urlsplit(base)
+        if (
+            parsed.scheme not in {"http", "https"}
+            or not parsed.netloc
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise RuntimeError(
+                "S3 public URL bases must be absolute http(s) URLs without query or fragment"
+            )
 
     stage = Path(os.environ["BACKUP_STAGE_DIR"])
     stage.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -182,6 +204,29 @@ def ensure_capacity(
         )
 
 
+def select_referenced_versions(
+    database_references: set[tuple[str, str]],
+    selections: dict[str, list[dict[str, Any]]],
+) -> dict[str, list[dict[str, Any]]]:
+    inventory = {
+        (bucket, version["Key"])
+        for bucket, versions in selections.items()
+        for version in versions
+    }
+    if database_references - inventory:
+        raise RuntimeError(
+            "database snapshot references MinIO objects with no readable value version"
+        )
+    return {
+        bucket: [
+            version
+            for version in versions
+            if (bucket, version["Key"]) in database_references
+        ]
+        for bucket, versions in selections.items()
+    }
+
+
 DATABASE_REFERENCE_QUERY = r'''
 SELECT value FROM (
   SELECT "logoUrl" AS value FROM "Store"
@@ -201,15 +246,59 @@ WHERE value IS NOT NULL;
 '''
 
 
-def parse_object_references(values: Iterable[str], buckets: list[str]) -> set[tuple[str, str]]:
+def parse_object_references(
+    values: Iterable[str], buckets: list[str]
+) -> set[tuple[str, str]]:
     references: set[tuple[str, str]] = set()
     known_buckets = set(buckets)
+    public_bases = [os.environ.get("S3_PUBLIC_URL", "https://cdn.biasmarket.com")]
+    public_bases.extend(
+        base.strip()
+        for base in os.environ.get("S3_LEGACY_PUBLIC_URLS", "").split(",")
+        if base.strip()
+    )
+    parsed_bases = []
+    for base in public_bases:
+        parsed = urlsplit(base)
+        if parsed.scheme in {"http", "https"} and parsed.netloc:
+            parsed_bases.append(
+                (parsed.scheme.lower(), parsed.netloc.lower(), parsed.path.rstrip("/"))
+            )
+    parsed_bases.sort(key=lambda item: len(item[2]), reverse=True)
     for value in values:
-        for candidate in re.findall(r"https?://[^\s\"'<>]+", value):
-            # Markdown and JSON may attach punctuation to the URL. MinIO keys
-            # emitted by StorageService use UUID filenames and safe path chars.
-            candidate = candidate.rstrip(").,;]")
-            path_parts = [part for part in urlsplit(candidate).path.split("/") if part]
+        markdown_matches = list(MARKDOWN_LINK_RE.finditer(value))
+        candidates = [match.group(1) or match.group(2) for match in markdown_matches]
+        remaining = MARKDOWN_LINK_RE.sub(" ", value)
+        candidates.extend(URL_RE.findall(remaining))
+        for candidate in candidates:
+            candidate = candidate.rstrip(".,;]")
+            try:
+                parsed_url = urlsplit(candidate)
+            except ValueError:
+                # User-authored Markdown may contain malformed IPv6 URLs.
+                # One bad candidate must not fail an otherwise valid backup.
+                continue
+            if parsed_url.scheme not in {"http", "https"} or not parsed_url.netloc:
+                continue
+            base_path = None
+            for scheme, netloc, path in parsed_bases:
+                if (
+                    parsed_url.scheme.lower() == scheme
+                    and parsed_url.netloc.lower() == netloc
+                    and (
+                        not path
+                        or parsed_url.path == path
+                        or parsed_url.path.startswith(f"{path}/")
+                    )
+                ):
+                    base_path = path
+                    break
+            if base_path is None:
+                continue
+            remainder = (
+                parsed_url.path[len(base_path) :] if base_path else parsed_url.path
+            )
+            path_parts = [part for part in remainder.split("/") if part]
             if len(path_parts) < 2:
                 continue
             bucket = unquote(path_parts[0])
@@ -473,9 +562,8 @@ def backup_once(*, allow_local_repository: bool = False) -> str:
     # Export candidates after the MVCC snapshot. The manifest records which
     # candidate keys were referenced by that exact snapshot; restore skips
     # unreferenced keys, including objects deleted before the recovery point.
-    selections = {bucket: list_latest_versions(client, bucket) for bucket in buckets}
     database_bytes = pg_database_size()
-    ensure_capacity(stage_root, database_bytes, selections)
+    ensure_capacity(stage_root, database_bytes, {})
 
     payload.mkdir(mode=0o700)
     try:
@@ -485,14 +573,8 @@ def backup_once(*, allow_local_repository: bool = False) -> str:
         # committed. UUID keys are immutable, so later uploads are extras;
         # concurrent deletes leave the referenced value version addressable.
         selections = {bucket: list_latest_versions(client, bucket) for bucket in buckets}
-        actual_object_bytes = sum(
-            int(version.get("Size", 0))
-            for bucket_versions in selections.values()
-            for version in bucket_versions
-        )
-        remaining = shutil.disk_usage(stage_root).free
-        if remaining < actual_object_bytes + max(1024**3, actual_object_bytes // 5):
-            raise RuntimeError("insufficient staging space for MinIO object export")
+        referenced_selections = select_referenced_versions(database_references, selections)
+        ensure_capacity(stage_root, 0, referenced_selections)
         manifest = export_objects(client, selections, payload, database_references)
         manifest_path = payload / "manifest.json"
         manifest_path.write_text(

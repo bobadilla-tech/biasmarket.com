@@ -88,6 +88,8 @@ docker run --rm --network "$NETWORK" --user 10001:10001 \
   --env PGHOST="$PG_SOURCE" --env PGPORT=5432 \
   --env PGUSER=backup_ci --env "PGPASSWORD=$DB_PASSWORD" --env PGDATABASE=backup_ci \
   --env BACKUP_STAGE_DIR=/stage \
+  --env S3_PUBLIC_URL=https://cdn.example \
+  --env S3_LEGACY_PUBLIC_URLS=https://legacy.example/old-path \
   --env S3_BUCKET=products --env S3_LOGO_BUCKET=logos --env S3_PAYMENT_BUCKET=payments \
   --env KUMA_BACKUP_PUSH_URL=https://status.invalid/api/push/ephemeral-test-token \
   --env RESTORE_MINIO_ENDPOINT="http://${MINIO_RESTORE}:9000" \

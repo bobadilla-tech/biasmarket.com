@@ -133,14 +133,11 @@ def seed_source() -> tuple[dict[tuple[str, str], tuple[str, str]], list[tuple[st
             "psql", "--no-psqlrc", "--set", "ON_ERROR_STOP=1", "--command",
             "CREATE TABLE restore_probe (id integer PRIMARY KEY, label text NOT NULL); "
             "INSERT INTO restore_probe VALUES (1, 'database-restored'); "
-            "CREATE TABLE object_references (bucket text NOT NULL, object_key text NOT NULL); "
-            "INSERT INTO object_references VALUES "
-            "('products', 'product-image.txt'), ('logos', 'brand-logo.txt'), "
-            "('payments', 'proof.txt'); "
             "CREATE TABLE \"Store\" (\"logoUrl\" text, \"bannerUrl\" text, "
             "\"publicOwnerAvatarUrl\" text, \"aboutMarkdown\" text); "
-            "INSERT INTO \"Store\" (\"logoUrl\") VALUES "
-            "('https://cdn.example/logos/brand-logo.txt'); "
+            "INSERT INTO \"Store\" (\"logoUrl\", \"aboutMarkdown\") VALUES "
+            "('https://cdn.example/logos/brand-logo.txt', "
+            "'![Photo](https://cdn.example/products/product-image.txt),caption'); "
             "CREATE TABLE \"Product\" (\"images\" text[] NOT NULL DEFAULT '{}'); "
             "INSERT INTO \"Product\" VALUES "
             "(ARRAY['https://cdn.example/products/product-image.txt']); "
@@ -219,7 +216,7 @@ def restore_and_verify(
         [
             "restic",
             "restore",
-            "latest",
+            snapshot_id,
             "--target",
             "/stage/restored-snapshot",
         ],
@@ -363,23 +360,33 @@ def restore_and_verify(
             if anonymous_status != 403:
                 raise AssertionError("restored payment proof is anonymously readable")
 
-    references = subprocess.run(  # nosec B603 - fixed read-only query against disposable Postgres
+    spec = importlib.util.spec_from_file_location("biasmarket_backup", BACKUP_MODULE_PATH)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("could not load the production backup module")
+    backup = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(backup)
+    reference_values = subprocess.run(  # nosec B603 - fixed production query against restored Postgres
         [
             "psql",
             "--no-psqlrc",
             "--tuples-only",
             "--no-align",
             "--command",
-            "SELECT bucket || '/' || object_key FROM object_references ORDER BY bucket, object_key",
+            backup.DATABASE_REFERENCE_QUERY,
         ],
         check=True,
         capture_output=True,
         text=True,
         shell=False,
-    ).stdout.strip()
-    expected_references = "\n".join(sorted(f"{bucket}/{key}" for bucket, key in expected))
-    if references != expected_references:
-        raise AssertionError(f"unexpected restored object references: {references!r}")
+    ).stdout.splitlines()
+    actual_references = backup.parse_object_references(
+        reference_values, list(SOURCE_BUCKETS)
+    )
+    expected_references = set(expected)
+    if actual_references != expected_references:
+        raise AssertionError(
+            f"unexpected restored application object references: {actual_references!r}"
+        )
     restore_environment(previous_restore_env)
 
 
