@@ -26,6 +26,8 @@ import { ContactSellerButton } from "./contact-seller-button";
 import { orderPaymentsApi } from "../api/order-payments.api";
 import { useSubmitPaymentProof } from "../mutations/use-submit-payment-proof";
 import { usePublicPaymentMethods } from "../queries/use-public-payment-methods";
+import { isPdfBuyerProof } from "@/features/orders/lib/payment-proof";
+import { PaymentProofThumbnail } from "@/features/orders/components/payment-proof-thumbnail";
 import type {
   OrderDetailResponseDto,
   OrderPaymentResponseDto,
@@ -248,6 +250,7 @@ export function AccountOrderDetail({
             enabledMethods={(enabledMethods.data ?? []).map((m) => m.method)}
             submitting={submitProof.isPending}
             onSubmit={handleSubmitProof}
+            allowPdfProof
           />
         </div>
       )}
@@ -306,33 +309,34 @@ export function AccountOrderDetail({
           />
         ) : (
           <div className="flex flex-wrap gap-3">
-            {submittedProofs.map((payment) => (
-              <button
-                key={payment.id}
-                type="button"
-                aria-label={tAccount("orderDetail.screenshots")}
-                onClick={() =>
-                  setPreviewUrl(
-                    orderPaymentsApi.paymentImageUrl(
-                      slug,
-                      order.id,
-                      payment.id,
-                    ),
-                  )
-                }
-                className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-100 bg-gray-50"
-              >
-                <img
-                  src={orderPaymentsApi.paymentImageUrl(
-                    slug,
-                    order.id,
-                    payment.id,
-                  )}
-                  alt=""
-                  className="h-full w-full object-cover"
+            {submittedProofs.map((payment) => {
+              const url = orderPaymentsApi.paymentImageUrl(
+                slug,
+                order.id,
+                payment.id,
+              );
+              return isPdfBuyerProof(payment) ? (
+                <PaymentProofThumbnail
+                  key={payment.id}
+                  url={url}
+                  isPdf
+                  label={tAccount("orderDetail.downloadProof")}
+                  showPdfLabel
+                  className="flex size-20 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-gray-100 bg-gray-50 text-gray-600"
+                  imageClassName="h-full w-full object-cover"
                 />
-              </button>
-            ))}
+              ) : (
+                <PaymentProofThumbnail
+                  key={payment.id}
+                  url={url}
+                  isPdf={false}
+                  label={tAccount("orderDetail.screenshots")}
+                  onPreview={() => setPreviewUrl(url)}
+                  className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-100 bg-gray-50"
+                  imageClassName="h-full w-full object-cover"
+                />
+              );
+            })}
           </div>
         )}
       </div>

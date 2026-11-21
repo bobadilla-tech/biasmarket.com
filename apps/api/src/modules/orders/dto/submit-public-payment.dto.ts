@@ -25,7 +25,7 @@ export class SubmitPublicPaymentDto {
   @ApiProperty({
     type: "string",
     format: "binary",
-    description: "JPEG or PNG proof of payment, up to 5 MB.",
+    description: "JPEG, PNG, or PDF proof of payment, up to 5 MB.",
   })
   file: unknown;
 }

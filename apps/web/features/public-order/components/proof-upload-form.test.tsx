@@ -21,7 +21,7 @@ const render = (order = makeOrder()) =>
   renderWithProviders(<ProofUploadForm token={TOKEN} order={order} />);
 
 function pickFile(file: File) {
-  fireEvent.change(screen.getByLabelText("Elegir captura del pago"), {
+  fireEvent.change(screen.getByLabelText("Elegir comprobante de pago"), {
     target: { files: [file] },
   });
 }
@@ -64,7 +64,7 @@ test("shows inline errors and does not call the API on an invalid form", async (
   render();
   fireEvent.click(screen.getByRole("button", { name: "Enviar comprobante" }));
   expect(await screen.findByText("Elige un método de pago.")).toBeTruthy();
-  expect(screen.getByText("Adjunta la captura de tu pago.")).toBeTruthy();
+  expect(screen.getByText("Adjunta tu comprobante de pago.")).toBeTruthy();
   expect(submitProof).not.toHaveBeenCalled();
 });
 
@@ -84,22 +84,36 @@ test("rejects an amount over the balance", async () => {
   expect(submitProof).not.toHaveBeenCalled();
 });
 
-test("rejects a PDF and a file over 5 MB", async () => {
+test("accepts a PDF proof", async () => {
+  submitProof.mockResolvedValue({ id: "p1" });
   render();
   fireEvent.change(screen.getByLabelText("Método de pago"), {
     target: { value: "YAPE" },
   });
-  pickFile(new File(["x"], "p.pdf", { type: "application/pdf" }));
+  const pdf = new File(["%PDF-1.7"], "p.pdf", { type: "application/pdf" });
+  pickFile(pdf);
+  expect(screen.getByText("PDF seleccionado")).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Enviar comprobante" }));
-  expect(await screen.findByText("Usa una imagen JPG o PNG.")).toBeTruthy();
+  await screen.findByRole("status");
+  expect(submitProof).toHaveBeenCalledWith(
+    TOKEN,
+    expect.objectContaining({ file: pdf }),
+    expect.any(String),
+  );
+});
 
+test("rejects a file over 5 MB", async () => {
+  render();
+  fireEvent.change(screen.getByLabelText("Método de pago"), {
+    target: { value: "YAPE" },
+  });
   pickFile(
     new File([new Uint8Array(5 * 1024 * 1024 + 1)], "big.png", {
       type: "image/png",
     }),
   );
   fireEvent.click(screen.getByRole("button", { name: "Enviar comprobante" }));
-  expect(await screen.findByText("La imagen pesa más de 5 MB.")).toBeTruthy();
+  expect(await screen.findByText("El archivo pesa más de 5 MB.")).toBeTruthy();
   expect(submitProof).not.toHaveBeenCalled();
 });
 
@@ -134,7 +148,7 @@ test("submits the values, disables the button while pending and shows success", 
 
 test.each([
   [404, "Este enlace ya no es válido. Pídele uno nuevo a la tienda."],
-  [413, "La imagen es demasiado grande."],
+  [413, "El archivo es demasiado grande."],
   [429, "Hiciste muchos intentos. Espera un momento."],
   [400, "No pudimos enviar tu comprobante. Inténtalo de nuevo."],
 ])(

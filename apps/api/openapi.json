@@ -1862,6 +1862,12 @@
                   "type": "string",
                   "format": "binary"
                 }
+              },
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
               }
             }
           }
@@ -2735,6 +2741,12 @@
                   "type": "string",
                   "format": "binary"
                 }
+              },
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
               }
             }
           }
@@ -2902,6 +2914,12 @@
                 }
               },
               "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/pdf": {
                 "schema": {
                   "type": "string",
                   "format": "binary"
@@ -10101,7 +10119,7 @@
           "file": {
             "type": "string",
             "format": "binary",
-            "description": "JPEG or PNG proof of payment, up to 5 MB."
+            "description": "JPEG, PNG, or PDF proof of payment, up to 5 MB."
           }
         },
         "required": ["amount", "method", "file"]
