@@ -9,8 +9,10 @@ objects remain on the VPS.
 
 The PR adds a oneshot backup service, version-aware MinIO exporter, Restic
 snapshot metadata checks, a daily timer, and config watcher. Cloud-init installs
-the helper and systemd units as root-owned files outside the rsync-writable app
-tree. Successful deploys enable the timer only after `backup.env` passes
+the backup entrypoint, config checker, isolated Compose definition, setup
+helper, and systemd units as root-owned files outside the rsync-writable app
+tree. Plaintext staging lives under `/var/lib/biasmarket-backup`, also outside
+that tree. Successful deploys enable the timer only after `backup.env` passes
 preflight; the watcher retries when Infisical later creates or changes that
 file. A persistent opt-out marker prevents deploys and config changes from
 re-enabling scheduled captures. This PR does not initialize a production Restic
@@ -126,8 +128,27 @@ cases.`
 For an operator rehearsal, use an isolated target database and empty target
 buckets. Supply Restic, Postgres, and S3 credentials through the approved
 root-only secret environment; do not put secret values in command arguments or
-shell history. Select and record the snapshot ID after checking its host and
-tag, then restore into a mode-0700 directory:
+shell history. Export the target directory and endpoint before using the
+recovery environment:
+
+```sh
+set -a
+. /root/backup-restore.env
+set +a
+export RESTORE_ROOT=/root/restore/biasmarket
+export RESTORE_MINIO_ENDPOINT=https://minio-restore.example.internal
+```
+
+The recovery environment holds the Restic password, Restic destination
+credentials, and separate `RESTORE_MINIO_ACCESS_KEY` /
+`RESTORE_MINIO_SECRET_KEY` target credentials. Boto3 reads the target paths and
+endpoint from `os.environ`. Keep credentials out of command arguments and
+shell history. The `RESTORE_MINIO_*` pair must authorize writes to the isolated
+target; Restic's `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` authorize only
+the off-box repository and must not be reused for MinIO.
+
+Select and record the snapshot ID after checking its host and tag, then restore
+into a mode-0700 directory:
 
 ```sh
 umask 077
@@ -143,27 +164,9 @@ PGPASSFILE=/root/.pgpass pg_restore --exit-on-error --no-owner --no-acl \
 
 The expected result is a successful `pg_restore` exit and a populated isolated
 database. The CI fixture additionally checks that its `restore_probe` row has
-the value `database-restored` and that its `object_references` rows exactly
-match the restored manifest.
-
-Before restoring, load the root-only recovery environment file (mode `0600`)
-that holds the Restic password, Restic destination credentials, and separate
-`RESTORE_MINIO_ACCESS_KEY` / `RESTORE_MINIO_SECRET_KEY` target credentials.
-Export the required paths and target endpoint in the current shell; boto3 reads
-all three from `os.environ`:
-
-```sh
-set -a
-. /root/backup-restore.env
-set +a
-export RESTORE_ROOT=/root/restore/biasmarket
-export RESTORE_MINIO_ENDPOINT=https://minio-restore.example.internal
-```
-
-Keep credentials out of command arguments and shell history. The
-`RESTORE_MINIO_*` pair must authorize writes to the isolated target; Restic's
-`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` authorize only the off-box
-repository and must not be reused for MinIO.
+the value `database-restored` and that product, store, and payment-proof
+references read from the restored application tables match the restored
+manifest.
 
 For MinIO, configure a protected `mc` alias named `restore` for the isolated
 target. Create or confirm the three empty buckets, enable versioning before
@@ -274,8 +277,8 @@ These items still block a production backup:
    rehearsal are complete.
 4. Before production capture, inspect VPS disk capacity and choose a protected
    staging filesystem. The service stages plaintext Postgres and object files
-   under `state/backup-stage`, owned by the dedicated container UID 10001 with
-   mode 0700. It checks free space before dumping and exporting and removes the
+   under `/var/lib/biasmarket-backup/stage`, owned by the dedicated container
+   UID 10001 with mode 0700. It checks free space before dumping and exporting and removes the
    stage after each run. Restic encrypts data before upload, but local staging
    is not encrypted by this implementation. Do not run it until local disk
    capacity and protection are accepted.
@@ -293,9 +296,13 @@ current cloud-init template. To update the existing VPS, an administrator must
 review the change and install the version-controlled root-owned files through
 an approved SSH session; do not apply a Terraform replacement to deliver them.
 From a reviewed checkout, install `infra/vps/bin/backup-setup.sh` as
-`/usr/local/sbin/biasmarket-backup-setup` (root:root, mode 0755), install the
-five backup systemd units from `infra/vps/systemd/` under `/etc/systemd/system/`
-(root:root, mode 0644), and validate the sudoers entry against cloud-init
+`/usr/local/sbin/biasmarket-backup-setup`, `backup.sh` as
+`/usr/local/sbin/biasmarket-backup`, and `backup-config-check.sh` as
+`/usr/local/sbin/biasmarket-backup-config-check` (root:root, mode 0755).
+Install `infra/vps/backup-compose.yml` as `/etc/biasmarket-backup-compose.yml`
+(root:root, mode 0644), the five backup systemd units from
+`infra/vps/systemd/` under `/etc/systemd/system/` (root:root, mode 0644), and
+validate the sudoers entry against cloud-init
 before installing it at `/etc/sudoers.d/biasmarket-backup-setup` (root:root,
 mode 0440). Run `visudo -cf /etc/sudoers.d/biasmarket-backup-setup` and
 `systemctl daemon-reload` afterward. Do not enable the timer as part of a code

@@ -212,18 +212,24 @@ The backup policy, manual oneshot service, and production blockers are in
 [backup-plan.md](backup-plan.md). No scheduled off-box backup is active yet.
 `biasmarket-backup-config.service` only validates the runtime environment;
 `biasmarket-backup.service` performs one capture. Cloud-init installs the
-root-owned units and config watcher; successful deploys invoke the setup helper.
-A valid root-owned
-`env/backup.env` automatically enables the daily timer; missing or invalid
-config leaves the timer disabled and reports the failure in deploy output and
-the setup service journal. Cloud-init installs the root-owned setup helper and
-systemd units outside the rsync-writable application tree. The watcher uses
-`PathChanged` on `env/backup.env`, so it retries after a later config change
-without repeatedly activating because the file exists. The preflight checks
-environment shape only; it does not verify remote connectivity, source bucket
-versioning, or restore readiness.
+root-owned backup runtime, Compose file, units and config watcher; successful
+deploys invoke the setup helper.
+Cloud-init installs the root-owned backup scripts, Compose definition, setup
+helper and unit files outside the rsync-writable application tree. A valid
+root-owned `env/backup.env` automatically enables the daily timer; missing or
+invalid config leaves the timer disabled and reports the failure in deploy
+output and the setup service journal. The watcher uses `PathChanged` on
+`env/backup.env`, so it retries after a later config change without repeatedly
+activating because the file exists. The preflight checks environment shape
+only; it does not verify remote connectivity, source bucket versioning, or
+restore readiness.
 Provision the valid production config only after those prerequisites and the
 disposable restore rehearsal are complete.
+
+If a backup run cannot confirm that its detached container stopped, it writes
+`/var/lib/biasmarket-backup/container-cleanup-required` and refuses later
+captures. Inspect and stop the named backup container before removing this
+marker; never clear it while a capture might still be running.
 
 After the local restore rehearsal and production prerequisites in the backup
 plan pass, a manual capture can be requested and inspected with:
@@ -328,15 +334,58 @@ it on a scratch copy before relying on it in an incident. Expect downtime.
 2. Recreate the four `env/*.env` files from the reviewed production secrets,
    using the same values as before: in particular the buyer-session secret,
    since changing it logs out every buyer.
-3. Run `deploy.sh --bootstrap <sha>` (first cutover). It starts the shared
-   services, runs migrations against an empty database and brings up the first
-   color, so the result is an empty application.
-4. Restore a scheduled Restic recovery point with the procedure in
+3. Keep the replacement unavailable to public traffic. If `deploy.sh
+   --bootstrap <sha>` is needed to start shared services, it starts from an
+   empty database; do not treat that first cutover as recovered service.
+4. Restore and verify the chosen scheduled Restic snapshot into an isolated
+   database and empty buckets by following
    [backup-plan.md](backup-plan.md#restore-acceptance-test-before-production-use).
-   This applies to scheduled snapshots; the plain-SQL pre-migration dumps
-   above remain a separate recovery source. Deploy a commit that matches the
-   restored schema.
-5. Re-run the Kuma setup (see [Uptime Kuma](#uptime-kuma)).
+   Confirm the snapshot ID, database rows, object checksums, and bucket access
+   policies before changing the live data.
+5. With public writes still blocked, stop both app colors and workers. Recreate
+   the application database from the verified custom-format dump, then restore
+   the manifest's database-referenced objects into the application's MinIO
+   buckets using the production target credentials and the matching access
+   policies. The isolated restore procedure does not switch the application to
+   its target database or copy objects into production automatically.
+6. Deploy code whose Prisma schema matches the restored migration history,
+   then start the app and run the health and smoke checks in
+   [deploy.md](deploy.md#verification) before restoring public traffic.
+7. Re-run the Kuma setup (see [Uptime Kuma](#uptime-kuma)).
+
+### Activate a verified scheduled restore
+
+For an existing VPS, keep traffic in maintenance and stop all writers before
+replacing the database or MinIO objects. Set the Compose image tag from the
+recorded deployed SHA, then stop both colors and both worker services:
+
+```bash
+IMAGE_TAG="$(cat state/current_sha)" docker compose --env-file env/shared.env \
+  stop api-blue api-green workers-blue workers-green web-blue web-green
+```
+
+First rehearse the full snapshot in isolation as described in
+[backup-plan.md](backup-plan.md#restore-acceptance-test-before-production-use).
+For production, use the verified recovery directory and restore into the same
+database name configured in `env/shared.env`. These commands replace the
+database and are destructive; keep writers stopped and take a safety dump if
+the current database contains data that must be retained:
+
+```bash
+IMAGE_TAG="$(cat state/current_sha)" docker compose --env-file env/shared.env \
+  exec -T db sh -c 'dropdb --force --if-exists -U "$POSTGRES_USER" "$POSTGRES_DB" && \
+    createdb -U "$POSTGRES_USER" --owner "$POSTGRES_USER" "$POSTGRES_DB"'
+IMAGE_TAG="$(cat state/current_sha)" docker compose --env-file env/shared.env \
+  exec -T db sh -c 'pg_restore --exit-on-error --no-owner --no-acl \
+    --dbname "$POSTGRES_DB"' < "$RESTORE_ROOT/postgres.dump"
+```
+
+Restore only manifest entries marked `databaseReferenced` into the configured
+MinIO buckets, with target credentials scoped to those buckets. Preserve the
+source's public read policy for `products` and `logos` and private access for
+`payments`; the isolated restore instructions validate those policies. Finally
+deploy the commit whose migration history matches the restored database, run
+the health and application smoke checks, and only then restore public traffic.
 
 ### What is not backed up
 
