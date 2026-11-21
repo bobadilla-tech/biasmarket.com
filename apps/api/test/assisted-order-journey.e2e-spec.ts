@@ -692,6 +692,39 @@ describe("assisted order journey (e2e)", () => {
     expect(stillLive.body.status).toBe("ACTIVE");
   });
 
+  it("serializes an expiring order against a concurrent seller payment", async () => {
+    const shop = await makeShop("expiry-payment-race");
+    const order = await newOrder(shop);
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { expiresAt: new Date(Date.now() - 60_000) },
+    });
+
+    const [paymentResponse] = await Promise.all([
+      recordPayment(shop, order.id, "10.00"),
+      request(app.getHttpServer())
+        .post("/internal/orders/expire-sweep")
+        .set(INTERNAL_JOBS_SECRET_HEADER, process.env.INTERNAL_JOBS_SECRET!),
+    ]);
+
+    expect([201, 400]).toContain(paymentResponse.status);
+    const [finalOrder, payments, variant] = await Promise.all([
+      prisma.order.findUniqueOrThrow({ where: { id: order.id } }),
+      prisma.orderPayment.findMany({ where: { orderId: order.id } }),
+      prisma.productVariant.findUniqueOrThrow({
+        where: { id: shop.variantId },
+      }),
+    ]);
+    const recordedAmount = payments.reduce(
+      (total, payment) => total + Number(payment.amount),
+      0,
+    );
+
+    expect(finalOrder.paymentStatus).toBe("CANCELLED");
+    expect(Number(finalOrder.retainedAmount)).toBe(recordedAmount);
+    expect(variant.reserved).toBe(0);
+  });
+
   it("records no invite for a cancelled order with a counted payment, and tells the buyer it was cancelled", async () => {
     const shop = await makeShop("cancel");
     const order = await newOrder(shop, {

@@ -314,6 +314,22 @@ describe("ExpireOrdersUseCase", () => {
     );
   });
 
+  it("skips a stale expiry candidate when it no longer holds a reserved status", async () => {
+    prisma.order.findMany.mockResolvedValue([
+      order({ id: "order-1", items: [] }),
+    ]);
+    prisma.$queryRaw.mockResolvedValue([]);
+
+    const result = await useCase.execute();
+
+    expect(prisma.orderPayment.findMany).not.toHaveBeenCalled();
+    expect(prisma.order.updateMany).not.toHaveBeenCalled();
+    expect(prisma.orderPayment.updateMany).not.toHaveBeenCalled();
+    expect(prisma.auditLog.create).not.toHaveBeenCalled();
+    expect(events.record).not.toHaveBeenCalled();
+    expect(result).toEqual({ cancelled: 0 });
+  });
+
   it("returns cancelled: 0 when nothing has expired", async () => {
     prisma.order.findMany.mockResolvedValue([]);
 
