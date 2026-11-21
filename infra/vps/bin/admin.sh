@@ -56,8 +56,8 @@ case "$action" in
   revoke)
     # The SQL is fed on stdin so psql binds :'email' as a quoted literal, never
     # by string-pasting the address into the statement.
+    # shellcheck disable=SC2016  # $POSTGRES_* / $1 must expand inside the container
     printf '%s\n' "update \"user\" set role = 'seller' where email = :'email' returning email, role;" |
-      # shellcheck disable=SC2016  # $POSTGRES_* / $1 must expand inside the container
       dc exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -v email="$1"' _ "$email"
     ;;
   *)
