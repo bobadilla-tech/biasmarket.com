@@ -1,0 +1,65 @@
+#cloud-config
+# External-key profile for a newly created VPS only. Never select this profile
+# in the Terraform state that owns the current production VPS.
+
+package_update: true
+packages:
+  - rsync
+  - openssh-server
+  - curl
+  - ca-certificates
+  - ufw
+
+# Remove image-provided host keys and generate an Ed25519 host key on the VPS.
+# The private key stays on disk; verify its public half through the provider
+# console before adding the known_hosts line to the GitHub environment.
+ssh_deletekeys: true
+ssh_genkeytypes: [ed25519]
+ssh_quiet_keygen: true
+
+users:
+  - default
+  - name: deploy
+    gecos: Bias Market deploy user
+    shell: /bin/bash
+    lock_passwd: true
+    ssh_authorized_keys:
+      # Key A: rsync only, confined to /home/deploy/biasmarket/ by rrsync.
+      - 'command="/usr/local/bin/rrsync /home/deploy/biasmarket/",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ${deploy_rsync_public_key}'
+      # Key B: forced command, only the deploy dispatcher script.
+      - 'command="/home/deploy/biasmarket/bin/ssh-deploy-dispatcher.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ${deploy_dispatch_public_key}'
+
+write_files:
+  # sshd uses the FIRST value it reads and includes sshd_config.d/*.conf in
+  # lexical order, so 10- beats Ubuntu's 50-cloud-init.conf.
+  - path: /etc/ssh/sshd_config.d/10-biasmarket-hardening.conf
+    permissions: "0644"
+    content: |
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin prohibit-password
+
+runcmd:
+  # Keep this pinned CLI version in sync with infra/vps/bin/infisical_sync.py.
+  - [ bash, -lc, "curl -1sLf 'https://artifacts-cli.infisical.com/setup.deb.sh' | bash && apt-get update && apt-get install -y infisical=0.45.13" ]
+  # Ubuntu 26.04 ships rrsync in /usr/bin; the authorized_keys lines above (and
+  # the docs) use /usr/local/bin.
+  - ln -sf /usr/bin/rrsync /usr/local/bin/rrsync
+  - curl -fsSL https://get.docker.com | sh
+  - usermod -aG docker deploy
+  - mkdir -p /home/deploy/biasmarket/env /home/deploy/biasmarket/caddy/active /home/deploy/biasmarket/state /home/deploy/biasmarket/releases
+  - chown -R deploy:deploy /home/deploy/biasmarket
+  # Firewall: SSH and web only. (Docker publishes only Caddy's 80/443.)
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow 22/tcp
+  - ufw allow 80/tcp
+  - ufw allow 443/tcp
+  - ufw --force enable
+  # 4 GB swap: two app colours briefly run side by side during a cutover.
+  - fallocate -l 4G /swapfile
+  - chmod 600 /swapfile
+  - mkswap /swapfile
+  - swapon /swapfile
+  - echo '/swapfile none swap sw 0 0' >> /etc/fstab
+  - systemctl restart ssh
