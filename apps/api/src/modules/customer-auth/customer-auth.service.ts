@@ -323,140 +323,140 @@ export class CustomerAuthService {
         if (!(await lockBuyerOrderRow(tx, ticket.orderId))) {
           throw new ClaimOrderError("invalid");
         }
-      const select = {
-        id: true,
-        storeId: true,
-        source: true,
-        status: true,
-        paymentStatus: true,
-        claimedAt: true,
-        buyerAccountId: true,
-        claimReleaseId: true,
-        claimReleaseExpiresAt: true,
-        accessTokenHash: true,
-        accessTokenRevokedAt: true,
-        payments: {
-          select: {
-            amount: true,
-            source: true,
-            reviewStatus: true,
-            voidedAt: true,
+        const select = {
+          id: true,
+          storeId: true,
+          source: true,
+          status: true,
+          paymentStatus: true,
+          claimedAt: true,
+          buyerAccountId: true,
+          claimReleaseId: true,
+          claimReleaseExpiresAt: true,
+          accessTokenHash: true,
+          accessTokenRevokedAt: true,
+          payments: {
+            select: {
+              amount: true,
+              source: true,
+              reviewStatus: true,
+              voidedAt: true,
+            },
           },
-        },
-      } as const;
-      const order = await tx.order.findFirst({
-        where: { id: ticket.orderId },
-        select,
-      });
-      if (!order) throw new ClaimOrderError("invalid");
+        } as const;
+        const order = await tx.order.findFirst({
+          where: { id: ticket.orderId },
+          select,
+        });
+        if (!order) throw new ClaimOrderError("invalid");
 
-      if (order.claimedAt || order.buyerAccountId) {
-        // Same account re-claiming is a success; anyone else is too late.
-        if (order.buyerAccountId === account.id) {
-          await this.upsertStoreLink(tx, account.id, order.storeId);
-          return;
+        if (order.claimedAt || order.buyerAccountId) {
+          // Same account re-claiming is a success; anyone else is too late.
+          if (order.buyerAccountId === account.id) {
+            await this.upsertStoreLink(tx, account.id, order.storeId);
+            return;
+          }
+          throw new ClaimOrderError("already_claimed");
         }
-        throw new ClaimOrderError("already_claimed");
-      }
-      const releaseActive =
-        order.claimReleaseId !== null &&
-        (!order.claimReleaseExpiresAt ||
-          order.claimReleaseExpiresAt.getTime() > Date.now());
-      if (
-        (reclaimBuyerAccountId &&
-          (!ticket.releaseId ||
-            order.claimReleaseId !== ticket.releaseId ||
-            !releaseActive)) ||
-        (!reclaimBuyerAccountId && (ticket.releaseId || releaseActive))
-      ) {
-        throw new ClaimOrderError("already_claimed");
-      }
-      // A reclaim ticket is its own short-lived, account-bound capability.
-      // Rotating the public order link after release must not invalidate the
-      // email; ordinary claim tickets remain tied to the current link hash.
-      if (
-        !reclaimBuyerAccountId &&
-        (order.accessTokenRevokedAt ||
-          !order.accessTokenHash ||
-          linkFingerprint(order.accessTokenHash) !== ticket.linkFp)
-      ) {
-        throw new ClaimOrderError("invalid");
-      }
-      if (
-        order.source !== "VENDOR_ASSISTED" ||
-        order.status === "CANCELLED" ||
-        order.paymentStatus === "CANCELLED" ||
-        !order.payments.some(countsTowardPaid)
-      ) {
-        throw new ClaimOrderError("not_claimable");
-      }
+        const releaseActive =
+          order.claimReleaseId !== null &&
+          (!order.claimReleaseExpiresAt ||
+            order.claimReleaseExpiresAt.getTime() > Date.now());
+        if (
+          (reclaimBuyerAccountId &&
+            (!ticket.releaseId ||
+              order.claimReleaseId !== ticket.releaseId ||
+              !releaseActive)) ||
+          (!reclaimBuyerAccountId && (ticket.releaseId || releaseActive))
+        ) {
+          throw new ClaimOrderError("already_claimed");
+        }
+        // A reclaim ticket is its own short-lived, account-bound capability.
+        // Rotating the public order link after release must not invalidate the
+        // email; ordinary claim tickets remain tied to the current link hash.
+        if (
+          !reclaimBuyerAccountId &&
+          (order.accessTokenRevokedAt ||
+            !order.accessTokenHash ||
+            linkFingerprint(order.accessTokenHash) !== ticket.linkFp)
+        ) {
+          throw new ClaimOrderError("invalid");
+        }
+        if (
+          order.source !== "VENDOR_ASSISTED" ||
+          order.status === "CANCELLED" ||
+          order.paymentStatus === "CANCELLED" ||
+          !order.payments.some(countsTowardPaid)
+        ) {
+          throw new ClaimOrderError("not_claimable");
+        }
 
-      const { count } = await tx.order.updateMany({
-        where: {
-          id: order.id,
-          source: "VENDOR_ASSISTED",
-          status: { not: "CANCELLED" },
-          paymentStatus: { not: "CANCELLED" },
-          claimedAt: null,
-          buyerAccountId: null,
-          ...(reclaimBuyerAccountId
-            ? {
-                claimReleaseId: ticket.releaseId,
-                claimReleaseExpiresAt: { gt: new Date() },
-              }
-            : {
-                OR: [
-                  { claimReleaseId: null },
-                  { claimReleaseExpiresAt: { lte: new Date() } },
-                ],
-              }),
-          ...(!reclaimBuyerAccountId
-            ? {
-                accessTokenRevokedAt: null,
-                accessTokenHash: { startsWith: ticket.linkFp },
-              }
-            : {}),
-        },
-        data: {
-          buyerAccountId: account.id,
-          claimedAt: new Date(),
-          claimReleaseId: null,
-          claimReleaseExpiresAt: null,
-        },
-      });
-      if (count !== 1) throw new ClaimOrderError("already_claimed");
+        const { count } = await tx.order.updateMany({
+          where: {
+            id: order.id,
+            source: "VENDOR_ASSISTED",
+            status: { not: "CANCELLED" },
+            paymentStatus: { not: "CANCELLED" },
+            claimedAt: null,
+            buyerAccountId: null,
+            ...(reclaimBuyerAccountId
+              ? {
+                  claimReleaseId: ticket.releaseId,
+                  claimReleaseExpiresAt: { gt: new Date() },
+                }
+              : {
+                  OR: [
+                    { claimReleaseId: null },
+                    { claimReleaseExpiresAt: { lte: new Date() } },
+                  ],
+                }),
+            ...(!reclaimBuyerAccountId
+              ? {
+                  accessTokenRevokedAt: null,
+                  accessTokenHash: { startsWith: ticket.linkFp },
+                }
+              : {}),
+          },
+          data: {
+            buyerAccountId: account.id,
+            claimedAt: new Date(),
+            claimReleaseId: null,
+            claimReleaseExpiresAt: null,
+          },
+        });
+        if (count !== 1) throw new ClaimOrderError("already_claimed");
 
-      await this.upsertStoreLink(tx, account.id, order.storeId);
-      await this.events.record(tx, {
-        orderId: order.id,
-        storeId: order.storeId,
-        type: "CLAIMED",
-        actor: "BUYER",
-        payload: ticket.moment ? { moment: ticket.moment } : {},
-      });
-      await tx.auditLog.create({
-        data: {
-          actorId: account.id,
+        await this.upsertStoreLink(tx, account.id, order.storeId);
+        await this.events.record(tx, {
+          orderId: order.id,
           storeId: order.storeId,
-          action: "order.claimed",
-          entityType: "Order",
-          entityId: order.id,
-          metadata: { actorType: "BUYER" },
-        },
-      });
-      await tx.notification.create({
-        data: {
-          storeId: order.storeId,
-          type: "ORDER_CLAIMED",
-          entityType: "Order",
-          entityId: order.id,
-          title: "Pedido guardado por el comprador",
-          body: "El comprador vinculó este pedido a su cuenta.",
-          metadata: {},
-        },
-      });
-      createdClaim = true;
-      claimedStoreId = order.storeId;
+          type: "CLAIMED",
+          actor: "BUYER",
+          payload: ticket.moment ? { moment: ticket.moment } : {},
+        });
+        await tx.auditLog.create({
+          data: {
+            actorId: account.id,
+            storeId: order.storeId,
+            action: "order.claimed",
+            entityType: "Order",
+            entityId: order.id,
+            metadata: { actorType: "BUYER" },
+          },
+        });
+        await tx.notification.create({
+          data: {
+            storeId: order.storeId,
+            type: "ORDER_CLAIMED",
+            entityType: "Order",
+            entityId: order.id,
+            title: "Pedido guardado por el comprador",
+            body: "El comprador vinculó este pedido a su cuenta.",
+            metadata: {},
+          },
+        });
+        createdClaim = true;
+        claimedStoreId = order.storeId;
       },
     );
     if (claimed === null) throw new ClaimOrderError("invalid");
