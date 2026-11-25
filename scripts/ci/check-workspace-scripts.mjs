@@ -22,8 +22,6 @@ const REQUIRED_SCRIPTS = ["lint", "typecheck"];
 const WORKSPACE_PARENTS = ["apps", "packages"];
 const WORKFLOW = ".github/workflows/ci.yml";
 
-const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
 // Single-line `run:` commands of the workflow, `#` comments stripped.
 function runLines(rootDir) {
   const file = path.join(rootDir, WORKFLOW);
@@ -36,8 +34,14 @@ function runLines(rootDir) {
 }
 
 function isTestRun(line, name) {
+  const tokens = line.trim().split(/\s+/);
+  const hasExactFilter = tokens.some(
+    (token, index) =>
+      token === `--filter=${name}` ||
+      (token === "--filter" && tokens[index + 1] === name),
+  );
   return (
-    new RegExp(`--filter[ =]${escapeRegExp(name)}(\\s|$)`).test(line) &&
+    hasExactFilter &&
     /\btest(:cov)?(\s|$)/.test(line) &&
     !/\bexec\b/.test(line) &&
     !/test:e2e/.test(line)
