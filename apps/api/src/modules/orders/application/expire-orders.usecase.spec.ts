@@ -21,11 +21,13 @@ describe("ExpireOrdersUseCase", () => {
   let events: { record: Mock };
   let prisma: {
     order: { findMany: Mock; updateMany: Mock };
+    orderPayment: { findMany: Mock; updateMany: Mock };
     auditLog: { create: Mock };
     productVariant: { findUnique: Mock; update: Mock };
     store: { findUnique: Mock };
     product: { findUnique: Mock };
     $transaction: Mock;
+    $queryRaw: Mock;
   };
 
   beforeEach(async () => {
@@ -34,11 +36,16 @@ describe("ExpireOrdersUseCase", () => {
         findMany: vi.fn(),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
+      orderPayment: {
+        findMany: vi.fn().mockResolvedValue([]),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
       auditLog: { create: vi.fn() },
       productVariant: { findUnique: vi.fn(), update: vi.fn() },
       store: { findUnique: vi.fn() },
       product: { findUnique: vi.fn() },
       $transaction: vi.fn((cb: (tx: unknown) => unknown) => cb(prisma)),
+      $queryRaw: vi.fn().mockResolvedValue([{ id: "order-1" }]),
     };
 
     events = { record: vi.fn() };
@@ -142,6 +149,45 @@ describe("ExpireOrdersUseCase", () => {
     expect(prisma.order.updateMany).toHaveBeenCalled();
   });
 
+  it("closes pending buyer proofs as SYSTEM during expiry", async () => {
+    prisma.order.findMany.mockResolvedValue([order({ items: [] })]);
+    prisma.orderPayment.findMany
+      .mockResolvedValueOnce([
+        {
+          amount: new Prisma.Decimal(30),
+          source: "BUYER_SUBMITTED",
+          reviewStatus: "PENDING_REVIEW",
+          voidedAt: null,
+        },
+      ])
+      .mockResolvedValueOnce([{ id: "proof-1" }]);
+
+    await useCase.execute();
+
+    expect(prisma.orderPayment.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: "proof-1",
+          orderId: "order-1",
+          storeId: "store-1",
+          reviewStatus: "PENDING_REVIEW",
+        }),
+        data: expect.objectContaining({
+          reviewStatus: "REJECTED",
+          reviewedBy: null,
+        }),
+      }),
+    );
+    expect(events.record).toHaveBeenCalledWith(
+      prisma,
+      expect.objectContaining({
+        type: "PAYMENT_REJECTED",
+        actor: "SYSTEM",
+        payload: { paymentId: "proof-1" },
+      }),
+    );
+  });
+
   it("skips releasing stock for unlimited (null stock) variants", async () => {
     prisma.order.findMany.mockResolvedValue([
       order({
@@ -177,6 +223,14 @@ describe("ExpireOrdersUseCase", () => {
       id: "variant-1",
       stock: 5,
     });
+    prisma.orderPayment.findMany.mockResolvedValue([
+      {
+        amount: new Prisma.Decimal(30),
+        source: "SELLER_RECORDED",
+        reviewStatus: "N_A",
+        voidedAt: null,
+      },
+    ]);
 
     const result = await useCase.execute();
 
@@ -216,6 +270,64 @@ describe("ExpireOrdersUseCase", () => {
       },
     });
     expect(result).toEqual({ cancelled: 1 });
+  });
+
+  it("uses payments read after the order lock instead of the stale sweep snapshot", async () => {
+    prisma.order.findMany.mockResolvedValue([
+      order({
+        id: "order-1",
+        // This is the initial sweep snapshot and must not determine retainedAmount.
+        payments: [],
+        items: [],
+      }),
+    ]);
+    prisma.orderPayment.findMany.mockResolvedValue([
+      {
+        amount: new Prisma.Decimal(45),
+        source: "SELLER_RECORDED",
+        reviewStatus: "N_A",
+        voidedAt: null,
+      },
+    ]);
+
+    await useCase.execute();
+
+    expect(prisma.$queryRaw).toHaveBeenCalled();
+    expect(prisma.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      prisma.orderPayment.findMany.mock.invocationCallOrder[0],
+    );
+    expect(prisma.orderPayment.findMany).toHaveBeenCalledWith({
+      where: { orderId: "order-1", storeId: "store-1" },
+      select: {
+        amount: true,
+        source: true,
+        reviewStatus: true,
+        voidedAt: true,
+      },
+    });
+    expect(prisma.order.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          retainedAmount: new Prisma.Decimal(45),
+        }),
+      }),
+    );
+  });
+
+  it("skips a stale expiry candidate when it no longer holds a reserved status", async () => {
+    prisma.order.findMany.mockResolvedValue([
+      order({ id: "order-1", items: [] }),
+    ]);
+    prisma.$queryRaw.mockResolvedValue([]);
+
+    const result = await useCase.execute();
+
+    expect(prisma.orderPayment.findMany).not.toHaveBeenCalled();
+    expect(prisma.order.updateMany).not.toHaveBeenCalled();
+    expect(prisma.orderPayment.updateMany).not.toHaveBeenCalled();
+    expect(prisma.auditLog.create).not.toHaveBeenCalled();
+    expect(events.record).not.toHaveBeenCalled();
+    expect(result).toEqual({ cancelled: 0 });
   });
 
   it("returns cancelled: 0 when nothing has expired", async () => {
