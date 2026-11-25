@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ImageIcon, Upload, X } from "lucide-react";
+import { FileText, ImageIcon, Upload, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { ApiError } from "@biasmarket/types";
 import type { PublicOrderResponseDto } from "@biasmarket/types";
@@ -61,7 +61,10 @@ export function ProofUploadForm({
 
   const file = watch("file");
   useEffect(() => {
-    if (!(file instanceof File)) {
+    if (
+      !(file instanceof File) ||
+      (!file.type.startsWith("image/") && !/\.(jpe?g|png)$/i.test(file.name))
+    ) {
       setPreviewUrl(null);
       return;
     }
@@ -200,7 +203,7 @@ export function ProofUploadForm({
               ref={fileInputRef}
               id="proof-file"
               type="file"
-              accept="image/png,image/jpeg"
+              accept="image/png,image/jpeg,application/pdf,.jpg,.jpeg,.png,.pdf"
               className="sr-only"
               aria-label={t("chooseFile")}
               onChange={(event) =>
@@ -214,7 +217,11 @@ export function ProofUploadForm({
           className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-3"
         >
           {file ? (
-            <ImageIcon aria-hidden="true" className="size-5 shrink-0" />
+            previewUrl ? (
+              <ImageIcon aria-hidden="true" className="size-5 shrink-0" />
+            ) : (
+              <FileText aria-hidden="true" className="size-5 shrink-0" />
+            )
           ) : (
             <Upload aria-hidden="true" className="size-5 shrink-0" />
           )}
@@ -225,13 +232,20 @@ export function ProofUploadForm({
             <span className="block text-xs text-gray-500">{t("fileHint")}</span>
           </span>
         </label>
-        {file && previewUrl && (
+        {file && (
           <div className="flex items-center justify-between rounded-xl border border-gray-100 p-2">
-            <img
-              src={previewUrl}
-              alt={t("preview")}
-              className="size-14 rounded-lg object-cover"
-            />
+            {previewUrl ? (
+              <img
+                src={previewUrl}
+                alt={t("preview")}
+                className="size-14 rounded-lg object-cover"
+              />
+            ) : (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <FileText aria-hidden="true" className="size-5" />
+                <span>{t("pdfSelected")}</span>
+              </div>
+            )}
             <Button
               type="button"
               variant="ghost"

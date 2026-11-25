@@ -73,6 +73,7 @@ import {
   UploadedFileValidationPipe,
   type ValidatedUploadedFile,
 } from "../../../common/uploaded-file-validation.pipe.js";
+import { paymentProofResponseOptions } from "../../../common/payment-proof-response.js";
 import { computePaymentSummary } from "../../../common/payment-summary.js";
 import { UpdateOrderShippingDto } from "../dto/update-order-shipping.dto.js";
 
@@ -509,14 +510,18 @@ export class OrderController {
     return this.orders.findRelatedForStore(storeId, row);
   }
 
-  // Authenticated streaming read for a payment's proof image — the only
+  // Authenticated streaming read for a payment's proof — the only
   // way to fetch one. Never redirects to a presigned URL (see
   // .artifacts/2026/08/20260808--payment-proof-image-access-control/plan.md): the
   // payment bucket is private, so `OrderPayment.imageUrl` alone is no longer
   // fetchable by anyone who obtains it, only via this ownership-gated route.
   @Get(":orderId/payments/:paymentId/image")
   @ApiOkResponse({ schema: { type: "string", format: "binary" } })
-  @ApiProduces("image/jpeg", "image/png")
+  @ApiProduces("image/jpeg", "image/png", "application/pdf")
+  @Header("Cache-Control", "private, no-store")
+  @Header("Referrer-Policy", "no-referrer")
+  @Header("X-Content-Type-Options", "nosniff")
+  @Header("Content-Security-Policy", "default-src 'none'; sandbox")
   // Helmet's default CORP (`same-origin`) makes the browser block this image
   // from being embedded by the web app's cross-origin `<img>` tags
   // (`ERR_BLOCKED_BY_RESPONSE.NotSameOrigin`) — the web frontend
@@ -541,7 +546,12 @@ export class OrderController {
     const { body, contentType } = await this.storage.getPaymentImageStream(
       payment.imageUrl,
     );
-    return new StreamableFile(body, { type: contentType });
+    const responseOptions = paymentProofResponseOptions(contentType);
+    if (!responseOptions) {
+      body.destroy?.();
+      throw new NotFoundException("Comprobante no encontrado");
+    }
+    return new StreamableFile(body, responseOptions);
   }
 
   @Patch(":orderId/shipping")

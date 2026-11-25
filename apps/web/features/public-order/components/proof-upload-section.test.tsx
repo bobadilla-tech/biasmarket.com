@@ -25,5 +25,5 @@ test("opens a remaining-balance dialog with the current balance prefilled", asyn
   expect(
     (screen.getByLabelText(/Monto pagado/) as HTMLInputElement).value,
   ).toBe("27.50");
-  expect(screen.getByLabelText("Elegir captura del pago")).toBeTruthy();
+  expect(screen.getByLabelText("Elegir comprobante de pago")).toBeTruthy();
 });

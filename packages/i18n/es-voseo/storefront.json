@@ -74,7 +74,7 @@
     "loggedOutBody": "Ingresá para ver tu cuenta y el historial de pedidos.",
     "orderDetail": {
       "notFoundBody": "Este pedido no existe o no pertenece a tu cuenta.",
-      "submitProofHint": "Subí una captura de tu transferencia/pago y la tienda la revisará.",
+      "submitProofHint": "Subí una captura o PDF de tu pago y la tienda lo revisará.",
       "submitProofSuccess": "Tu comprobante fue enviado — la tienda lo revisará pronto."
     },
     "addresses": {
@@ -187,9 +187,14 @@
     },
     "upload": {
       "title": "Subí tu comprobante",
+      "description": "Pagá con uno de los métodos de arriba y adjuntá la captura o el PDF. La tienda lo revisará.",
       "selectMethod": "Elegí un método",
       "codeHint": "Ayuda a la tienda a encontrar tu pago más rápido.",
+      "chooseFile": "Elegir comprobante de pago",
+      "fileHint": "JPG, PNG o PDF, hasta 5 MB",
       "preview": "Vista previa de tu comprobante",
+      "pdfSelected": "PDF seleccionado",
+      "removeFile": "Quitar archivo",
       "success": "¡Listo! Recibimos tu comprobante. La tienda lo revisará pronto.",
       "inReview": "Tenés {amount} en revisión.",
       "remainingDescription": "Te queda pagar {amount}. Adjuntá el comprobante del abono.",
@@ -197,8 +202,9 @@
       "errors": {
         "amountInvalid": "Escribí un monto válido, por ejemplo 40.50.",
         "methodRequired": "Elegí un método de pago.",
-        "fileRequired": "Adjuntá la captura de tu pago.",
-        "fileType": "Usá una imagen JPG o PNG.",
+        "fileRequired": "Adjuntá tu comprobante de pago.",
+        "fileTooLarge": "El archivo pesa más de 5 MB.",
+        "fileType": "Usá un archivo JPG, PNG o PDF.",
         "generic": "No pudimos enviar tu comprobante. Inténtalo de nuevo."
       }
     },

@@ -12,6 +12,19 @@ test("accepts a valid payment within the pending amount", () => {
   expect(result.success).toBe(true);
 });
 
+test("allows PDF proof only when enabled for a buyer upload", () => {
+  const pdf = new File(["%PDF-1.7"], "proof.pdf", {
+    type: "application/pdf",
+  });
+  const input = { amount: "40", method: "YAPE", note: "", file: pdf };
+
+  expect(buildRegisterPaymentSchema(60).safeParse(input).success).toBe(false);
+  expect(
+    buildRegisterPaymentSchema(60, { allowPdfProof: true }).safeParse(input)
+      .success,
+  ).toBe(true);
+});
+
 test("rejects an amount greater than the pending amount", () => {
   const schema = buildRegisterPaymentSchema(60);
   const result = schema.safeParse({

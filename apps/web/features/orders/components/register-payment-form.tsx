@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ImageIcon, Upload, X } from "lucide-react";
+import { FileText, ImageIcon, Upload, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,11 +20,13 @@ export function RegisterPaymentForm({
   enabledMethods,
   submitting,
   onSubmit,
+  allowPdfProof = false,
 }: {
   pendingAmount: number;
   enabledMethods: string[];
   submitting: boolean;
   onSubmit: (values: RegisterPaymentInput) => Promise<unknown>;
+  allowPdfProof?: boolean;
 }) {
   const t = useTranslations("dashboard.orders");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -34,7 +36,9 @@ export function RegisterPaymentForm({
 
   const { register, handleSubmit, watch, control, reset } =
     useForm<RegisterPaymentInput>({
-      resolver: zodResolver(buildRegisterPaymentSchema(pendingAmount)),
+      resolver: zodResolver(
+        buildRegisterPaymentSchema(pendingAmount, { allowPdfProof }),
+      ),
       defaultValues: { amount: "", method: "", note: "", file: null },
     });
 
@@ -43,7 +47,10 @@ export function RegisterPaymentForm({
   const file = watch("file");
 
   useEffect(() => {
-    if (!(file instanceof File)) {
+    if (
+      !(file instanceof File) ||
+      (!file.type.startsWith("image/") && !/\.(jpe?g|png)$/i.test(file.name))
+    ) {
       setPreviewUrl(null);
       return;
     }
@@ -108,7 +115,11 @@ export function RegisterPaymentForm({
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/png,image/jpeg"
+              accept={
+                allowPdfProof
+                  ? "image/png,image/jpeg,application/pdf,.jpg,.jpeg,.png,.pdf"
+                  : "image/png,image/jpeg"
+              }
               className="hidden"
               id="payment-image-upload"
               aria-label={t("details.uploadPaymentImage")}
@@ -129,7 +140,11 @@ export function RegisterPaymentForm({
         >
           <div className="flex size-9 items-center justify-center rounded-full bg-[#f0e7f8]">
             {file ? (
-              <ImageIcon className="size-4 text-[var(--store-primary)]" />
+              previewUrl ? (
+                <ImageIcon className="size-4 text-[var(--store-primary)]" />
+              ) : (
+                <FileText className="size-4 text-[var(--store-primary)]" />
+              )
             ) : (
               <Upload className="size-4 text-[var(--store-primary)]" />
             )}
@@ -153,7 +168,11 @@ export function RegisterPaymentForm({
                   {t("details.uploadPaymentImage")}
                 </p>
                 <p className="text-xs text-[#8f7da8]">
-                  {t("details.uploadPaymentImageHint")}
+                  {t(
+                    allowPdfProof
+                      ? "details.uploadBuyerProofHint"
+                      : "details.uploadPaymentImageHint",
+                  )}
                 </p>
               </>
             )}
@@ -166,22 +185,32 @@ export function RegisterPaymentForm({
           )}
         </label>
 
-        {file && previewUrl && (
+        {file && (
           <div className="flex items-center justify-between rounded-xl border border-[#f0e7f8] bg-white p-2">
             <div className="flex items-center gap-3">
-              <img
-                src={previewUrl}
-                alt=""
-                className="size-12 rounded-lg object-cover"
-              />
+              {previewUrl ? (
+                <img
+                  src={previewUrl}
+                  alt=""
+                  className="size-12 rounded-lg object-cover"
+                />
+              ) : (
+                <FileText
+                  aria-hidden="true"
+                  className="size-8 text-[var(--store-primary)]"
+                />
+              )}
               <span className="text-xs text-[#8f7da8]">
-                {t("details.imagePreview")}
+                {previewUrl
+                  ? t("details.imagePreview")
+                  : t("details.pdfProofSelected")}
               </span>
             </div>
 
             <Button
               type="button"
               variant="ghost"
+              aria-label={t("details.removeImage")}
               className="size-8 rounded-full p-0 text-[#b24368] hover:bg-[#fff0f5]"
               onClick={() => {
                 reset({ amount, method, note: watch("note"), file: null });
