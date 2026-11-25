@@ -28,6 +28,7 @@ describe("CustomerAccountService", () => {
     order: { findMany: Mock };
     store: { findUnique: Mock };
     $executeRaw: Mock;
+    $queryRaw: Mock;
     $transaction: Mock;
   };
   let mailer: { send: Mock };
@@ -50,6 +51,7 @@ describe("CustomerAccountService", () => {
       order: { findMany: vi.fn() },
       store: { findUnique: vi.fn().mockResolvedValue(store) },
       $executeRaw: vi.fn().mockResolvedValue(1),
+      $queryRaw: vi.fn().mockResolvedValue([{ id: "buyer-1" }]),
       $transaction: vi.fn(),
     };
     prisma.$transaction.mockImplementation(
@@ -348,7 +350,8 @@ describe("CustomerAccountService", () => {
       it("attaches the phone to the signed-in buyer who owns the email, guarded on its own row", async () => {
         prisma.buyerAccount.findUnique
           .mockResolvedValueOnce(null) // no account has this phone yet
-          .mockResolvedValueOnce(googleAccount); // the session's own account
+          .mockResolvedValueOnce(googleAccount) // the session's own account
+          .mockResolvedValue(googleAccount); // locked re-read
         prisma.buyerAccount.updateMany.mockResolvedValue({ count: 1 });
         prisma.buyerAccount.findUniqueOrThrow.mockResolvedValue({
           ...googleAccount,
@@ -358,7 +361,11 @@ describe("CustomerAccountService", () => {
         const result = await checkout("Jane@Example.com", session);
 
         expect(prisma.buyerAccount.updateMany).toHaveBeenCalledWith({
-          where: { id: "buyer-g", phone: null },
+          where: {
+            id: "buyer-g",
+            phone: null,
+            passwordVersion: session.passwordVersion,
+          },
           data: { phone: PHONE, name: "Jane" },
         });
         expect(insertInto("BuyerAccount")).toHaveLength(0);
@@ -370,7 +377,8 @@ describe("CustomerAccountService", () => {
       it("returns the guest result, and never mints a second account, when the attach was lost", async () => {
         prisma.buyerAccount.findUnique
           .mockResolvedValueOnce(null)
-          .mockResolvedValueOnce(googleAccount);
+          .mockResolvedValueOnce(googleAccount)
+          .mockResolvedValue(googleAccount);
         prisma.buyerAccount.updateMany.mockResolvedValue({ count: 0 });
 
         const result = await checkout("jane@example.com", session);
@@ -514,7 +522,7 @@ describe("CustomerAccountService", () => {
       prisma.buyerAccount.updateMany.mockResolvedValue({ count: 0 });
 
       await expect(service.confirmAccount(store.slug, token)).rejects.toThrow(
-        BadRequestException,
+        ConflictException,
       );
 
       expect(prisma.buyerAccount.updateMany).toHaveBeenCalledWith({
@@ -699,6 +707,8 @@ describe("CustomerAccountService", () => {
       };
       prisma.buyerAccount.findUnique
         .mockResolvedValueOnce(buyerAccount)
+        .mockResolvedValueOnce(buyerAccount)
+        .mockResolvedValueOnce(buyerAccount)
         .mockResolvedValueOnce(null); // nobody holds the new phone
       prisma.buyerAccount.updateMany.mockResolvedValue({ count: 1 });
       prisma.buyerAccount.findUniqueOrThrow.mockResolvedValue({
@@ -714,11 +724,21 @@ describe("CustomerAccountService", () => {
       expect(prisma.$executeRaw.mock.calls[0][0].join("?")).toContain(
         "pg_advisory_xact_lock",
       );
-      expect(prisma.$executeRaw.mock.calls[0][1]).toBe(
+      expect(prisma.$executeRaw.mock.calls.map((call) => call[1])).toEqual([
+        "buyer-phone:+51900000000",
         "buyer-phone:+51900000001",
-      );
+      ]);
       expect(prisma.buyerAccount.updateMany).toHaveBeenCalledWith({
-        where: { id: "buyer-1", pendingPhone: { not: null } },
+        where: {
+          id: "buyer-1",
+          pendingPhone: "+51900000001",
+          OR: [
+            { phone: { not: null } },
+            { email: { not: null } },
+            { googleSub: { not: null } },
+            { passwordHash: { not: null } },
+          ],
+        },
         data: { phone: "+51900000001", pendingPhone: null },
       });
       expect(result.purpose).toBe("change-phone");
@@ -742,6 +762,8 @@ describe("CustomerAccountService", () => {
       };
       prisma.buyerAccount.findUnique
         .mockResolvedValueOnce(buyerAccount)
+        .mockResolvedValueOnce(buyerAccount)
+        .mockResolvedValueOnce(buyerAccount)
         .mockResolvedValueOnce(null);
       prisma.buyerAccount.updateMany.mockResolvedValue({ count: 1 });
       prisma.buyerAccount.findUniqueOrThrow.mockResolvedValue({
@@ -754,7 +776,16 @@ describe("CustomerAccountService", () => {
       await service.confirmAccount(store.slug, token);
 
       expect(prisma.buyerAccount.updateMany).toHaveBeenCalledWith({
-        where: { id: "buyer-1", pendingPhone: { not: null } },
+        where: {
+          id: "buyer-1",
+          pendingPhone: "900000001",
+          OR: [
+            { phone: { not: null } },
+            { email: { not: null } },
+            { googleSub: { not: null } },
+            { passwordHash: { not: null } },
+          ],
+        },
         data: { phone: "+51900000001", pendingPhone: null },
       });
     });
@@ -776,6 +807,8 @@ describe("CustomerAccountService", () => {
       };
       const rival = { ...buyerAccount, id: "buyer-2" };
       prisma.buyerAccount.findUnique
+        .mockResolvedValueOnce(buyerAccount)
+        .mockResolvedValueOnce(buyerAccount)
         .mockResolvedValueOnce(buyerAccount)
         .mockResolvedValueOnce(rival);
       prisma.order.findMany.mockResolvedValue([]);

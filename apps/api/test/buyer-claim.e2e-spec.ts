@@ -327,6 +327,45 @@ describe("claim order with Google (e2e)", () => {
     ).toBe(1);
   });
 
+  it("orders a Google claim against deletion of the same buyer account", async () => {
+    await reset();
+    const identity = id("claim-delete-race");
+    const account = await prisma.buyerAccount.create({
+      data: {
+        email: identity.email,
+        emailVerified: true,
+        googleSub: identity.sub,
+        name: identity.name,
+      },
+    });
+    accountIds.push(account.id);
+    const ticket = await issueTicket();
+
+    const results = await Promise.allSettled([
+      auth.claimWithGoogle(identity, ticket),
+      auth.deleteGlobalAccount(account.id),
+    ]);
+
+    expect(results[1]).toMatchObject({ status: "fulfilled" });
+    if (results[0]?.status === "rejected") {
+      expect(results[0].reason).toBeInstanceOf(ClaimOrderError);
+      expect(results[0].reason).toMatchObject({ code: "invalid" });
+    }
+    const deleted = await prisma.buyerAccount.findUniqueOrThrow({
+      where: { id: account.id },
+    });
+    expect(deleted).toMatchObject({
+      email: null,
+      googleSub: null,
+      passwordHash: null,
+    });
+    const order = await prisma.order.findUniqueOrThrow({
+      where: { id: orderId },
+    });
+    expect(order.buyerAccountId).toBeNull();
+    expect(await claims()).toHaveLength(order.claimedAt ? 1 : 0);
+  }, 30_000);
+
   it("rejects a ticket issued before the seller regenerated the link", async () => {
     await reset();
     const ticket = await issueTicket();

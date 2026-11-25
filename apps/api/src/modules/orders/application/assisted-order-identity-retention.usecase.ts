@@ -4,6 +4,10 @@ import type { Prisma } from "@biasmarket/db";
 import { PrismaService } from "../../../prisma/prisma.service.js";
 import { StorageService } from "../../../storage/storage.service.js";
 import { lockAssistedCustomer } from "./assisted-customer.js";
+import {
+  lockBuyerOrderRow,
+  withBuyerAccountLock,
+} from "../../customer-auth/buyer-account-lock.js";
 
 export const ASSISTED_ORDER_IDENTITY_RETENTION_DAYS = 90;
 const RETENTION_BATCH_SIZE = 500;
@@ -273,7 +277,8 @@ export class AssistedOrderIdentityRetentionUseCase {
     requestAudit?: RequestAuditContext,
   ): Promise<boolean> {
     const erasedAt = new Date();
-    return this.prisma.$transaction(async (tx) => {
+    const erase = async (tx: Prisma.TransactionClient): Promise<boolean> => {
+      if (!(await lockBuyerOrderRow(tx, order.id))) return false;
       const payments = await tx.orderPayment.findMany({
         where: { orderId: order.id, storeId: order.storeId },
         select: { imageUrl: true },
@@ -439,7 +444,17 @@ export class AssistedOrderIdentityRetentionUseCase {
         },
       });
       return true;
-    });
+    };
+
+    if (order.buyerAccountId) {
+      const result = await withBuyerAccountLock(
+        this.prisma,
+        order.buyerAccountId,
+        async (tx) => erase(tx),
+      );
+      return result ?? false;
+    }
+    return this.prisma.$transaction(erase);
   }
 }
 
