@@ -942,6 +942,7 @@ describe("CustomerAuthService", () => {
       prisma.buyerAccount.findUnique.mockResolvedValue({
         id: "buyer-1",
         passwordVersion: 2,
+        googleSub: identity.sub,
       });
       prisma.order.findFirst.mockResolvedValue(
         order({

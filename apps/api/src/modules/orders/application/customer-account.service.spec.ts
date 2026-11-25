@@ -529,6 +529,12 @@ describe("CustomerAccountService", () => {
         where: {
           id: "buyer-1",
           pendingEmail: "new@example.com",
+          OR: [
+            { phone: { not: null } },
+            { email: { not: null } },
+            { googleSub: { not: null } },
+            { passwordHash: { not: null } },
+          ],
         },
         data: {
           email: "new@example.com",
@@ -666,6 +672,12 @@ describe("CustomerAccountService", () => {
         where: {
           id: "buyer-1",
           pendingEmail: "new@example.com",
+          OR: [
+            { phone: { not: null } },
+            { email: { not: null } },
+            { googleSub: { not: null } },
+            { passwordHash: { not: null } },
+          ],
         },
         data: {
           email: "new@example.com",
@@ -717,7 +729,16 @@ describe("CustomerAccountService", () => {
         "buyer-phone:+51900000001",
       ]);
       expect(prisma.buyerAccount.updateMany).toHaveBeenCalledWith({
-        where: { id: "buyer-1", pendingPhone: "+51900000001" },
+        where: {
+          id: "buyer-1",
+          pendingPhone: "+51900000001",
+          OR: [
+            { phone: { not: null } },
+            { email: { not: null } },
+            { googleSub: { not: null } },
+            { passwordHash: { not: null } },
+          ],
+        },
         data: { phone: "+51900000001", pendingPhone: null },
       });
       expect(result.purpose).toBe("change-phone");
@@ -755,7 +776,16 @@ describe("CustomerAccountService", () => {
       await service.confirmAccount(store.slug, token);
 
       expect(prisma.buyerAccount.updateMany).toHaveBeenCalledWith({
-        where: { id: "buyer-1", pendingPhone: "900000001" },
+        where: {
+          id: "buyer-1",
+          pendingPhone: "900000001",
+          OR: [
+            { phone: { not: null } },
+            { email: { not: null } },
+            { googleSub: { not: null } },
+            { passwordHash: { not: null } },
+          ],
+        },
         data: { phone: "+51900000001", pendingPhone: null },
       });
     });
