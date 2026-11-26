@@ -1,3 +1,4 @@
+import { randomInt } from "node:crypto";
 import type { RedisOptions } from "bullmq";
 
 const REDIS_CONNECT_TIMEOUT_MS = 5_000;
@@ -55,7 +56,7 @@ function redisEndpointOptions(url: URL): Omit<RedisOptions, "url"> {
 
 export function redisRetryDelay(
   attempt: number,
-  random: number = Math.random(),
+  random: number = randomInt(0, 1_000_001) / 1_000_000,
 ): number {
   const safeAttempt = Number.isFinite(attempt)
     ? Math.max(1, Math.floor(attempt))
