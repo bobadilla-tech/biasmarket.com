@@ -15,7 +15,14 @@ const expectedPatterns = [
   "/es/store/[^/]+/account/orders/[^/]+",
   "/en/store/[^/]+/account/orders/[^/]+",
 ];
-const pathMatchers = pathPatterns.map((pattern) => new RegExp(`^${pattern}$`));
+const pathMatchers = [
+  /^\/es\/store\/[^/]+$/,
+  /^\/en\/store\/[^/]+$/,
+  /^\/es\/store\/[^/]+\/product\/[^/]+$/,
+  /^\/en\/store\/[^/]+\/product\/[^/]+$/,
+  /^\/es\/store\/[^/]+\/account\/orders\/[^/]+$/,
+  /^\/en\/store\/[^/]+\/account\/orders\/[^/]+$/,
+];
 
 describe("Android app-link path patterns", () => {
   it("keeps the Android path patterns aligned with the tested routes", () => {
