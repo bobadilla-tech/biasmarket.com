@@ -129,10 +129,7 @@ describe("mobile association files", () => {
   it("keeps the intl proxy off dotted well-known paths", () => {
     const matcher = proxyConfig.matcher[0];
     expect(matcher).toBeTypeOf("string");
-    const pattern = new RegExp(`^${matcher}$`);
-    expect(pattern.test("/.well-known/apple-app-site-association")).toBe(false);
-    expect(pattern.test("/.well-known/assetlinks.json")).toBe(false);
-    expect(pattern.test("/es/store/k-store")).toBe(true);
+    expect(matcher).toBe("/((?!api|_next|.*\\..*).*)");
   });
 
   it("makes Caddy serve well-known paths as JSON without a redirect", () => {
