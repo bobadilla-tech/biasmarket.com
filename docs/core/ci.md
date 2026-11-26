@@ -12,9 +12,10 @@ path-filtered job that should run did not succeed
 | `ci.yml` (CI)                                         | push to `main` (not markdown-only), every pull request, manual dispatch | The jobs in the next section. Concurrent runs for the same ref cancel the older one.                                                                                                                               |
 | `cd.yml` (CD)                                         | completion of a CI run                                                  | Deploys only a successful CI `push` run on `main` from this repository: a gate job, a build-and-push matrix (`api`, `web`, `workers` images to GHCR), then sync and deploy to the VPS. See [deploy.md](deploy.md). |
 | `cleanup-fallback.yml`                                | hourly cron, manual dispatch                                            | Runs `deploy.sh --cleanup` over SSH as a backstop for the server-side scheduled cleanup; a no-op unless a cleanup is due. See [blue-green-migrations.md](blue-green-migrations.md#scheduled-cleanup).              |
-| `dependabot-automerge.yml`                            | pull requests opened, reopened or updated                               | For Dependabot PRs only, enables auto-merge (squash) on patch and minor updates. The merge still waits for the required `CI Success` check.                                                                        |
+| `dependabot-automerge.yml`                            | pull requests opened, reopened or updated                               | For Dependabot PRs only, enables auto-merge (squash) after `CI Success`. Refuses `package-ecosystem` `github_actions`, so a `cd.yml` action bump cannot merge and deploy on a green CI run.                         |
 | `mobile-release.yml`                                  | a published release, manual dispatch                                    | Builds the mobile app for Android and iOS and attaches the outputs to the release. See [mobile-release.md](mobile-release.md).                                                                                     |
 | Mobile staging and production workflows               | staging push / manual dispatch                                          | Runs Maestro against the staging buyer flow, or builds, updates, and submits EAS binaries with GitHub environment protection. See [mobile release operations](../mobile/release.md).                               |
+| `codeql.yml` (CodeQL)                                 | push to `main`, every pull request, weekly                              | Analyzes JavaScript and TypeScript. This workflow is the only CodeQL setup; leave the UI default setup off.                                                                                                        |
 | `.github/actions/deploy-ssh-setup` (composite action) | used by `cd.yml` and `cleanup-fallback.yml`                             | Writes the pinned `known_hosts`, the two restricted deploy keys and SSH keepalive settings, and exports the host and user to later steps.                                                                          |
 
 ## Jobs in `ci.yml`
@@ -27,8 +28,9 @@ path-filtered job that should run did not succeed
   runs is in the matrix below.
 - `hygiene` always runs: the workspace-scripts guard and its tests, `actionlint`
   over `.github/workflows` (pinned and checksum-verified by
-  `scripts/ci/install-actionlint.sh`), and `shellcheck` over `scripts/ci/*.sh`.
-  Production scripts under `infra/vps` are deliberately not shell-checked here.
+  `scripts/ci/install-actionlint.sh`), `shellcheck` over `scripts/ci/*.sh`, and
+  `shellcheck -x` over every `infra/vps/**/*.sh`. Run the VPS check locally with
+  `pnpm check:vps-shell`.
 - `e2e` (API E2E) boots the API and workers against real Postgres, Redis and
   MinIO started by `scripts/ci/e2e-datastores.sh` and `minio-e2e.sh`. It runs on
   every push to `main`, on pull requests whose changes match the `api_e2e`
@@ -220,6 +222,44 @@ the `api_e2e` output rather than a plain changed/skipped pair
 `ci.yml` at the release tag (`scripts/ci/mobile-release-changes.sh`), so
 renaming or restructuring that filter changes which releases build the mobile
 app.
+
+## Settings that stay in GitHub
+
+Two controls from the security hardening cannot be stored in git. A maintainer
+token (`admin: false`) received 403 on
+`PUT /repos/bobadilla-tech/biasmarket.com/actions/permissions/workflow` and 404
+on `PATCH /repos/bobadilla-tech/biasmarket.com` for `security_and_analysis`.
+A repository admin turns them on once:
+
+1. Secret scanning and push protection. Open
+   [Settings → Advanced Security](https://github.com/bobadilla-tech/biasmarket.com/settings/security_analysis).
+   In the sidebar that page is **Security and quality → Advanced Security**.
+   If **Secret Protection** is off, click **Enable**, review the impact, then
+   **Enable Secret Protection** (that turns on secret scanning alerts; it is
+   free for this public repository). In the Secret Protection section, next to
+   **Push protection**, click **Enable**.
+2. Default workflow token. Open
+   [Settings → Actions → General](https://github.com/bobadilla-tech/biasmarket.com/settings/actions).
+   Under **Workflow permissions**, choose read access for the `contents` and
+   `packages` scopes (the restricted setting), then **Save**. Leave **Allow
+   GitHub Actions to create and approve pull requests** unchecked.
+
+Workflow files also set `permissions:`, so a permissive repository default
+cannot widen a job that declares its own token. Write scopes sit on the job
+that needs them: `contents` and `pull-requests` on Dependabot auto-merge,
+`packages` on CD `build-push`, `contents` on mobile release `publish`, and
+`security-events` on the CodeQL analyze job.
+
+Code scanning has no analyses yet, and reading the default-setup API returned
+403, so CodeQL lives in `codeql.yml` (JavaScript and TypeScript, `build-mode:
+none`). On the Advanced Security page, leave CodeQL **default setup** off.
+One setup only.
+
+There is no Dependabot config for the `github-actions` ecosystem. The
+auto-merge workflow still refuses that ecosystem, including when
+`steps.metadata.outputs.package-ecosystem` is empty, and it skips branch names
+that start with `dependabot/github_actions/`. Keep that gate if a
+`github-actions` Dependabot entry is added later.
 
 ## Emergency path
 

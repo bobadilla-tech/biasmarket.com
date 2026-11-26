@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import type { CreateAssistedOrderResponseDto } from "@biasmarket/types";
 import { getOrderNumber } from "@/features/orders/lib/order-format";
 import { useAssistedLinkTemplate } from "../queries/use-assisted-link-template";
-import { buildAssistedLinkMessage } from "../lib/assisted-link-message";
+import { buildCreateOrderSuccessMessage } from "../lib/assisted-link-message";
 import { LinkMessagePanel } from "./link-message-panel";
 
 // Shown right after creation. The private link exists only in this response,
@@ -30,7 +30,7 @@ export function CreatedOrderScreen({
   const { order, accessUrl } = created;
   const message = useMemo(
     () =>
-      buildAssistedLinkMessage({
+      buildCreateOrderSuccessMessage({
         order,
         storeName,
         accessUrl,

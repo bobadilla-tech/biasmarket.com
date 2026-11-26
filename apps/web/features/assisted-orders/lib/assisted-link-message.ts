@@ -1,13 +1,10 @@
+import { orderRef } from "@biasmarket/utils/order-ref";
 import {
   buildWhatsAppAssistedOrderLinkMessage,
   buildWhatsAppUrl,
 } from "@biasmarket/utils/whatsapp";
 
-// The default (or the seller's saved ASSISTED_ORDER_LINK template) rendered
-// with the order that was just created. `customerName` is "" when the seller
-// gave no alias, so the greeting stays clean. The order ref in the message is
-// the shared `orderRef`, built inside the message builder.
-export function buildAssistedLinkMessage(input: {
+type AssistedLinkInput = {
   order: {
     id: string;
     customerName: string | null;
@@ -17,18 +14,44 @@ export function buildAssistedLinkMessage(input: {
   storeName: string;
   accessUrl: string;
   template: string | null | undefined;
-}): string {
+};
+
+function assistedLinkVariables(input: AssistedLinkInput) {
+  return {
+    orderId: input.order.id,
+    storeName: input.storeName,
+    totalAmount: Number(input.order.totalAmount),
+    currency: input.order.currency,
+    customerName: input.order.customerName ?? "",
+    link: input.accessUrl,
+  };
+}
+
+// The shared assisted-order template, or the seller's saved override. Used
+// when an existing order regenerates its buyer link.
+export function buildAssistedLinkMessage(input: AssistedLinkInput): string {
   return buildWhatsAppAssistedOrderLinkMessage(
-    {
-      orderId: input.order.id,
-      storeName: input.storeName,
-      totalAmount: Number(input.order.totalAmount),
-      currency: input.order.currency,
-      customerName: input.order.customerName ?? "",
-      link: input.accessUrl,
-    },
+    assistedLinkVariables(input),
     input.template,
   );
+}
+
+// Copy for the "Pedido creado" modal. Issue #458 specifies this sentence.
+// A saved ASSISTED_ORDER_LINK template still wins; otherwise this text is
+// used instead of the shared assisted-order default.
+export function buildCreateOrderSuccessMessage(
+  input: AssistedLinkInput,
+): string {
+  const template = input.template?.trim();
+  if (template) {
+    return buildWhatsAppAssistedOrderLinkMessage(
+      assistedLinkVariables(input),
+      template,
+    );
+  }
+  const name = input.order.customerName?.trim();
+  const greeting = name ? `¡Hola ${name}!` : "¡Hola!";
+  return `${greeting} Preparé tu pedido #${orderRef(input.order.id)} en ${input.storeName} por ${input.order.totalAmount} ${input.order.currency}. Aquí puedes ver el detalle de tu compra:\n${input.accessUrl}`;
 }
 
 export function buildAssistedLinkWhatsAppUrl(

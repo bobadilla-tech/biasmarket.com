@@ -17,6 +17,7 @@ const m = vi.hoisted(() => ({
   findCouriers: vi.fn(),
   findProducts: vi.fn(),
   findProduct: vi.fn(),
+  findCollections: vi.fn(),
   lookup: vi.fn(),
   createAssisted: vi.fn(),
 }));
@@ -29,6 +30,7 @@ vi.mock("@/lib/api-client", () => ({
     stores: { findPublic: m.findStore },
     publicCouriers: { findEnabled: m.findCouriers },
     products: { findAll: m.findProducts, findOne: m.findProduct },
+    collections: { findAll: m.findCollections },
     customers: { lookup: m.lookup },
   },
 }));
@@ -95,6 +97,7 @@ beforeEach(() => {
   m.findCouriers.mockResolvedValue([]);
   m.findProducts.mockResolvedValue([product()]);
   m.findProduct.mockResolvedValue(detail());
+  m.findCollections.mockResolvedValue([]);
   m.lookup.mockResolvedValue({
     normalizedPhone: "+51987654321",
     previousOrders: 0,
@@ -121,19 +124,26 @@ async function renderForm(onCreated = vi.fn()) {
     />,
   );
   // The delivery options (public endpoints) and the product list load async.
-  await screen.findByRole("option", { name: "Álbum v1" });
-  await screen.findByRole("option", { name: "Retiro presencial" });
+  await screen.findByRole("button", { name: "Agregar Álbum v1" });
+  if (window.innerWidth >= 768) {
+    await screen.findByRole("radio", { name: "Recoge en un punto" });
+  }
   return { user, onCreated, ...view };
 }
 
+async function summaryRegion() {
+  return screen.findByRole("region", { name: "Resumen del pedido" });
+}
+
 async function fillValidOrder(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(
-    screen.getByLabelText(/WhatsApp del comprador/i, { selector: "input" }),
-    "987654321",
-  );
-  await user.selectOptions(screen.getByLabelText("Producto"), "p1");
-  // Wait for the product detail (variants + price) to land.
-  await screen.findByText(/Subtotal: PEN 25\.00/);
+  await user.type(screen.getByLabelText("Número de celular"), "987654321");
+  await user.type(screen.getByLabelText("Nombre del comprador"), "Vale");
+  await user.click(screen.getByRole("button", { name: "Agregar Álbum v1" }));
+  // Wait for the product detail (variants + price) to land in the summary.
+  await within(await summaryRegion()).findByText("Álbum v1");
+  expect(
+    await within(await summaryRegion()).findAllByText("S/ 25.00"),
+  ).not.toHaveLength(0);
 }
 
 const submitButton = () =>
@@ -152,7 +162,7 @@ test("uses the fixed 30% deposit for assisted pickup orders", async () => {
   const paymentType = screen.getByLabelText(/Tipo de pago/i);
   await user.selectOptions(paymentType, "PARTIAL");
 
-  expect(await screen.findByText("PEN 7.50")).toBeTruthy();
+  expect(await screen.findByText("S/ 7.50")).toBeTruthy();
   expect(screen.getByRole("option", { name: /30%/ })).toBeTruthy();
 });
 
@@ -162,9 +172,7 @@ test("phone comes first, defaults to +51 and shows a readable review line", asyn
   expect(
     (screen.getByLabelText("Código de país") as HTMLSelectElement).value,
   ).toBe("PE");
-  expect(fields[0]).toBe(
-    screen.getByLabelText(/WhatsApp del comprador/i, { selector: "input" }),
-  );
+  expect(fields[0]).toBe(screen.getByLabelText("Número de celular"));
   await user.type(fields[0]!, "987654321");
   expect(await screen.findByText("Se enviará a +51 987 654 321")).toBeTruthy();
 });
@@ -176,40 +184,80 @@ test("shows the lookup hint and prefills the alias without overwriting typing", 
     lastAlias: "Sofi",
   });
   const { user } = await renderForm();
-  await user.type(
-    screen.getByLabelText(/WhatsApp del comprador/i, { selector: "input" }),
-    "987654321",
-  );
+  await user.type(screen.getByLabelText("Número de celular"), "987654321");
   expect(
     await screen.findByText("Este número ya tiene 3 pedidos en tu tienda."),
   ).toBeTruthy();
   const alias = screen.getByLabelText(
-    /Nombre o apodo \(opcional\)/,
+    "Nombre del comprador",
   ) as HTMLInputElement;
   await waitFor(() => expect(alias.value).toBe("Sofi"));
   expect(m.lookup).toHaveBeenCalledWith("store-1", { phone: "+51987654321" });
 });
 
-test("the alias is optional and labelled as such", async () => {
+test("requires the buyer name before creating the order", async () => {
   const { user } = await renderForm();
-  await fillValidOrder(user);
+  await user.type(screen.getByLabelText("Número de celular"), "987654321");
+  await user.click(screen.getByRole("button", { name: "Agregar Álbum v1" }));
+  await within(await summaryRegion()).findByText("Álbum v1");
+  await user.click(submitButton());
   expect(
-    (screen.getByLabelText(/Nombre o apodo \(opcional\)/) as HTMLInputElement)
-      .value,
-  ).toBe("");
+    await screen.findByText("Ingresa el nombre del comprador."),
+  ).toBeTruthy();
+  expect(m.createAssisted).not.toHaveBeenCalled();
+
+  await user.type(screen.getByLabelText("Nombre del comprador"), "  Vale ");
   await user.click(submitButton());
   await waitFor(() => expect(m.createAssisted).toHaveBeenCalled());
-  expect(m.createAssisted.mock.calls[0]![1].customerName).toBeUndefined();
+  expect(m.createAssisted.mock.calls[0]![1].customerName).toBe("Vale");
+});
+
+test("payment cards use the Yape, Plin, and bank marks", async () => {
+  m.findPayments.mockResolvedValue([
+    {
+      method: "YAPE",
+      enabled: true,
+      depositPercent: 100,
+      details: { phoneNumber: "999999999" },
+    },
+    {
+      method: "PLIN",
+      enabled: true,
+      depositPercent: 100,
+      details: { phoneNumber: "999999999" },
+    },
+    {
+      method: "TRANSFER",
+      enabled: true,
+      depositPercent: 100,
+      details: { bankName: "BCP", accountNumber: "001" },
+    },
+  ]);
+  await renderForm();
+  const mark = (name: string) =>
+    screen.getByRole("radio", { name }).closest("div");
+  expect(mark("Yape")?.querySelector("img")?.getAttribute("src")).toBe(
+    "/logos/integrations/yape.webp",
+  );
+  expect(mark("Plin")?.querySelector("img")?.getAttribute("src")).toBe(
+    "/logos/integrations/plin.png",
+  );
+  const banks = [...(mark("Transferencia")?.querySelectorAll("img") ?? [])].map(
+    (image) => image.getAttribute("src"),
+  );
+  expect(banks).toEqual([
+    "/logos/integrations/bcp.png",
+    "/logos/integrations/interbank-horizontal-logo.webp",
+  ]);
 });
 
 test("an invalid phone shows an error and nothing is sent", async () => {
   const { user } = await renderForm();
-  await user.type(
-    screen.getByLabelText(/WhatsApp del comprador/i, { selector: "input" }),
-    "123",
-  );
-  await user.selectOptions(screen.getByLabelText("Producto"), "p1");
-  await screen.findByText(/Subtotal: PEN 25\.00/);
+  await user.type(screen.getByLabelText("Número de celular"), "123");
+  await user.click(screen.getByRole("button", { name: "Agregar Álbum v1" }));
+  expect(
+    await within(await summaryRegion()).findAllByText("S/ 25.00"),
+  ).not.toHaveLength(0);
   await user.click(submitButton());
   expect(await screen.findByText("El número no es válido.")).toBeTruthy();
   expect(m.createAssisted).not.toHaveBeenCalled();
@@ -221,16 +269,12 @@ test("quantity controls and live total include shipping", async () => {
   ]);
   const { user } = await renderForm();
   await fillValidOrder(user);
-  expect(screen.getByText("PEN 35.00", { selector: "dd" })).toBeTruthy();
+  expect(screen.getByText("S/ 35.00", { selector: "dd" })).toBeTruthy();
   await user.click(screen.getByRole("button", { name: "Aumentar cantidad" }));
-  expect((screen.getByLabelText("Cantidad") as HTMLInputElement).value).toBe(
-    "2",
-  );
-  expect(screen.getByText("PEN 60.00", { selector: "dd" })).toBeTruthy();
+  expect(screen.getByLabelText("Cantidad").textContent).toBe("2");
+  expect(screen.getByText("S/ 60.00", { selector: "dd" })).toBeTruthy();
   await user.click(screen.getByRole("button", { name: "Disminuir cantidad" }));
-  expect((screen.getByLabelText("Cantidad") as HTMLInputElement).value).toBe(
-    "1",
-  );
+  expect(screen.getByLabelText("Cantidad").textContent).toBe("1");
 });
 
 test("bounds typed quantity and resets it when product or variant changes", async () => {
@@ -262,40 +306,37 @@ test("bounds typed quantity and resets it when product or variant changes", asyn
   );
 
   const { user } = await renderForm();
-  await user.selectOptions(screen.getByLabelText("Producto"), "p1");
-  await screen.findByRole("option", { name: "Small" });
-  await user.selectOptions(screen.getByLabelText("Variante"), "v2");
-  let quantity = screen.getByLabelText("Cantidad") as HTMLInputElement;
-  const variantSelect = screen.getByLabelText("Variante");
+  await user.click(screen.getByRole("button", { name: "Agregar Álbum v1" }));
+  const variant = await screen.findByLabelText("Variante");
+  await user.selectOptions(variant, "v2");
   await waitFor(() =>
-    expect((variantSelect as HTMLSelectElement).value).toBe("v2"),
+    expect((screen.getByLabelText("Variante") as HTMLSelectElement).value).toBe(
+      "v2",
+    ),
   );
   expect(screen.getByText("Quedan 3")).toBeTruthy();
-  await user.clear(quantity);
-  await user.type(quantity, "20");
-  await waitFor(() => expect(quantity.value).toBe("3"));
+  const increase = screen.getByRole("button", { name: "Aumentar cantidad" });
+  await user.click(increase);
+  await user.click(increase);
+  await user.click(increase);
+  expect(screen.getByLabelText("Cantidad").textContent).toBe("3");
 
   await user.selectOptions(screen.getByLabelText("Variante"), "v1");
-  quantity = screen.getByLabelText("Cantidad") as HTMLInputElement;
-  expect(quantity.value).toBe("1");
+  expect(screen.getByLabelText("Cantidad").textContent).toBe("1");
   await user.click(screen.getByRole("button", { name: "Aumentar cantidad" }));
   await user.click(screen.getByRole("button", { name: "Aumentar cantidad" }));
-  expect(quantity.value).toBe("3");
+  expect(screen.getByLabelText("Cantidad").textContent).toBe("3");
 
-  await user.selectOptions(screen.getByLabelText("Producto"), "p2");
-  quantity = screen.getByLabelText("Cantidad") as HTMLInputElement;
-  expect(quantity.value).toBe("1");
+  await user.click(screen.getByRole("button", { name: "Agregar Álbum v2" }));
+  expect(screen.getAllByLabelText("Cantidad")[1]?.textContent).toBe("1");
 });
 
 test("a total of 0 blocks submit and says why", async () => {
   m.findProducts.mockResolvedValue([product("0.00")]);
   m.findProduct.mockResolvedValue(detail("0.00"));
   const { user } = await renderForm();
-  await user.type(
-    screen.getByLabelText(/WhatsApp del comprador/i, { selector: "input" }),
-    "987654321",
-  );
-  await user.selectOptions(screen.getByLabelText("Producto"), "p1");
+  await user.type(screen.getByLabelText("Número de celular"), "987654321");
+  await user.click(screen.getByRole("button", { name: "Agregar Álbum v1" }));
   expect(
     await screen.findByText(
       "El total debe ser mayor a 0 para crear el pedido.",
@@ -316,16 +357,18 @@ test("blocks submission while selected product details are loading even when del
   ]);
 
   const { user } = await renderForm();
-  await user.selectOptions(screen.getByLabelText("Producto"), "p1");
+  await user.click(screen.getByRole("button", { name: "Agregar Álbum v1" }));
 
   expect(
     await screen.findByText("Cargando detalles del producto…"),
   ).toBeTruthy();
-  expect(screen.getAllByText("PEN 10.00", { selector: "dd" })).toHaveLength(2);
+  expect(screen.getAllByText("S/ 10.00", { selector: "dd" })).toHaveLength(2);
   expect((submitButton() as HTMLButtonElement).disabled).toBe(true);
 
   resolveDetail(detail());
-  await screen.findByText(/Subtotal: PEN 25\.00/);
+  expect(
+    await within(await summaryRegion()).findAllByText("S/ 25.00"),
+  ).not.toHaveLength(0);
   await waitFor(() =>
     expect((submitButton() as HTMLButtonElement).disabled).toBe(false),
   );
@@ -335,7 +378,7 @@ test("keeps submission blocked after product details fail and allows retry", asy
   m.findProduct.mockRejectedValueOnce(new Error("details unavailable"));
 
   const { user } = await renderForm();
-  await user.selectOptions(screen.getByLabelText("Producto"), "p1");
+  await user.click(screen.getByRole("button", { name: "Agregar Álbum v1" }));
   expect(
     await screen.findByText("No se pudieron cargar el precio y las variantes."),
   ).toBeTruthy();
@@ -343,7 +386,9 @@ test("keeps submission blocked after product details fail and allows retry", asy
 
   m.findProduct.mockResolvedValueOnce(detail());
   await user.click(screen.getByRole("button", { name: "Reintentar" }));
-  await screen.findByText(/Subtotal: PEN 25\.00/);
+  expect(
+    await within(await summaryRegion()).findAllByText("S/ 25.00"),
+  ).not.toHaveLength(0);
   await waitFor(() =>
     expect((submitButton() as HTMLButtonElement).disabled).toBe(false),
   );
@@ -409,7 +454,7 @@ test("shows an error with retry when the delivery options fail and blocks submit
   expect((submitButton() as HTMLButtonElement).disabled).toBe(true);
 
   await user.click(within(alert).getByRole("button", { name: "Reintentar" }));
-  await screen.findByRole("option", { name: "Retiro presencial" });
+  await screen.findByRole("radio", { name: "Recoge en un punto" });
   expect(screen.queryByRole("alert")).toBeNull();
 });
 
@@ -422,10 +467,8 @@ test("clears a lookup-generated alias immediately when the phone changes", async
     }),
   );
   const { user } = await renderForm();
-  const phone = screen.getByLabelText(/WhatsApp del comprador/i, {
-    selector: "input",
-  });
-  const alias = screen.getByLabelText(/Nombre o apodo/);
+  const phone = screen.getByLabelText("Número de celular");
+  const alias = screen.getByLabelText("Nombre del comprador");
 
   await user.type(phone, "987654321");
   await waitFor(() =>
@@ -447,10 +490,8 @@ test("preserves seller-edited alias text when the phone changes", async () => {
     lastAlias: "Compradora A",
   });
   const { user } = await renderForm();
-  const phone = screen.getByLabelText(/WhatsApp del comprador/i, {
-    selector: "input",
-  });
-  const alias = screen.getByLabelText(/Nombre o apodo/);
+  const phone = screen.getByLabelText("Número de celular");
+  const alias = screen.getByLabelText("Nombre del comprador");
 
   await user.type(phone, "987654321");
   await waitFor(() =>
@@ -477,7 +518,9 @@ test("submits the payload, disables the button while pending, then reports the r
   m.createAssisted.mockReturnValue(new Promise((r) => (resolve = r)));
   const { user, onCreated } = await renderForm();
   await fillValidOrder(user);
-  await user.type(screen.getByLabelText(/Nombre o apodo/), "  Sofi ");
+  const name = screen.getByLabelText("Nombre del comprador");
+  await user.clear(name);
+  await user.type(name, "  Sofi ");
   await user.click(submitButton());
 
   await waitFor(() =>
@@ -551,7 +594,7 @@ test("uses a new Idempotency-Key after any edit of the form values", async () =>
   await screen.findByRole("alert");
 
   // A corrected resubmit is a different order, not a replay of the failed one.
-  await user.type(screen.getByLabelText(/Nombre o apodo/), "Sofi");
+  await user.type(screen.getByLabelText("Nombre del comprador"), "Sofi");
   await waitFor(() =>
     expect((submitButton() as HTMLButtonElement).disabled).toBe(false),
   );
@@ -587,18 +630,43 @@ test("explains a replayed create and links to the existing order without navigat
   expect(onCreated).not.toHaveBeenCalled();
 });
 
+test("keeps the cart and buyer fields when moving between mobile steps", async () => {
+  setViewport(390, 844);
+  const { user } = await renderForm();
+  expect(
+    (screen.getByRole("button", { name: "Ver resumen" }) as HTMLButtonElement)
+      .disabled,
+  ).toBe(true);
+  await user.click(screen.getByRole("button", { name: "Agregar Álbum v1" }));
+  expect(
+    (screen.getByRole("button", { name: "Ver resumen" }) as HTMLButtonElement)
+      .disabled,
+  ).toBe(false);
+  await user.click(screen.getByRole("button", { name: "Ver resumen" }));
+  expect(within(await summaryRegion()).getByText("Álbum v1")).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: /Continuar/ }));
+  await user.type(screen.getByLabelText("Nombre del comprador"), "Vale");
+  await user.click(screen.getByRole("button", { name: /Atrás/ }));
+  expect(within(await summaryRegion()).getByText("Álbum v1")).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: /Continuar/ }));
+  expect(
+    (screen.getByLabelText("Nombre del comprador") as HTMLInputElement).value,
+  ).toBe("Vale");
+});
+
 test("works on a phone-width viewport with 44px touch targets", async () => {
   setViewport(375, 667);
   const { user } = await renderForm();
-  await fillValidOrder(user);
+  await user.click(screen.getByRole("button", { name: "Agregar Álbum v1" }));
+  await user.click(screen.getByRole("button", { name: "Ver resumen" }));
   for (const control of [
     screen.getByRole("button", { name: "Aumentar cantidad" }),
     screen.getByRole("button", { name: "Disminuir cantidad" }),
-    screen.getByLabelText("Producto"),
-    submitButton(),
   ]) {
     expect(control.className).toMatch(/min-h-11|size-11|w-11/);
   }
+  await user.click(screen.getByRole("button", { name: /Continuar/ }));
+  expect(submitButton().className).toMatch(/min-h-11/);
 });
 
 test("has no detectable accessibility violations", async () => {
