@@ -72,6 +72,13 @@ export function hasMixedCurrencies(
 
 export const centsToAmount = (cents: number) => cents / 100;
 
+// PEN is shown as soles on the create-order screen. Other currencies keep
+// their ISO code so a mixed-currency guard stays readable.
+export function formatOrderMoney(currency: string, cents: number): string {
+  const amount = centsToAmount(cents).toFixed(2);
+  return currency === "PEN" ? `S/ ${amount}` : `${currency} ${amount}`;
+}
+
 // Maps the flat form values to the API body. Empty strings become undefined,
 // the alias is trimmed, and pickup/courier fields only travel with their own
 // delivery method (the server rejects a pickupDate on anything else).

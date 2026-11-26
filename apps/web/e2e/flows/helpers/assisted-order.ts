@@ -34,19 +34,22 @@ export async function createOrderViaUi(
 ): Promise<CreatedOrder> {
   await page.goto(`/es/dashboard/${shop.slug}/orders`);
   await page.getByRole("button", { name: "Nuevo pedido" }).click();
-  await page.locator("#assisted-phone").fill(phone.national);
   await page
-    .locator("#assisted-item-0-product")
-    .selectOption({ label: shop.productName });
+    .getByRole("button", { name: `Agregar ${shop.productName}` })
+    .click();
+  const viewSummary = page.getByRole("button", { name: "Ver resumen" });
+  if ((await viewSummary.count()) > 0 && (await viewSummary.isVisible())) {
+    await viewSummary.click();
+    await page.getByRole("button", { name: /Continuar/ }).click();
+  }
+  await page.locator("#assisted-phone").fill(phone.national);
   if (options.paymentMethod) {
-    await page
-      .locator("#assisted-payment-method")
-      .selectOption({ label: options.paymentMethod });
+    await page.getByRole("radio", { name: options.paymentMethod }).check();
   }
   if (options.partial) {
     await page.locator("#assisted-payment-type").selectOption({ index: 1 });
   }
-  await page.getByRole("button", { name: "Crear pedido" }).click();
+  await page.getByRole("button", { name: /Crear pedido/ }).click();
 
   const message = page.locator("#assisted-link-message");
   await expect(message).toBeVisible();
