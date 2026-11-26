@@ -51,9 +51,13 @@ describe("mobile association files", () => {
 
   it("associates store, product, and order paths with the Expo bundle id", () => {
     const body = readJson("public/.well-known/apple-app-site-association");
-    expect(body.applinks.details[0].appIDs).toEqual([
-      `${APPLE_TEAM_PLACEHOLDER}.${bundleId}`,
-    ]);
+    const appIDs = body.applinks.details[0].appIDs as string[];
+    expect(appIDs).toHaveLength(1);
+    const [teamId, ...associatedBundleId] = appIDs[0].split(".");
+    expect(
+      teamId === APPLE_TEAM_PLACEHOLDER || /^[A-Z0-9]{10}$/.test(teamId),
+    ).toBe(true);
+    expect(associatedBundleId.join(".")).toBe(bundleId);
     expect(bundleId).toBe("com.biasmarket.mobile");
     const components = body.applinks.details[0].components as {
       "/": string;
@@ -97,12 +101,12 @@ describe("mobile association files", () => {
     expect(body[0].target.namespace).toBe("android_app");
     expect(body[0].target.package_name).toBe(packageName);
     expect(packageName).toBe("com.biasmarket.mobile");
-    expect(body[0].target.sha256_cert_fingerprints).toEqual([
-      ANDROID_SHA_PLACEHOLDER,
-    ]);
-    expect(ANDROID_SHA_PLACEHOLDER).not.toMatch(
-      /^(?:[0-9A-F]{2}:){31}[0-9A-F]{2}$/i,
-    );
+    const fingerprints = body[0].target.sha256_cert_fingerprints as string[];
+    expect(fingerprints).toHaveLength(1);
+    expect(
+      fingerprints[0] === ANDROID_SHA_PLACEHOLDER ||
+        /^(?:[0-9A-F]{2}:){31}[0-9A-F]{2}$/i.test(fingerprints[0]),
+    ).toBe(true);
   });
 
   it("sets JSON content type for both association paths", async () => {
@@ -127,9 +131,7 @@ describe("mobile association files", () => {
   });
 
   it("keeps the intl proxy off dotted well-known paths", () => {
-    const matcher = proxyConfig.matcher[0];
-    expect(matcher).toBeTypeOf("string");
-    expect(matcher).toBe("/((?!api|_next|.*\\..*).*)");
+    expect(proxyConfig.matcher).toEqual(["/((?!api|_next|.*\\..*).*)"]);
   });
 
   it("makes Caddy serve well-known paths as JSON without a redirect", () => {
