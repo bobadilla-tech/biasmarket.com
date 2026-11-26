@@ -1187,6 +1187,9 @@ jobs:
       - name: Guard script tests
         run: node --test scripts/ci/check-workspace-scripts.test.mjs
 
+      - name: Caddy probe matcher tests
+        run: node --test scripts/ci/caddy-probe-matchers.test.mjs
+
       - name: Maestro config syntax and tests
         run: |
           node --check scripts/ci/mobile-maestro-config.mjs
