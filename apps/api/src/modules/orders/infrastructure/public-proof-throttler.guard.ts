@@ -4,8 +4,10 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  Logger,
   OnModuleDestroy,
 } from "@nestjs/common";
+import { observeRedisConnection, redisClientConfig } from "@biasmarket/queue";
 import { Redis } from "ioredis";
 import { createHash } from "node:crypto";
 
@@ -15,10 +17,28 @@ const WINDOW_MS = 60_000;
 /** Share the proof-upload burst limit for each secret link across API replicas. */
 @Injectable()
 export class PublicProofThrottlerGuard implements CanActivate, OnModuleDestroy {
-  private readonly redis =
-    process.env.VITEST_WORKER_ID != null
-      ? null
-      : new Redis(process.env.REDIS_URL!, { maxRetriesPerRequest: null });
+  private readonly logger = new Logger(PublicProofThrottlerGuard.name);
+  private closing = false;
+  private readonly redis = this.openRedis();
+
+  // Same bounded client as the queues. ioredis' default retry (50ms, cap 2s)
+  // and a missing error listener were an independent reconnect storm whose
+  // reason never made it into a structured log.
+  private openRedis(): Redis | null {
+    if (process.env.VITEST_WORKER_ID != null) return null;
+    const { url, options } = redisClientConfig();
+    const client = new Redis(url, options);
+    observeRedisConnection(
+      client,
+      "public-proof-throttle",
+      {
+        error: (fields) => this.logger.error(fields),
+        warn: (fields) => this.logger.warn(fields),
+      },
+      () => this.closing,
+    );
+    return client;
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     if (!this.redis) return true;
@@ -41,6 +61,7 @@ export class PublicProofThrottlerGuard implements CanActivate, OnModuleDestroy {
   }
 
   async onModuleDestroy(): Promise<void> {
+    this.closing = true;
     if (this.redis) await this.redis.quit();
   }
 }
