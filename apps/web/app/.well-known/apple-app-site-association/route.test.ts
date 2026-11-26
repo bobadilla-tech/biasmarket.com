@@ -13,7 +13,7 @@ describe("Apple Universal Links association", () => {
     expect((await GET()).status).toBe(503);
   });
 
-  it("associates product and buyer order URLs with the mobile bundle", async () => {
+  it("associates store, product, and buyer order URLs with the mobile bundle", async () => {
     vi.stubEnv("IOS_TEAM_ID", "ABCDE12345");
     vi.stubEnv("IOS_BUNDLE_ID", process.env.IOS_BUNDLE_ID ?? "");
     delete process.env.IOS_BUNDLE_ID;
@@ -32,6 +32,9 @@ describe("Apple Universal Links association", () => {
       "/*/store/*/account/orders/*/*",
       "/*/store/*/account/orders/",
       "/*/store/*/account/orders/*",
+      "/*/store/*/*",
+      "/*/store/",
+      "/*/store/*",
     ]);
     expect(components).toEqual(
       expect.arrayContaining([
@@ -49,6 +52,14 @@ describe("Apple Universal Links association", () => {
         }),
         expect.objectContaining({
           "/": "/*/store/*/account/orders/",
+          exclude: true,
+        }),
+        expect.objectContaining({
+          "/": "/*/store/*/*",
+          exclude: true,
+        }),
+        expect.objectContaining({
+          "/": "/*/store/",
           exclude: true,
         }),
       ]),
