@@ -33,7 +33,12 @@ describe("buildRedisConnection", () => {
 
     try {
       const options = buildRedisConnection();
-      assert.equal(options.url, "redis://:super-secret@redis:6379/0");
+      assert.equal(options.url, undefined);
+      assert.equal(options.host, "redis");
+      assert.equal(options.port, 6379);
+      assert.equal(options.password, "super-secret");
+      assert.equal(options.db, 0);
+      assert.equal(options.tls, undefined);
       assert.equal(options.maxRetriesPerRequest, null);
       assert.equal(options.connectTimeout, 5_000);
       assert.equal(options.reconnectOnError(), false);
@@ -81,6 +86,25 @@ describe("buildRedisConnection", () => {
       assert.equal(options.maxRetriesPerRequest, null);
       const delay = options.retryStrategy(2);
       assert.ok(delay >= 1_000 && delay <= 2_000);
+    } finally {
+      if (previousUrl === undefined) delete process.env.REDIS_URL;
+      else process.env.REDIS_URL = previousUrl;
+    }
+  });
+
+  it("parses encoded credentials and TLS endpoints for BullMQ options", () => {
+    const previousUrl = process.env.REDIS_URL;
+    process.env.REDIS_URL = "rediss://worker%40app:p%3Ass@cache.example:6380/4";
+
+    try {
+      const options = buildRedisConnection();
+      assert.equal(options.host, "cache.example");
+      assert.equal(options.port, 6380);
+      assert.equal(options.username, "worker@app");
+      assert.equal(options.password, "p:ss");
+      assert.equal(options.db, 4);
+      assert.deepEqual(options.tls, {});
+      assert.equal(options.url, undefined);
     } finally {
       if (previousUrl === undefined) delete process.env.REDIS_URL;
       else process.env.REDIS_URL = previousUrl;

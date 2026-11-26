@@ -4,6 +4,39 @@ const REDIS_CONNECT_TIMEOUT_MS = 5_000;
 const REDIS_RETRY_MIN_DELAY_MS = 1_000;
 const REDIS_RETRY_MAX_DELAY_MS = 20_000;
 
+function requiredRedisUrl(): URL {
+  const value = process.env.REDIS_URL;
+  if (!value) throw new Error("Missing required env var: REDIS_URL");
+
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error("REDIS_URL must be a valid redis:// or rediss:// URL");
+  }
+  if (url.protocol !== "redis:" && url.protocol !== "rediss:") {
+    throw new Error("REDIS_URL must use the redis:// or rediss:// scheme");
+  }
+  return url;
+}
+
+function redisEndpointOptions(url: URL): Omit<RedisOptions, "url"> {
+  const database = url.pathname.replace(/^\//, "");
+  if (database && !/^\d+$/.test(database)) {
+    throw new Error("REDIS_URL database path must be a non-negative integer");
+  }
+  const db = database ? Number(database) : 0;
+
+  return {
+    host: url.hostname,
+    port: url.port ? Number(url.port) : 6379,
+    ...(url.username ? { username: decodeURIComponent(url.username) } : {}),
+    ...(url.password ? { password: decodeURIComponent(url.password) } : {}),
+    db,
+    ...(url.protocol === "rediss:" ? { tls: {} } : {}),
+  };
+}
+
 // GlitchTip's `redis-connect` span is Sentry's wrapper around ioredis
 // `connect()`. The promise rejects with "Connection is closed." when the
 // socket drops before `ready`; the cause (`ECONNREFUSED`, `ENOTFOUND`,
@@ -40,11 +73,10 @@ export function redisRetryDelay(
 }
 
 export function buildRedisConnection(): RedisOptions {
-  const url = process.env.REDIS_URL;
-  if (!url) throw new Error("Missing required env var: REDIS_URL");
+  const url = requiredRedisUrl();
 
   return {
-    url,
+    ...redisEndpointOptions(url),
     maxRetriesPerRequest: null,
     connectTimeout: REDIS_CONNECT_TIMEOUT_MS,
     retryStrategy: (attempt) => redisRetryDelay(attempt),
@@ -58,10 +90,14 @@ export function redisClientConfig(): {
   url: string;
   options: Omit<RedisOptions, "url">;
 } {
-  const built = buildRedisConnection();
-  const url = built.url;
-  if (!url) throw new Error("Missing required env var: REDIS_URL");
-  const options = { ...built };
-  delete options.url;
-  return { url, options };
+  const url = requiredRedisUrl();
+  return {
+    url: url.toString(),
+    options: {
+      maxRetriesPerRequest: null,
+      connectTimeout: REDIS_CONNECT_TIMEOUT_MS,
+      retryStrategy: (attempt: number) => redisRetryDelay(attempt),
+      reconnectOnError: () => false,
+    },
+  };
 }
