@@ -24,6 +24,16 @@
             {
               "scheme": "https",
               "host": "biasmarket.com",
+              "pathAdvancedPattern": "/es/store/[^/]+"
+            },
+            {
+              "scheme": "https",
+              "host": "biasmarket.com",
+              "pathAdvancedPattern": "/en/store/[^/]+"
+            },
+            {
+              "scheme": "https",
+              "host": "biasmarket.com",
               "pathAdvancedPattern": "/es/store/[^/]+/product/[^/]+"
             },
             {

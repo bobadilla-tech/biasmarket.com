@@ -8,25 +8,24 @@ const pathPatterns: string[] = appConfig.expo.android.intentFilters[0].data.map(
   (entry: { pathAdvancedPattern: string }) => entry.pathAdvancedPattern,
 );
 const expectedPatterns = [
+  "/es/store/[^/]+",
+  "/en/store/[^/]+",
   "/es/store/[^/]+/product/[^/]+",
   "/en/store/[^/]+/product/[^/]+",
   "/es/store/[^/]+/account/orders/[^/]+",
   "/en/store/[^/]+/account/orders/[^/]+",
 ];
-const pathMatchers = [
-  /^\/es\/store\/[^/]+\/product\/[^/]+$/,
-  /^\/en\/store\/[^/]+\/product\/[^/]+$/,
-  /^\/es\/store\/[^/]+\/account\/orders\/[^/]+$/,
-  /^\/en\/store\/[^/]+\/account\/orders\/[^/]+$/,
-];
+const pathMatchers = pathPatterns.map((pattern) => new RegExp(`^${pattern}$`));
 
 describe("Android app-link path patterns", () => {
   it("keeps the Android path patterns aligned with the tested routes", () => {
     expect(pathPatterns).toEqual(expectedPatterns);
   });
 
-  it("matches product and buyer-order routes with one non-empty segment per ID", () => {
+  it("matches store, product, and buyer-order routes with one non-empty segment per ID", () => {
     const validPaths = [
+      "/es/store/k-store",
+      "/en/store/k-store",
       "/es/store/k-store/product/product-123",
       "/en/store/k-store/product/product-123",
       "/es/store/k-store/account/orders/order-123",
@@ -42,12 +41,30 @@ describe("Android app-link path patterns", () => {
   });
 
   it.each([
+    "/es/store/",
     "/es/store//product/product-123",
     "/es/store/k-store/product/",
     "/es/store/k-store/product/product-123/extra",
     "/en/store/k-store/account/orders/",
     "/en/store/k-store/account/orders/order-123/extra",
+    "/es/store/k-store/pedido/secret-token",
+    "/en/store/k-store/account",
   ])("rejects empty identifiers and extra route segments: %s", (path) => {
     expect(pathMatchers.some((matcher) => matcher.test(path))).toBe(false);
+  });
+
+  it("claims only the apex host, with iOS associated domains for the same host", () => {
+    const hosts = new Set(
+      appConfig.expo.android.intentFilters[0].data.map(
+        (entry: { host: string }) => entry.host,
+      ),
+    );
+    expect(hosts).toEqual(new Set(["biasmarket.com"]));
+    expect(appConfig.expo.ios.associatedDomains).toEqual([
+      "applinks:biasmarket.com",
+    ]);
+    expect(appConfig.expo.ios.bundleIdentifier).toBe("com.biasmarket.mobile");
+    expect(appConfig.expo.android.package).toBe("com.biasmarket.mobile");
+    expect(appConfig.expo.android.intentFilters[0].autoVerify).toBe(true);
   });
 });
