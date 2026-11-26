@@ -5,25 +5,24 @@ The Expo app claims localized product and buyer-order URLs on iOS and Android:
 `/{es,en}/store/:slug/account/orders/:orderId`. These paths map to mobile
 product and order screens; other web URLs remain in the browser.
 
-The API association documents are served by Next.js at
+The association documents are static files served by Next.js at
 `/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json`.
-`infra/vps/Caddyfile` routes the domain to the active web container without a
-redirect; these handlers return `application/json` directly. The Caddy web
-upstream already uses a direct `reverse_proxy`, so no Caddy rewrite is needed.
+`infra/vps/Caddyfile` passes these paths to the active web container without a
+redirect and sets their content type to `application/json`.
 
-Before domain verification, set these values in the VPS shared environment:
+Before domain verification, replace the marked values in the static files under
+`apps/web/public/.well-known/`:
 
-- `IOS_TEAM_ID`: Apple Developer Team ID.
-- `IOS_BUNDLE_ID`: must match the iOS bundle identifier (currently
-  `com.biasmarket.mobile`).
-- `ANDROID_APP_ID`: must match the Android application ID (currently
-  `com.biasmarket.mobile`).
-- `ANDROID_APP_SHA256_CERT_FINGERPRINT`: SHA-256 fingerprint of the Android
-  signing certificate Google Play uses for the production app.
+- In `apple-app-site-association`, replace
+  `REPLACE_WITH_APPLE_TEAM_ID` with the Apple Developer Team ID. Keep the app
+  identifier suffix aligned with the iOS bundle identifier
+  (`com.biasmarket.mobile`).
+- In `assetlinks.json`, replace
+  `REPLACE_WITH_ANDROID_SHA256_CERT_FINGERPRINT` with the SHA-256 fingerprint
+  for the production Play App Signing certificate. The package name must remain
+  aligned with the Android application ID (`com.biasmarket.mobile`).
 
-Both endpoints return HTTP 503 until their certificate identifiers are
-configured, instead of publishing an association that cannot verify. After
-deploying the values, check that both endpoints return HTTP 200 with JSON and no
-redirect, then validate them with Apple's App Search API validator and Android
+Deploy the files, then check that both endpoints return HTTP 200 with JSON and
+no redirect. Validate them with Apple's App Search API validator and Android
 Digital Asset Links tools. Finally test the same product and order URL on
 devices with and without the app installed.

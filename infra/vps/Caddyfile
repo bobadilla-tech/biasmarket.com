@@ -106,6 +106,16 @@ biasmarket.com {
 		respond 400
 	}
 
+	# Association files must be served as JSON directly at the domain root.
+	# Keep the path unchanged and preserve the active blue/green web upstream.
+	handle /.well-known/* {
+		header {
+			Content-Type application/json
+			defer
+		}
+		import /etc/caddy/active/web.caddy
+	}
+
 	import /etc/caddy/active/web.caddy
 }
 
