@@ -15,10 +15,16 @@ test("an invalid phone shows the Spanish error summary and creates nothing", asy
   const shop = await createShop(api);
 
   await page.goto(`/es/dashboard/${shop.slug}/orders/new`);
-  await page.locator("#assisted-phone").fill("123");
   await page
-    .locator("#assisted-item-0-product")
-    .selectOption({ label: shop.productName });
+    .getByRole("button", { name: `Agregar ${shop.productName}` })
+    .click();
+  const viewSummary = page.getByRole("button", { name: "Ver resumen" });
+  if ((await viewSummary.count()) > 0 && (await viewSummary.isVisible())) {
+    await viewSummary.click();
+    await page.getByRole("button", { name: /Continuar/ }).click();
+  }
+  await page.locator("#assisted-phone").fill("123");
+  await page.getByLabel("Nombre del comprador").fill("Vale");
   await page.getByRole("button", { name: "Crear pedido" }).click();
 
   const summary = page.locator("#assisted-order-error-summary");
