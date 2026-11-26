@@ -27,8 +27,9 @@ path-filtered job that should run did not succeed
   runs is in the matrix below.
 - `hygiene` always runs: the workspace-scripts guard and its tests, `actionlint`
   over `.github/workflows` (pinned and checksum-verified by
-  `scripts/ci/install-actionlint.sh`), and `shellcheck` over `scripts/ci/*.sh`.
-  Production scripts under `infra/vps` are deliberately not shell-checked here.
+  `scripts/ci/install-actionlint.sh`), `shellcheck` over `scripts/ci/*.sh`, and
+  `shellcheck -x` over every `infra/vps/**/*.sh`. Run the VPS check locally with
+  `pnpm check:vps-shell`.
 - `e2e` (API E2E) boots the API and workers against real Postgres, Redis and
   MinIO started by `scripts/ci/e2e-datastores.sh` and `minio-e2e.sh`. It runs on
   every push to `main`, on pull requests whose changes match the `api_e2e`

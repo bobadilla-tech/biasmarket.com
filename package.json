@@ -21,7 +21,8 @@
     "admin:promote:dev": "docker compose -f infra/docker/docker-compose.dev.yml exec api pnpm --filter api run admin:promote",
     "seed:base:dev": "docker compose -f infra/docker/docker-compose.dev.yml exec api pnpm --filter api run seed:base",
     "seed:append:dev": "docker compose -f infra/docker/docker-compose.dev.yml exec api pnpm --filter api run seed:append",
-    "check:workspaces": "node scripts/ci/check-workspace-scripts.mjs"
+    "check:workspaces": "node scripts/ci/check-workspace-scripts.mjs",
+    "check:vps-shell": "bash scripts/ci/shellcheck-vps.sh"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.29.9",
