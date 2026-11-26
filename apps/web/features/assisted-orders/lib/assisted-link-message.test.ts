@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   buildAssistedLinkMessage,
   buildAssistedLinkWhatsAppUrl,
+  buildCreateOrderSuccessMessage,
 } from "./assisted-link-message";
 
 const link = "https://biasmarket.com/es/store/k/pedido/tok_-1";
@@ -40,6 +41,41 @@ describe("buildAssistedLinkMessage", () => {
   test("uses the seller's saved template when there is one", () => {
     expect(
       buildAssistedLinkMessage({
+        order,
+        storeName: "K-Store",
+        accessUrl: link,
+        template: "Tu pedido {{orderRef}}: {{link}}",
+      }),
+    ).toBe(`Tu pedido #ABCDEF: ${link}`);
+  });
+
+  test("create-order success copy uses the issue sentence, not the shared template", () => {
+    const message = buildCreateOrderSuccessMessage({
+      order,
+      storeName: "K-Store",
+      accessUrl: link,
+      template: null,
+    });
+    expect(message).toBe(
+      `¡Hola Sofi! Preparé tu pedido #ABCDEF en K-Store por 50.00 PEN. Aquí puedes ver el detalle de tu compra:\n${link}`,
+    );
+    expect(message).not.toContain("💜");
+    expect(message).not.toContain("cómo pagar");
+  });
+
+  test("a blank name keeps the success sentence from greeting nobody", () => {
+    const message = buildCreateOrderSuccessMessage({
+      order: { ...order, customerName: "  " },
+      storeName: "K-Store",
+      accessUrl: link,
+      template: null,
+    });
+    expect(message.startsWith("¡Hola! Preparé tu pedido #ABCDEF")).toBe(true);
+  });
+
+  test("a saved template still replaces the create-order success sentence", () => {
+    expect(
+      buildCreateOrderSuccessMessage({
         order,
         storeName: "K-Store",
         accessUrl: link,

@@ -45,6 +45,21 @@ export function GET() {
                 "/": "/*/store/*/account/orders/*",
                 comment: "Localized buyer order detail",
               },
+              {
+                "/": "/*/store/*/*",
+                exclude: true,
+                comment:
+                  "Keep nested store URLs, including private orders, on the web",
+              },
+              {
+                "/": "/*/store/",
+                exclude: true,
+                comment: "Exclude an empty store slug",
+              },
+              {
+                "/": "/*/store/*",
+                comment: "Localized store page",
+              },
             ],
           },
         ],

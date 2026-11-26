@@ -77,6 +77,12 @@ Caddy before the web upstream is reached. This internal header is not part of a
 legitimate browser request; dropping it at the edge also keeps scanner traffic
 out of the Next.js logs.
 
+The same site rejects `next-action: cachefn`. [Next.js server actions](https://nextjs.org/docs/app/guides/server-actions)
+send `next-action` with a compiler id. `cachefn` is the scanner value from
+issue #533, so the [Caddy header matcher](https://caddyserver.com/docs/caddyfile/matchers#header)
+is an exact match. A real server action, RSC prefetch, and normal `/api`
+traffic do not use that value and still reach the app.
+
 The app currently pins Next.js `16.4.5` in `apps/web/package.json`. The
 [CVE-2025-29927 advisory](https://github.com/advisories/GHSA-f82v-jwr5-mffw)
 lists affected releases through patched versions in the 12.x–15.x lines; Next.js

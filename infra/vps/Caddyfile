@@ -101,8 +101,19 @@ biasmarket.com {
 
 	# This is an internal Next.js header and should never be sent by public clients.
 	# Reject probes before proxying so they cannot pollute web logs.
+	# https://caddyserver.com/docs/caddyfile/matchers#header
 	@nextMiddlewareProbe header x-middleware-subrequest *
 	handle @nextMiddlewareProbe {
+		respond 400
+	}
+
+	# Scanners POST with `next-action: cachefn`. That value is not a Next.js
+	# server-action id. Real actions use the same header with a compiler id, so
+	# this is an exact match, not `next-action *`.
+	# https://caddyserver.com/docs/caddyfile/matchers#header
+	# https://nextjs.org/docs/app/guides/server-actions
+	@nextActionProbe header next-action cachefn
+	handle @nextActionProbe {
 		respond 400
 	}
 
@@ -115,6 +126,7 @@ biasmarket.com {
 			defer
 		}
 		import /etc/caddy/active/web.caddy
+	}
 	}
 
 	import /etc/caddy/active/web.caddy
