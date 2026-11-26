@@ -154,10 +154,10 @@ prefixed `# local:` run on your own machine, not the VPS.
 | 2    | `rrsync`                             | cloud-init symlink: on Ubuntu 26.04 `rsync` installs `/usr/bin/rrsync` (no `rrsync.gz`) |
 | 3    | the two deploy SSH keys              | `tls_private_key` in legacy mode; local helper in external mode                         |
 | 4    | restricted `authorized_keys`         | cloud-init, using public keys from step 3                                               |
-| 5    | pin `known_hosts`                    | Terraform-generated in legacy mode; provider-console verified in external mode         |
-| 6    | GitHub secrets/variables/environment | `github.tf` in legacy mode; helper uploads SSH secrets in external mode                |
+| 5    | pin `known_hosts`                    | Terraform-generated in legacy mode; provider-console verified in external mode          |
+| 6    | GitHub secrets/variables/environment | `github.tf` in legacy mode; helper uploads SSH secrets in external mode                 |
 | 7    | GHCR package visibility              | manual on every path                                                                    |
-| 8    | first sync, env files, systemd units | first sync/env manual; backup timer activates automatically after config preflight       |
+| 8    | first sync, env files, systemd units | first sync/env manual; backup timer activates automatically after config preflight      |
 
 The `deploy` OS user is a Docker-group member, which is root-equivalent in
 practice. It is not a containment boundary; the real security boundary is SSH
@@ -558,20 +558,16 @@ Compose project against the production volumes: the project name is pinned by
 the first line of the compose file, and a different name silently creates new
 empty volumes instead of attaching to the production ones.
 
-## Mobile deep-link association configuration
+## Mobile deep-link association files
 
-Set these runtime variables for the web deployment that serves the mobile
-association files. They are not VPS provisioning credentials:
+Universal Links and Android App Links are static files under
+`apps/web/public/.well-known/`, not runtime environment variables. The bundle
+id and Android package are `com.biasmarket.mobile`, matching the Expo app.
 
-- `IOS_TEAM_ID`: the Apple Developer team identifier.
-- `IOS_BUNDLE_ID`: the iOS bundle identifier; defaults to
-  `com.biasmarket.mobile` when unset.
-- `ANDROID_APP_ID`: the Android application id.
-- `ANDROID_APP_SHA256_CERT_FINGERPRINT`: the signing certificate SHA-256
-  fingerprint in colon-separated hexadecimal form.
-
-The Apple and Android association routes return `503` until their required
-identifiers are configured. See [mobile deep links](../mobile/deep-links.md).
+Before Apple or Google can verify the domain, replace the placeholders in
+those files: `REPLACE_WITH_APPLE_TEAM_ID` with the Apple Developer Team ID, and
+`REPLACE_WITH_ANDROID_SHA256_CERT_FINGERPRINT` with the Play App Signing
+SHA-256 fingerprint. See [mobile deep links](../mobile/deep-links.md).
 
 ## Related
 

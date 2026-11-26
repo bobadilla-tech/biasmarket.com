@@ -1,29 +1,48 @@
 # Mobile deep links
 
-The Expo app claims localized product and buyer-order URLs on iOS and Android:
-`/{es,en}/store/:slug/product/:productId` and
-`/{es,en}/store/:slug/account/orders/:orderId`. These paths map to mobile
-product and order screens; other web URLs remain in the browser.
+The Expo app claims localized store, product, and buyer-order URLs on iOS and
+Android:
 
-The API association documents are served by Next.js at
-`/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json`.
-`infra/vps/Caddyfile` routes the domain to the active web container without a
-redirect; these handlers return `application/json` directly. The Caddy web
-upstream already uses a direct `reverse_proxy`, so no Caddy rewrite is needed.
+| Web URL                                        | App screen                                                                      |
+| ---------------------------------------------- | ------------------------------------------------------------------------------- |
+| `/{es,en}/store/:slug`                         | Store (`src/app/store/[storeSlug]/index.tsx`, which opens that store in search) |
+| `/{es,en}/store/:slug/product/:productId`      | Product detail                                                                  |
+| `/{es,en}/store/:slug/account/orders/:orderId` | Buyer order detail                                                              |
 
-Before domain verification, set these values in the VPS shared environment:
+`src/app/+native-intent.ts` strips the locale prefix before Expo Router matches
+those files. Other web URLs, including private `/pedido/:token` links, stay in
+the browser.
 
-- `IOS_TEAM_ID`: Apple Developer Team ID.
-- `IOS_BUNDLE_ID`: must match the iOS bundle identifier (currently
-  `com.biasmarket.mobile`).
-- `ANDROID_APP_ID`: must match the Android application ID (currently
-  `com.biasmarket.mobile`).
-- `ANDROID_APP_SHA256_CERT_FINGERPRINT`: SHA-256 fingerprint of the Android
-  signing certificate Google Play uses for the production app.
+## Association files
 
-Both endpoints return HTTP 503 until their certificate identifiers are
-configured, instead of publishing an association that cannot verify. After
-deploying the values, check that both endpoints return HTTP 200 with JSON and no
-redirect, then validate them with Apple's App Search API validator and Android
-Digital Asset Links tools. Finally test the same product and order URL on
-devices with and without the app installed.
+`apps/web/public/.well-known/apple-app-site-association` and
+`apps/web/public/.well-known/assetlinks.json` are static files. Next.js serves
+them from `public/` with `Content-Type: application/json` (`apps/web/next.config.ts`).
+The intl proxy matcher ignores dotted paths, so these URLs are not redirected
+to `/es` or `/en`.
+
+`infra/vps/Caddyfile` handles `/.well-known/*` on `biasmarket.com` by proxying
+to the active web container. That handle sets `Content-Type: application/json`
+after the upstream responds and does not redirect.
+
+The bundle id and package name match `apps/mobile/app.json`
+(`com.biasmarket.mobile`). Two values are not in the repo and are placeholders:
+
+- `REPLACE_WITH_APPLE_TEAM_ID` in the AASA `appIDs` entry. Replace it with the
+  Apple Developer Team ID (the 10-character team id, keeping the
+  `.com.biasmarket.mobile` suffix).
+- `REPLACE_WITH_ANDROID_SHA256_CERT_FINGERPRINT` in `assetlinks.json`. Replace
+  it with the colon-separated SHA-256 fingerprint of the Android signing
+  certificate Google Play App Signing uses for the production app.
+
+Until those two placeholders are replaced, Apple and Google domain verification
+cannot pass. After deploying the edited files, confirm both URLs return HTTP
+200, `Content-Type: application/json`, and no redirect:
+
+- `https://biasmarket.com/.well-known/apple-app-site-association`
+- `https://biasmarket.com/.well-known/assetlinks.json`
+
+Then validate them with Apple's App Search API validator and Google's Digital
+Asset Links tool. Finally open the same store, product, and order URL on a
+device with the app installed (opens that screen) and on a device without it
+(opens the web page).

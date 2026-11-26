@@ -62,6 +62,14 @@ point `reverse_proxy` at a dead upstream, request `/api/public/orders/SECRET`,
 `/es/store/x/pedido/SECRET?x=1` and a request with `Referer: .../pedido/SECRET`,
 and assert `SECRET` is absent from `docker logs`.
 
+## App-link association files
+
+On `biasmarket.com`, `/.well-known/*` is its own `handle`. It reverse-proxies
+to the active web container, sets `Content-Type: application/json` after the
+upstream responds, and does not redirect. That is what Apple and Google fetch
+for `apple-app-site-association` and `assetlinks.json`. The files themselves
+live in `apps/web/public/.well-known/`.
+
 ## Next.js middleware-probe filter
 
 The `biasmarket.com` site rejects requests carrying `x-middleware-subrequest` in

@@ -46,6 +46,16 @@ const nextConfig: NextConfig = {
         source: "/store/:slug/pedido/:token",
         headers: privateOrderHeaders,
       },
+      // Extensionless AASA is otherwise served as octet-stream. Apple and
+      // Google both require application/json and reject a path redirect.
+      {
+        source: "/.well-known/apple-app-site-association",
+        headers: [{ key: "Content-Type", value: "application/json" }],
+      },
+      {
+        source: "/.well-known/assetlinks.json",
+        headers: [{ key: "Content-Type", value: "application/json" }],
+      },
     ];
   },
   async rewrites() {
