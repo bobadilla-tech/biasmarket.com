@@ -127,7 +127,6 @@ biasmarket.com {
 		}
 		import /etc/caddy/active/web.caddy
 	}
-	}
 
 	import /etc/caddy/active/web.caddy
 }
