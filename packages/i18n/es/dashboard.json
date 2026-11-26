@@ -1013,7 +1013,7 @@
     "alias": {
       "label": "Nombre del comprador",
       "placeholder": "Ej. Vale, Ana, etc.",
-      "description": "Solo sirve para saludar al comprador en el mensaje. Si lo dejas vacío, el saludo será genérico."
+      "description": "Nombre o apodo del comprador. Se usa para saludarlo en el mensaje."
     },
     "steps": {
       "viewSummary": "Ver resumen",
@@ -1115,6 +1115,7 @@
       "viewExistingOrder": "Ver el pedido",
       "phoneRequired": "Ingresa el WhatsApp del comprador.",
       "phoneInvalid": "El número no es válido.",
+      "aliasRequired": "Ingresa el nombre del comprador.",
       "aliasTooLong": "Máximo 60 caracteres.",
       "aliasInvalid": "El nombre tiene caracteres no permitidos.",
       "itemsRequired": "Agrega al menos un producto.",

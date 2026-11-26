@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { getOrderNumber } from "@/features/orders/lib/order-format";
-import { buildAssistedLinkMessage } from "../lib/assisted-link-message";
+import { buildCreateOrderSuccessMessage } from "../lib/assisted-link-message";
 import { useAssistedLinkTemplate } from "../queries/use-assisted-link-template";
 import { LinkMessagePanel } from "./link-message-panel";
 
@@ -41,7 +41,7 @@ export function CreatedOrderModal({
 
   const message = useMemo(() => {
     if (!created) return "";
-    return buildAssistedLinkMessage({
+    return buildCreateOrderSuccessMessage({
       order: created.order,
       storeName,
       accessUrl: created.accessUrl,

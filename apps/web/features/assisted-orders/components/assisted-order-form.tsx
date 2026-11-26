@@ -31,6 +31,7 @@ import {
   type AssistedOrderFormInput,
   buildAssistedOrderSchema,
 } from "@biasmarket/validation";
+import { withRequiredBuyerName } from "../lib/buyer-name";
 import { Button } from "@/components/ui/button";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Select } from "@/components/ui/select";
@@ -88,6 +89,16 @@ const controlClass =
 const inputClass = cn(controlClass, "w-full px-3");
 const EMPTY_ARRAY: never[] = [];
 const PAYMENT_ORDER = ["YAPE", "PLIN", "TRANSFER", "CASH"] as const;
+
+const PAYMENT_LOGOS: Record<string, { src: string }> = {
+  YAPE: { src: "/logos/integrations/yape.webp" },
+  PLIN: { src: "/logos/integrations/plin.png" },
+};
+
+const BANK_MARKS = [
+  "/logos/integrations/bcp.png",
+  "/logos/integrations/interbank-horizontal-logo.webp",
+] as const;
 
 function toDateInputValue(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -200,10 +211,12 @@ export function AssistedOrderForm({
 
   const form = useForm<AssistedOrderFormInput>({
     resolver: zodResolver(
-      buildAssistedOrderSchema(
-        points.length > 0,
-        paymentMethods.length > 0,
-        requiringDate,
+      withRequiredBuyerName(
+        buildAssistedOrderSchema(
+          points.length > 0,
+          paymentMethods.length > 0,
+          requiringDate,
+        ),
       ),
     ),
     defaultValues: {
@@ -409,6 +422,8 @@ export function AssistedOrderForm({
         return t("errors.phoneRequired");
       case "phone invalid":
         return t("errors.phoneInvalid");
+      case "alias required":
+        return t("errors.aliasRequired");
       case "alias too long":
         return t("errors.aliasTooLong");
       case "alias invalid":
@@ -1691,14 +1706,37 @@ function ProductImage({ product }: { product: ProductResponseDto }) {
 }
 
 function PaymentMark({ method }: { method: string }) {
-  const letter =
-    method === "YAPE" ? "Y" : method === "PLIN" ? "P" : method === "TRANSFER" ? "T" : "E";
+  if (method === "TRANSFER") {
+    return (
+      <span aria-hidden="true" className="flex items-center justify-center gap-1">
+        {BANK_MARKS.map((src) => (
+          <img
+            key={src}
+            src={src}
+            alt=""
+            className="h-4 w-auto max-w-10 object-contain"
+          />
+        ))}
+      </span>
+    );
+  }
+  const logo = PAYMENT_LOGOS[method];
+  if (logo) {
+    return (
+      <img
+        src={logo.src}
+        alt=""
+        className="size-8 object-contain"
+        aria-hidden="true"
+      />
+    );
+  }
   return (
     <span
       aria-hidden="true"
       className="flex size-8 items-center justify-center rounded-full bg-[#efe4fb] text-xs font-bold text-[#341b55]"
     >
-      {letter}
+      E
     </span>
   );
 }

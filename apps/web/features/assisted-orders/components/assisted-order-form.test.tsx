@@ -137,6 +137,7 @@ async function summaryRegion() {
 
 async function fillValidOrder(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText("Número de celular"), "987654321");
+  await user.type(screen.getByLabelText("Nombre del comprador"), "Vale");
   await user.click(screen.getByRole("button", { name: "Agregar Álbum v1" }));
   // Wait for the product detail (variants + price) to land in the summary.
   await within(await summaryRegion()).findByText("Álbum v1");
@@ -199,16 +200,60 @@ test("shows the lookup hint and prefills the alias without overwriting typing", 
   expect(m.lookup).toHaveBeenCalledWith("store-1", { phone: "+51987654321" });
 });
 
-test("the alias is optional and labelled as such", async () => {
+test("requires the buyer name before creating the order", async () => {
   const { user } = await renderForm();
-  await fillValidOrder(user);
+  await user.type(screen.getByLabelText("Número de celular"), "987654321");
+  await user.click(screen.getByRole("button", { name: "Agregar Álbum v1" }));
+  await within(await summaryRegion()).findByText("Álbum v1");
+  await user.click(submitButton());
   expect(
-    (screen.getByLabelText("Nombre del comprador") as HTMLInputElement)
-      .value,
-  ).toBe("");
+    await screen.findByText("Ingresa el nombre del comprador."),
+  ).toBeTruthy();
+  expect(m.createAssisted).not.toHaveBeenCalled();
+
+  await user.type(screen.getByLabelText("Nombre del comprador"), "  Vale ");
   await user.click(submitButton());
   await waitFor(() => expect(m.createAssisted).toHaveBeenCalled());
-  expect(m.createAssisted.mock.calls[0]![1].customerName).toBeUndefined();
+  expect(m.createAssisted.mock.calls[0]![1].customerName).toBe("Vale");
+});
+
+test("payment cards use the Yape, Plin, and bank marks", async () => {
+  m.findPayments.mockResolvedValue([
+    {
+      method: "YAPE",
+      enabled: true,
+      depositPercent: 100,
+      details: { phoneNumber: "999999999" },
+    },
+    {
+      method: "PLIN",
+      enabled: true,
+      depositPercent: 100,
+      details: { phoneNumber: "999999999" },
+    },
+    {
+      method: "TRANSFER",
+      enabled: true,
+      depositPercent: 100,
+      details: { bankName: "BCP", accountNumber: "001" },
+    },
+  ]);
+  await renderForm();
+  const mark = (name: string) =>
+    screen.getByRole("radio", { name }).closest("div");
+  expect(mark("Yape")?.querySelector("img")?.getAttribute("src")).toBe(
+    "/logos/integrations/yape.webp",
+  );
+  expect(mark("Plin")?.querySelector("img")?.getAttribute("src")).toBe(
+    "/logos/integrations/plin.png",
+  );
+  const banks = [...(mark("Transferencia")?.querySelectorAll("img") ?? [])].map(
+    (image) => image.getAttribute("src"),
+  );
+  expect(banks).toEqual([
+    "/logos/integrations/bcp.png",
+    "/logos/integrations/interbank-horizontal-logo.webp",
+  ]);
 });
 
 test("an invalid phone shows an error and nothing is sent", async () => {
@@ -481,7 +526,9 @@ test("submits the payload, disables the button while pending, then reports the r
   m.createAssisted.mockReturnValue(new Promise((r) => (resolve = r)));
   const { user, onCreated } = await renderForm();
   await fillValidOrder(user);
-  await user.type(screen.getByLabelText("Nombre del comprador"), "  Sofi ");
+  const name = screen.getByLabelText("Nombre del comprador");
+  await user.clear(name);
+  await user.type(name, "  Sofi ");
   await user.click(submitButton());
 
   await waitFor(() =>

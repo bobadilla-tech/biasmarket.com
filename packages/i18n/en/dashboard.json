@@ -1013,7 +1013,7 @@
     "alias": {
       "label": "Buyer name",
       "placeholder": "e.g. Vale, Ana",
-      "description": "Only used to greet the buyer in the message. If you leave it empty, the greeting will be generic."
+      "description": "The buyer's name or nickname, used to greet them in the message."
     },
     "steps": {
       "viewSummary": "View summary",
@@ -1115,6 +1115,7 @@
       "viewExistingOrder": "View the order",
       "phoneRequired": "Enter the buyer's WhatsApp.",
       "phoneInvalid": "The number is not valid.",
+      "aliasRequired": "Enter the buyer's name.",
       "aliasTooLong": "Maximum 60 characters.",
       "aliasInvalid": "The name has characters that are not allowed.",
       "itemsRequired": "Add at least one product.",

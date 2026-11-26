@@ -66,17 +66,17 @@ const messageBox = async () =>
 test("builds the default message with the alias greeting and the link", async () => {
   setup();
   const box = await messageBox();
-  expect(box.value).toContain("¡Hola Sofi! 💜");
-  expect(box.value).toContain("#ABCDEF");
-  expect(box.value).toContain("K-Store");
-  expect(box.value).toContain("50.00 PEN");
-  expect(box.value.endsWith(link)).toBe(true);
+  expect(box.value).toBe(
+    `¡Hola Sofi! Preparé tu pedido #ABCDEF en K-Store por 50.00 PEN. Aquí puedes ver el detalle de tu compra:\n${link}`,
+  );
   expect(findTemplate).toHaveBeenCalledWith("store-1", "ASSISTED_ORDER_LINK");
 });
 
 test("an empty alias gives a clean greeting", async () => {
   setup(created({ customerName: null }));
-  expect((await messageBox()).value.startsWith("¡Hola! 💜")).toBe(true);
+  expect(
+    (await messageBox()).value.startsWith("¡Hola! Preparé tu pedido #ABCDEF"),
+  ).toBe(true);
 });
 
 test("uses the seller's saved template", async () => {

@@ -63,9 +63,9 @@ test("shows the order chip, the private link as text, and copies it", async () =
   const box = (await screen.findByLabelText(
     "Mensaje para el comprador",
   )) as HTMLTextAreaElement;
-  expect(box.value).toContain("Vale");
-  expect(box.value).toContain("K-Store");
-  expect(box.value).toContain(link);
+  expect(box.value).toBe(
+    `¡Hola Vale! Preparé tu pedido #ABCDEF en K-Store por 92.00 PEN. Aquí puedes ver el detalle de tu compra:\n${link}`,
+  );
   expect(document.querySelector("a[href*='pedido']")).toBeNull();
 
   await user.click(screen.getByRole("button", { name: "Copiar enlace" }));
