@@ -15,6 +15,8 @@ const expectedPatterns = [
   "/es/store/[^/]+/account/orders/[^/]+",
   "/en/store/[^/]+/account/orders/[^/]+",
 ];
+// Use JavaScript equivalents for route examples rather than constructing
+// regular expressions from config values (Android's pattern syntax is distinct).
 const pathMatchers = [
   /^\/es\/store\/[^/]+$/,
   /^\/en\/store\/[^/]+$/,

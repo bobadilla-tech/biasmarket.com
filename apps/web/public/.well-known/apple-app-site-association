@@ -1,0 +1,59 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["REPLACE_WITH_APPLE_TEAM_ID.com.biasmarket.mobile"],
+        "components": [
+          {
+            "/": "/*/store/*/product/*/*",
+            "exclude": true,
+            "comment": "Exclude extra path segments under product"
+          },
+          {
+            "/": "/*/store/*/product/",
+            "exclude": true,
+            "comment": "Exclude empty product id"
+          },
+          {
+            "/": "/*/store/*/product/*",
+            "comment": "Localized product detail"
+          },
+          {
+            "/": "/*/store/*/account/orders/*/*",
+            "exclude": true,
+            "comment": "Exclude extra path segments under orders"
+          },
+          {
+            "/": "/*/store/*/account/orders/",
+            "exclude": true,
+            "comment": "Exclude empty order id"
+          },
+          {
+            "/": "/*/store/*/account/orders/*",
+            "comment": "Localized buyer order detail"
+          },
+          {
+            "/": "/*/store/*/*",
+            "exclude": true,
+            "comment": "Leave other store subpaths, including private pedido links, on the web"
+          },
+          {
+            "/": "/*/store/*/",
+            "exclude": true,
+            "comment": "Exclude a trailing slash with no further segment"
+          },
+          {
+            "/": "/*/store/",
+            "exclude": true,
+            "comment": "Exclude an empty store slug"
+          },
+          {
+            "/": "/*/store/*",
+            "comment": "Localized store"
+          }
+        ]
+      }
+    ]
+  }
+}
