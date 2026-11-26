@@ -1,6 +1,7 @@
 export { AssistedOrderForm } from "./components/assisted-order-form";
 export { ConfirmNumberAndOpenWhatsApp } from "./components/confirm-number-and-open-whatsapp";
 export { CreatedOrderScreen } from "./components/created-order-screen";
+export { CreatedOrderModal } from "./components/created-order-modal";
 export { NewOrderButton } from "./components/new-order-button";
 export { useCreateAssistedOrder } from "./mutations/use-create-assisted-order";
 export { BuyerNoticePrompt } from "./components/buyer-notice-prompt";
