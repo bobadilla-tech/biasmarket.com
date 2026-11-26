@@ -106,6 +106,17 @@ biasmarket.com {
 		respond 400
 	}
 
+	# Universal Links / App Links association files. Do not redirect this
+	# prefix (no locale prefix, no trailing slash). The extensionless AASA
+	# file has no MIME type of its own; force JSON after the upstream writes.
+	handle /.well-known/* {
+		header {
+			Content-Type application/json
+			defer
+		}
+		import /etc/caddy/active/web.caddy
+	}
+
 	import /etc/caddy/active/web.caddy
 }
 
