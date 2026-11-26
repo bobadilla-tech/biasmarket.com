@@ -1,10 +1,7 @@
 export const ORDER_CATALOG_PAGE_SIZE = 12;
 
 function fold(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLocaleLowerCase();
+  return value.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase();
 }
 
 export function filterOrderCatalog<T extends { id: string; name: string }>(
@@ -22,8 +19,7 @@ export function filterOrderCatalog<T extends { id: string; name: string }>(
     }
     if (!input.collectionId) return true;
     return (
-      input.productCollections.get(product.id)?.has(input.collectionId) ??
-      false
+      input.productCollections.get(product.id)?.has(input.collectionId) ?? false
     );
   });
 }

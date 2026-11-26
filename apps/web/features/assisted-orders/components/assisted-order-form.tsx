@@ -187,7 +187,9 @@ export function AssistedOrderForm({
   const [receipt, setReceipt] = useState<File | null>(null);
   const [amountError, setAmountError] = useState<string | undefined>();
   const [receiptError, setReceiptError] = useState<string | undefined>();
-  const [paymentSaveError, setPaymentSaveError] = useState<string | undefined>();
+  const [paymentSaveError, setPaymentSaveError] = useState<
+    string | undefined
+  >();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const deliveryOptions = useDeliveryOptions(slug);
   const productsQuery = useOrderableProducts(storeId);
@@ -650,10 +652,7 @@ export function AssistedOrderForm({
           values: {
             amount: amountPaid.trim(),
             method: values.paymentMethod as
-              | "YAPE"
-              | "PLIN"
-              | "TRANSFER"
-              | "CASH",
+              "YAPE" | "PLIN" | "TRANSFER" | "CASH",
             operationCode: "",
             paidAt: limaToday(),
             note: "",
@@ -690,10 +689,7 @@ export function AssistedOrderForm({
       description={
         <>
           {validatedPhone.ok ? (
-            <span
-              role="status"
-              className="block font-semibold text-[#341b55]"
-            >
+            <span role="status" className="block font-semibold text-[#341b55]">
               {t("phone.review", { phone: formatPhone(validatedPhone.phone) })}
             </span>
           ) : null}
@@ -959,7 +955,9 @@ export function AssistedOrderForm({
                     <FormField
                       id={`assisted-item-${index}-variant`}
                       label={t("items.variant")}
-                      error={errorText(errors.items?.[index]?.variantId?.message)}
+                      error={errorText(
+                        errors.items?.[index]?.variantId?.message,
+                      )}
                     >
                       {(props) => (
                         <Select
@@ -1451,7 +1449,10 @@ export function AssistedOrderForm({
             className="grid grid-cols-3 gap-2"
           >
             {errorText(errors.paymentMethod?.message) ? (
-              <p role="alert" className="col-span-3 text-sm text-error-foreground">
+              <p
+                role="alert"
+                className="col-span-3 text-sm text-error-foreground"
+              >
                 {errorText(errors.paymentMethod?.message)}
               </p>
             ) : null}
@@ -1708,7 +1709,10 @@ function ProductImage({ product }: { product: ProductResponseDto }) {
 function PaymentMark({ method }: { method: string }) {
   if (method === "TRANSFER") {
     return (
-      <span aria-hidden="true" className="flex items-center justify-center gap-1">
+      <span
+        aria-hidden="true"
+        className="flex items-center justify-center gap-1"
+      >
         {BANK_MARKS.map((src) => (
           <img
             key={src}

@@ -44,9 +44,9 @@ test("the create-order form requires a non-blank buyer name", () => {
       "alias required",
     );
   }
-  expect(
-    schema.safeParse({ ...valid, customerName: "   " }).success,
-  ).toBe(false);
+  expect(schema.safeParse({ ...valid, customerName: "   " }).success).toBe(
+    false,
+  );
   expect(schema.safeParse({ ...valid, customerName: "Vale" }).success).toBe(
     true,
   );

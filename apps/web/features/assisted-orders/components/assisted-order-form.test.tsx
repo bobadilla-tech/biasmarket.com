@@ -172,9 +172,7 @@ test("phone comes first, defaults to +51 and shows a readable review line", asyn
   expect(
     (screen.getByLabelText("Código de país") as HTMLSelectElement).value,
   ).toBe("PE");
-  expect(fields[0]).toBe(
-    screen.getByLabelText("Número de celular"),
-  );
+  expect(fields[0]).toBe(screen.getByLabelText("Número de celular"));
   await user.type(fields[0]!, "987654321");
   expect(await screen.findByText("Se enviará a +51 987 654 321")).toBeTruthy();
 });
@@ -186,10 +184,7 @@ test("shows the lookup hint and prefills the alias without overwriting typing", 
     lastAlias: "Sofi",
   });
   const { user } = await renderForm();
-  await user.type(
-    screen.getByLabelText("Número de celular"),
-    "987654321",
-  );
+  await user.type(screen.getByLabelText("Número de celular"), "987654321");
   expect(
     await screen.findByText("Este número ya tiene 3 pedidos en tu tienda."),
   ).toBeTruthy();
@@ -258,10 +253,7 @@ test("payment cards use the Yape, Plin, and bank marks", async () => {
 
 test("an invalid phone shows an error and nothing is sent", async () => {
   const { user } = await renderForm();
-  await user.type(
-    screen.getByLabelText("Número de celular"),
-    "123",
-  );
+  await user.type(screen.getByLabelText("Número de celular"), "123");
   await user.click(screen.getByRole("button", { name: "Agregar Álbum v1" }));
   expect(
     await within(await summaryRegion()).findAllByText("S/ 25.00"),
@@ -651,9 +643,7 @@ test("keeps the cart and buyer fields when moving between mobile steps", async (
       .disabled,
   ).toBe(false);
   await user.click(screen.getByRole("button", { name: "Ver resumen" }));
-  expect(
-    within(await summaryRegion()).getByText("Álbum v1"),
-  ).toBeTruthy();
+  expect(within(await summaryRegion()).getByText("Álbum v1")).toBeTruthy();
   await user.click(screen.getByRole("button", { name: /Continuar/ }));
   await user.type(screen.getByLabelText("Nombre del comprador"), "Vale");
   await user.click(screen.getByRole("button", { name: /Atrás/ }));

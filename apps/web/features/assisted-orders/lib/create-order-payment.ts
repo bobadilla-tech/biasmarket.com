@@ -33,16 +33,17 @@ export function proofFieldErrors(input: {
   if (parsed === 0) {
     return input.file ? { amount: "amountRequired" } : {};
   }
-  const result = buildSellerPaymentSchema(input.maxCents, input.today).safeParse(
-    {
-      amount: input.amount.trim(),
-      method: input.method,
-      operationCode: "",
-      paidAt: input.today,
-      note: "",
-      file: input.file,
-    },
-  );
+  const result = buildSellerPaymentSchema(
+    input.maxCents,
+    input.today,
+  ).safeParse({
+    amount: input.amount.trim(),
+    method: input.method,
+    operationCode: "",
+    paidAt: input.today,
+    note: "",
+    file: input.file,
+  });
   if (result.success) return {};
   const errors: { amount?: string; file?: string } = {};
   for (const issue of result.error.issues) {

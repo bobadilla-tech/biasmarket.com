@@ -43,6 +43,7 @@ export async function createOrderViaUi(
     await page.getByRole("button", { name: /Continuar/ }).click();
   }
   await page.locator("#assisted-phone").fill(phone.national);
+  await page.getByLabel("Nombre del comprador").fill("Vale");
   if (options.paymentMethod) {
     await page.getByRole("radio", { name: options.paymentMethod }).check();
   }

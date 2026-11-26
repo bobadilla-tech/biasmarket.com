@@ -47,8 +47,8 @@ test("pages the filtered list", () => {
     id: String(i),
     name: `Producto ${i}`,
   }));
-  expect(
-    visibleCatalogPage(many, ORDER_CATALOG_PAGE_SIZE),
-  ).toHaveLength(ORDER_CATALOG_PAGE_SIZE);
+  expect(visibleCatalogPage(many, ORDER_CATALOG_PAGE_SIZE)).toHaveLength(
+    ORDER_CATALOG_PAGE_SIZE,
+  );
   expect(visibleCatalogPage(many, many.length)).toHaveLength(many.length);
 });

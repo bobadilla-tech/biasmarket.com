@@ -96,7 +96,7 @@ test("courier shipping asks for the address fields the screen shows", () => {
       shippingDistrict: "Miraflores",
     }),
   ).toEqual({});
-  expect(
-    extraCourierErrors({ ...base, deliveryMethodType: "PICKUP" }),
-  ).toEqual({});
+  expect(extraCourierErrors({ ...base, deliveryMethodType: "PICKUP" })).toEqual(
+    {},
+  );
 });

@@ -53,7 +53,9 @@ test("shows the order chip, the private link as text, and copies it", async () =
     />,
   );
 
-  expect(await screen.findByRole("heading", { name: "Pedido creado" })).toBeTruthy();
+  expect(
+    await screen.findByRole("heading", { name: "Pedido creado" }),
+  ).toBeTruthy();
   expect(
     screen.getByText(
       "Tu enlace de pedido ya está listo. Compártelo con tu comprador",
