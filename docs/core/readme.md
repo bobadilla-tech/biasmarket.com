@@ -31,8 +31,9 @@ it. The front door for all docs is [../readme.md](../readme.md).
   issues. Read this when the local stack misbehaves or you need a demo login.
 - [docker.md](docker.md): how the images are built and cached. Read this when
   changing a Dockerfile or a slow build.
-- [ci.md](ci.md): what CI checks per workspace and how to change the API
-  contract. Read this before editing workflows or a DTO.
+- [ci.md](ci.md): what CI checks per workspace, how to change the API
+  contract, and the GitHub security toggles that are still manual. Read this
+  before editing workflows or a DTO.
 - [admin-access.md](admin-access.md): creating and promoting admins and running
   the seed. Read this when you need an admin account.
 - [mobile-release.md](mobile-release.md): how Android and iOS builds are

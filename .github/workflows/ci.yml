@@ -70,7 +70,7 @@ jobs:
       api_e2e: ${{ steps.filter.outputs.api_e2e }}
       backup_restore: ${{ steps.filter.outputs.backup_restore }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
@@ -294,7 +294,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
           # `lint-changed-files.mjs` diffs against origin/main; a shallow
@@ -304,11 +304,11 @@ jobs:
       - name: Load shared CI test environment
         run: bash scripts/ci/load-e2e-env.sh
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
@@ -318,7 +318,7 @@ jobs:
 
       - name: Restore turbo cache
         id: turbo-cache
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: turbo-api-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
@@ -356,7 +356,7 @@ jobs:
 
       - name: Save turbo cache
         if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
@@ -368,18 +368,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
           # `lint-changed-files.mjs` diffs against origin/main; a shallow
           # checkout has no base ref, which would fail the lint step.
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
@@ -389,7 +389,7 @@ jobs:
 
       - name: Restore turbo cache
         id: turbo-cache
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: turbo-web-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
@@ -426,7 +426,7 @@ jobs:
 
       - name: Save turbo cache
         if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
@@ -438,18 +438,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
           # `lint-changed-files.mjs` diffs against the base branch; a shallow
           # checkout has no base ref, which would fail the lint step.
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
@@ -459,7 +459,7 @@ jobs:
 
       - name: Restore turbo cache
         id: turbo-cache
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: turbo-mobile-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
@@ -506,7 +506,7 @@ jobs:
 
       - name: Save turbo cache
         if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
@@ -518,18 +518,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
           # `lint-changed-files.mjs` diffs against the base branch; a shallow
           # checkout has no base ref, which would fail the lint step.
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
@@ -539,7 +539,7 @@ jobs:
 
       - name: Restore turbo cache
         id: turbo-cache
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: turbo-workers-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
@@ -574,7 +574,7 @@ jobs:
 
       - name: Save turbo cache
         if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
@@ -586,7 +586,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
           # `lint-changed-files.mjs` diffs against the base branch; a shallow
@@ -596,11 +596,11 @@ jobs:
       - name: Load shared CI test environment
         run: bash scripts/ci/load-e2e-env.sh
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
@@ -610,7 +610,7 @@ jobs:
 
       - name: Restore turbo cache
         id: turbo-cache
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: turbo-db-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
@@ -634,7 +634,7 @@ jobs:
 
       - name: Save turbo cache
         if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
@@ -646,7 +646,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -671,18 +671,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
           # `lint-changed-files.mjs` diffs against the base branch; a shallow
           # checkout has no base ref, which would fail the lint step.
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
@@ -692,7 +692,7 @@ jobs:
 
       - name: Restore turbo cache
         id: turbo-cache
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: turbo-i18n-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
@@ -730,7 +730,7 @@ jobs:
 
       - name: Save turbo cache
         if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
@@ -742,18 +742,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
           # `lint-changed-files.mjs` diffs against the base branch; a shallow
           # checkout has no base ref, which would fail the lint step.
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
@@ -763,7 +763,7 @@ jobs:
 
       - name: Restore turbo cache
         id: turbo-cache
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: turbo-queue-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
@@ -790,7 +790,7 @@ jobs:
 
       - name: Save turbo cache
         if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
@@ -802,18 +802,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
           # `lint-changed-files.mjs` diffs against the base branch; a shallow
           # checkout has no base ref, which would fail the lint step.
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
@@ -826,7 +826,7 @@ jobs:
 
       - name: Restore turbo cache
         id: turbo-cache
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: turbo-types-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
@@ -864,7 +864,7 @@ jobs:
 
       - name: Save turbo cache
         if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
@@ -876,18 +876,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
           # `lint-changed-files.mjs` diffs against the base branch; a shallow
           # checkout has no base ref, which would fail the lint step.
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
@@ -897,7 +897,7 @@ jobs:
 
       - name: Restore turbo cache
         id: turbo-cache
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: turbo-design-tokens-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
@@ -935,7 +935,7 @@ jobs:
 
       - name: Save turbo cache
         if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
@@ -947,18 +947,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
           # `lint-changed-files.mjs` diffs against the base branch; a shallow
           # checkout has no base ref, which would fail the lint step.
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
@@ -968,7 +968,7 @@ jobs:
 
       - name: Restore turbo cache
         id: turbo-cache
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: turbo-utils-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
@@ -1003,7 +1003,7 @@ jobs:
 
       - name: Save turbo cache
         if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
@@ -1015,18 +1015,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
           # `lint-changed-files.mjs` diffs against the base branch; a shallow
           # checkout has no base ref, which would fail the lint step.
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
@@ -1036,7 +1036,7 @@ jobs:
 
       - name: Restore turbo cache
         id: turbo-cache
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: turbo-validation-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
@@ -1071,7 +1071,7 @@ jobs:
 
       - name: Save turbo cache
         if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
@@ -1083,18 +1083,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
           # `lint-changed-files.mjs` diffs against the base branch; a shallow
           # checkout has no base ref, which would fail the lint step.
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
@@ -1104,7 +1104,7 @@ jobs:
 
       - name: Restore turbo cache
         id: turbo-cache
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: turbo-query-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
@@ -1128,7 +1128,7 @@ jobs:
 
       - name: Save turbo cache
         if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
@@ -1142,15 +1142,15 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
@@ -1173,11 +1173,11 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -1247,7 +1247,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
@@ -1277,18 +1277,18 @@ jobs:
     # before any step, retry for only a few seconds, and cannot be cached, so
     # a transient GHCR `toomanyrequests` used to fail the job outright.
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
       - name: Load shared CI test environment
         run: bash scripts/ci/load-e2e-env.sh
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
@@ -1298,7 +1298,7 @@ jobs:
 
       - name: Restore turbo cache
         id: turbo-cache
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: turbo-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
@@ -1308,7 +1308,7 @@ jobs:
 
       - name: Restore E2E sidecar images
         id: e2e-images
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.cache/biasmarket-e2e-images
           key: e2e-images-${{ runner.os }}-${{ hashFiles('scripts/ci/e2e-images.sh') }}
@@ -1330,7 +1330,7 @@ jobs:
       # warms the cache for the next one.
       - name: Save E2E sidecar images
         if: steps.e2e-images.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.cache/biasmarket-e2e-images
           key: ${{ steps.e2e-images.outputs.cache-primary-key }}
@@ -1359,7 +1359,7 @@ jobs:
 
       - name: Save turbo cache
         if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
@@ -1379,18 +1379,18 @@ jobs:
     # stays "Web E2E (a11y)" so check-ci-success.sh keeps matching it.
     # Sidecars are script-managed (see the E2E (API) job).
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
       - name: Load shared CI test environment
         run: bash scripts/ci/load-e2e-env.sh
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
@@ -1400,7 +1400,7 @@ jobs:
 
       - name: Restore turbo cache
         id: turbo-cache
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: turbo-web-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ env.TURBO_CACHE_SCOPE }}${{ github.sha }}
@@ -1410,7 +1410,7 @@ jobs:
 
       - name: Restore E2E sidecar images
         id: e2e-images
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.cache/biasmarket-e2e-images
           key: e2e-images-${{ runner.os }}-${{ hashFiles('scripts/ci/e2e-images.sh') }}
@@ -1432,14 +1432,14 @@ jobs:
       # warms the cache for the next one.
       - name: Save E2E sidecar images
         if: steps.e2e-images.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.cache/biasmarket-e2e-images
           key: ${{ steps.e2e-images.outputs.cache-primary-key }}
 
       - name: Cache Playwright browsers
         id: pw-cache
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
@@ -1470,7 +1470,7 @@ jobs:
 
       - name: Save turbo cache
         if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') }}
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .turbo/cache
           key: ${{ steps.turbo-cache.outputs.cache-primary-key }}
@@ -1499,7 +1499,7 @@ jobs:
       - web-e2e
     if: always()
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
